@@ -1,4 +1,4 @@
-package fitpay.android;
+package com.fitpay.android;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;
