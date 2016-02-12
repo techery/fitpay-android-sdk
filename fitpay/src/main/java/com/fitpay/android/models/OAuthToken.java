@@ -1,13 +1,10 @@
-package com.fitpay.android.api.oauth.objects;
+package com.fitpay.android.models;
 
 import com.fitpay.android.api.oauth.OAuthConst;
 import com.google.gson.annotations.SerializedName;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * OAuth2.0 token.
+ * OAuth token.
  */
 public class OAuthToken {
     @SerializedName("token_type")
@@ -20,11 +17,8 @@ public class OAuthToken {
         this.accessToken = accessToken;
     }
 
-    public Map<String, String> getAuthHeaders(OAuthConfig authConfig, String method,
-                                              String url, Map<String, String> postParams) {
-        final Map<String, String> headers = new HashMap<>();
+    public String getAuthHeader() {
         final String authorizationHeader = String.format("%s %s", OAuthConst.AUTHORIZATION_BEARER, accessToken);
-        headers.put(OAuthConst.HEADER_AUTHORIZATION, authorizationHeader);
-        return headers;
+        return authorizationHeader;
     }
 }

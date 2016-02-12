@@ -23,7 +23,7 @@ public class FitPay {
 
     public static FitPay getInstance() {
         if (sInstance == null) {
-            throw new IllegalStateException("Must init FitPay first");
+            throw new IllegalStateException("Init FitPay first");
         }
 
         return sInstance;

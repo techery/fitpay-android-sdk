@@ -1,6 +1,7 @@
-package com.fitpay.android.api.oauth;
+package com.fitpay.android.api;
 
-import com.fitpay.android.api.oauth.objects.OAuthConfig;
+import com.fitpay.android.api.oauth.OAuthConst;
+import com.fitpay.android.api.oauth.OAuthConfig;
 
 import java.io.IOException;
 
@@ -14,11 +15,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 /**
  * OAuth2.0 service. Provides methods for requesting auth tokens.
  */
-public class OAuthService {
+public class OAuthClient extends BaseClient<OAuthService>{
 
-    private OAuthAPI api;
-
-    public OAuthService(final OAuthConfig config){
+    public OAuthClient(final OAuthConfig config){
 
         Interceptor interceptor = new Interceptor() {
             @Override
@@ -37,16 +36,11 @@ public class OAuthService {
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
         clientBuilder.addInterceptor(interceptor);
 
-        api = new Retrofit.Builder()
+        mAPIService = new Retrofit.Builder()
                 .baseUrl(OAuthConst.AUTH_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(clientBuilder.build())
                 .build()
-                .create(OAuthAPI.class);
+                .create(OAuthService.class);
     }
-
-    public OAuthAPI getApi(){
-        return api;
-    }
-
 }

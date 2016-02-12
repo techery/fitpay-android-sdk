@@ -1,9 +1,9 @@
-package com.fitpay.android.api.oauth.objects;
+package com.fitpay.android.api.oauth;
 
 import android.util.Base64;
 
 /**
- * OAuth2.0 client_id and client_secret
+ * OAuth client_id and client_secret
  */
 public class OAuthConfig {
     private final String consumerKey;

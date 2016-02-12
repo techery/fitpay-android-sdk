@@ -22,71 +22,71 @@ import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
-public interface RestClient {
+public interface FitPayService {
 
     @FormUrlEncoded
-    @POST("users/login")
+    @POST("/users/login")
     Call<AuthenticatedUser> loginUser(@FieldMap Map<String, String> options);
 
-    @POST("users")
+    @POST("/users")
     Call<User> createUser(@Body User user);
 
-    @GET("users")
+    @GET("/users")
     Call<UsersCollection> getUsers(@Query("limit") int limit, @Query("offset") int offset);
 
-    @DELETE("users/{userId}")
+    @DELETE("/users/{userId}")
     Call<Object> deleteUser(@Path("userId") String userId);
 
-    @PATCH("users/{userId}")
+    @PATCH("/users/{userId}")
     Call<User> updateUser(@Path("userId") String userId, @Body User user);
 
-    @GET("users/{userId}")
+    @GET("/users/{userId}")
     Call<User> getUser(@Path("userId") String userId);
 
 
 
-    @GET("users/{userId}/relationships")
+    @GET("/users/{userId}/relationships")
     Call<Relationship> getRelationship(@Path("userId") String userId,
                                        @Query("creditCardId") String creditCardId,
                                        @Query("deviceId") String deviceId);
 
-    @PUT("users/{userId}/relationships")
+    @PUT("/users/{userId}/relationships")
     Call<Relationship> createRelationship(@Path("userId") String userId,
                                           @Query("creditCardId") String creditCardId,
                                           @Query("deviceId") String deviceId);
 
-    @DELETE("users/{userId}/relationships")
+    @DELETE("/users/{userId}/relationships")
     Call<Object> deleteRelationship(@Path("userId") String userId);
 
 
 
-    @GET("users/{userId}/creditCards")
+    @GET("/users/{userId}/creditCards")
     Call<CreditCardsCollection> getCreditCards(@Path("userId") String userId,
                                                @Query("limit") int limit,
                                                @Query("offset") int offset);
 
-    @POST("users/{userId}/creditCards")
+    @POST("/users/{userId}/creditCards")
     Call<CreditCard> addCard(@Path("userId") String userId, @Body CreditCard creditCard);
 
-    @GET("users/{userId}/creditCards/{creditCardId}")
+    @GET("/users/{userId}/creditCards/{creditCardId}")
     Call<CreditCard> getCreditCard(@Path("userId") String userId,
                                    @Path("creditCardId") String creditCardId,
                                    @Body CreditCard creditCard);
 
-    @DELETE("users/{userId}/creditCards/{creditCardId}")
+    @DELETE("/users/{userId}/creditCards/{creditCardId}")
     Call<Object> deleteCreditCard(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
 
 
-    @POST("users/{userId}/creditCards/{creditCardId}/acceptTerms")
+    @POST("/users/{userId}/creditCards/{creditCardId}/acceptTerms")
     Call<CreditCard> acceptTerm(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
 
-    @POST("users/{userId}/creditCards/{creditCardId}/declineTerms")
+    @POST("/users/{userId}/creditCards/{creditCardId}/declineTerms")
     Call<CreditCard> declineTerms(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
 
-    @POST("users/{userId}/creditCards/{creditCardId}/makeDefault")
+    @POST("/users/{userId}/creditCards/{creditCardId}/makeDefault")
     Call<CreditCard> makeDefault(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
 
-    @POST("users/{userId}/creditCards/{creditCardId}/deactivate")
+    @POST("/users/{userId}/creditCards/{creditCardId}/deactivate")
     Call<CreditCard> deactivate(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
 
 }
