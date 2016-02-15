@@ -1,10 +1,5 @@
 apply plugin: 'com.android.library'
 
-repositories {
-    jcenter()
-    maven { url 'http://clojars.org/repo' }
-}
-
 android {
     compileSdkVersion 23
     buildToolsVersion "23.0.2"
@@ -25,6 +20,8 @@ dependencies {
 
     compile 'com.nimbusds:nimbus-jose-jwt:4.12'
     compile 'com.pusher:pusher-java-client:1.0.2'
+
+    //compile 'io.reactivex:rxjava:1.1.1'
 
     testCompile 'org.mockito:mockito-core:1.10.19'
     testCompile "org.robolectric:robolectric:3.0"

@@ -31,7 +31,7 @@ public interface FitPayService {
     @POST("/users")
     Call<User> createUser(@Body User user);
 
-    @GET("/users")
+    @GET("users")
     Call<UsersCollection> getUsers(@Query("limit") int limit, @Query("offset") int offset);
 
     @DELETE("/users/{userId}")

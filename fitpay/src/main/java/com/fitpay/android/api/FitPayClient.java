@@ -2,7 +2,12 @@ package com.fitpay.android.api;
 
 import com.fitpay.android.api.oauth.OAuthConst;
 import com.fitpay.android.models.OAuthToken;
+import com.fitpay.android.models.User;
 import com.fitpay.android.utils.C;
+import com.fitpay.android.utils.DataAdapter;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 
@@ -15,9 +20,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  */
-public class FitPayClient extends BaseClient<FitPayService>{
+public class FitPayClient extends BaseClient<FitPayService> {
 
-    public FitPayClient(final OAuthToken token){
+    public FitPayClient(final OAuthToken token) {
 
         Interceptor interceptor = new Interceptor() {
             @Override
@@ -34,9 +39,14 @@ public class FitPayClient extends BaseClient<FitPayService>{
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
         clientBuilder.addInterceptor(interceptor);
 
+        Gson gson = new GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .registerTypeAdapter(User.class, new DataAdapter.DataSerializer<User>())
+                .create();
+
         mAPIService = new Retrofit.Builder()
                 .baseUrl(C.API_URL)
-                .addConverterFactory(GsonConverterFactory.create())
+                .addConverterFactory(GsonConverterFactory.create(gson))
                 .client(clientBuilder.build())
                 .build()
                 .create(FitPayService.class);

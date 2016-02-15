@@ -2,6 +2,10 @@ package com.fitpay.android.api;
 
 import com.fitpay.android.api.oauth.OAuthConst;
 import com.fitpay.android.api.oauth.OAuthConfig;
+import com.fitpay.android.utils.C;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 
@@ -37,8 +41,8 @@ public class OAuthClient extends BaseClient<OAuthService>{
         clientBuilder.addInterceptor(interceptor);
 
         mAPIService = new Retrofit.Builder()
-                .baseUrl(OAuthConst.AUTH_URL)
-                .addConverterFactory(GsonConverterFactory.create())
+                .baseUrl(C.BASE_URL)
+                .addConverterFactory(getDefaultGsonConverter())
                 .client(clientBuilder.build())
                 .build()
                 .create(OAuthService.class);
