@@ -2,10 +2,13 @@ package com.fitpay.android.api;
 
 
 import com.fitpay.android.models.AuthenticatedUser;
+import com.fitpay.android.models.Commit;
 import com.fitpay.android.models.CreditCard;
 import com.fitpay.android.models.CreditCardsCollection;
 import com.fitpay.android.models.Device;
 import com.fitpay.android.models.Relationship;
+import com.fitpay.android.models.ResultCollection;
+import com.fitpay.android.models.Transaction;
 import com.fitpay.android.models.User;
 import com.fitpay.android.models.UsersCollection;
 import com.fitpay.android.models.Verification;
@@ -256,9 +259,9 @@ public interface FitPayService {
      */
     @POST("users/{userId}/creditCards/{creditCardId}/verificationMethods/{verificationTypeId}/verify")
     Call<Verification> verify(@Path("userId") String userId,
-                            @Path("creditCardId") String creditCardId,
-                            @Path("verificationTypeId") String verificationTypeId,
-                            @Body String verificationCode);
+                              @Path("creditCardId") String creditCardId,
+                              @Path("verificationTypeId") String verificationTypeId,
+                              @Body String verificationCode);
 
 
     /**
@@ -270,8 +273,8 @@ public interface FitPayService {
      */
     @GET("users/{userId}/devices")
     Call<ArrayList<Device>> getDevices(@Path("userId") String userId,
-                                  @Query("limit") int limit,
-                                  @Query("offset") int offset);
+                                       @Query("limit") int limit,
+                                       @Query("offset") int offset);
 
     /**
      * For a single user, create a new device in their profile.
@@ -311,5 +314,124 @@ public interface FitPayService {
      */
     @DELETE("users/{userId}/devices/{deviceId}")
     Call<Object> deleteDevice(@Path("userId") String userId, @Path("deviceId") String deviceId);
+
+
+    /**
+     * Retrieves a collection of all events that should be committed to this device.
+     *
+     * @param userId user id
+     * @param deviceId device id
+     * @param limit Max number of events per page, default: 10
+     * @param offset Start index position for list of entities returned
+     * @param commitsAfter The last commit successfully applied.
+     *                     Query will return all subsequent commits which need to be applied.
+     */
+    @GET("users/{userId}/devices/{deviceId}/commits")
+    Call<ResultCollection<Commit>> getCommits(@Path("userId") String userId,
+                                              @Path("deviceId") String deviceId,
+                                              @Query("commitsAfter") String commitsAfter,
+                                              @Query("limit") int limit,
+                                              @Query("offset") int offset);
+
+    /**
+     * Retrieves an individual commit.
+     *
+     * @param userId user id
+     * @param deviceId device id
+     * @param commitId commit id
+     */
+    @GET("users/{userId}/devices/{deviceId}/commits/{commitId}")
+    Call<Commit> getCommit(@Path("userId") String userId,
+                           @Path("deviceId") String deviceId,
+                           @Path("commitId") String commitId);
+
+    /**
+     * Get all transactions.
+     *
+     * @param userId user id
+     * @param limit Max number of transactions per page, default: 10
+     * @param offset Start index position for list of entities returned
+     * */
+    @GET("users/{userId}/transactions")
+    Call<ResultCollection<Transaction>> getTransactions(@Path("userId") String userId,
+                                                        @Query("limit") int limit,
+                                                        @Query("offset") int offset);
+
+    /**
+     * Get a single transaction.
+     *
+     * @param userId user id
+     * @param transactionId transaction id
+     * */
+    @GET("users/{userId}/transactions/{transactionId}")
+    Call<Transaction> getTransaction(@Path("userId") String userId, @Path("transactionId") String transactionId);
+
+
+    /**
+     * Endpoint to allow for returning responses to APDU execution.
+     *
+     * @param packageId package id
+     * */
+    @POST("apduPackages/{packageId}/confirm")
+    Call<Object> confirmPackage(@Path("packageId") String packageId);
+
+
+    /**
+     * Retrieve an individual asset (i.e. terms and conditions)
+     *
+     * @param adapterData adapter data
+     * @param adapterId adapter id
+     * @param assetId asset id
+     * */
+    @GET("assets")
+    Call<Object> getAssets(@Query("adapterData") String adapterData,
+                          @Query("adapterId") String adapterId,
+                          @Query("assetId") String assetId);
+
+
+    /**
+     * Creates a new encryption key pair
+     *
+     * @param clientPublicKey client public key
+     * */
+    @POST("config/encryptionKeys")
+    Call<Object> createEncryptionKey(@Body String clientPublicKey);
+
+    /**
+     * Retrieve and individual key pair.
+     *
+     * @param keyId key id
+     * */
+    @GET("config/encryptionKeys/{keyId}")
+    Call<Object> getEncryptionKey(@Query("keyId") String keyId);
+
+    /**
+     * Delete and individual key pair.
+     *
+     * @param keyId key id
+     * */
+    @DELETE("config/encryptionKeys/{keyId}")
+    Call<Object> deleteEncryptionKey(@Query("keyId") String keyId);
+
+
+    /**
+     *
+     * */
+    @GET("config/webhook")
+    Call<Object> getWebhook();
+
+    /**
+     * Sets the webhook endpoint you would like FitPay to send notifications to, must be a valid URL.
+     *
+     * */
+    @PUT("config/webhook")
+    Call<Object> setWebhook();
+
+    /**
+     * Removes the current webhook endpoint, unsubscribing you from all Fitpay notifications.
+     *
+     * */
+    @DELETE("config/webhook")
+    Call<Object> removeWebhook();
 
 }
