@@ -3,7 +3,22 @@ package com.fitpay.android.models;
 
 public class Relationship {
 
-    private Card card;
+    private RelationshipCard card;
     private Device device;
 
+    public RelationshipCard getCard() {
+        return card;
+    }
+
+    public void setCard(RelationshipCard card) {
+        this.card = card;
+    }
+
+    public Device getDevice() {
+        return device;
+    }
+
+    public void setDevice(Device device) {
+        this.device = device;
+    }
 }

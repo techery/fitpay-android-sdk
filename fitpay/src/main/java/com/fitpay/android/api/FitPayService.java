@@ -1,19 +1,19 @@
 package com.fitpay.android.api;
 
 
+import com.fitpay.android.models.ApduPackage;
 import com.fitpay.android.models.AuthenticatedUser;
 import com.fitpay.android.models.Commit;
 import com.fitpay.android.models.CreditCard;
-import com.fitpay.android.models.CreditCardsCollection;
 import com.fitpay.android.models.Device;
+import com.fitpay.android.models.EncryptionKey;
+import com.fitpay.android.models.Reason;
 import com.fitpay.android.models.Relationship;
 import com.fitpay.android.models.ResultCollection;
 import com.fitpay.android.models.Transaction;
 import com.fitpay.android.models.User;
-import com.fitpay.android.models.UsersCollection;
-import com.fitpay.android.models.Verification;
+import com.fitpay.android.models.VerificationMethod;
 
-import java.util.ArrayList;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -51,7 +51,7 @@ public interface FitPayService {
      * @param offset Start index position for list of entities returned
      */
     @GET("users")
-    Call<UsersCollection> getUsers(@Query("limit") int limit, @Query("offset") int offset);
+    Call<ResultCollection<User>> getUsers(@Query("limit") int limit, @Query("offset") int offset);
 
     /**
      * Delete a single user from your organization.
@@ -126,9 +126,9 @@ public interface FitPayService {
      * @param offset Start index position for list of entities returned
      */
     @GET("users/{userId}/creditCards")
-    Call<CreditCardsCollection> getCreditCards(@Path("userId") String userId,
-                                               @Query("limit") int limit,
-                                               @Query("offset") int offset);
+    Call<ResultCollection<CreditCard>> getCreditCards(@Path("userId") String userId,
+                                                      @Query("limit") int limit,
+                                                      @Query("offset") int offset);
 
     /**
      * Add a single credit card to a user's profile.
@@ -221,9 +221,12 @@ public interface FitPayService {
      *
      * @param userId user id
      * @param creditCardId credit card id
+     * @param reason reason data:(causedBy, reason)
      */
     @POST("users/{userId}/creditCards/{creditCardId}/deactivate")
-    Call<CreditCard> deactivate(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
+    Call<CreditCard> deactivate(@Path("userId") String userId,
+                                @Path("creditCardId") String creditCardId,
+                                @Body Reason reason);
 
     /**
      * Transition the credit card into an active state where it can be utilized for payment.
@@ -231,9 +234,12 @@ public interface FitPayService {
      *
      * @param userId user id
      * @param creditCardId credit card id
+     * @param reason reason data:(causedBy, reason)
      */
     @POST("users/{userId}/creditCards/{creditCardId}/reactivate")
-    Call<CreditCard> reactivate(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
+    Call<CreditCard> reactivate(@Path("userId") String userId,
+                                @Path("creditCardId") String creditCardId,
+                                @Body Reason reason);
 
     /**
      * When an issuer requires additional authentication to verify the identity of the cardholder,
@@ -244,9 +250,9 @@ public interface FitPayService {
      * @param verificationTypeId verification type id
      */
     @POST("users/{userId}/creditCards/{creditCardId}/verificationMethods/{verificationTypeId}/select")
-    Call<Verification> selectVerification(@Path("userId") String userId,
-                                        @Path("creditCardId") String creditCardId,
-                                        @Path("verificationTypeId") String verificationTypeId);
+    Call<VerificationMethod> selectVerificationType(@Path("userId") String userId,
+                                              @Path("creditCardId") String creditCardId,
+                                              @Path("verificationTypeId") String verificationTypeId);
 
     /**
      * If a verification method is selected that requires an entry of a pin code, this transition will be available.
@@ -258,7 +264,7 @@ public interface FitPayService {
      * @param verificationCode verification code
      */
     @POST("users/{userId}/creditCards/{creditCardId}/verificationMethods/{verificationTypeId}/verify")
-    Call<Verification> verify(@Path("userId") String userId,
+    Call<VerificationMethod> verify(@Path("userId") String userId,
                               @Path("creditCardId") String creditCardId,
                               @Path("verificationTypeId") String verificationTypeId,
                               @Body String verificationCode);
@@ -272,7 +278,7 @@ public interface FitPayService {
      * @param offset Start index position for list of entities returned
      */
     @GET("users/{userId}/devices")
-    Call<ArrayList<Device>> getDevices(@Path("userId") String userId,
+    Call<ResultCollection<Device>> getDevices(@Path("userId") String userId,
                                        @Query("limit") int limit,
                                        @Query("offset") int offset);
 
@@ -302,9 +308,12 @@ public interface FitPayService {
      *
      * @param userId user id
      * @param deviceId device id
+     * @param deviceData device data:(firmwareRevision, softwareRevision)
      */
     @PATCH("users/{userId}/devices/{deviceId}")
-    Call<Device> updateDevice(@Path("userId") String userId, @Path("deviceId") String deviceId);
+    Call<Device> updateDevice(@Path("userId") String userId,
+                              @Path("deviceId") String deviceId,
+                              @Body Device deviceData);
 
     /**
      * Delete a single device.
@@ -371,9 +380,11 @@ public interface FitPayService {
      * Endpoint to allow for returning responses to APDU execution.
      *
      * @param packageId package id
+     * @param apduPackage package confirmation data:(packageId, state, executedTs,
+     *                            executedDuration, apduResponses:(commandId, commandId, responseData))
      * */
     @POST("apduPackages/{packageId}/confirm")
-    Call<Object> confirmPackage(@Path("packageId") String packageId);
+    Call<Object> confirmAPDUPackage(@Path("packageId") String packageId, @Body ApduPackage apduPackage);
 
 
     /**
@@ -395,7 +406,7 @@ public interface FitPayService {
      * @param clientPublicKey client public key
      * */
     @POST("config/encryptionKeys")
-    Call<Object> createEncryptionKey(@Body String clientPublicKey);
+    Call<EncryptionKey> createEncryptionKey(@Body String clientPublicKey);
 
     /**
      * Retrieve and individual key pair.
@@ -403,7 +414,7 @@ public interface FitPayService {
      * @param keyId key id
      * */
     @GET("config/encryptionKeys/{keyId}")
-    Call<Object> getEncryptionKey(@Query("keyId") String keyId);
+    Call<EncryptionKey> getEncryptionKey(@Query("keyId") String keyId);
 
     /**
      * Delete and individual key pair.
@@ -415,6 +426,7 @@ public interface FitPayService {
 
 
     /**
+     * //TODO: add description when it becomes available on API documentation page
      *
      * */
     @GET("config/webhook")
@@ -423,15 +435,17 @@ public interface FitPayService {
     /**
      * Sets the webhook endpoint you would like FitPay to send notifications to, must be a valid URL.
      *
+     * @param webhookURL webhook URL
      * */
     @PUT("config/webhook")
-    Call<Object> setWebhook();
+    Call<Object> setWebhook(@Body String webhookURL);
 
     /**
      * Removes the current webhook endpoint, unsubscribing you from all Fitpay notifications.
      *
+     * @param webhookURL webhook URL
      * */
     @DELETE("config/webhook")
-    Call<Object> removeWebhook();
+    Call<Object> removeWebhook(@Body String webhookURL);
 
 }

@@ -1,7 +1,7 @@
 package com.fitpay.android.models;
 
 
-public class Verification {
+public class VerificationMethod {
 
 
     private String verificationId;

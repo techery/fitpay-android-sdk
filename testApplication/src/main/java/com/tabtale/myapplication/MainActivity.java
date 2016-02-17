@@ -8,8 +8,8 @@ import com.fitpay.android.FitPay;
 import com.fitpay.android.api.FitPayService;
 import com.fitpay.android.api.oauth.OAuthConfig;
 import com.fitpay.android.models.ECCKeyPair;
+import com.fitpay.android.models.ResultCollection;
 import com.fitpay.android.models.User;
-import com.fitpay.android.models.UsersCollection;
 import com.fitpay.android.units.APIUnit;
 import com.fitpay.android.utils.C;
 import com.fitpay.android.utils.KeyHandler;
@@ -70,17 +70,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getUsers(){
-        Call<UsersCollection> usersCall = fitPayAPI.getUsers(10, 0);
-        usersCall.enqueue(new Callback<UsersCollection>() {
+        Call<ResultCollection<User>> usersCall = fitPayAPI.getUsers(10, 0);
+        usersCall.enqueue(new Callback<ResultCollection<User>>() {
             @Override
-            public void onResponse(Call<UsersCollection> call, Response<UsersCollection> response) {
+            public void onResponse(Call<ResultCollection<User>> call, Response<ResultCollection<User>> response) {
                 if(response.body().getResults().size() == 0){
                     createUser();
                 }
             }
 
             @Override
-            public void onFailure(Call<UsersCollection> call, Throwable t) {
+            public void onFailure(Call<ResultCollection<User>> call, Throwable t) {
                 Log.i(C.FIT_PAY_ERROR_TAG, t.toString());
             }
         });
