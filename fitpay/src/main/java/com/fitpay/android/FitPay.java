@@ -31,7 +31,6 @@ public class FitPay {
 
     public static FitPay init(@NonNull Context context) {
         if (sInstance == null) {
-
             sInstance = new FitPay(context);
             sInstance.mUnits = new HashMap<>();
         }

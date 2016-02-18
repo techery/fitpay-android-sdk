@@ -1,7 +1,6 @@
 package com.fitpay.android.models;
 
-
-public class User {
+public class User extends BaseModel{
 
     /**
      * description : The user's first name

@@ -8,8 +8,8 @@ import com.fitpay.android.FitPay;
 import com.fitpay.android.api.FitPayService;
 import com.fitpay.android.api.oauth.OAuthConfig;
 import com.fitpay.android.models.ECCKeyPair;
+import com.fitpay.android.models.ResultCollection;
 import com.fitpay.android.models.User;
-import com.fitpay.android.models.UsersCollection;
 import com.fitpay.android.units.APIUnit;
 import com.fitpay.android.utils.C;
 import com.fitpay.android.utils.SecurityHandler;
@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
             public void onSuccess(FitPayService apiClient) {
                 fitPayAPI = apiClient;
                 getUsers();
+//                createUser();
             }
 
             @Override
@@ -72,17 +73,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getUsers(){
-        Call<UsersCollection> usersCall = fitPayAPI.getUsers(10, 0);
-        usersCall.enqueue(new Callback<UsersCollection>() {
+        Call<ResultCollection<User>> usersCall = fitPayAPI.getUsers(10, 0);
+        usersCall.enqueue(new Callback<ResultCollection<User>>() {
             @Override
-            public void onResponse(Call<UsersCollection> call, Response<UsersCollection> response) {
-                if(response.body().getResults().size() == 0){
-                    createUser();
+            public void onResponse(Call<ResultCollection<User>> call, Response<ResultCollection<User>> response) {
+                if(response.isSuccess()) {
+                    if (response.body() == null || response.body().getResults().size() == 0) {
+                        createUser();
+                    }
                 }
             }
 
             @Override
-            public void onFailure(Call<UsersCollection> call, Throwable t) {
+            public void onFailure(Call<ResultCollection<User>> call, Throwable t) {
                 C.printError(t.toString());
             }
         });
@@ -94,6 +97,10 @@ public class MainActivity extends AppCompatActivity {
         user.setLastName("Doe");
         user.setBirthDate("1967-06-23");
         user.setEmail("john@doe.com");
+        user.setTermsAcceptedTs("2015-11-05T17:51:01.125Z");
+        user.setOriginAccountCreatedTs("2015-10-30T17:32:35.963Z");
+        user.setTermsVersion("0.0.1");
+
 
         Call<User> createUserCall = fitPayAPI.createUser(user);
         createUserCall.enqueue(new Callback<User>() {

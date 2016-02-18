@@ -2,6 +2,7 @@ package com.fitpay.android.utils;
 
 import android.util.Log;
 
+import com.fitpay.android.models.Links;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -17,13 +18,16 @@ public class C {
 
     public static Gson getDefaultGson() {
         if (gson == null) {
-            gson = new GsonBuilder().create();
+            gson = new GsonBuilder()
+                    .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+                    .registerTypeAdapter(Links.class, new ModelAdapter.LinksDeserializer())
+                    .create();
         }
 
         return gson;
     }
 
-    public static void printError(String error){
+    public static void printError(String error) {
         Log.e(C.FIT_PAY_ERROR_TAG, error);
     }
 }

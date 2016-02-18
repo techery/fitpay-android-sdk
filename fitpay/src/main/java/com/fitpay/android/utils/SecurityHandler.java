@@ -9,7 +9,9 @@ import com.nimbusds.jose.JWEAlgorithm;
 import com.nimbusds.jose.JWEEncrypter;
 import com.nimbusds.jose.JWEHeader;
 import com.nimbusds.jose.JWEObject;
+import com.nimbusds.jose.KeyLengthException;
 import com.nimbusds.jose.Payload;
+import com.nimbusds.jose.crypto.AESDecrypter;
 import com.nimbusds.jose.crypto.AESEncrypter;
 import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 
@@ -28,6 +30,7 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.text.ParseException;
 import java.util.UUID;
 
 import javax.crypto.KeyAgreement;
@@ -137,6 +140,14 @@ public class SecurityHandler {
         }
     }
 
+    public String getKeyId(){
+        if(mKeyPair != null){
+            return mKeyPair.getKeyId();
+        }
+
+        return null;
+    }
+
     //TODO: refresh secret if null
     public SecretKey getSecretKey() {
         if (mSecretKey == null && mKeyPair != null && mKeyPair.getServerPublicKey() != null) {
@@ -167,7 +178,10 @@ public class SecurityHandler {
         JWEAlgorithm alg = JWEAlgorithm.A256GCMKW;
         EncryptionMethod enc = EncryptionMethod.A256GCM;
 
-        JWEHeader.Builder jweHeaderBuilder = new JWEHeader.Builder(alg, enc);
+        JWEHeader.Builder jweHeaderBuilder = new JWEHeader.Builder(alg, enc)
+                .contentType("application/json")
+                .keyID(mKeyPair.getKeyId());
+
         JWEHeader header = jweHeaderBuilder.build();
         Payload payload = new Payload(decryptedString);
         JWEObject jweObject = new JWEObject(header, payload);
@@ -184,7 +198,16 @@ public class SecurityHandler {
     }
 
     public String getDecryptedString(String encryptedString) {
-        String decryptedString = encryptedString;
-        return decryptedString;
+
+        JWEObject jweObject;
+        try {
+            jweObject = JWEObject.parse(encryptedString);
+            jweObject.decrypt(new AESDecrypter(getSecretKey()));
+            return jweObject.getPayload().toString();
+        } catch (ParseException | JOSEException e) {
+            C.printError(e.toString());
+        }
+
+        return null;
     }
 }

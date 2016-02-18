@@ -1,6 +1,5 @@
 package com.fitpay.android.api;
 
-
 import com.fitpay.android.models.ApduPackage;
 import com.fitpay.android.models.AuthenticatedUser;
 import com.fitpay.android.models.Commit;
@@ -35,14 +34,6 @@ public interface FitPayService {
     Call<AuthenticatedUser> loginUser(@FieldMap Map<String, String> options);
 
     /**
-     * Creates a new user within your organization.
-     *
-     * @param user user data (firstName, lastName, birthDate, email)
-     */
-    @POST("users")
-    Call<User> createUser(@Body User user);
-
-    /**
      * Returns a list of all users that belong to your organization.
      * The customers are returned sorted by creation date,
      * with the most recently created customers appearing first.
@@ -52,6 +43,14 @@ public interface FitPayService {
      */
     @GET("users")
     Call<ResultCollection<User>> getUsers(@Query("limit") int limit, @Query("offset") int offset);
+
+    /**
+     * Creates a new user within your organization.
+     *
+     * @param user user data (firstName, lastName, birthDate, email)
+     */
+    @POST("users")
+    Call<User> createUser(@Body User user);
 
     /**
      * Delete a single user from your organization.
