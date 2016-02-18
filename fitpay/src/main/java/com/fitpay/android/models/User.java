@@ -1,7 +1,7 @@
 package com.fitpay.android.models;
 
 
-public class User{
+public class User {
 
     /**
      * description : The user's first name
