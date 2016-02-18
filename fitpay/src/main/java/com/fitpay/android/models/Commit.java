@@ -1,18 +1,21 @@
 package com.fitpay.android.models;
 
 
+import com.fitpay.android.constants.CommitType;
+import com.fitpay.android.constants.CreditCardInitiator;
+
 import java.util.List;
 
 public class Commit {
 
-    private String commitType;
+    private CommitType commitType;
     private Payload payload;
     private long createdTs;
     private String previousCommit;
     private String commit;
 
 
-    public void setCommitType(String commitType) {
+    public void setCommitType(CommitType commitType) {
         this.commitType = commitType;
     }
 
@@ -32,7 +35,7 @@ public class Commit {
         this.commit = commit;
     }
 
-    public String getCommitType() {
+    public CommitType getCommitType() {
         return commitType;
     }
 
@@ -61,7 +64,7 @@ public class Commit {
         private Address address;
         private String externalTokenReference;
         private String cardType;
-        private String causedBy;
+        private CreditCardInitiator causedBy;
         private String creditCardId;
         private long lastModifiedTsEpoch;
         private String userId;
@@ -101,7 +104,7 @@ public class Commit {
             this.cardType = cardType;
         }
 
-        public void setCausedBy(String causedBy) {
+        public void setCausedBy(CreditCardInitiator causedBy) {
             this.causedBy = causedBy;
         }
 
@@ -185,7 +188,7 @@ public class Commit {
             return cardType;
         }
 
-        public String getCausedBy() {
+        public CreditCardInitiator getCausedBy() {
             return causedBy;
         }
 

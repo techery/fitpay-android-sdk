@@ -1,5 +1,6 @@
 package com.fitpay.android.models;
 
+import com.fitpay.android.constants.CreditCardInitiator;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
@@ -13,7 +14,7 @@ public class CreditCard {
     private String createdTs;
     private long createdTsEpoch;
     private String state;
-    private String causedBy;
+    private CreditCardInitiator causedBy;
     private String cardType;
     private String termsAssetId;
     private String pan;
@@ -190,4 +191,11 @@ public class CreditCard {
     }
 
 
+    public CreditCardInitiator getCausedBy() {
+        return causedBy;
+    }
+
+    public void setCausedBy(CreditCardInitiator causedBy) {
+        this.causedBy = causedBy;
+    }
 }
