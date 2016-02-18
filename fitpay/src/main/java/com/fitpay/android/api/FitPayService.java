@@ -6,6 +6,7 @@ import com.fitpay.android.models.Commit;
 import com.fitpay.android.models.CreditCard;
 import com.fitpay.android.models.CreditCardsCollection;
 import com.fitpay.android.models.Device;
+import com.fitpay.android.models.ECCKeyPair;
 import com.fitpay.android.models.Relationship;
 import com.fitpay.android.models.ResultCollection;
 import com.fitpay.android.models.Transaction;
@@ -395,7 +396,8 @@ public interface FitPayService {
      * @param clientPublicKey client public key
      * */
     @POST("config/encryptionKeys")
-    Call<Object> createEncryptionKey(@Body String clientPublicKey);
+    Call<ECCKeyPair> createEncryptionKey(@Body ECCKeyPair clientPublicKey);
+
 
     /**
      * Retrieve and individual key pair.
@@ -403,7 +405,7 @@ public interface FitPayService {
      * @param keyId key id
      * */
     @GET("config/encryptionKeys/{keyId}")
-    Call<Object> getEncryptionKey(@Query("keyId") String keyId);
+    Call<ECCKeyPair> getEncryptionKey(@Query("keyId") String keyId);
 
     /**
      * Delete and individual key pair.
@@ -411,7 +413,7 @@ public interface FitPayService {
      * @param keyId key id
      * */
     @DELETE("config/encryptionKeys/{keyId}")
-    Call<Object> deleteEncryptionKey(@Query("keyId") String keyId);
+    Call<Void> deleteEncryptionKey(@Query("keyId") String keyId);
 
 
     /**

@@ -1,6 +1,7 @@
 package com.fitpay.android.utils;
 
-import com.google.gson.FieldNamingPolicy;
+import android.util.Log;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -14,13 +15,15 @@ public class C {
 
     private static Gson gson;
 
-    public static Gson getDefaultGson(){
-        if(gson == null){
-            gson = new GsonBuilder()
-                    .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                    .create();
+    public static Gson getDefaultGson() {
+        if (gson == null) {
+            gson = new GsonBuilder().create();
         }
 
         return gson;
+    }
+
+    public static void printError(String error){
+        Log.e(C.FIT_PAY_ERROR_TAG, error);
     }
 }

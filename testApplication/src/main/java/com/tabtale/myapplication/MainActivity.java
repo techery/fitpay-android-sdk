@@ -12,7 +12,7 @@ import com.fitpay.android.models.User;
 import com.fitpay.android.models.UsersCollection;
 import com.fitpay.android.units.APIUnit;
 import com.fitpay.android.utils.C;
-import com.fitpay.android.utils.KeyHandler;
+import com.fitpay.android.utils.SecurityHandler;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWEAlgorithm;
@@ -25,6 +25,7 @@ import com.nimbusds.jose.crypto.AESDecrypter;
 import com.nimbusds.jose.crypto.AESEncrypter;
 import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 
+import java.io.IOException;
 import java.security.Security;
 import java.text.ParseException;
 
@@ -46,11 +47,12 @@ public class MainActivity extends AppCompatActivity {
 
         Security.addProvider(BouncyCastleProviderSingleton.getInstance());
 
-        testKeyPair();
-        //testFitPay();
+        testGetUsers();
+//        testSecretKeys();
+//        testServerSecretKey();
     }
 
-    private void testFitPay(){
+    private void testGetUsers(){
         APIUnit api = new APIUnit(new OAuthConfig("e362a5cd-ab9d-4f9a-98ff-f91fcdd27936","s2CLUBKcbvQP6IqKx31XLclyqAd3nf6tyIPk74rL"));
         api.setAuthCallback(new APIUnit.IAuthCallback() {
             @Override
@@ -81,27 +83,42 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(Call<UsersCollection> call, Throwable t) {
-                Log.i(C.FIT_PAY_ERROR_TAG, t.toString());
+                C.printError(t.toString());
             }
         });
     }
 
     private void createUser(){
-        User user = new User();
+        final User user = new User();
         user.setFirstName("John");
         user.setLastName("Doe");
         user.setBirthDate("1967-06-23");
         user.setEmail("john@doe.com");
+
+        Call<User> createUserCall = fitPayAPI.createUser(user);
+        createUserCall.enqueue(new Callback<User>() {
+            @Override
+            public void onResponse(Call<User> call, Response<User> response) {
+                if(response.isSuccess() && response.body() != null){
+                    Log.i("SUCCESS", response.body().getId());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<User> call, Throwable t) {
+                C.printError(t.toString());
+            }
+        });
     }
 
-    private void testKeyPair(){
-        KeyHandler handler = new KeyHandler();
+    private void testSecretKeys(){
+        SecurityHandler handler = SecurityHandler.getInstance();
         ECCKeyPair keyPairOne = null;
         ECCKeyPair keyPairTwo = null;
 
         try {
-            keyPairOne = handler.getKeyPair();
-            keyPairTwo = handler.getKeyPair();
+            keyPairOne = handler.createECCKeyPair();
+            keyPairTwo = handler.createECCKeyPair();
         } catch (Exception e) {
         }
 
@@ -113,8 +130,8 @@ public class MainActivity extends AppCompatActivity {
             Log.i("KEY 2", "public: " + keyPairTwo.getPublicKey());
             Log.i("KEY 2", "private: " + keyPairTwo.getPublicKey());
 
-            SecretKey secretKey1 = handler.generateSharedSecret(keyPairOne.getPrivateKey(), keyPairTwo.getPublicKey());
-            SecretKey secretKey2 = handler.generateSharedSecret(keyPairTwo.getPrivateKey(), keyPairOne.getPublicKey());
+            SecretKey secretKey1 = handler.getSecretKey(keyPairOne.getPrivateKey(), keyPairTwo.getPublicKey());
+            SecretKey secretKey2 = handler.getSecretKey(keyPairTwo.getPrivateKey(), keyPairOne.getPublicKey());
 
             String thisIsSparta = "This is SPARTAAAAA!!!";
 
@@ -135,7 +152,6 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
 
-            String jweHeader = jweObject.getHeader().toString();
             String jwe = jweObject.serialize();
 
             try {
@@ -153,5 +169,44 @@ public class MainActivity extends AppCompatActivity {
                 Log.i("ENC_DEC", "SUCCESS");
             }
         }
+    }
+
+    public void testServerSecretKey(){
+
+        APIUnit api = new APIUnit(new OAuthConfig("e362a5cd-ab9d-4f9a-98ff-f91fcdd27936","s2CLUBKcbvQP6IqKx31XLclyqAd3nf6tyIPk74rL"));
+        FitPay fp = FitPay.init(this);
+        fp.addUnit(api);
+
+        SecurityHandler handler = SecurityHandler.getInstance();
+        ECCKeyPair myKey = null;
+        try {
+            myKey = handler.createECCKeyPair();
+        } catch (Exception e) {
+        }
+
+        ECCKeyPair encKeyPair = new ECCKeyPair();
+        encKeyPair.setPublicKey(myKey.getPublicKey());
+
+        Call<ECCKeyPair> getServerKey = api.getFitPayClient().createEncryptionKey(encKeyPair);
+        getServerKey.enqueue(new Callback<ECCKeyPair>() {
+            @Override
+            public void onResponse(Call<ECCKeyPair> call, Response<ECCKeyPair> response) {
+                if(response.isSuccess() && response.body() != null){
+                    Log.i("KEY", response.body().getServerPublicKey());
+                } else if (response.errorBody() != null){
+                    try {
+                        String errorMessage = response.errorBody().string();
+                        C.printError(errorMessage);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ECCKeyPair> call, Throwable t) {
+                C.printError(t.toString());
+            }
+        });
     }
 }

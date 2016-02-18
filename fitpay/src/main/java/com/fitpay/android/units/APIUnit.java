@@ -10,6 +10,7 @@ import com.fitpay.android.api.OAuthService;
 import com.fitpay.android.api.oauth.OAuthConfig;
 import com.fitpay.android.models.OAuthToken;
 import com.fitpay.android.utils.C;
+import com.fitpay.android.utils.SecurityHandler;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -20,28 +21,32 @@ import retrofit2.Response;
  */
 public class APIUnit extends Unit {
 
-    private OAuthService mAuthAPI;
-    private FitPayService mFitPayAPI;
+    private OAuthClient mAuthAPI;
+    private FitPayClient mFitPayAPI;
     private IAuthCallback mAuthCallback;
 
     public APIUnit(@NonNull OAuthConfig config) {
         super();
-        mAuthAPI = new OAuthClient(config).getService();
+
+        mAuthAPI = new OAuthClient(config);
+        mFitPayAPI = new FitPayClient(null);
     }
 
     @Override
     public void onAdd() {
         super.onAdd();
 
-        Call<OAuthToken> getTokenCall = mAuthAPI.getAuthToken();
+        SecurityHandler.getInstance().updateECCKeyPair();
+
+        Call<OAuthToken> getTokenCall = mAuthAPI.getService().getAuthToken();
         getTokenCall.enqueue(new Callback<OAuthToken>() {
             @Override
             public void onResponse(Call<OAuthToken> call, Response<OAuthToken> response) {
                 if (response.isSuccess() && response.body() != null) {
-                    mFitPayAPI = new FitPayClient(response.body()).getService();
+                    mFitPayAPI.updateToken(response.body());
 
                     if (mAuthCallback != null) {
-                        mAuthCallback.onSuccess(mFitPayAPI);
+                        mAuthCallback.onSuccess(mFitPayAPI.getService());
                     }
                 } else if (mAuthCallback != null) {
                     if (response.errorBody() != null) {
@@ -54,7 +59,7 @@ public class APIUnit extends Unit {
 
             @Override
             public void onFailure(Call<OAuthToken> call, Throwable t) {
-                Log.e(C.FIT_PAY_ERROR_TAG, t.toString());
+                C.printError(t.toString());
 
                 if(mAuthCallback != null){
                     mAuthCallback.onError(t.toString());
@@ -68,7 +73,7 @@ public class APIUnit extends Unit {
     }
 
     public FitPayService getFitPayClient(){
-        return mFitPayAPI;
+        return mFitPayAPI.getService();
     }
 
     public interface IAuthCallback {

@@ -1,11 +1,12 @@
 package com.fitpay.android.api;
 
 import com.fitpay.android.api.oauth.OAuthConst;
+import com.fitpay.android.models.ECCKeyPair;
 import com.fitpay.android.models.OAuthToken;
 import com.fitpay.android.models.User;
 import com.fitpay.android.utils.C;
 import com.fitpay.android.utils.DataAdapter;
-import com.google.gson.FieldNamingPolicy;
+import com.fitpay.android.utils.SecurityHandler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -22,7 +23,11 @@ import retrofit2.converter.gson.GsonConverterFactory;
  */
 public class FitPayClient extends BaseClient<FitPayService> {
 
-    public FitPayClient(final OAuthToken token) {
+    private OAuthToken mAuthToken;
+
+    public FitPayClient(OAuthToken token) {
+
+        this.mAuthToken = token;
 
         Interceptor interceptor = new Interceptor() {
             @Override
@@ -30,7 +35,11 @@ public class FitPayClient extends BaseClient<FitPayService> {
 
                 Request.Builder builder = chain.request().newBuilder()
                         .header("Accept", "application/json")
-                        .header(OAuthConst.HEADER_AUTHORIZATION, token.getAuthHeader());
+                        .header("Content-Type", "application/json");
+
+                if (mAuthToken != null) {
+                    builder.header(OAuthConst.HEADER_AUTHORIZATION, mAuthToken.getAuthHeader());
+                }
 
                 return chain.proceed(builder.build());
             }
@@ -39,8 +48,10 @@ public class FitPayClient extends BaseClient<FitPayService> {
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
         clientBuilder.addInterceptor(interceptor);
 
+
         Gson gson = new GsonBuilder()
-                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+                .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+                .registerTypeAdapter(ECCKeyPair.class, new DataAdapter.KeyPairSerializer())
                 .registerTypeAdapter(User.class, new DataAdapter.DataSerializer<User>())
                 .create();
 
@@ -50,5 +61,9 @@ public class FitPayClient extends BaseClient<FitPayService> {
                 .client(clientBuilder.build())
                 .build()
                 .create(FitPayService.class);
+    }
+
+    public void updateToken(OAuthToken token) {
+        mAuthToken = token;
     }
 }
