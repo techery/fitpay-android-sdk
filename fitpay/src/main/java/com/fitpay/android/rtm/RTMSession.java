@@ -9,12 +9,12 @@ import com.fitpay.android.utils.Unit;
 /**
  * Created by Vlad on 12.02.2016.
  */
-public final class RTMUnit extends Unit {
+public final class RTMSession extends Unit {
 
     private final String authUrl;
     private RTMListener mListener;
 
-    public RTMUnit(@NonNull String authUrl) {
+    public RTMSession(@NonNull String authUrl) {
         this.authUrl = authUrl;
     }
 
@@ -40,9 +40,9 @@ public final class RTMUnit extends Unit {
          * @param url       Provides url object to be used in WebView, or null if error occurs
          * @param errorCode Provides error object, or null if no error occurs
          */
-        void onConnect(String url, @SyncErrorCode int errorCode);
+        void onConnect(String url, @SyncErrorCode.Code int errorCode);
 
-        void onError(@SyncErrorCode int errorCode);
+        void onError(@SyncErrorCode.Code int errorCode);
 
         void onUserLogin(WebViewSessionData sessionData);
 

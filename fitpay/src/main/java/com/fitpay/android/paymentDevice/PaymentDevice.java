@@ -7,13 +7,13 @@ import com.fitpay.android.utils.Unit;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class DeviceUnit extends Unit{
+public final class PaymentDevice extends Unit{
 
     private Device mDevice;
 
     private List<AlertsListener> mAlertListeners;
 
-    public DeviceUnit(){
+    public PaymentDevice(){
         mAlertListeners = new ArrayList<>();
     }
 
