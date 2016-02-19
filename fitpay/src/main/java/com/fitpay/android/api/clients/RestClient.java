@@ -1,6 +1,7 @@
 package com.fitpay.android.api.clients;
 
 import com.fitpay.android.api.callbacks.Callback;
+import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.Commit;
 import com.fitpay.android.api.models.CreditCard;
@@ -18,14 +19,13 @@ import java.util.Map;
 
 public interface RestClient {
 
-
     /**
      * User Login
      *
      * @param options  login params
      * @param callback result callback
      */
-    public void loginUser(Map<String, String> options, Callback<ResultCollection<User>> callback);
+    public void loginUser(Map<String, String> options, Callback<User> callback);
 
     /**
      * Returns a list of all users that belong to your organization.

@@ -1,6 +1,6 @@
 package com.fitpay.android.api.callbacks;
 
-import com.fitpay.android.api.enums.ErrorCode;
+import com.fitpay.android.api.enums.ResultCode;
 
 /**
  * Communicates responses from a server
@@ -19,5 +19,5 @@ public interface Callback<T> {
      * @param errorCode    error code
      * @param errorMessage readable message of an error
      */
-    void onFailure(@ErrorCode.Code int errorCode, String errorMessage);
+    void onFailure(@ResultCode.Code int errorCode, String errorMessage);
 }

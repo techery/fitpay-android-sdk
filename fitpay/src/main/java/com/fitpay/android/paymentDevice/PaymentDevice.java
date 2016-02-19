@@ -42,6 +42,6 @@ public final class PaymentDevice extends Unit{
     }
 
     public interface AlertsListener{
-        void handleAlert(PaymentDeviceAlert alert);
+        void handleAlert(@PaymentDeviceAlert.Type String alert);
     }
 }
