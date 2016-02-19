@@ -1,37 +1,20 @@
 package com.fitpay.android.api.clients;
 
 import com.fitpay.android.api.models.ApduPackage;
-import com.fitpay.android.api.models.AuthenticatedUser;
-import com.fitpay.android.api.models.Commit;
 import com.fitpay.android.api.models.CreditCard;
 import com.fitpay.android.api.models.Device;
 import com.fitpay.android.api.models.ECCKeyPair;
 import com.fitpay.android.api.models.Reason;
-import com.fitpay.android.api.models.Relationship;
-import com.fitpay.android.api.models.ResultCollection;
-import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.User;
-import com.fitpay.android.api.models.VerificationMethod;
 
 import java.util.Map;
 
-import retrofit2.Call;
-import retrofit2.http.Body;
-import retrofit2.http.DELETE;
-import retrofit2.http.FieldMap;
-import retrofit2.http.FormUrlEncoded;
-import retrofit2.http.GET;
-import retrofit2.http.PATCH;
-import retrofit2.http.POST;
-import retrofit2.http.PUT;
-import retrofit2.http.Path;
-import retrofit2.http.Query;
 
-public interface FitPayService {
+public interface RestClient {
 
-    @FormUrlEncoded
-    @POST("users/login")
-    Call<AuthenticatedUser> loginUser(@FieldMap Map<String, String> options);
+
+
+    public void loginUser(Map<String, String> options);
 
     /**
      * Returns a list of all users that belong to your organization.
@@ -41,24 +24,21 @@ public interface FitPayService {
      * @param limit Max number of profiles per page, default: 10
      * @param offset Start index position for list of entities returned
      */
-    @GET("users")
-    Call<ResultCollection<User>> getUsers(@Query("limit") int limit, @Query("offset") int offset);
+    public void getUsers(int limit, int offset);
 
     /**
      * Creates a new user within your organization.
      *
      * @param user user data (firstName, lastName, birthDate, email)
      */
-    @POST("users")
-    Call<User> createUser(@Body User user);
+    public void createUser(User user);
 
     /**
      * Delete a single user from your organization.
      *
      * @param userId user id
      */
-    @DELETE("users/{userId}")
-    Call<Object> deleteUser(@Path("userId") String userId);
+    public void deleteUser(String userId);
 
     /**
      * Update the details of an existing user.
@@ -66,8 +46,7 @@ public interface FitPayService {
      * @param userId user id
      * @param user user data to update:(firstName, lastName, birthDate, originAccountCreatedTs, termsAcceptedTs, termsVersion)
      */
-    @PATCH("users/{userId}")
-    Call<User> updateUser(@Path("userId") String userId, @Body User user);
+    public void updateUser(String userId, User user);
 
     /**
      * Retrieves the details of an existing user.
@@ -75,8 +54,7 @@ public interface FitPayService {
      *
      * @param userId user id
      */
-    @GET("users/{userId}")
-    Call<User> getUser(@Path("userId") String userId);
+    public void getUser(String userId);
 
 
     /**
@@ -86,10 +64,7 @@ public interface FitPayService {
      * @param creditCardId credit card id
      * @param deviceId device id
      */
-    @GET("users/{userId}/relationships")
-    Call<Relationship> getRelationship(@Path("userId") String userId,
-                                       @Query("creditCardId") String creditCardId,
-                                       @Query("deviceId") String deviceId);
+    public void getRelationship(String userId, String creditCardId, String deviceId);
 
 
 
@@ -100,10 +75,7 @@ public interface FitPayService {
      * @param creditCardId credit card id
      * @param deviceId device id
      */
-    @PUT("users/{userId}/relationships")
-    Call<Relationship> createRelationship(@Path("userId") String userId,
-                                          @Query("creditCardId") String creditCardId,
-                                          @Query("deviceId") String deviceId);
+    public void createRelationship(String userId, String creditCardId, String deviceId);
 
     /**
      * Removes a relationship between a device and a creditCard if it exists.
@@ -112,10 +84,7 @@ public interface FitPayService {
      * @param creditCardId credit card id
      * @param deviceId device id
      */
-    @DELETE("users/{userId}/relationships")
-    Call<Object> deleteRelationship(@Path("userId") String userId,
-                                    @Query("creditCardId") String creditCardId,
-                                    @Query("deviceId") String deviceId);
+    public void deleteRelationship(String userId, String creditCardId, String deviceId);
 
 
 
@@ -126,10 +95,7 @@ public interface FitPayService {
      * @param limit Max number of credit cards per page, default: 10
      * @param offset Start index position for list of entities returned
      */
-    @GET("users/{userId}/creditCards")
-    Call<ResultCollection<CreditCard>> getCreditCards(@Path("userId") String userId,
-                                                      @Query("limit") int limit,
-                                                      @Query("offset") int offset);
+    public void getCreditCards(String userId, int limit, int offset);
 
     /**
      * Add a single credit card to a user's profile.
@@ -141,8 +107,7 @@ public interface FitPayService {
      * @param creditCard credit card data:(pan, expMonth, expYear, cvv, name,
      *                   address data:(street1, street2, street3, city, state, postalCode, country))
      */
-    @POST("users/{userId}/creditCards")
-    Call<CreditCard> createCreditCard(@Path("userId") String userId, @Body CreditCard creditCard);
+    public void createCreditCard(String userId, CreditCard creditCard);
 
     /**
      * Retrieves the details of an existing credit card.
@@ -151,8 +116,7 @@ public interface FitPayService {
      * @param userId user id
      * @param creditCardId credit card id
      */
-    @GET("users/{userId}/creditCards/{creditCardId}")
-    Call<CreditCard> getCreditCard(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
+    public void getCreditCard(String userId, String creditCardId);
 
     /**
      * Update the details of an existing credit card.
@@ -162,10 +126,7 @@ public interface FitPayService {
      * @param creditCard credit card data to update:(name (Card holder name), address/street1, address/street2,
      *                   address/city, address/state, address/postalCode, address/countryCode)
      */
-    @PATCH("users/{userId}/creditCards/{creditCardId}")
-    Call<CreditCard> updateCreditCard(@Path("userId") String userId,
-                                      @Path("creditCardId") String creditCardId,
-                                      @Body CreditCard creditCard);
+    public void updateCreditCard(String userId, String creditCardId, CreditCard creditCard);
 
     /**
      * Delete a single credit card from a user's profile.
@@ -177,8 +138,7 @@ public interface FitPayService {
      * @param userId user id
      * @param creditCardId credit card id
      */
-    @DELETE("users/{userId}/creditCards/{creditCardId}")
-    Call<Object> deleteCreditCard(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
+    public void deleteCreditCard(String userId, String creditCardId);
 
 
     /**
@@ -190,8 +150,7 @@ public interface FitPayService {
      * @param userId user id
      * @param creditCardId credit card id
      */
-    @POST("users/{userId}/creditCards/{creditCardId}/acceptTerms")
-    Call<CreditCard> acceptTerm(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
+    public void acceptTerm(String userId, String creditCardId);
 
     /**
      * Indicate a user has declined the terms and conditions.
@@ -202,8 +161,7 @@ public interface FitPayService {
      * @param userId user id
      * @param creditCardId credit card id
      */
-    @POST("users/{userId}/creditCards/{creditCardId}/declineTerms")
-    Call<CreditCard> declineTerms(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
+    public void declineTerms(String userId, String creditCardId);
 
     /**
      * Mark the credit card as the default payment instrument.
@@ -213,8 +171,7 @@ public interface FitPayService {
      * @param userId user id
      * @param creditCardId credit card id
      */
-    @POST("users/{userId}/creditCards/{creditCardId}/makeDefault")
-    Call<CreditCard> makeDefault(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
+    public void makeDefault(String userId, String creditCardId);
 
     /**
      * Transition the credit card into a deactivated state so that it may not be utilized for payment.
@@ -224,10 +181,7 @@ public interface FitPayService {
      * @param creditCardId credit card id
      * @param reason reason data:(causedBy, reason)
      */
-    @POST("users/{userId}/creditCards/{creditCardId}/deactivate")
-    Call<CreditCard> deactivate(@Path("userId") String userId,
-                                @Path("creditCardId") String creditCardId,
-                                @Body Reason reason);
+    public void deactivate(String userId, String creditCardId, Reason reason);
 
     /**
      * Transition the credit card into an active state where it can be utilized for payment.
@@ -237,10 +191,7 @@ public interface FitPayService {
      * @param creditCardId credit card id
      * @param reason reason data:(causedBy, reason)
      */
-    @POST("users/{userId}/creditCards/{creditCardId}/reactivate")
-    Call<CreditCard> reactivate(@Path("userId") String userId,
-                                @Path("creditCardId") String creditCardId,
-                                @Body Reason reason);
+    public void reactivate(String userId, String creditCardId, Reason reason);
 
     /**
      * When an issuer requires additional authentication to verify the identity of the cardholder,
@@ -250,10 +201,7 @@ public interface FitPayService {
      * @param creditCardId credit card id
      * @param verificationTypeId verification type id
      */
-    @POST("users/{userId}/creditCards/{creditCardId}/verificationMethods/{verificationTypeId}/select")
-    Call<VerificationMethod> selectVerificationType(@Path("userId") String userId,
-                                              @Path("creditCardId") String creditCardId,
-                                              @Path("verificationTypeId") String verificationTypeId);
+    public void selectVerificationType(String userId, String creditCardId, String verificationTypeId);
 
     /**
      * If a verification method is selected that requires an entry of a pin code, this transition will be available.
@@ -264,11 +212,7 @@ public interface FitPayService {
      * @param verificationTypeId verification type id
      * @param verificationCode verification code
      */
-    @POST("users/{userId}/creditCards/{creditCardId}/verificationMethods/{verificationTypeId}/verify")
-    Call<VerificationMethod> verify(@Path("userId") String userId,
-                              @Path("creditCardId") String creditCardId,
-                              @Path("verificationTypeId") String verificationTypeId,
-                              @Body String verificationCode);
+    public void verify(String userId, String creditCardId, String verificationTypeId, String verificationCode);
 
 
     /**
@@ -278,10 +222,7 @@ public interface FitPayService {
      * @param limit Max number of devices per page, default: 10
      * @param offset Start index position for list of entities returned
      */
-    @GET("users/{userId}/devices")
-    Call<ResultCollection<Device>> getDevices(@Path("userId") String userId,
-                                       @Query("limit") int limit,
-                                       @Query("offset") int offset);
+    public void getDevices(String userId, int limit, int offset);
 
     /**
      * For a single user, create a new device in their profile.
@@ -291,8 +232,7 @@ public interface FitPayService {
      *               modelNumber, hardwareRevision, firmwareRevision, softwareRevision, systemId,
      *               osName, licenseKey, bdAddress, secureElementId, pairingTs)
      */
-    @POST("users/{userId}/devices")
-    Call<Device> createDevice(@Path("userId") String userId, @Body Device device);
+    public void createDevice(String userId, Device device);
 
     /**
      * Retrieves the details of an existing device.
@@ -301,8 +241,7 @@ public interface FitPayService {
      * @param userId user id
      * @param deviceId device id
      */
-    @GET("users/{userId}/devices/{deviceId}")
-    Call<Device> getDevice(@Path("userId") String userId, @Path("deviceId") String deviceId);
+    public void getDevice(String userId, String deviceId);
 
     /**
      * Update the details of an existing device.
@@ -311,10 +250,7 @@ public interface FitPayService {
      * @param deviceId device id
      * @param deviceData device data:(firmwareRevision, softwareRevision)
      */
-    @PATCH("users/{userId}/devices/{deviceId}")
-    Call<Device> updateDevice(@Path("userId") String userId,
-                              @Path("deviceId") String deviceId,
-                              @Body Device deviceData);
+    public void updateDevice(String userId, String deviceId, Device deviceData);
 
     /**
      * Delete a single device.
@@ -322,8 +258,7 @@ public interface FitPayService {
      * @param userId user id
      * @param deviceId device id
      */
-    @DELETE("users/{userId}/devices/{deviceId}")
-    Call<Object> deleteDevice(@Path("userId") String userId, @Path("deviceId") String deviceId);
+    public void deleteDevice(String userId, String deviceId);
 
 
     /**
@@ -336,12 +271,7 @@ public interface FitPayService {
      * @param commitsAfter The last commit successfully applied.
      *                     Query will return all subsequent commits which need to be applied.
      */
-    @GET("users/{userId}/devices/{deviceId}/commits")
-    Call<ResultCollection<Commit>> getCommits(@Path("userId") String userId,
-                                              @Path("deviceId") String deviceId,
-                                              @Query("commitsAfter") String commitsAfter,
-                                              @Query("limit") int limit,
-                                              @Query("offset") int offset);
+    public void getCommits(String userId, String deviceId, String commitsAfter, int limit, int offset);
 
     /**
      * Retrieves an individual commit.
@@ -350,10 +280,7 @@ public interface FitPayService {
      * @param deviceId device id
      * @param commitId commit id
      */
-    @GET("users/{userId}/devices/{deviceId}/commits/{commitId}")
-    Call<Commit> getCommit(@Path("userId") String userId,
-                           @Path("deviceId") String deviceId,
-                           @Path("commitId") String commitId);
+    public void getCommit(String userId, String deviceId, String commitId);
 
     /**
      * Get all transactions.
@@ -362,10 +289,7 @@ public interface FitPayService {
      * @param limit Max number of transactions per page, default: 10
      * @param offset Start index position for list of entities returned
      * */
-    @GET("users/{userId}/transactions")
-    Call<ResultCollection<Transaction>> getTransactions(@Path("userId") String userId,
-                                                        @Query("limit") int limit,
-                                                        @Query("offset") int offset);
+    public void getTransactions(String userId, int limit, int offset);
 
     /**
      * Get a single transaction.
@@ -373,8 +297,7 @@ public interface FitPayService {
      * @param userId user id
      * @param transactionId transaction id
      * */
-    @GET("users/{userId}/transactions/{transactionId}")
-    Call<Transaction> getTransaction(@Path("userId") String userId, @Path("transactionId") String transactionId);
+    public void getTransaction(String userId, String transactionId);
 
 
     /**
@@ -384,8 +307,7 @@ public interface FitPayService {
      * @param apduPackage package confirmation data:(packageId, state, executedTs,
      *                            executedDuration, apduResponses:(commandId, commandId, responseData))
      * */
-    @POST("apduPackages/{packageId}/confirm")
-    Call<Object> confirmAPDUPackage(@Path("packageId") String packageId, @Body ApduPackage apduPackage);
+    public void confirmAPDUPackage(String packageId, ApduPackage apduPackage);
 
 
     /**
@@ -395,10 +317,7 @@ public interface FitPayService {
      * @param adapterId adapter id
      * @param assetId asset id
      * */
-    @GET("assets")
-    Call<Object> getAssets(@Query("adapterData") String adapterData,
-                          @Query("adapterId") String adapterId,
-                          @Query("assetId") String assetId);
+    public void getAssets(String adapterData, String adapterId, String assetId);
 
 
     /**
@@ -406,8 +325,7 @@ public interface FitPayService {
      *
      * @param clientPublicKey client public key
      * */
-    @POST("config/encryptionKeys")
-    Call<ECCKeyPair> createEncryptionKey(@Body ECCKeyPair clientPublicKey);
+    public void createEncryptionKey(ECCKeyPair clientPublicKey);
 
 
     /**
@@ -415,40 +333,14 @@ public interface FitPayService {
      *
      * @param keyId key id
      * */
-    @GET("config/encryptionKeys/{keyId}")
-    Call<ECCKeyPair> getEncryptionKey(@Query("keyId") String keyId);
+    public void getEncryptionKey(String keyId);
 
     /**
      * Delete and individual key pair.
      *
      * @param keyId key id
      * */
-    @DELETE("config/encryptionKeys/{keyId}")
-    Call<Void> deleteEncryptionKey(@Query("keyId") String keyId);
+    public void deleteEncryptionKey(String keyId);
 
-    //TODO: move Webhood to private class and hide it from outside
-
-    /**
-     * //TODO: add description when it becomes available on API documentation page
-     *
-     * */
-    @GET("config/webhook")
-    Call<Object> getWebhook();
-
-    /**
-     * Sets the webhook endpoint you would like FitPay to send notifications to, must be a valid URL.
-     *
-     * @param webhookURL webhook URL
-     * */
-    @PUT("config/webhook")
-    Call<Object> setWebhook(@Body String webhookURL);
-
-    /**
-     * Removes the current webhook endpoint, unsubscribing you from all Fitpay notifications.
-     *
-     * @param webhookURL webhook URL
-     * */
-    @DELETE("config/webhook")
-    Call<Object> removeWebhook(@Body String webhookURL);
 
 }
