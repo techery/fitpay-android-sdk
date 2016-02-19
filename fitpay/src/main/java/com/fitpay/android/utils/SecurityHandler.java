@@ -1,15 +1,14 @@
 package com.fitpay.android.utils;
 
 import com.fitpay.android.FitPay;
-import com.fitpay.android.models.ECCKeyPair;
-import com.fitpay.android.units.APIUnit;
+import com.fitpay.android.api.models.ECCKeyPair;
+import com.fitpay.android.api.APIUnit;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWEAlgorithm;
 import com.nimbusds.jose.JWEEncrypter;
 import com.nimbusds.jose.JWEHeader;
 import com.nimbusds.jose.JWEObject;
-import com.nimbusds.jose.KeyLengthException;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.AESDecrypter;
 import com.nimbusds.jose.crypto.AESEncrypter;
@@ -43,7 +42,7 @@ import retrofit2.Response;
 /**
  * SecurityHandler is designed to create and manager @ECCKeyPair object.
  */
-public class SecurityHandler {
+public final class SecurityHandler {
     private static final String ALGORITHM = "ECDH";
     private static final String EC_CURVE = "secp256r1";
     private static final String KEY_TYPE = "AES";

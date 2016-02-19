@@ -2,9 +2,8 @@ package com.fitpay.android.utils;
 
 import android.text.TextUtils;
 
-import com.fitpay.android.models.ECCKeyPair;
-import com.fitpay.android.models.Links;
-import com.google.gson.JsonArray;
+import com.fitpay.android.api.models.ECCKeyPair;
+import com.fitpay.android.api.models.Links;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -13,15 +12,12 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.google.gson.internal.LinkedTreeMap;
 
 import java.lang.reflect.Type;
-import java.security.Security;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * Created by Vlad on 15.02.2016.
  */
 public class ModelAdapter {
 

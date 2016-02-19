@@ -5,12 +5,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import com.fitpay.android.FitPay;
-import com.fitpay.android.api.FitPayService;
-import com.fitpay.android.api.oauth.OAuthConfig;
-import com.fitpay.android.models.ECCKeyPair;
-import com.fitpay.android.models.ResultCollection;
-import com.fitpay.android.models.User;
-import com.fitpay.android.units.APIUnit;
+import com.fitpay.android.api.APIUnit;
+import com.fitpay.android.api.clients.FitPayService;
+import com.fitpay.android.api.models.OAuthConfig;
+import com.fitpay.android.api.models.ECCKeyPair;
+import com.fitpay.android.api.models.ResultCollection;
+import com.fitpay.android.api.models.User;
 import com.fitpay.android.utils.C;
 import com.fitpay.android.utils.SecurityHandler;
 import com.nimbusds.jose.EncryptionMethod;
@@ -52,8 +52,8 @@ public class MainActivity extends AppCompatActivity {
 //        testServerSecretKey();
     }
 
-    private void testGetUsers(){
-        APIUnit api = new APIUnit(new OAuthConfig("e362a5cd-ab9d-4f9a-98ff-f91fcdd27936","s2CLUBKcbvQP6IqKx31XLclyqAd3nf6tyIPk74rL"));
+    private void testGetUsers() {
+        APIUnit api = new APIUnit(new OAuthConfig("e362a5cd-ab9d-4f9a-98ff-f91fcdd27936", "s2CLUBKcbvQP6IqKx31XLclyqAd3nf6tyIPk74rL"));
         api.setAuthCallback(new APIUnit.IAuthCallback() {
             @Override
             public void onSuccess(FitPayService apiClient) {
@@ -72,12 +72,12 @@ public class MainActivity extends AppCompatActivity {
         fp.addUnit(api);
     }
 
-    private void getUsers(){
+    private void getUsers() {
         Call<ResultCollection<User>> usersCall = fitPayAPI.getUsers(10, 0);
         usersCall.enqueue(new Callback<ResultCollection<User>>() {
             @Override
             public void onResponse(Call<ResultCollection<User>> call, Response<ResultCollection<User>> response) {
-                if(response.isSuccess()) {
+                if (response.isSuccess()) {
                     if (response.body() == null || response.body().getResults().size() == 0) {
                         createUser();
                     }
@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void createUser(){
+    private void createUser() {
         final User user = new User();
         user.setFirstName("John");
         user.setLastName("Doe");
@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
         createUserCall.enqueue(new Callback<User>() {
             @Override
             public void onResponse(Call<User> call, Response<User> response) {
-                if(response.isSuccess() && response.body() != null){
+                if (response.isSuccess() && response.body() != null) {
                     Log.i("SUCCESS", response.body().getId());
                 }
             }
@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void testSecretKeys(){
+    private void testSecretKeys() {
         SecurityHandler handler = SecurityHandler.getInstance();
         ECCKeyPair keyPairOne = null;
         ECCKeyPair keyPairTwo = null;
@@ -129,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
         }
 
-        if(keyPairOne != null && keyPairTwo != null){
+        if (keyPairOne != null && keyPairTwo != null) {
 
             Log.i("KEY 1", "public: " + keyPairOne.getPublicKey());
             Log.i("KEY 1", "private: " + keyPairOne.getPrivateKey());
@@ -172,15 +172,15 @@ public class MainActivity extends AppCompatActivity {
 
             String newString = jweObject.getPayload().toString();
 
-            if(thisIsSparta.equals(newString)){
+            if (thisIsSparta.equals(newString)) {
                 Log.i("ENC_DEC", "SUCCESS");
             }
         }
     }
 
-    public void testServerSecretKey(){
+    public void testServerSecretKey() {
 
-        APIUnit api = new APIUnit(new OAuthConfig("e362a5cd-ab9d-4f9a-98ff-f91fcdd27936","s2CLUBKcbvQP6IqKx31XLclyqAd3nf6tyIPk74rL"));
+        APIUnit api = new APIUnit(new OAuthConfig("e362a5cd-ab9d-4f9a-98ff-f91fcdd27936", "s2CLUBKcbvQP6IqKx31XLclyqAd3nf6tyIPk74rL"));
         FitPay fp = FitPay.init(this);
         fp.addUnit(api);
 
@@ -198,9 +198,9 @@ public class MainActivity extends AppCompatActivity {
         getServerKey.enqueue(new Callback<ECCKeyPair>() {
             @Override
             public void onResponse(Call<ECCKeyPair> call, Response<ECCKeyPair> response) {
-                if(response.isSuccess() && response.body() != null){
+                if (response.isSuccess() && response.body() != null) {
                     Log.i("KEY", response.body().getServerPublicKey());
-                } else if (response.errorBody() != null){
+                } else if (response.errorBody() != null) {
                     try {
                         String errorMessage = response.errorBody().string();
                         C.printError(errorMessage);

@@ -3,14 +3,14 @@ package com.fitpay.android;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import com.fitpay.android.units.Unit;
+import com.fitpay.android.utils.Unit;
 
 import java.util.HashMap;
 
 /**
  * Created by Vlad on 12.02.2016.
  */
-public class FitPay {
+public final class FitPay {
 
     private static FitPay sInstance;
 
@@ -62,12 +62,12 @@ public class FitPay {
         return this;
     }
 
-    public <T extends Unit> T getUnit(Class<T> clazz){
+    public <T extends Unit> T getUnit(Class<T> clazz) {
         String name = clazz.getName();
 
-        if(mUnits.containsKey(name)){
+        if (mUnits.containsKey(name)) {
             Unit unit = mUnits.get(name);
-            return (T)unit;
+            return (T) unit;
         }
 
         return null;

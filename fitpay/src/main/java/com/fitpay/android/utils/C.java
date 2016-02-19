@@ -2,7 +2,7 @@ package com.fitpay.android.utils;
 
 import android.util.Log;
 
-import com.fitpay.android.models.Links;
+import com.fitpay.android.api.models.Links;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -10,8 +10,6 @@ import com.google.gson.GsonBuilder;
  * Created by Vlad on 12.02.2016.
  */
 public class C {
-    public static final String BASE_URL = "https://demo.pagare.me/";
-    public static final String API_URL = BASE_URL + "api/";
     public static final String FIT_PAY_ERROR_TAG = "FitPayError";
 
     private static Gson gson;
