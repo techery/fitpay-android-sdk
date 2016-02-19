@@ -13,6 +13,16 @@ public class ErrorCode{
     public static final int SERVER_ERROR_2 = 503;
     public static final int SERVER_ERROR_3 = 504;
 
-    @IntDef({OK, BAD_REQUEST, UNAUTHORIZED, REQUEST_FAILED, NOT_FOUND, SERVER_ERROR_0, SERVER_ERROR_1, SERVER_ERROR_2, SERVER_ERROR_3})
+    @IntDef({
+            OK,
+            BAD_REQUEST,
+            UNAUTHORIZED,
+            REQUEST_FAILED,
+            NOT_FOUND,
+            SERVER_ERROR_0,
+            SERVER_ERROR_1,
+            SERVER_ERROR_2,
+            SERVER_ERROR_3
+    })
     public @interface Code{}
 }

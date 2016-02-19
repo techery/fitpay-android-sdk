@@ -1,22 +1,14 @@
 package com.fitpay.android.paymentDevice.enums;
 
-import com.google.gson.annotations.SerializedName;
+import android.support.annotation.StringDef;
 
-//TODO: change with @StringDef
-public enum PaymentDeviceAlert {
+public class PaymentDeviceAlert {
 
-    @SerializedName("${TransactionAlert}")
-    TRANSACTIONALERT("${TransactionAlert}"),
+    public static final String TRANSACTION = "Transaction";
+    public static final String SECURITY = "Security";
+    public static final String CONNECTION = "Connection";
 
-    @SerializedName("${SecurityAlert}")
-    SecurityAlert("${SecurityAlert}"),
-
-    @SerializedName("${ConnectionAlert}")
-    CONNECTIONALERT("${ConnectionAlert}");
-
-    String alert;
-
-    PaymentDeviceAlert(String alert) {
-        this.alert = alert;
+    @StringDef({TRANSACTION, SECURITY, CONNECTION})
+    public @interface Type {
     }
 }

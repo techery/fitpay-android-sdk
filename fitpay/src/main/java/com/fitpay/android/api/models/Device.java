@@ -1,7 +1,9 @@
 package com.fitpay.android.api.models;
 
 
-public class Device {
+import java.util.List;
+
+public class Device extends BaseModel {
 
     /**
      * description : The type of device (PHONE, TABLET, ACTIVITY_TRACKER, SMARTWATCH, PC, CARD_EMULATOR, CLOTHING, JEWELRY, OTHER
@@ -80,145 +82,175 @@ public class Device {
      */
     private String secureElementId;
 
+    private List<CardRelationship> cardRelationships;
 
-    public void setDeviceType(String deviceType) {
-        this.deviceType = deviceType;
-    }
-
-    public void setDeviceIdentifier(String deviceIdentifier) {
-        this.deviceIdentifier = deviceIdentifier;
-    }
-
-    public void setAnufacturerName(String anufacturerName) {
-        this.manufacturerName = anufacturerName;
-    }
-
-    public void setDeviceName(String deviceName) {
-        this.deviceName = deviceName;
-    }
-
-    public void setSerialNumber(String serialNumber) {
-        this.serialNumber = serialNumber;
-    }
-
-    public void setOdelNumber(String odelNumber) {
-        this.modelNumber = odelNumber;
-    }
-
-    public void setHardwareRevision(String hardwareRevision) {
-        this.hardwareRevision = hardwareRevision;
-    }
-
-    public void setFirmwareRevision(String firmwareRevision) {
-        this.firmwareRevision = firmwareRevision;
-    }
-
-    public void setSoftwareRevision(String softwareRevision) {
-        this.softwareRevision = softwareRevision;
-    }
-
-    public void setCreatedTs(String createdTs) {
-        this.createdTs = createdTs;
-    }
-
-    public void setCreatedTsEpoch(long createdTsEpoch) {
-        this.createdTsEpoch = createdTsEpoch;
-    }
-
-    public void setOsName(String osName) {
-        this.osName = osName;
-    }
-
-    public void setLicenseKey(String licenseKey) {
-        this.licenseKey = licenseKey;
-    }
-
-    public void setBdAddress(String bdAddress) {
-        this.bdAddress = bdAddress;
-    }
-
-    public void setSystemId(String systemId) {
-        this.systemId = systemId;
-    }
-
-
-    public void setSecureElementId(String secureElementId) {
-        this.secureElementId = secureElementId;
-    }
-
-    public void setPairingTs(String pairingTs) {
-        this.pairingTs = pairingTs;
-    }
+    private String hostDeviceId;
 
     public String getDeviceType() {
         return deviceType;
+    }
+
+    public void setDeviceType(String deviceType) {
+        this.deviceType = deviceType;
     }
 
     public String getDeviceIdentifier() {
         return deviceIdentifier;
     }
 
+    public void setDeviceIdentifier(String deviceIdentifier) {
+        this.deviceIdentifier = deviceIdentifier;
+    }
+
     public String getAnufacturerName() {
         return manufacturerName;
+    }
+
+    public void setAnufacturerName(String anufacturerName) {
+        this.manufacturerName = anufacturerName;
     }
 
     public String getDeviceName() {
         return deviceName;
     }
 
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
+    }
+
     public String getSerialNumber() {
         return serialNumber;
+    }
+
+    public void setSerialNumber(String serialNumber) {
+        this.serialNumber = serialNumber;
     }
 
     public String getOdelNumber() {
         return modelNumber;
     }
 
+    public void setOdelNumber(String odelNumber) {
+        this.modelNumber = odelNumber;
+    }
+
     public String getHardwareRevision() {
         return hardwareRevision;
+    }
+
+    public void setHardwareRevision(String hardwareRevision) {
+        this.hardwareRevision = hardwareRevision;
     }
 
     public String getFirmwareRevision() {
         return firmwareRevision;
     }
 
+    public void setFirmwareRevision(String firmwareRevision) {
+        this.firmwareRevision = firmwareRevision;
+    }
+
     public String getSoftwareRevision() {
         return softwareRevision;
+    }
+
+    public void setSoftwareRevision(String softwareRevision) {
+        this.softwareRevision = softwareRevision;
     }
 
     public String getCreatedTs() {
         return createdTs;
     }
 
+    public void setCreatedTs(String createdTs) {
+        this.createdTs = createdTs;
+    }
+
     public long getCreatedTsEpoch() {
         return createdTsEpoch;
+    }
+
+    public void setCreatedTsEpoch(long createdTsEpoch) {
+        this.createdTsEpoch = createdTsEpoch;
     }
 
     public String getOsName() {
         return osName;
     }
 
+    public void setOsName(String osName) {
+        this.osName = osName;
+    }
+
     public String getLicenseKey() {
         return licenseKey;
     }
 
+    public void setLicenseKey(String licenseKey) {
+        this.licenseKey = licenseKey;
+    }
 
     public String getBdAddress() {
         return bdAddress;
+    }
+
+    public void setBdAddress(String bdAddress) {
+        this.bdAddress = bdAddress;
     }
 
     public String getSystemId() {
         return systemId;
     }
 
+    public void setSystemId(String systemId) {
+        this.systemId = systemId;
+    }
 
     public String getSecureElementId() {
         return secureElementId;
+    }
+
+    public void setSecureElementId(String secureElementId) {
+        this.secureElementId = secureElementId;
     }
 
     public String getPairingTs() {
         return pairingTs;
     }
 
+    public void setPairingTs(String pairingTs) {
+        this.pairingTs = pairingTs;
+    }
 
+    public String getManufacturerName() {
+        return manufacturerName;
+    }
+
+    public void setManufacturerName(String manufacturerName) {
+        this.manufacturerName = manufacturerName;
+    }
+
+    public String getModelNumber() {
+        return modelNumber;
+    }
+
+    public void setModelNumber(String modelNumber) {
+        this.modelNumber = modelNumber;
+    }
+
+    public List<CardRelationship> getCardRelationships() {
+        return cardRelationships;
+    }
+
+    public void setCardRelationships(List<CardRelationship> cardRelationships) {
+        this.cardRelationships = cardRelationships;
+    }
+
+    public String getHostDeviceId() {
+        return hostDeviceId;
+    }
+
+    public void setHostDeviceId(String hostDeviceId) {
+        this.hostDeviceId = hostDeviceId;
+    }
 }
