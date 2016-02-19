@@ -1,1 +1,1 @@
-include ':fitpay', ':testApplication'
+include ':fitpay'

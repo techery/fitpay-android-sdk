@@ -1,6 +1,5 @@
 package com.fitpay.android.api.models;
 
-import com.fitpay.android.api.clients.BaseClient;
 import com.google.gson.annotations.SerializedName;
 
 /**
@@ -17,8 +16,7 @@ public class OAuthToken {
         this.accessToken = accessToken;
     }
 
-    public String getAuthHeader() {
-        final String authorizationHeader = String.format("%s %s", BaseClient.AUTHORIZATION_BEARER, accessToken);
-        return authorizationHeader;
+    public String getAccessToken() {
+        return accessToken;
     }
 }

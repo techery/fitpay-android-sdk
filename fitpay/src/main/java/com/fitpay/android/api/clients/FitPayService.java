@@ -424,6 +424,7 @@ public interface FitPayService {
     @DELETE("config/encryptionKeys/{keyId}")
     Call<Void> deleteEncryptionKey(@Query("keyId") String keyId);
 
+    //TODO: move Webhood to private class and hide it from outside
 
     /**
      * //TODO: add description when it becomes available on API documentation page
