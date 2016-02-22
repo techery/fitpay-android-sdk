@@ -1,31 +1,86 @@
-package com.fitpay.android.api.clients;
+package com.fitpay.android.api;
 
-import com.fitpay.android.api.callbacks.Callback;
+import com.fitpay.android.api.callbacks.CallbackWrapper;
+import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.Commit;
 import com.fitpay.android.api.models.CreditCard;
 import com.fitpay.android.api.models.Device;
 import com.fitpay.android.api.models.ECCKeyPair;
+import com.fitpay.android.api.models.OAuthToken;
 import com.fitpay.android.api.models.Reason;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.User;
 import com.fitpay.android.api.models.VerificationMethod;
+import com.fitpay.android.utils.SecurityHandler;
 
+import java.util.HashMap;
 import java.util.Map;
 
+import retrofit2.Call;
 
-public interface RestClient {
+/*
+ * Created by andrews on 22.02.16.
+ */
+public class ApiManager{
+
+    private static ApiManager instance;
+
+    public static ApiManager getInstance() {
+        if (instance == null) {
+            synchronized (ApiManager.class) {
+                if (instance == null) {
+                    instance = new ApiManager();
+                }
+            }
+        }
+
+        return instance;
+    }
+
+    private FitPayService apiService;
+
+    private ApiManager(){
+        apiService = new FitPayService();
+    }
 
     /**
      * User Login
      *
-     * @param options  login params
+     * @param login  login
+     * @param password password
      * @param callback result callback
      */
-    public void loginUser(Map<String, String> options, Callback<User> callback);
+    public void loginUser(String login, String password, final ApiCallback<User> callback) {
+
+        String apiUrl = BaseClient.BASE_URL;
+        String data = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", login, password);
+
+        Map<String, String> loginMap = new HashMap<>();
+        loginMap.put("response_type", "token");
+        loginMap.put("client_id", "pagare");
+        loginMap.put("redirect_uri", apiUrl.substring(0, apiUrl.length() - 1));
+        loginMap.put("credentials", data);
+
+        CallbackWrapper<OAuthToken> getTokenCallback = new CallbackWrapper<>(new ApiCallback<OAuthToken>() {
+            @Override
+            public void onResponse(OAuthToken result) {
+                apiService.updateToken(result);
+                getUser(result.getUserId(), callback);
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+
+            }
+        });
+
+        Call<OAuthToken> getTokenCall = apiService.getClient().loginUser(loginMap);
+        getTokenCall.enqueue(getTokenCallback);
+    }
 
     /**
      * Returns a list of all users that belong to your organization.
@@ -36,7 +91,11 @@ public interface RestClient {
      * @param offset   Start index position for list of entities returned
      * @param callback result callback
      */
-    public void getUsers(int limit, int offset, Callback<ResultCollection<User>> callback);
+    public void getUsers(int limit, int offset, ApiCallback<ResultCollection<User>> callback) {
+        String fpKeyId = SecurityHandler.getInstance().getKeyId();
+        Call<ResultCollection<User>> getUsersCall = apiService.getClient().getUsers(fpKeyId, limit, offset);
+        getUsersCall.enqueue(new CallbackWrapper<>(callback));
+    }
 
     /**
      * Creates a new user within your organization.
@@ -44,7 +103,8 @@ public interface RestClient {
      * @param user     user data (firstName, lastName, birthDate, email)
      * @param callback result callback
      */
-    public void createUser(User user, Callback<User> callback);
+    public void createUser(User user, ApiCallback<User> callback) {
+    }
 
     /**
      * Delete a single user from your organization.
@@ -52,7 +112,8 @@ public interface RestClient {
      * @param userId   user id
      * @param callback result callback
      */
-    public void deleteUser(String userId, Callback<Void> callback);
+    public void deleteUser(String userId, ApiCallback<Void> callback) {
+    }
 
     /**
      * Update the details of an existing user.
@@ -62,7 +123,8 @@ public interface RestClient {
      *                 termsAcceptedTs, termsVersion)
      * @param callback result callback
      */
-    public void updateUser(String userId, User user, Callback<User> callback);
+    public void updateUser(String userId, User user, ApiCallback<User> callback) {
+    }
 
     /**
      * Retrieves the details of an existing user.
@@ -71,7 +133,8 @@ public interface RestClient {
      * @param userId   user id
      * @param callback result callback
      */
-    public void getUser(String userId, Callback<User> callback);
+    public void getUser(String userId, ApiCallback<User> callback) {
+    }
 
 
     /**
@@ -82,7 +145,8 @@ public interface RestClient {
      * @param deviceId     device id
      * @param callback     result callback
      */
-    public void getRelationship(String userId, String creditCardId, String deviceId, Callback<Relationship> callback);
+    public void getRelationship(String userId, String creditCardId, String deviceId, ApiCallback<Relationship> callback) {
+    }
 
 
     /**
@@ -93,7 +157,8 @@ public interface RestClient {
      * @param deviceId     device id
      * @param callback     result callback
      */
-    public void createRelationship(String userId, String creditCardId, String deviceId, Callback<Relationship> callback);
+    public void createRelationship(String userId, String creditCardId, String deviceId, ApiCallback<Relationship> callback) {
+    }
 
     /**
      * Removes a relationship between a device and a creditCard if it exists.
@@ -103,7 +168,8 @@ public interface RestClient {
      * @param deviceId     device id
      * @param callback     result callback
      */
-    public void deleteRelationship(String userId, String creditCardId, String deviceId, Callback<Void> callback);
+    public void deleteRelationship(String userId, String creditCardId, String deviceId, ApiCallback<Void> callback) {
+    }
 
 
     /**
@@ -114,7 +180,8 @@ public interface RestClient {
      * @param offset   Start index position for list of entities returned
      * @param callback result callback
      */
-    public void getCreditCards(String userId, int limit, int offset, Callback<ResultCollection<CreditCard>> callback);
+    public void getCreditCards(String userId, int limit, int offset, ApiCallback<ResultCollection<CreditCard>> callback) {
+    }
 
     /**
      * Add a single credit card to a user's profile.
@@ -127,7 +194,8 @@ public interface RestClient {
      *                   address data:(street1, street2, street3, city, state, postalCode, country))
      * @param callback   result callback
      */
-    public void createCreditCard(String userId, CreditCard creditCard, Callback<CreditCard> callback);
+    public void createCreditCard(String userId, CreditCard creditCard, ApiCallback<CreditCard> callback) {
+    }
 
     /**
      * Retrieves the details of an existing credit card.
@@ -137,7 +205,8 @@ public interface RestClient {
      * @param creditCardId credit card id
      * @param callback     result callback
      */
-    public void getCreditCard(String userId, String creditCardId, Callback<CreditCard> callback);
+    public void getCreditCard(String userId, String creditCardId, ApiCallback<CreditCard> callback) {
+    }
 
     /**
      * Update the details of an existing credit card.
@@ -148,7 +217,8 @@ public interface RestClient {
      *                     address/city, address/state, address/postalCode, address/countryCode)
      * @param callback     result callback
      */
-    public void updateCreditCard(String userId, String creditCardId, CreditCard creditCard, Callback<CreditCard> callback);
+    public void updateCreditCard(String userId, String creditCardId, CreditCard creditCard, ApiCallback<CreditCard> callback) {
+    }
 
     /**
      * Delete a single credit card from a user's profile.
@@ -161,7 +231,8 @@ public interface RestClient {
      * @param creditCardId credit card id
      * @param callback     result callback
      */
-    public void deleteCreditCard(String userId, String creditCardId, Callback<Void> callback);
+    public void deleteCreditCard(String userId, String creditCardId, ApiCallback<Void> callback) {
+    }
 
 
     /**
@@ -174,7 +245,8 @@ public interface RestClient {
      * @param creditCardId credit card id
      * @param callback     result callback
      */
-    public void acceptTerm(String userId, String creditCardId, Callback<CreditCard> callback);
+    public void acceptTerm(String userId, String creditCardId, ApiCallback<CreditCard> callback) {
+    }
 
     /**
      * Indicate a user has declined the terms and conditions.
@@ -186,7 +258,8 @@ public interface RestClient {
      * @param creditCardId credit card id
      * @param callback     result callback
      */
-    public void declineTerms(String userId, String creditCardId, Callback<CreditCard> callback);
+    public void declineTerms(String userId, String creditCardId, ApiCallback<CreditCard> callback) {
+    }
 
     /**
      * Mark the credit card as the default payment instrument.
@@ -197,7 +270,8 @@ public interface RestClient {
      * @param creditCardId credit card id
      * @param callback     result callback
      */
-    public void makeDefault(String userId, String creditCardId, Callback<Void> callback);
+    public void makeDefault(String userId, String creditCardId, ApiCallback<Void> callback) {
+    }
 
     /**
      * Transition the credit card into a deactivated state so that it may not be utilized for payment.
@@ -208,7 +282,8 @@ public interface RestClient {
      * @param reason       reason data:(causedBy, reason)
      * @param callback     result callback
      */
-    public void deactivate(String userId, String creditCardId, Reason reason, Callback<CreditCard> callback);
+    public void deactivate(String userId, String creditCardId, Reason reason, ApiCallback<CreditCard> callback) {
+    }
 
     /**
      * Transition the credit card into an active state where it can be utilized for payment.
@@ -219,7 +294,8 @@ public interface RestClient {
      * @param reason       reason data:(causedBy, reason)
      * @param callback     result callback
      */
-    public void reactivate(String userId, String creditCardId, Reason reason, Callback<CreditCard> callback);
+    public void reactivate(String userId, String creditCardId, Reason reason, ApiCallback<CreditCard> callback) {
+    }
 
     /**
      * When an issuer requires additional authentication to verify the identity of the cardholder,
@@ -231,7 +307,8 @@ public interface RestClient {
      * @param callback           result callback
      */
     public void selectVerificationType(String userId, String creditCardId, String verificationTypeId,
-                                       Callback<VerificationMethod> callback);
+                                       ApiCallback<VerificationMethod> callback) {
+    }
 
     /**
      * If a verification method is selected that requires an entry of a pin code, this transition will be available.
@@ -244,7 +321,8 @@ public interface RestClient {
      * @param callback           result callback
      */
     public void verify(String userId, String creditCardId, String verificationTypeId, String verificationCode,
-                       Callback<VerificationMethod> callback);
+                       ApiCallback<VerificationMethod> callback) {
+    }
 
 
     /**
@@ -255,7 +333,8 @@ public interface RestClient {
      * @param offset   Start index position for list of entities returned
      * @param callback result callback
      */
-    public void getDevices(String userId, int limit, int offset, Callback<ResultCollection<Device>> callback);
+    public void getDevices(String userId, int limit, int offset, ApiCallback<ResultCollection<Device>> callback) {
+    }
 
     /**
      * For a single user, create a new device in their profile.
@@ -266,7 +345,8 @@ public interface RestClient {
      *                 osName, licenseKey, bdAddress, secureElementId, pairingTs)
      * @param callback result callback
      */
-    public void createDevice(String userId, Device device, Callback<Device> callback);
+    public void createDevice(String userId, Device device, ApiCallback<Device> callback) {
+    }
 
     /**
      * Retrieves the details of an existing device.
@@ -276,7 +356,8 @@ public interface RestClient {
      * @param deviceId device id
      * @param callback result callback
      */
-    public void getDevice(String userId, String deviceId, Callback<Device> callback);
+    public void getDevice(String userId, String deviceId, ApiCallback<Device> callback) {
+    }
 
     /**
      * Update the details of an existing device.
@@ -286,7 +367,8 @@ public interface RestClient {
      * @param deviceData device data:(firmwareRevision, softwareRevision)
      * @param callback   result callback
      */
-    public void updateDevice(String userId, String deviceId, Device deviceData, Callback<Device> callback);
+    public void updateDevice(String userId, String deviceId, Device deviceData, ApiCallback<Device> callback) {
+    }
 
     /**
      * Delete a single device.
@@ -295,7 +377,8 @@ public interface RestClient {
      * @param deviceId device id
      * @param callback result callback
      */
-    public void deleteDevice(String userId, String deviceId, Callback<Void> callback);
+    public void deleteDevice(String userId, String deviceId, ApiCallback<Void> callback) {
+    }
 
 
     /**
@@ -310,7 +393,8 @@ public interface RestClient {
      * @param callback     result callback
      */
     public void getCommits(String userId, String deviceId, String commitsAfter, int limit, int offset,
-                           Callback<ResultCollection<Commit>> callback);
+                           ApiCallback<ResultCollection<Commit>> callback) {
+    }
 
     /**
      * Retrieves an individual commit.
@@ -320,7 +404,8 @@ public interface RestClient {
      * @param commitId commit id
      * @param callback result callback
      */
-    public void getCommit(String userId, String deviceId, String commitId, Callback<Commit> callback);
+    public void getCommit(String userId, String deviceId, String commitId, ApiCallback<Commit> callback) {
+    }
 
     /**
      * Get all transactions.
@@ -330,7 +415,8 @@ public interface RestClient {
      * @param offset   Start index position for list of entities returned
      * @param callback result callback
      */
-    public void getTransactions(String userId, int limit, int offset, Callback<ResultCollection<Transaction>> callback);
+    public void getTransactions(String userId, int limit, int offset, ApiCallback<ResultCollection<Transaction>> callback) {
+    }
 
     /**
      * Get a single transaction.
@@ -339,7 +425,8 @@ public interface RestClient {
      * @param transactionId transaction id
      * @param callback      result callback
      */
-    public void getTransaction(String userId, String transactionId, Callback<Transaction> callback);
+    public void getTransaction(String userId, String transactionId, ApiCallback<Transaction> callback) {
+    }
 
 
     /**
@@ -350,7 +437,8 @@ public interface RestClient {
      *                    executedDuration, apduResponses:(commandId, commandId, responseData))
      * @param callback    result callback
      */
-    public void confirmAPDUPackage(String packageId, ApduPackage apduPackage, Callback<Void> callback);
+    public void confirmAPDUPackage(String packageId, ApduPackage apduPackage, ApiCallback<Void> callback) {
+    }
 
 
     /**
@@ -361,7 +449,8 @@ public interface RestClient {
      * @param assetId     asset id
      * @param callback    result callback
      */
-    public void getAssets(String adapterData, String adapterId, String assetId, Callback<Object> callback);
+    public void getAssets(String adapterData, String adapterId, String assetId, ApiCallback<Object> callback) {
+    }
 
 
     /**
@@ -370,7 +459,8 @@ public interface RestClient {
      * @param clientPublicKey client public key
      * @param callback        result callback
      */
-    public void createEncryptionKey(ECCKeyPair clientPublicKey, Callback<ECCKeyPair> callback);
+    public void createEncryptionKey(ECCKeyPair clientPublicKey, ApiCallback<ECCKeyPair> callback) {
+    }
 
 
     /**
@@ -379,7 +469,8 @@ public interface RestClient {
      * @param keyId    key id
      * @param callback result callback
      */
-    public void getEncryptionKey(String keyId, Callback<ECCKeyPair> callback);
+    public void getEncryptionKey(String keyId, ApiCallback<ECCKeyPair> callback) {
+    }
 
     /**
      * Delete and individual key pair.
@@ -387,7 +478,7 @@ public interface RestClient {
      * @param keyId    key id
      * @param callback result callback
      */
-    public void deleteEncryptionKey(String keyId, Callback<Void> callback);
-
+    public void deleteEncryptionKey(String keyId, ApiCallback<Void> callback) {
+    }
 
 }

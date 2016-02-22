@@ -1,13 +1,23 @@
 package com.fitpay.android.api;
 
+import com.fitpay.android.api.models.Links;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 /**
  * private constants for FitPay API
  */
 final class RestApiConstants {
-    public static final String BASE_URL = "https://demo.pagare.me/";
-    public static final String API_URL = BASE_URL + "api/";
+    private static Gson gson;
 
-    public static final String HEADER_AUTHORIZATION = "Authorization";
-    public static final String AUTHORIZATION_BASIC = "Basic";
-    public static final String AUTHORIZATION_BEARER = "Bearer";
+    public static Gson getDefaultGson() {
+        if (gson == null) {
+            gson = new GsonBuilder()
+                    .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+                    .registerTypeAdapter(Links.class, new ModelAdapter.LinksDeserializer())
+                    .create();
+        }
+
+        return gson;
+    }
 }

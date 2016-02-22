@@ -34,7 +34,6 @@ public final class FitPay {
             sInstance = new FitPay(context);
             sInstance.mUnits = new HashMap<>();
         }
-
         return sInstance;
     }
 
