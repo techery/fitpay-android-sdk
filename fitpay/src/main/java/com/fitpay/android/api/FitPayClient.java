@@ -18,6 +18,8 @@ import java.util.Map;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
+import retrofit2.http.FieldMap;
+import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.PATCH;
@@ -25,15 +27,15 @@ import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
-import retrofit2.http.QueryMap;
 
 interface FitPayClient {
 
     /**
      * Login user and get auth token
      */
-    @GET(BaseClient.BASE_URL + "oauth/authorize")
-    Call<OAuthToken> loginUser(@QueryMap Map<String, String> options);
+    @FormUrlEncoded
+    @POST(BaseClient.BASE_URL + "oauth/authorize")
+    Call<OAuthToken> loginUser(@FieldMap Map<String, String> options);
 
     /**
      * Returns a list of all users that belong to your organization.
@@ -78,7 +80,7 @@ interface FitPayClient {
      * @param userId user id
      */
     @GET("users/{userId}")
-    Call<User> getUser(@Path("userId") String userId);
+    Call<User> getUser(@Header("fp-api-key")String fpKey, @Path("userId") String userId);
 
 
     /**

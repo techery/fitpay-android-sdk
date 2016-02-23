@@ -54,7 +54,7 @@ public class ApiManager{
      * @param password password
      * @param callback result callback
      */
-    public void loginUser(String login, String password, final ApiCallback<User> callback) {
+    public void loginUser(String login, String password, final ApiCallback<Void> callback) {
 
         String apiUrl = BaseClient.BASE_URL;
         String data = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", login, password);
@@ -65,16 +65,20 @@ public class ApiManager{
         loginMap.put("redirect_uri", apiUrl.substring(0, apiUrl.length() - 1));
         loginMap.put("credentials", data);
 
+
+
         CallbackWrapper<OAuthToken> getTokenCallback = new CallbackWrapper<>(new ApiCallback<OAuthToken>() {
             @Override
-            public void onResponse(OAuthToken result) {
+            public void onSuccess(OAuthToken result) {
                 apiService.updateToken(result);
-                getUser(result.getUserId(), callback);
+                callback.onSuccess(null);
             }
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-
+                if(callback != null){
+                    callback.onFailure(errorCode, errorMessage);
+                }
             }
         });
 
@@ -134,6 +138,9 @@ public class ApiManager{
      * @param callback result callback
      */
     public void getUser(String userId, ApiCallback<User> callback) {
+        String fpKeyId = SecurityHandler.getInstance().getKeyId();
+        Call<User> getUserCall = apiService.getClient().getUser(fpKeyId, userId);
+        getUserCall.enqueue(new CallbackWrapper<>(callback));
     }
 
 

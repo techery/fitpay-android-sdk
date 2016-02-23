@@ -108,7 +108,7 @@ public final class SecurityHandler {
 
             ApiCallback<ECCKeyPair> apiCallback = new ApiCallback<ECCKeyPair>() {
                 @Override
-                public void onResponse(ECCKeyPair result) {
+                public void onSuccess(ECCKeyPair result) {
                     mKeyPair.refreshWithNewData(result);
                     mSecretKey = getSecretKey();
                 }

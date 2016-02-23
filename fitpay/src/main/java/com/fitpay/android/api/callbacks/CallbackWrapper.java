@@ -23,7 +23,7 @@ public class CallbackWrapper<T> implements Callback<T> {
     public void onResponse(Call<T> call, Response<T> response) {
         if(mCallback != null) {
             if (response.isSuccess() && response.errorBody() == null){
-                mCallback.onResponse(response.body());
+                mCallback.onSuccess(response.body());
             } else {
                 @ResultCode.Code int errorCode = response.code();
 

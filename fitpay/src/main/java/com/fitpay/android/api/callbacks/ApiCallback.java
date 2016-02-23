@@ -11,7 +11,7 @@ public interface ApiCallback<T> {
     /**
      * Successful HTTP response.
      */
-    void onResponse(T result);
+    void onSuccess(T result);
 
     /**
      * Invoked when a network or unexpected exception occurred during the HTTP request.
