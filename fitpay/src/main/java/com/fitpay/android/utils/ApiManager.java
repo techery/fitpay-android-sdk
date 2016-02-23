@@ -2,8 +2,8 @@ package com.fitpay.android.utils;
 
 import android.support.annotation.NonNull;
 
-import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.Commit;
@@ -26,9 +26,14 @@ import retrofit2.Call;
 /*
  * Created by andrews on 22.02.16.
  */
-public class ApiManager{
+public class ApiManager {
 
     private static ApiManager instance;
+    private FitPayService apiService;
+
+    private ApiManager() {
+        apiService = new FitPayService();
+    }
 
     public static ApiManager getInstance() {
         if (instance == null) {
@@ -42,21 +47,15 @@ public class ApiManager{
         return instance;
     }
 
-    private FitPayService apiService;
-
-    private ApiManager(){
-        apiService = new FitPayService();
-    }
-
-    FitPayClient getClient(){
+    FitPayClient getClient() {
         return apiService.getClient();
     }
 
-    private void checkKeyAndMakeCall(@NonNull final ApiCallback callback){
-        if(SecurityHandler.getInstance().getKeyId() == null){
-            SecurityHandler.getInstance().updateECCKeyPair(new ApiCallback() {
+    private void checkKeyAndMakeCall(@NonNull final ApiCallback<Void> callback) {
+        if (SecurityHandler.getInstance().getKeyId() == null) {
+            SecurityHandler.getInstance().updateECCKeyPair(new ApiCallback<Void>() {
                 @Override
-                public void onSuccess(Object result) {
+                public void onSuccess(Void result) {
                     callback.onSuccess(null);
                 }
 
@@ -73,7 +72,7 @@ public class ApiManager{
     /**
      * User Login
      *
-     * @param login  login
+     * @param login    login
      * @param password password
      * @param callback result callback
      */
@@ -97,7 +96,7 @@ public class ApiManager{
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                if(callback != null){
+                if (callback != null) {
                     callback.onFailure(errorCode, errorMessage);
                 }
             }
@@ -118,6 +117,7 @@ public class ApiManager{
      */
     public void getUsers(int limit, int offset, ApiCallback<ResultCollection<User>> callback) {
         String fpKeyId = SecurityHandler.getInstance().getKeyId();
+
         Call<ResultCollection<User>> getUsersCall = apiService.getClient().getUsers(fpKeyId, limit, offset);
         getUsersCall.enqueue(new CallbackWrapper<>(callback));
     }
@@ -158,9 +158,9 @@ public class ApiManager{
      * @param callback result callback
      */
     public void getUser(final ApiCallback<User> callback) {
-        checkKeyAndMakeCall(new ApiCallback() {
+        checkKeyAndMakeCall(new ApiCallback<Void>() {
             @Override
-            public void onSuccess(Object result) {
+            public void onSuccess(Void result) {
                 Call<User> getUserCall = apiService.getClient().getUser(SecurityHandler.getInstance().getKeyId(), apiService.getUserId());
                 getUserCall.enqueue(new CallbackWrapper<>(callback));
             }

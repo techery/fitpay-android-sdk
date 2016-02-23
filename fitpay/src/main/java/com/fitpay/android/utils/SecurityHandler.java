@@ -101,7 +101,7 @@ final class SecurityHandler {
     /**
      * update existing keyPair with a new one
      */
-    public void updateECCKeyPair(final ApiCallback callback) {
+    public void updateECCKeyPair(final ApiCallback<Void> callback) {
 
         mSecretKey = null;
 
