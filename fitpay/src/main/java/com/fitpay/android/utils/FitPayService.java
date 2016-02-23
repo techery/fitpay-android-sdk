@@ -1,10 +1,9 @@
-package com.fitpay.android.api;
+package com.fitpay.android.utils;
 
 import com.fitpay.android.api.models.ECCKeyPair;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.OAuthToken;
 import com.fitpay.android.api.models.User;
-import com.fitpay.android.utils.SecurityHandler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -20,8 +19,12 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  */
-final class FitPayService extends BaseClient<FitPayClient> {
+final class FitPayService {
 
+    private static final String HEADER_AUTHORIZATION = "Authorization";
+    private static final String AUTHORIZATION_BEARER = "Bearer";
+
+    private FitPayClient mAPIClient;
     private OAuthToken mAuthToken;
 
     public FitPayService() {
@@ -57,19 +60,27 @@ final class FitPayService extends BaseClient<FitPayClient> {
         Gson gson = new GsonBuilder()
                 .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
                 .registerTypeAdapter(ECCKeyPair.class, new ModelAdapter.KeyPairSerializer())
-                .registerTypeAdapter(User.class, new ModelAdapter.DataSerializer<User>())
                 .registerTypeAdapter(Links.class, new ModelAdapter.LinksDeserializer())
+                .registerTypeAdapter(User.UserInfo.class, new ModelAdapter.DataSerializer<>())
                 .create();
 
         mAPIClient = new Retrofit.Builder()
-                .baseUrl(API_URL)
+                .baseUrl(Constants.API_URL)
                 .addConverterFactory(GsonConverterFactory.create(gson))
                 .client(clientBuilder.build())
                 .build()
                 .create(FitPayClient.class);
     }
 
+    public FitPayClient getClient() {
+        return mAPIClient;
+    }
+
     public void updateToken(OAuthToken token) {
         mAuthToken = token;
+    }
+
+    public String getUserId() {
+        return mAuthToken.getUserId();
     }
 }

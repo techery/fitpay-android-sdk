@@ -1,7 +1,7 @@
 package com.fitpay.android.utils;
 
-import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.ECCKeyPair;
 import com.nimbusds.jose.EncryptionMethod;
@@ -35,10 +35,12 @@ import java.util.UUID;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 
+import retrofit2.Call;
+
 /**
- * SecurityHandler is designed to create and manager @ECCKeyPair object.
+ * SecurityHandler is designed to create and manage @ECCKeyPair object.
  */
-public final class SecurityHandler {
+final class SecurityHandler {
     private static final String ALGORITHM = "ECDH";
     private static final String EC_CURVE = "secp256r1";
     private static final String KEY_TYPE = "AES";
@@ -99,7 +101,7 @@ public final class SecurityHandler {
     /**
      * update existing keyPair with a new one
      */
-    public void updateECCKeyPair() {
+    public void updateECCKeyPair(final ApiCallback callback) {
 
         mSecretKey = null;
 
@@ -111,15 +113,25 @@ public final class SecurityHandler {
                 public void onSuccess(ECCKeyPair result) {
                     mKeyPair.refreshWithNewData(result);
                     mSecretKey = getSecretKey();
+
+                    if(callback != null){
+                        callback.onSuccess(null);
+                    }
                 }
 
                 @Override
                 public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
                     Constants.printError(errorMessage);
+
+                    if(callback != null){
+                        callback.onFailure(errorCode, errorMessage);
+                    }
                 }
             };
 
-            ApiManager.getInstance().createEncryptionKey(mKeyPair, apiCallback);
+            Call<ECCKeyPair> getKeyCall = ApiManager.getInstance().getClient().createEncryptionKey(mKeyPair);
+            getKeyCall.enqueue(new CallbackWrapper<>(apiCallback));
+
         } catch (Exception e) {
             Constants.printError(e.toString());
         }

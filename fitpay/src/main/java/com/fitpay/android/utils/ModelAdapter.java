@@ -1,16 +1,16 @@
-package com.fitpay.android.api;
+package com.fitpay.android.utils;
 
 import android.text.TextUtils;
 
 import com.fitpay.android.api.models.ECCKeyPair;
 import com.fitpay.android.api.models.Links;
-import com.fitpay.android.utils.SecurityHandler;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
@@ -28,7 +28,7 @@ class ModelAdapter {
         public JsonElement serialize(T data, Type typeOfSrc, JsonSerializationContext context) {
 
             final String encryptedString = SecurityHandler.getInstance()
-                    .getEncryptedString(RestApiConstants.getDefaultGson().toJson(data));
+                    .getEncryptedString(new GsonBuilder().create().toJson(data));
 
             JsonObject jo = new JsonObject();
             jo.addProperty(ENCRYPTED_DATA, encryptedString);
@@ -39,29 +39,19 @@ class ModelAdapter {
         @Override
         public T deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
 
-            JsonObject finalJson = json.getAsJsonObject();
+            if (!json.isJsonObject() && !TextUtils.isEmpty(json.getAsString())) {
 
-            if (finalJson.has(ENCRYPTED_DATA)) {
-                JsonElement encryptedObject = finalJson.get(ENCRYPTED_DATA);
-                if(!encryptedObject.isJsonObject() && !TextUtils.isEmpty(encryptedObject.getAsString())){
+                final String decryptedString = SecurityHandler.getInstance().getDecryptedString(json.getAsString());
 
-                    final String decryptedString = SecurityHandler.getInstance().getDecryptedString(encryptedObject.getAsString());
-                    if(decryptedString != null) {
-                        JsonElement decryptedJson = new JsonParser().parse(decryptedString);
-
-                        if (decryptedJson != null) {
-                            finalJson.remove(ENCRYPTED_DATA);
-
-                            for (Map.Entry<String, JsonElement> entry : decryptedJson.getAsJsonObject().entrySet()) {
-                                finalJson.add(entry.getKey(), entry.getValue());
-                            }
-                        }
-                    }
+                if (!TextUtils.isEmpty(decryptedString)) {
+                    Gson gson = new Gson();
+                    return gson.fromJson(decryptedString, typeOfT);
                 }
             }
 
-            return RestApiConstants.getDefaultGson().fromJson(finalJson, typeOfT);
+            return null;
         }
+
     }
 
     public static class KeyPairSerializer implements JsonSerializer<ECCKeyPair> {
@@ -73,7 +63,7 @@ class ModelAdapter {
         }
     }
 
-    public static class LinksDeserializer implements JsonDeserializer<Links>{
+    public static class LinksDeserializer implements JsonDeserializer<Links> {
 
         @Override
         public Links deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
@@ -81,10 +71,10 @@ class ModelAdapter {
             Links links = new Links();
 
             Set<Map.Entry<String, JsonElement>> listsSet = json.getAsJsonObject().entrySet();
-            for(Map.Entry<String, JsonElement> entry : listsSet){
+            for (Map.Entry<String, JsonElement> entry : listsSet) {
                 links.setLink(entry.getKey(), entry.getValue().getAsJsonObject().get("href").getAsString());
             }
-            
+
             return links;
         }
     }

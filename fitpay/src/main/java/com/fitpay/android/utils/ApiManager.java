@@ -1,4 +1,6 @@
-package com.fitpay.android.api;
+package com.fitpay.android.utils;
+
+import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.callbacks.ApiCallback;
@@ -15,7 +17,6 @@ import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.User;
 import com.fitpay.android.api.models.VerificationMethod;
-import com.fitpay.android.utils.SecurityHandler;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +48,28 @@ public class ApiManager{
         apiService = new FitPayService();
     }
 
+    FitPayClient getClient(){
+        return apiService.getClient();
+    }
+
+    private void checkKeyAndMakeCall(@NonNull final ApiCallback callback){
+        if(SecurityHandler.getInstance().getKeyId() == null){
+            SecurityHandler.getInstance().updateECCKeyPair(new ApiCallback() {
+                @Override
+                public void onSuccess(Object result) {
+                    callback.onSuccess(null);
+                }
+
+                @Override
+                public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                    callback.onFailure(errorCode, errorMessage);
+                }
+            });
+        } else {
+            callback.onSuccess(null);
+        }
+    }
+
     /**
      * User Login
      *
@@ -56,7 +79,7 @@ public class ApiManager{
      */
     public void loginUser(String login, String password, final ApiCallback<Void> callback) {
 
-        String apiUrl = BaseClient.BASE_URL;
+        String apiUrl = Constants.BASE_URL;
         String data = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", login, password);
 
         Map<String, String> loginMap = new HashMap<>();
@@ -64,8 +87,6 @@ public class ApiManager{
         loginMap.put("client_id", "pagare");
         loginMap.put("redirect_uri", apiUrl.substring(0, apiUrl.length() - 1));
         loginMap.put("credentials", data);
-
-
 
         CallbackWrapper<OAuthToken> getTokenCallback = new CallbackWrapper<>(new ApiCallback<OAuthToken>() {
             @Override
@@ -134,13 +155,21 @@ public class ApiManager{
      * Retrieves the details of an existing user.
      * You need only supply the unique user identifier that was returned upon user creation.
      *
-     * @param userId   user id
      * @param callback result callback
      */
-    public void getUser(String userId, ApiCallback<User> callback) {
-        String fpKeyId = SecurityHandler.getInstance().getKeyId();
-        Call<User> getUserCall = apiService.getClient().getUser(fpKeyId, userId);
-        getUserCall.enqueue(new CallbackWrapper<>(callback));
+    public void getUser(final ApiCallback<User> callback) {
+        checkKeyAndMakeCall(new ApiCallback() {
+            @Override
+            public void onSuccess(Object result) {
+                Call<User> getUserCall = apiService.getClient().getUser(SecurityHandler.getInstance().getKeyId(), apiService.getUserId());
+                getUserCall.enqueue(new CallbackWrapper<>(callback));
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                callback.onFailure(errorCode, errorMessage);
+            }
+        });
     }
 
 

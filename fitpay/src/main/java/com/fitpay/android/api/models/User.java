@@ -8,7 +8,7 @@ public final class User extends BaseModel {
      * description : JSON Web Encrypted compact serialization of the user's information from
      * @see UserInfo
      */
-    private String encryptedData;
+    private UserInfo encryptedData;
 
     /**
      * description : ISO8601 string providing the date of the creation of original user account.   If not known use the current date
@@ -94,11 +94,17 @@ public final class User extends BaseModel {
         this.originAccountCreatedTsEpoch = originAccountCreatedTsEpoch;
     }
 
-    public String getEncryptedData() {
+    public UserInfo getUserInfo() {
         return encryptedData;
     }
 
     public static final class UserInfo {
+
+        /**
+         * description : The user's username
+         */
+        private String username;
+
         /**
          * description : The user's first name
          */
@@ -120,6 +126,10 @@ public final class User extends BaseModel {
         private String email;
 
         public UserInfo(){
+        }
+
+        public String getUsername(){
+            return username;
         }
 
         public String getFirstName() {

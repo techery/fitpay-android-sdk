@@ -1,4 +1,4 @@
-package com.fitpay.android.api;
+package com.fitpay.android.utils;
 
 import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.Commit;
@@ -34,7 +34,7 @@ interface FitPayClient {
      * Login user and get auth token
      */
     @FormUrlEncoded
-    @POST(BaseClient.BASE_URL + "oauth/authorize")
+    @POST(Constants.BASE_URL + "oauth/authorize")
     Call<OAuthToken> loginUser(@FieldMap Map<String, String> options);
 
     /**
