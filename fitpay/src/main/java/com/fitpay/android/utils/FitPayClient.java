@@ -407,7 +407,7 @@ interface FitPayClient {
      * @param clientPublicKey client public key
      * */
     @POST("config/encryptionKeys")
-    Call<ECCKeyPair> createEncryptionKey(@FieldMap String clientPublicKey);
+    Call<ECCKeyPair> createEncryptionKey(@Body ECCKeyPair clientPublicKey);
 
 
     /**

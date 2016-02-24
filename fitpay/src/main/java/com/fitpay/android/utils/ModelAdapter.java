@@ -53,14 +53,14 @@ class ModelAdapter {
 
     }
 
-//    public static class KeyPairSerializer implements JsonSerializer<ECCKeyPair> {
-//        public JsonElement serialize(ECCKeyPair data, Type typeOfSrc, JsonSerializationContext context) {
-//
-//            JsonObject jo = new JsonObject();
-//            jo.addProperty("clientPublicKey", data.getPublicKey());
-//            return jo;
-//        }
-//    }
+    public static class KeyPairSerializer implements JsonSerializer<ECCKeyPair> {
+        public JsonElement serialize(ECCKeyPair data, Type typeOfSrc, JsonSerializationContext context) {
+
+            JsonObject jo = new JsonObject();
+            jo.addProperty("clientPublicKey", data.getPublicKey());
+            return jo;
+        }
+    }
 
     public static class LinksDeserializer implements JsonDeserializer<Links> {
 

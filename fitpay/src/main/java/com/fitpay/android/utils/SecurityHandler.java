@@ -168,7 +168,7 @@ final class SecurityHandler {
                 }
             };
 
-            Call<ECCKeyPair> getKeyCall = ApiManager.getInstance().getClient().createEncryptionKey(keyPair.getPublicKey());
+            Call<ECCKeyPair> getKeyCall = ApiManager.getInstance().getClient().createEncryptionKey(keyPair);
             getKeyCall.enqueue(new CallbackWrapper<>(apiCallback));
 
         } catch (Exception e) {

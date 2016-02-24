@@ -57,6 +57,7 @@ final class FitPayService {
 
         Gson gson = new GsonBuilder()
                 .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+                .registerTypeAdapter(ECCKeyPair.class, new ModelAdapter.KeyPairSerializer())
                 .registerTypeAdapter(Links.class, new ModelAdapter.LinksDeserializer())
                 .registerTypeAdapter(User.UserInfo.class, new ModelAdapter.DataSerializer<>())
                 .create();

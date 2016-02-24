@@ -71,4 +71,9 @@ class ECCKeyPair {
     public void setSecretKey(SecretKey secretKey) {
         this.secretKey = secretKey;
     }
+
+    @Override
+    public String toString(){
+        return "ECCKeyPair";
+    }
 }
