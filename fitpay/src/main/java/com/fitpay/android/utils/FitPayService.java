@@ -1,8 +1,6 @@
 package com.fitpay.android.utils;
 
-import com.fitpay.android.api.models.ECCKeyPair;
 import com.fitpay.android.api.models.Links;
-import com.fitpay.android.api.models.OAuthToken;
 import com.fitpay.android.api.models.User;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -37,7 +35,7 @@ final class FitPayService {
                         .header("Accept", "application/json")
                         .header("Content-Type", "application/json");
 
-                String keyId = SecurityHandler.getInstance().getKeyId();
+                String keyId = SecurityHandler.getInstance().getKeyId(Constants.KEY_API);
                 if (keyId != null) {
                     builder.header("fp-key-id", keyId);
                 }
@@ -59,7 +57,6 @@ final class FitPayService {
 
         Gson gson = new GsonBuilder()
                 .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
-                .registerTypeAdapter(ECCKeyPair.class, new ModelAdapter.KeyPairSerializer())
                 .registerTypeAdapter(Links.class, new ModelAdapter.LinksDeserializer())
                 .registerTypeAdapter(User.UserInfo.class, new ModelAdapter.DataSerializer<>())
                 .create();
@@ -82,5 +79,9 @@ final class FitPayService {
 
     public String getUserId() {
         return mAuthToken.getUserId();
+    }
+
+    public boolean isAuthorized(){
+        return mAuthToken != null;
     }
 }

@@ -2,7 +2,6 @@ package com.fitpay.android.utils;
 
 import android.text.TextUtils;
 
-import com.fitpay.android.api.models.ECCKeyPair;
 import com.fitpay.android.api.models.Links;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -28,7 +27,7 @@ class ModelAdapter {
         public JsonElement serialize(T data, Type typeOfSrc, JsonSerializationContext context) {
 
             final String encryptedString = SecurityHandler.getInstance()
-                    .getEncryptedString(new GsonBuilder().create().toJson(data));
+                    .getEncryptedString(Constants.KEY_API, new GsonBuilder().create().toJson(data));
 
             JsonObject jo = new JsonObject();
             jo.addProperty(ENCRYPTED_DATA, encryptedString);
@@ -41,7 +40,7 @@ class ModelAdapter {
 
             if (!json.isJsonObject() && !TextUtils.isEmpty(json.getAsString())) {
 
-                final String decryptedString = SecurityHandler.getInstance().getDecryptedString(json.getAsString());
+                final String decryptedString = SecurityHandler.getInstance().getDecryptedString(Constants.KEY_API, json.getAsString());
 
                 if (!TextUtils.isEmpty(decryptedString)) {
                     Gson gson = new Gson();
@@ -54,14 +53,14 @@ class ModelAdapter {
 
     }
 
-    public static class KeyPairSerializer implements JsonSerializer<ECCKeyPair> {
-        public JsonElement serialize(ECCKeyPair data, Type typeOfSrc, JsonSerializationContext context) {
-
-            JsonObject jo = new JsonObject();
-            jo.addProperty("clientPublicKey", data.getPublicKey());
-            return jo;
-        }
-    }
+//    public static class KeyPairSerializer implements JsonSerializer<ECCKeyPair> {
+//        public JsonElement serialize(ECCKeyPair data, Type typeOfSrc, JsonSerializationContext context) {
+//
+//            JsonObject jo = new JsonObject();
+//            jo.addProperty("clientPublicKey", data.getPublicKey());
+//            return jo;
+//        }
+//    }
 
     public static class LinksDeserializer implements JsonDeserializer<Links> {
 

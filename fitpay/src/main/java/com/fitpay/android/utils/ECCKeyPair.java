@@ -1,13 +1,13 @@
-package com.fitpay.android.api.models;
+package com.fitpay.android.utils;
 
 import java.util.Date;
+
+import javax.crypto.SecretKey;
 
 /**
  * Created by Vlad on 17.02.2016.
  */
-public class ECCKeyPair {
-
-    //createdTs:"2015-10-05T20:34:24.350+0000",
+class ECCKeyPair {
 
     private String keyId;
     private Date createdTs;
@@ -16,6 +16,7 @@ public class ECCKeyPair {
     private String clientPublicKey;
 
     private transient String privateKey;
+    private transient SecretKey secretKey = null;
 
     public ECCKeyPair(){}
 
@@ -63,10 +64,11 @@ public class ECCKeyPair {
         this.privateKey = privateKey;
     }
 
-    public void refreshWithNewData(ECCKeyPair respKey){
-        keyId = respKey.getKeyId();
-        createdTs = respKey.getCreatedTs();
-        createdTsEpoch = respKey.getCreatedTsEpoch();
-        serverPublicKey = respKey.getServerPublicKey();
+    public SecretKey getSecretKey() {
+        return secretKey;
+    }
+
+    public void setSecretKey(SecretKey secretKey) {
+        this.secretKey = secretKey;
     }
 }

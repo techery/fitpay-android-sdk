@@ -2,6 +2,9 @@ package com.fitpay.android.api.enums;
 
 import android.support.annotation.IntDef;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 public class ResultCode {
     public static final int OK = 200;
     public static final int BAD_REQUEST = 400;
@@ -13,6 +16,7 @@ public class ResultCode {
     public static final int SERVER_ERROR_2 = 503;
     public static final int SERVER_ERROR_3 = 504;
 
+    @Retention(RetentionPolicy.SOURCE)
     @IntDef({
             OK,
             BAD_REQUEST,

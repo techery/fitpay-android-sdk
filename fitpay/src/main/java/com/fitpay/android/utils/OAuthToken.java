@@ -1,4 +1,4 @@
-package com.fitpay.android.api.models;
+package com.fitpay.android.utils;
 
 import android.text.TextUtils;
 import android.util.Log;
@@ -14,7 +14,7 @@ import java.text.ParseException;
 /**
  * OAuth token.
  */
-public class OAuthToken {
+final class OAuthToken {
     @SerializedName("token_type")
     private String tokenType;
     @SerializedName("access_token")

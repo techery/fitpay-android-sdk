@@ -4,8 +4,6 @@ import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.Commit;
 import com.fitpay.android.api.models.CreditCard;
 import com.fitpay.android.api.models.Device;
-import com.fitpay.android.api.models.ECCKeyPair;
-import com.fitpay.android.api.models.OAuthToken;
 import com.fitpay.android.api.models.Reason;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.ResultCollection;
@@ -409,7 +407,7 @@ interface FitPayClient {
      * @param clientPublicKey client public key
      * */
     @POST("config/encryptionKeys")
-    Call<ECCKeyPair> createEncryptionKey(@Body ECCKeyPair clientPublicKey);
+    Call<ECCKeyPair> createEncryptionKey(@FieldMap String clientPublicKey);
 
 
     /**

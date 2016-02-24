@@ -1,5 +1,7 @@
 package com.fitpay.android.api.models;
 
+import com.google.gson.annotations.SerializedName;
+
 public final class User extends BaseModel {
 
     private String id;
@@ -8,7 +10,9 @@ public final class User extends BaseModel {
      * description : JSON Web Encrypted compact serialization of the user's information from
      * @see UserInfo
      */
-    private UserInfo encryptedData;
+
+    @SerializedName("encryptedData")
+    private UserInfo userInfo;
 
     /**
      * description : ISO8601 string providing the date of the creation of original user account.   If not known use the current date
@@ -95,7 +99,7 @@ public final class User extends BaseModel {
     }
 
     public UserInfo getUserInfo() {
-        return encryptedData;
+        return userInfo;
     }
 
     public static final class UserInfo {

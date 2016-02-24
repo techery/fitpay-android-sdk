@@ -1,9 +1,11 @@
 package com.fitpay.android.utils;
 
+import android.support.annotation.IntDef;
+import android.support.annotation.NonNull;
+
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.enums.ResultCode;
-import com.fitpay.android.api.models.ECCKeyPair;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWEAlgorithm;
@@ -17,6 +19,8 @@ import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 
 import org.bouncycastle.util.encoders.Hex;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -30,6 +34,8 @@ import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.crypto.KeyAgreement;
@@ -45,11 +51,20 @@ final class SecurityHandler {
     private static final String EC_CURVE = "secp256r1";
     private static final String KEY_TYPE = "AES";
 
-    private static SecurityHandler sInstance;
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({
+            Constants.KEY_API,
+            Constants.KEY_RTM,
+            Constants.KEY_WEB
+    })
+    public @interface KeyType {
+    }
 
     static {
         Security.addProvider(BouncyCastleProviderSingleton.getInstance());
     }
+
+    private static SecurityHandler sInstance;
 
     public static SecurityHandler getInstance() {
         if (sInstance == null) {
@@ -59,17 +74,28 @@ final class SecurityHandler {
         return sInstance;
     }
 
-    private ECCKeyPair mKeyPair;
-    private SecretKey mSecretKey;
+    private Map<Integer, ECCKeyPair> mKeysMap;
 
     private SecurityHandler() {
+        mKeysMap = new HashMap<>();
     }
 
     // Create the public and private keys
-    private KeyPair generateKeyPair() throws Exception {
+    private ECCKeyPair createECCKeyPair() throws Exception {
         KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance(ALGORITHM, BouncyCastleProviderSingleton.getInstance());
         keyGenerator.initialize(new ECGenParameterSpec(EC_CURVE), new SecureRandom());
-        return keyGenerator.generateKeyPair();
+
+        KeyPair keyPair = keyGenerator.generateKeyPair();
+
+        ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
+        ECPrivateKey privateKey = (ECPrivateKey) keyPair.getPrivate();
+
+        ECCKeyPair eccKeyPair = new ECCKeyPair();
+        eccKeyPair.setKeyId(UUID.randomUUID().toString());
+        eccKeyPair.setPrivateKey(Hex.toHexString(privateKey.getEncoded()));
+        eccKeyPair.setPublicKey(Hex.toHexString(publicKey.getEncoded()));
+
+        return eccKeyPair;
     }
 
     // methods for ASN.1 encoded keys
@@ -85,75 +111,20 @@ final class SecurityHandler {
         return kf.generatePublic(keySpec);
     }
 
-    public ECCKeyPair createECCKeyPair() throws Exception {
-        KeyPair keyPair = generateKeyPair();
-        ECPublicKey publicKey = (ECPublicKey) keyPair.getPublic();
-        ECPrivateKey privateKey = (ECPrivateKey) keyPair.getPrivate();
+    private SecretKey getSecretKey(@KeyType int type) {
 
-        ECCKeyPair eccKeyPair = new ECCKeyPair();
-        eccKeyPair.setKeyId(UUID.randomUUID().toString());
-        eccKeyPair.setPrivateKey(Hex.toHexString(privateKey.getEncoded()));
-        eccKeyPair.setPublicKey(Hex.toHexString(publicKey.getEncoded()));
+        ECCKeyPair keyPair = getPairForType(type);
+        SecretKey secretKey = keyPair.getSecretKey();
 
-        return eccKeyPair;
-    }
-
-    /**
-     * update existing keyPair with a new one
-     */
-    public void updateECCKeyPair(final ApiCallback<Void> callback) {
-
-        mSecretKey = null;
-
-        try {
-            mKeyPair = createECCKeyPair();
-
-            ApiCallback<ECCKeyPair> apiCallback = new ApiCallback<ECCKeyPair>() {
-                @Override
-                public void onSuccess(ECCKeyPair result) {
-                    mKeyPair.refreshWithNewData(result);
-                    mSecretKey = getSecretKey();
-
-                    if(callback != null){
-                        callback.onSuccess(null);
-                    }
-                }
-
-                @Override
-                public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                    Constants.printError(errorMessage);
-
-                    if(callback != null){
-                        callback.onFailure(errorCode, errorMessage);
-                    }
-                }
-            };
-
-            Call<ECCKeyPair> getKeyCall = ApiManager.getInstance().getClient().createEncryptionKey(mKeyPair);
-            getKeyCall.enqueue(new CallbackWrapper<>(apiCallback));
-
-        } catch (Exception e) {
-            Constants.printError(e.toString());
-        }
-    }
-
-    public String getKeyId(){
-        if(mKeyPair != null){
-            return mKeyPair.getKeyId();
+        if(secretKey == null) {
+            secretKey = createSecretKey(keyPair.getPrivateKey(), keyPair.getServerPublicKey());
+            keyPair.setSecretKey(secretKey);
         }
 
-        return null;
+        return secretKey;
     }
 
-    //TODO: refresh secret if null
-    public SecretKey getSecretKey() {
-        if (mSecretKey == null && mKeyPair != null && mKeyPair.getServerPublicKey() != null) {
-            mSecretKey = getSecretKey(mKeyPair.getPrivateKey(), mKeyPair.getServerPublicKey());
-        }
-        return mSecretKey;
-    }
-
-    public SecretKey getSecretKey(String privateKeyStr, String publicKeyStr) {
+    private SecretKey createSecretKey(String privateKeyStr, String publicKeyStr) {
 
         try {
             PrivateKey privateKey = getPrivateKey(Hex.decode(privateKeyStr));
@@ -170,36 +141,81 @@ final class SecurityHandler {
         }
     }
 
-    public String getEncryptedString(String decryptedString) {
+    private ECCKeyPair getPairForType(@KeyType int type) {
+        return mKeysMap.get(type);
+    }
+
+    public void updateECCKey(final @KeyType int type, @NonNull final Runnable successRunnable, final ApiCallback callback) {
+
+        try {
+            ECCKeyPair keyPair = createECCKeyPair();
+            mKeysMap.put(type, keyPair);
+
+            ApiCallback<ECCKeyPair> apiCallback = new ApiCallback<ECCKeyPair>() {
+                @Override
+                public void onSuccess(ECCKeyPair result) {
+                    result.setPrivateKey(mKeysMap.get(type).getPrivateKey());
+                    mKeysMap.put(type, result);
+
+                    successRunnable.run();
+                }
+
+                @Override
+                public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                    if (callback != null) {
+                        callback.onFailure(errorCode, errorMessage);
+                    }
+                }
+            };
+
+            Call<ECCKeyPair> getKeyCall = ApiManager.getInstance().getClient().createEncryptionKey(keyPair.getPublicKey());
+            getKeyCall.enqueue(new CallbackWrapper<>(apiCallback));
+
+        } catch (Exception e) {
+            callback.onFailure(ResultCode.REQUEST_FAILED, e.toString());
+        }
+    }
+
+    public String getKeyId(@KeyType int type) {
+        ECCKeyPair keyPair = getPairForType(type);
+
+        if (keyPair != null) {
+            return keyPair.getKeyId();
+        }
+
+        return null;
+    }
+
+    public String getEncryptedString(@KeyType int type, String decryptedString) {
 
         JWEAlgorithm alg = JWEAlgorithm.A256GCMKW;
         EncryptionMethod enc = EncryptionMethod.A256GCM;
 
+        ECCKeyPair keyPair = getPairForType(type);
+
         JWEHeader.Builder jweHeaderBuilder = new JWEHeader.Builder(alg, enc)
                 .contentType("application/json")
-                .keyID(mKeyPair.getKeyId());
+                .keyID(keyPair.getKeyId());
 
         JWEHeader header = jweHeaderBuilder.build();
         Payload payload = new Payload(decryptedString);
         JWEObject jweObject = new JWEObject(header, payload);
-        JWEEncrypter encrypter = null;
         try {
-            encrypter = new AESEncrypter(SecurityHandler.getInstance().getSecretKey());
+            JWEEncrypter encrypter = new AESEncrypter(SecurityHandler.getInstance().getSecretKey(type));
             jweObject.encrypt(encrypter);
         } catch (JOSEException e) {
             Constants.printError(e.toString());
         }
 
-        String strHeader = jweObject.getHeader().toJSONObject().toString();
         return jweObject.serialize();
     }
 
-    public String getDecryptedString(String encryptedString) {
+    public String getDecryptedString(@KeyType int type, String encryptedString) {
 
         JWEObject jweObject;
         try {
             jweObject = JWEObject.parse(encryptedString);
-            jweObject.decrypt(new AESDecrypter(getSecretKey()));
+            jweObject.decrypt(new AESDecrypter(getSecretKey(type)));
             return jweObject.getPayload().toString();
         } catch (ParseException | JOSEException e) {
             Constants.printError(e.toString());

@@ -2,6 +2,9 @@ package com.fitpay.android.rtm.enums;
 
 import android.support.annotation.IntDef;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 public class SyncErrorCode {
 
     public static final int SUCCESS = 0;
@@ -10,6 +13,7 @@ public class SyncErrorCode {
     public static final int ER_UNAUTHORIZED_TOKEN_REJECTED = ER_NO_USER_DATA_AVAILABLE + 1;
     public static final int ER_COMMITS_COULD_NOT_BE_APPLIED_TO_DEVICE = ER_UNAUTHORIZED_TOKEN_REJECTED + 1;
 
+    @Retention(RetentionPolicy.SOURCE)
     @IntDef({
             SUCCESS,
             ER_UNKNOWN,

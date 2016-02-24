@@ -9,8 +9,6 @@ import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.Commit;
 import com.fitpay.android.api.models.CreditCard;
 import com.fitpay.android.api.models.Device;
-import com.fitpay.android.api.models.ECCKeyPair;
-import com.fitpay.android.api.models.OAuthToken;
 import com.fitpay.android.api.models.Reason;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.ResultCollection;
@@ -20,6 +18,8 @@ import com.fitpay.android.api.models.VerificationMethod;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 
@@ -28,7 +28,8 @@ import retrofit2.Call;
  */
 public class ApiManager {
 
-    private static ApiManager instance;
+    private static ApiManager sInstance;
+    private ExecutorService exService = Executors.newSingleThreadExecutor();
     private FitPayService apiService;
 
     private ApiManager() {
@@ -36,36 +37,36 @@ public class ApiManager {
     }
 
     public static ApiManager getInstance() {
-        if (instance == null) {
+        if (sInstance == null) {
             synchronized (ApiManager.class) {
-                if (instance == null) {
-                    instance = new ApiManager();
+                if (sInstance == null) {
+                    sInstance = new ApiManager();
                 }
             }
         }
 
-        return instance;
+        return sInstance;
     }
 
     FitPayClient getClient() {
         return apiService.getClient();
     }
 
-    private void checkKeyAndMakeCall(@NonNull final ApiCallback<Void> callback) {
-        if (SecurityHandler.getInstance().getKeyId() == null) {
-            SecurityHandler.getInstance().updateECCKeyPair(new ApiCallback<Void>() {
-                @Override
-                public void onSuccess(Void result) {
-                    callback.onSuccess(null);
-                }
+    private boolean isAuthorized(@NonNull ApiCallback callback) {
+        if (!apiService.isAuthorized()) {
+            callback.onFailure(ResultCode.UNAUTHORIZED, "Unauthorized");
 
-                @Override
-                public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                    callback.onFailure(errorCode, errorMessage);
-                }
-            });
+            return false;
+        }
+
+        return true;
+    }
+
+    private void checkKeyAndMakeCall(@NonNull Runnable successRunnable, @NonNull ApiCallback callback) {
+        if (SecurityHandler.getInstance().getKeyId(Constants.KEY_API) == null) {
+            SecurityHandler.getInstance().updateECCKey(Constants.KEY_API, successRunnable, callback);
         } else {
-            callback.onSuccess(null);
+            successRunnable.run();
         }
     }
 
@@ -106,21 +107,21 @@ public class ApiManager {
         getTokenCall.enqueue(getTokenCallback);
     }
 
-    /**
-     * Returns a list of all users that belong to your organization.
-     * The customers are returned sorted by creation date,
-     * with the most recently created customers appearing first.
-     *
-     * @param limit    Max number of profiles per page, default: 10
-     * @param offset   Start index position for list of entities returned
-     * @param callback result callback
-     */
-    public void getUsers(int limit, int offset, ApiCallback<ResultCollection<User>> callback) {
-        String fpKeyId = SecurityHandler.getInstance().getKeyId();
-
-        Call<ResultCollection<User>> getUsersCall = apiService.getClient().getUsers(fpKeyId, limit, offset);
-        getUsersCall.enqueue(new CallbackWrapper<>(callback));
-    }
+//    /**
+//     * Returns a list of all users that belong to your organization.
+//     * The customers are returned sorted by creation date,
+//     * with the most recently created customers appearing first.
+//     *
+//     * @param limit    Max number of profiles per page, default: 10
+//     * @param offset   Start index position for list of entities returned
+//     * @param callback result callback
+//     */
+//    public void getUsers(int limit, int offset, ApiCallback<ResultCollection<User>> callback) {
+//        String fpKeyId = SecurityHandler.getInstance().getKeyId();
+//
+//        Call<ResultCollection<User>> getUsersCall = apiService.getClient().getUsers(fpKeyId, limit, offset);
+//        getUsersCall.enqueue(new CallbackWrapper<>(callback));
+//    }
 
     /**
      * Creates a new user within your organization.
@@ -158,18 +159,18 @@ public class ApiManager {
      * @param callback result callback
      */
     public void getUser(final ApiCallback<User> callback) {
-        checkKeyAndMakeCall(new ApiCallback<Void>() {
-            @Override
-            public void onSuccess(Void result) {
-                Call<User> getUserCall = apiService.getClient().getUser(SecurityHandler.getInstance().getKeyId(), apiService.getUserId());
-                getUserCall.enqueue(new CallbackWrapper<>(callback));
-            }
+        if (isAuthorized(callback)) {
 
-            @Override
-            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                callback.onFailure(errorCode, errorMessage);
-            }
-        });
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+                    Call<User> getUserCall = apiService.getClient().getUser(SecurityHandler.getInstance().getKeyId(Constants.KEY_API), apiService.getUserId());
+                    getUserCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
 
