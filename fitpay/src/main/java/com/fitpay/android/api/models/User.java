@@ -1,6 +1,6 @@
 package com.fitpay.android.api.models;
 
-import com.fitpay.android.utils.TimeUtils;
+import com.fitpay.android.utils.TimestampUtils;
 import com.google.gson.annotations.SerializedName;
 
 public final class User extends BaseModel {
@@ -32,9 +32,9 @@ public final class User extends BaseModel {
     private String termsVersion;
 
     private String createdTs;
-    private long createdTsEpoch;
-    private long termsAcceptedTsEpoch;
-    private long originAccountCreatedTsEpoch;
+    private Long createdTsEpoch;
+    private Long termsAcceptedTsEpoch;
+    private Long originAccountCreatedTsEpoch;
 
     private User() {
         userInfo = new UserInfo();
@@ -189,7 +189,7 @@ public final class User extends BaseModel {
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
         public Builder setBirthDate(long date){
-            this.birthDate = TimeUtils.getReadableDate(date);
+            this.birthDate = TimestampUtils.getReadableDate(date);
             return this;
         }
 
@@ -199,7 +199,7 @@ public final class User extends BaseModel {
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
         public Builder setOriginAccountCreatedAt(long originAccountCreatedAt) {
-            this.originAccountCreatedAt = TimeUtils.getReadableDateISO8601(originAccountCreatedAt);
+            this.originAccountCreatedAt = TimestampUtils.getISO8601StringForTime(originAccountCreatedAt);
             return this;
         }
 
@@ -209,7 +209,7 @@ public final class User extends BaseModel {
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
         public Builder setTermsAcceptedAt(long termsAcceptedAt) {
-            this.termsAcceptedAt = TimeUtils.getReadableDateISO8601(termsAcceptedAt);
+            this.termsAcceptedAt = TimestampUtils.getISO8601StringForTime(termsAcceptedAt);
             return this;
         }
 

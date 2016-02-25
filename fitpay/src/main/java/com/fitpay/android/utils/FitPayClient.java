@@ -70,7 +70,6 @@ interface FitPayClient {
      * @param userId user id
      * @param user user data to update:(firstName, lastName, birthDate, originAccountCreatedTs, termsAcceptedTs, termsVersion)
      */
-    @FormUrlEncoded
     @PATCH("users/{userId}")
     Call<User> updateUser(@Path("userId") String userId, @Body JsonObject user);
 

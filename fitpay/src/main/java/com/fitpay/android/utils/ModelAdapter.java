@@ -12,18 +12,20 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.google.gson.internal.LinkedTreeMap;
 
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 /**
  */
-class ModelAdapter {
+final class ModelAdapter {
 
     private static final String ENCRYPTED_DATA = "encryptedData";
 
-    public static class DataSerializer<T> implements JsonSerializer<T>, JsonDeserializer<T> {
+    public static final class DataSerializer<T> implements JsonSerializer<T>, JsonDeserializer<T> {
         public JsonElement serialize(T data, Type typeOfSrc, JsonSerializationContext context) {
 
             final String encryptedString = SecurityHandler.getInstance()
@@ -53,7 +55,7 @@ class ModelAdapter {
 
     }
 
-    public static class KeyPairSerializer implements JsonSerializer<ECCKeyPair> {
+    public static final class KeyPairSerializer implements JsonSerializer<ECCKeyPair> {
         public JsonElement serialize(ECCKeyPair data, Type typeOfSrc, JsonSerializationContext context) {
 
             JsonObject jo = new JsonObject();
@@ -62,7 +64,7 @@ class ModelAdapter {
         }
     }
 
-    public static class LinksDeserializer implements JsonDeserializer<Links> {
+    public static final class LinksDeserializer implements JsonDeserializer<Links> {
 
         @Override
         public Links deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
@@ -75,6 +77,31 @@ class ModelAdapter {
             }
 
             return links;
+        }
+    }
+
+    public static final class ObjectConverter<T>{
+
+        public Map<String, Object> convertToSimpleMap(T object){
+            Gson gson = new Gson();
+
+            JsonElement objectAsJson = gson.toJsonTree(object);
+            LinkedTreeMap objectAsMap = gson.fromJson(objectAsJson, LinkedTreeMap.class);
+
+            Map<String, Object> resultMap = new HashMap<>();
+            iterateThroughMap(objectAsMap, resultMap);
+
+            return resultMap;
+        }
+
+        private void iterateThroughMap(LinkedTreeMap treeMap, Map<String, Object> resultMap){
+            for (Map.Entry<String, Object> entry : (Iterable<Map.Entry<String, Object>>) treeMap.entrySet()) {
+                if (entry.getValue() instanceof LinkedTreeMap) {
+                    iterateThroughMap((LinkedTreeMap) entry.getValue(), resultMap);
+                } else {
+                    resultMap.put(entry.getKey(), entry.getValue());
+                }
+            }
         }
     }
 }

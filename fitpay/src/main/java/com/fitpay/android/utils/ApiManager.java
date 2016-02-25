@@ -16,13 +16,16 @@ import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.User;
 import com.fitpay.android.api.models.VerificationMethod;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.internal.LinkedTreeMap;
+import com.google.gson.internal.Streams;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -159,24 +162,22 @@ public class ApiManager {
                 @Override
                 public void run() {
 
-                    Gson gson = new Gson();
+                    JsonArray updateData = new JsonArray();
 
-                    JsonElement userJson = gson.toJsonTree(user);
+                    Map<String, Object> userMap = new ModelAdapter.ObjectConverter().convertToSimpleMap(user);
+                    for(Map.Entry<String, Object> entry : userMap.entrySet()) {
+                        JsonObject item = new JsonObject();
+                        item.addProperty("op", "replace");
+                        item.addProperty("path", "/" + entry.getKey());
+                        item.addProperty("value", String.valueOf(entry.getValue()));
 
-                    Type mapType = new TypeToken<Map<String, Map>>(){}.getType();
-                    Map<String, String> userMap = gson.fromJson(userJson, mapType);
+                        updateData.add(item);
+                    }
 
-                    JsonObject updateData = new JsonObject();
-
-//                    LinkedTreeMap userMap = gson.fromJson(userJson, LinkedTreeMap.class);
-//                    for(Object entry : userMap.entrySet()){
-//
-//                    }
-
-                    String userString = updateData.getAsString();
+                    String userString = updateData.toString();
 
                     JsonObject jsonObject = new JsonObject();
-                    jsonObject.addProperty("encryptedData", SecurityHandler.getInstance().getDecryptedString(Constants.KEY_API, userString));
+                    jsonObject.addProperty("encryptedData", SecurityHandler.getInstance().getEncryptedString(Constants.KEY_API, userString));
 
                     Call<User> updateUserCall = getClient().updateUser(userId, jsonObject);
                     updateUserCall.enqueue(new CallbackWrapper<>(callback));
