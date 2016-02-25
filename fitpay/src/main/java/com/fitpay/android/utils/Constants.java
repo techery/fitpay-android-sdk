@@ -18,6 +18,9 @@ public final class Constants {
     static final int KEY_RTM = KEY_API + 1;
     static final int KEY_WEB = KEY_RTM + 1;
 
+    static final String DATE_FORMAT_ISO8601 = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+    static final String DATE_FORMAT_SIMPLE = "yyyy-MM-dd";
+
     public static final String FIT_PAY_ERROR_TAG = "FitPayError";
 
     public static void printError(String error) {

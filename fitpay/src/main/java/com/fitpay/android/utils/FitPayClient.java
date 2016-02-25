@@ -10,12 +10,14 @@ import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.User;
 import com.fitpay.android.api.models.VerificationMethod;
+import com.google.gson.JsonObject;
 
 import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
+import retrofit2.http.Field;
 import retrofit2.http.FieldMap;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
@@ -60,7 +62,7 @@ interface FitPayClient {
      * @param userId user id
      */
     @DELETE("users/{userId}")
-    Call<Object> deleteUser(@Path("userId") String userId);
+    Call<Void> deleteUser(@Path("userId") String userId);
 
     /**
      * Update the details of an existing user.
@@ -68,8 +70,9 @@ interface FitPayClient {
      * @param userId user id
      * @param user user data to update:(firstName, lastName, birthDate, originAccountCreatedTs, termsAcceptedTs, termsVersion)
      */
+    @FormUrlEncoded
     @PATCH("users/{userId}")
-    Call<User> updateUser(@Path("userId") String userId, @Body User user);
+    Call<User> updateUser(@Path("userId") String userId, @Body JsonObject user);
 
     /**
      * Retrieves the details of an existing user.

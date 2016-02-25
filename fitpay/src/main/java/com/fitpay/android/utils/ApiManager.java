@@ -15,11 +15,15 @@ import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.User;
 import com.fitpay.android.api.models.VerificationMethod;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.internal.LinkedTreeMap;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import retrofit2.Call;
 
@@ -29,7 +33,6 @@ import retrofit2.Call;
 public class ApiManager {
 
     private static ApiManager sInstance;
-    private ExecutorService exService = Executors.newSingleThreadExecutor();
     private FitPayService apiService;
 
     private ApiManager() {
@@ -103,7 +106,7 @@ public class ApiManager {
             }
         });
 
-        Call<OAuthToken> getTokenCall = apiService.getClient().loginUser(loginMap);
+        Call<OAuthToken> getTokenCall = getClient().loginUser(loginMap);
         getTokenCall.enqueue(getTokenCallback);
     }
 
@@ -117,20 +120,16 @@ public class ApiManager {
 //     * @param callback result callback
 //     */
 //    public void getUsers(int limit, int offset, ApiCallback<ResultCollection<User>> callback) {
-//        String fpKeyId = SecurityHandler.getInstance().getKeyId();
-//
-//        Call<ResultCollection<User>> getUsersCall = apiService.getClient().getUsers(fpKeyId, limit, offset);
-//        getUsersCall.enqueue(new CallbackWrapper<>(callback));
 //    }
 
-    /**
-     * Creates a new user within your organization.
-     *
-     * @param user     user data (firstName, lastName, birthDate, email)
-     * @param callback result callback
-     */
-    public void createUser(User user, ApiCallback<User> callback) {
-    }
+//    /**
+//     * Creates a new user within your organization.
+//     *
+//     * @param user     user data (firstName, lastName, birthDate, email)
+//     * @param callback result callback
+//     */
+//    public void createUser(User user, ApiCallback<User> callback) {
+//    }
 
     /**
      * Delete a single user from your organization.
@@ -139,6 +138,10 @@ public class ApiManager {
      * @param callback result callback
      */
     public void deleteUser(String userId, ApiCallback<Void> callback) {
+        if(isAuthorized(callback)){
+            Call<Void> deleteUserCall = getClient().deleteUser(userId);
+            deleteUserCall.enqueue(new CallbackWrapper<>(callback));
+        }
     }
 
     /**
@@ -149,7 +152,39 @@ public class ApiManager {
      *                 termsAcceptedTs, termsVersion)
      * @param callback result callback
      */
-    public void updateUser(String userId, User user, ApiCallback<User> callback) {
+    public void updateUser(final String userId, final User user, final ApiCallback<User> callback) {
+        if(isAuthorized(callback)){
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    Gson gson = new Gson();
+
+                    JsonElement userJson = gson.toJsonTree(user);
+
+                    Type mapType = new TypeToken<Map<String, Map>>(){}.getType();
+                    Map<String, String> userMap = gson.fromJson(userJson, mapType);
+
+                    JsonObject updateData = new JsonObject();
+
+//                    LinkedTreeMap userMap = gson.fromJson(userJson, LinkedTreeMap.class);
+//                    for(Object entry : userMap.entrySet()){
+//
+//                    }
+
+                    String userString = updateData.getAsString();
+
+                    JsonObject jsonObject = new JsonObject();
+                    jsonObject.addProperty("encryptedData", SecurityHandler.getInstance().getDecryptedString(Constants.KEY_API, userString));
+
+                    Call<User> updateUserCall = getClient().updateUser(userId, jsonObject);
+                    updateUserCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -164,7 +199,7 @@ public class ApiManager {
             Runnable onSuccess = new Runnable() {
                 @Override
                 public void run() {
-                    Call<User> getUserCall = apiService.getClient().getUser(SecurityHandler.getInstance().getKeyId(Constants.KEY_API), apiService.getUserId());
+                    Call<User> getUserCall = getClient().getUser(SecurityHandler.getInstance().getKeyId(Constants.KEY_API), apiService.getUserId());
                     getUserCall.enqueue(new CallbackWrapper<>(callback));
                 }
             };
