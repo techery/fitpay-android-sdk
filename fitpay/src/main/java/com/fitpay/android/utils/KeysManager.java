@@ -44,18 +44,22 @@ import javax.crypto.SecretKey;
 import retrofit2.Call;
 
 /**
- * SecurityHandler is designed to create and manage @ECCKeyPair object.
+ * KeysManager is designed to create and manage @ECCKeyPair object.
  */
-final class SecurityHandler {
+final class KeysManager {
+    static final int KEY_API = 0;
+    static final int KEY_RTM = KEY_API + 1;
+    static final int KEY_WEB = KEY_RTM + 1;
+
     private static final String ALGORITHM = "ECDH";
     private static final String EC_CURVE = "secp256r1";
     private static final String KEY_TYPE = "AES";
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({
-            Constants.KEY_API,
-            Constants.KEY_RTM,
-            Constants.KEY_WEB
+            KeysManager.KEY_API,
+            KeysManager.KEY_RTM,
+            KeysManager.KEY_WEB
     })
     public @interface KeyType {
     }
@@ -64,11 +68,11 @@ final class SecurityHandler {
         Security.addProvider(BouncyCastleProviderSingleton.getInstance());
     }
 
-    private static SecurityHandler sInstance;
+    static KeysManager sInstance;
 
-    public static SecurityHandler getInstance() {
+    public static KeysManager getInstance() {
         if (sInstance == null) {
-            sInstance = new SecurityHandler();
+            sInstance = new KeysManager();
         }
 
         return sInstance;
@@ -76,7 +80,7 @@ final class SecurityHandler {
 
     private Map<Integer, ECCKeyPair> mKeysMap;
 
-    private SecurityHandler() {
+    private KeysManager() {
         mKeysMap = new HashMap<>();
     }
 
@@ -111,7 +115,7 @@ final class SecurityHandler {
         return kf.generatePublic(keySpec);
     }
 
-    private SecretKey getSecretKey(@KeyType int type) {
+    public SecretKey getSecretKey(@KeyType int type) {
 
         ECCKeyPair keyPair = getPairForType(type);
         SecretKey secretKey = keyPair.getSecretKey();
@@ -141,7 +145,7 @@ final class SecurityHandler {
         }
     }
 
-    private ECCKeyPair getPairForType(@KeyType int type) {
+    public ECCKeyPair getPairForType(@KeyType int type) {
         return mKeysMap.get(type);
     }
 
@@ -181,44 +185,6 @@ final class SecurityHandler {
 
         if (keyPair != null) {
             return keyPair.getKeyId();
-        }
-
-        return null;
-    }
-
-    public String getEncryptedString(@KeyType int type, String decryptedString) {
-
-        JWEAlgorithm alg = JWEAlgorithm.A256GCMKW;
-        EncryptionMethod enc = EncryptionMethod.A256GCM;
-
-        ECCKeyPair keyPair = getPairForType(type);
-
-        JWEHeader.Builder jweHeaderBuilder = new JWEHeader.Builder(alg, enc)
-                .contentType("application/json")
-                .keyID(keyPair.getKeyId());
-
-        JWEHeader header = jweHeaderBuilder.build();
-        Payload payload = new Payload(decryptedString);
-        JWEObject jweObject = new JWEObject(header, payload);
-        try {
-            JWEEncrypter encrypter = new AESEncrypter(SecurityHandler.getInstance().getSecretKey(type));
-            jweObject.encrypt(encrypter);
-        } catch (JOSEException e) {
-            Constants.printError(e.toString());
-        }
-
-        return jweObject.serialize();
-    }
-
-    public String getDecryptedString(@KeyType int type, String encryptedString) {
-
-        JWEObject jweObject;
-        try {
-            jweObject = JWEObject.parse(encryptedString);
-            jweObject.decrypt(new AESDecrypter(getSecretKey(type)));
-            return jweObject.getPayload().toString();
-        } catch (ParseException | JOSEException e) {
-            Constants.printError(e.toString());
         }
 
         return null;

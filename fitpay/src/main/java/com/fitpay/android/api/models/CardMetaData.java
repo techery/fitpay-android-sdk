@@ -16,6 +16,8 @@ public class CardMetaData {
     private List<ImageAssetReference> brandLogo;
     private List<ImageAssetReference> cardBackground;
     private List<ImageAssetReference> cardBackgroundCombined;
+
+    //TODO: check values
     private List<ImageAssetReference> icon;
     private List<ImageAssetReference> issuerLogo;
 

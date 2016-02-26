@@ -10,6 +10,7 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.internal.LinkedTreeMap;
@@ -28,13 +29,9 @@ final class ModelAdapter {
     public static final class DataSerializer<T> implements JsonSerializer<T>, JsonDeserializer<T> {
         public JsonElement serialize(T data, Type typeOfSrc, JsonSerializationContext context) {
 
-            final String encryptedString = SecurityHandler.getInstance()
-                    .getEncryptedString(Constants.KEY_API, new GsonBuilder().create().toJson(data));
+            final String encryptedString = StringUtils.getEncryptedString(KeysManager.KEY_API, new GsonBuilder().create().toJson(data));
 
-            JsonObject jo = new JsonObject();
-            jo.addProperty(ENCRYPTED_DATA, encryptedString);
-
-            return jo;
+            return new JsonParser().parse(encryptedString);
         }
 
         @Override
@@ -42,7 +39,7 @@ final class ModelAdapter {
 
             if (!json.isJsonObject() && !TextUtils.isEmpty(json.getAsString())) {
 
-                final String decryptedString = SecurityHandler.getInstance().getDecryptedString(Constants.KEY_API, json.getAsString());
+                final String decryptedString = StringUtils.getDecryptedString(KeysManager.KEY_API, json.getAsString());
 
                 if (!TextUtils.isEmpty(decryptedString)) {
                     Gson gson = new Gson();
@@ -80,26 +77,29 @@ final class ModelAdapter {
         }
     }
 
-    public static final class ObjectConverter<T>{
+    public static final class ObjectConverter<T> {
 
-        public Map<String, Object> convertToSimpleMap(T object){
+        public Map<String, Object> convertToSimpleMap(T object) {
             Gson gson = new Gson();
 
             JsonElement objectAsJson = gson.toJsonTree(object);
             LinkedTreeMap objectAsMap = gson.fromJson(objectAsJson, LinkedTreeMap.class);
 
             Map<String, Object> resultMap = new HashMap<>();
-            iterateThroughMap(objectAsMap, resultMap);
+            iterateThroughMap(0, "", objectAsMap, resultMap);
 
             return resultMap;
         }
 
-        private void iterateThroughMap(LinkedTreeMap treeMap, Map<String, Object> resultMap){
+        private void iterateThroughMap(int deepLevel, String keyName, LinkedTreeMap treeMap, Map<String, Object> resultMap) {
             for (Map.Entry<String, Object> entry : (Iterable<Map.Entry<String, Object>>) treeMap.entrySet()) {
                 if (entry.getValue() instanceof LinkedTreeMap) {
-                    iterateThroughMap((LinkedTreeMap) entry.getValue(), resultMap);
+                    if(deepLevel++ > 0) {
+                        keyName = String.format("%s/%s/", keyName, entry.getKey());
+                    }
+                    iterateThroughMap(deepLevel, keyName, (LinkedTreeMap) entry.getValue(), resultMap);
                 } else {
-                    resultMap.put(entry.getKey(), entry.getValue());
+                    resultMap.put(keyName + entry.getKey(), entry.getValue());
                 }
             }
         }

@@ -115,7 +115,7 @@ interface FitPayClient {
      * @param deviceId device id
      */
     @DELETE("users/{userId}/relationships")
-    Call<Object> deleteRelationship(@Path("userId") String userId,
+    Call<Void> deleteRelationship(@Path("userId") String userId,
                                     @Query("creditCardId") String creditCardId,
                                     @Query("deviceId") String deviceId);
 
@@ -144,7 +144,7 @@ interface FitPayClient {
      *                   address data:(street1, street2, street3, city, state, postalCode, country))
      */
     @POST("users/{userId}/creditCards")
-    Call<CreditCard> addCard(@Path("userId") String userId, @Body CreditCard creditCard);
+    Call<CreditCard> createCreditCard(@Path("userId") String userId, @Body CreditCard creditCard);
 
     /**
      * Retrieves the details of an existing credit card.
@@ -167,7 +167,7 @@ interface FitPayClient {
     @PATCH("users/{userId}/creditCards/{creditCardId}")
     Call<CreditCard> updateCreditCard(@Path("userId") String userId,
                                       @Path("creditCardId") String creditCardId,
-                                      @Body CreditCard creditCard);
+                                      @Body JsonObject creditCard);
 
     /**
      * Delete a single credit card from a user's profile.

@@ -1,5 +1,6 @@
 package com.fitpay.android.utils;
 
+import com.fitpay.android.api.models.CreditCard;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.User;
 import com.google.gson.Gson;
@@ -35,7 +36,7 @@ final class FitPayService {
                         .header("Accept", "application/json")
                         .header("Content-Type", "application/json");
 
-                String keyId = SecurityHandler.getInstance().getKeyId(Constants.KEY_API);
+                String keyId = KeysManager.getInstance().getKeyId(KeysManager.KEY_API);
                 if (keyId != null) {
                     builder.header("fp-key-id", keyId);
                 }
@@ -60,6 +61,7 @@ final class FitPayService {
                 .registerTypeAdapter(ECCKeyPair.class, new ModelAdapter.KeyPairSerializer())
                 .registerTypeAdapter(Links.class, new ModelAdapter.LinksDeserializer())
                 .registerTypeAdapter(User.UserInfo.class, new ModelAdapter.DataSerializer<>())
+                .registerTypeAdapter(CreditCard.CreditCardInfo.class, new ModelAdapter.DataSerializer<>())
                 .create();
 
         mAPIClient = new Retrofit.Builder()

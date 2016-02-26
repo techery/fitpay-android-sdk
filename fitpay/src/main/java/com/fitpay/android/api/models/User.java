@@ -1,5 +1,7 @@
 package com.fitpay.android.api.models;
 
+import android.support.annotation.NonNull;
+
 import com.fitpay.android.utils.TimestampUtils;
 import com.google.gson.annotations.SerializedName;
 
@@ -12,7 +14,6 @@ public final class User extends BaseModel {
      *
      * @see UserInfo
      */
-
     @SerializedName("encryptedData")
     private UserInfo userInfo;
 
@@ -168,7 +169,7 @@ public final class User extends BaseModel {
          * @param firstName the user's first name
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
-        public Builder setFirstName(String firstName){
+        public Builder setFirstName(@NonNull String firstName){
             this.firstName = firstName;
             return this;
         }
@@ -178,7 +179,7 @@ public final class User extends BaseModel {
          * @param lastName the user's last name
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
-        public Builder setLastName(String lastName){
+        public Builder setLastName(@NonNull String lastName){
             this.lastName = lastName;
             return this;
         }
@@ -218,7 +219,7 @@ public final class User extends BaseModel {
          * @param termsVersion version name
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
-        public Builder setTermsVersion(String termsVersion) {
+        public Builder setTermsVersion(@NonNull String termsVersion) {
             this.termsVersion = termsVersion;
             return this;
         }

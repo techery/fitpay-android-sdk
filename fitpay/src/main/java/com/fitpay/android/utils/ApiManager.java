@@ -15,17 +15,10 @@ import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.User;
 import com.fitpay.android.api.models.VerificationMethod;
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.internal.LinkedTreeMap;
-import com.google.gson.internal.Streams;
-import com.google.gson.reflect.TypeToken;
 
-import java.lang.reflect.Type;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -69,8 +62,8 @@ public class ApiManager {
     }
 
     private void checkKeyAndMakeCall(@NonNull Runnable successRunnable, @NonNull ApiCallback callback) {
-        if (SecurityHandler.getInstance().getKeyId(Constants.KEY_API) == null) {
-            SecurityHandler.getInstance().updateECCKey(Constants.KEY_API, successRunnable, callback);
+        if (KeysManager.getInstance().getKeyId(KeysManager.KEY_API) == null) {
+            KeysManager.getInstance().updateECCKey(KeysManager.KEY_API, successRunnable, callback);
         } else {
             successRunnable.run();
         }
@@ -168,7 +161,7 @@ public class ApiManager {
                     for(Map.Entry<String, Object> entry : userMap.entrySet()) {
                         JsonObject item = new JsonObject();
                         item.addProperty("op", "replace");
-                        item.addProperty("path", "/" + entry.getKey());
+                        item.addProperty("path", entry.getKey());
                         item.addProperty("value", String.valueOf(entry.getValue()));
 
                         updateData.add(item);
@@ -177,7 +170,7 @@ public class ApiManager {
                     String userString = updateData.toString();
 
                     JsonObject jsonObject = new JsonObject();
-                    jsonObject.addProperty("encryptedData", SecurityHandler.getInstance().getEncryptedString(Constants.KEY_API, userString));
+                    jsonObject.addProperty("encryptedData", StringUtils.getEncryptedString(KeysManager.KEY_API, userString));
 
                     Call<User> updateUserCall = getClient().updateUser(userId, jsonObject);
                     updateUserCall.enqueue(new CallbackWrapper<>(callback));
@@ -200,7 +193,7 @@ public class ApiManager {
             Runnable onSuccess = new Runnable() {
                 @Override
                 public void run() {
-                    Call<User> getUserCall = getClient().getUser(SecurityHandler.getInstance().getKeyId(Constants.KEY_API), apiService.getUserId());
+                    Call<User> getUserCall = getClient().getUser(KeysManager.getInstance().getKeyId(KeysManager.KEY_API), apiService.getUserId());
                     getUserCall.enqueue(new CallbackWrapper<>(callback));
                 }
             };
@@ -219,6 +212,10 @@ public class ApiManager {
      * @param callback     result callback
      */
     public void getRelationship(String userId, String creditCardId, String deviceId, ApiCallback<Relationship> callback) {
+        if(isAuthorized(callback)){
+            Call<Relationship> getRelationshipCall = getClient().getRelationship(userId, creditCardId, deviceId);
+            getRelationshipCall.enqueue(new CallbackWrapper<>(callback));
+        }
     }
 
 
@@ -231,6 +228,10 @@ public class ApiManager {
      * @param callback     result callback
      */
     public void createRelationship(String userId, String creditCardId, String deviceId, ApiCallback<Relationship> callback) {
+        if(isAuthorized(callback)){
+            Call<Relationship> createRelationshipCall = getClient().createRelationship(userId, creditCardId, deviceId);
+            createRelationshipCall.enqueue(new CallbackWrapper<>(callback));
+        }
     }
 
     /**
@@ -242,6 +243,10 @@ public class ApiManager {
      * @param callback     result callback
      */
     public void deleteRelationship(String userId, String creditCardId, String deviceId, ApiCallback<Void> callback) {
+        if(isAuthorized(callback)){
+            Call<Void> deleteRelationshipCall = getClient().deleteRelationship(userId, creditCardId, deviceId);
+            deleteRelationshipCall.enqueue(new CallbackWrapper<>(callback));
+        }
     }
 
 
@@ -253,7 +258,19 @@ public class ApiManager {
      * @param offset   Start index position for list of entities returned
      * @param callback result callback
      */
-    public void getCreditCards(String userId, int limit, int offset, ApiCallback<ResultCollection<CreditCard>> callback) {
+    public void getCreditCards(final String userId, final int limit, final int offset, final ApiCallback<ResultCollection<CreditCard>> callback) {
+        if(isAuthorized(callback)){
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+                    Call<ResultCollection<CreditCard>> getCreditCardsCall = getClient().getCreditCards(userId, limit, offset);
+                    getCreditCardsCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -267,7 +284,19 @@ public class ApiManager {
      *                   address data:(street1, street2, street3, city, state, postalCode, country))
      * @param callback   result callback
      */
-    public void createCreditCard(String userId, CreditCard creditCard, ApiCallback<CreditCard> callback) {
+    public void createCreditCard(final String userId, final CreditCard creditCard, final ApiCallback<CreditCard> callback) {
+        if (isAuthorized(callback)) {
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+                    Call<CreditCard> createCreditCardCall = getClient().createCreditCard(userId, creditCard);
+                    createCreditCardCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -278,7 +307,19 @@ public class ApiManager {
      * @param creditCardId credit card id
      * @param callback     result callback
      */
-    public void getCreditCard(String userId, String creditCardId, ApiCallback<CreditCard> callback) {
+    public void getCreditCard(final String userId, final String creditCardId, final ApiCallback<CreditCard> callback) {
+        if (isAuthorized(callback)) {
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+                    Call<CreditCard> getCreditCardCall = getClient().getCreditCard(userId, creditCardId);
+                    getCreditCardCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -290,7 +331,37 @@ public class ApiManager {
      *                     address/city, address/state, address/postalCode, address/countryCode)
      * @param callback     result callback
      */
-    public void updateCreditCard(String userId, String creditCardId, CreditCard creditCard, ApiCallback<CreditCard> callback) {
+    public void updateCreditCard(final String userId, final String creditCardId, final CreditCard creditCard, final ApiCallback<CreditCard> callback) {
+        if (isAuthorized(callback)) {
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    JsonArray updateData = new JsonArray();
+
+                    Map<String, Object> userMap = new ModelAdapter.ObjectConverter().convertToSimpleMap(creditCard);
+                    for(Map.Entry<String, Object> entry : userMap.entrySet()) {
+                        JsonObject item = new JsonObject();
+                        item.addProperty("op", "replace");
+                        item.addProperty("path", entry.getKey());
+                        item.addProperty("value", String.valueOf(entry.getValue()));
+
+                        updateData.add(item);
+                    }
+
+                    String userString = updateData.toString();
+
+                    JsonObject jsonObject = new JsonObject();
+                    jsonObject.addProperty("encryptedData", StringUtils.getEncryptedString(KeysManager.KEY_API, userString));
+
+                    Call<CreditCard> updateCreditCardCall = getClient().updateCreditCard(userId, creditCardId, jsonObject);
+                    updateCreditCardCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
