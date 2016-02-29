@@ -637,12 +637,12 @@ public class ApiManager {
                         updateData.add(item);
                     }
 
-                    String userString = updateData.toString();
+//                    String userString = updateData.toString();
 
-                    JsonObject jsonObject = new JsonObject();
-                    jsonObject.addProperty("encryptedData", StringUtils.getEncryptedString(KeysManager.KEY_API, userString));
+//                    JsonObject jsonObject = new JsonObject();
+//                    jsonObject.addProperty("encryptedData", StringUtils.getEncryptedString(KeysManager.KEY_API, userString));
 
-                    Call<Device> updateCreditCardCall = getClient().updateDevice(userId, deviceId, jsonObject);
+                    Call<Device> updateCreditCardCall = getClient().updateDevice(userId, deviceId, updateData);
                     updateCreditCardCall.enqueue(new CallbackWrapper<>(callback));
                 }
             };

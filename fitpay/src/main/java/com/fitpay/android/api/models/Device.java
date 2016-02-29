@@ -3,6 +3,8 @@ package com.fitpay.android.api.models;
 
 import android.support.annotation.NonNull;
 
+import com.fitpay.android.utils.TimestampUtils;
+
 import java.util.List;
 
 public class Device extends BaseModel {
@@ -351,8 +353,8 @@ public class Device extends BaseModel {
          * @param pairingTs The time the device was paired
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
-        public Builder setPairingTs(String pairingTs) {
-            this.pairingTs = pairingTs;
+        public Builder setPairingTs(long pairingTs) {
+            this.pairingTs = TimestampUtils.getISO8601StringForTime(pairingTs);
             return this;
         }
     }

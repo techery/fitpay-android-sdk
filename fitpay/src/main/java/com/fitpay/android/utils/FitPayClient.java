@@ -10,6 +10,7 @@ import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.User;
 import com.fitpay.android.api.models.VerificationMethod;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.util.Map;
@@ -316,7 +317,7 @@ interface FitPayClient {
     @PATCH("users/{userId}/devices/{deviceId}")
     Call<Device> updateDevice(@Path("userId") String userId,
                               @Path("deviceId") String deviceId,
-                              @Body JsonObject deviceData);
+                              @Body JsonArray deviceData);
 
     /**
      * Delete a single device.
