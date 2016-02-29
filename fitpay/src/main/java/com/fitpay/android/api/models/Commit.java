@@ -15,12 +15,13 @@ public class Commit extends BaseModel {
     public static final String SET_DEFAULT_CREDITCARD = "SET_DEFAULT_CREDITCARD";
     public static final String APDU_PACKAGE = "APDU_PACKAGE ";
 
+    private String commitId;
     @Type
     private String commitType;
     private Payload payload;
-    private long createdTs;
+    private Long createdTs;
     private String previousCommit;
-    private String commit;
+
 
     @Type
     public String getCommitType() {
@@ -55,12 +56,8 @@ public class Commit extends BaseModel {
         this.previousCommit = previousCommit;
     }
 
-    public String getCommit() {
-        return commit;
-    }
-
-    public void setCommit(String commit) {
-        this.commit = commit;
+    public String getCommitId() {
+        return commitId;
     }
 
     @StringDef({

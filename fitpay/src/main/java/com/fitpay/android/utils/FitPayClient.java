@@ -180,7 +180,7 @@ interface FitPayClient {
      * @param creditCardId credit card id
      */
     @DELETE("users/{userId}/creditCards/{creditCardId}")
-    Call<Object> deleteCreditCard(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
+    Call<Void> deleteCreditCard(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
 
 
     /**
@@ -193,7 +193,7 @@ interface FitPayClient {
      * @param creditCardId credit card id
      */
     @POST("users/{userId}/creditCards/{creditCardId}/acceptTerms")
-    Call<CreditCard> acceptTerm(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
+    Call<CreditCard> acceptTerms(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
 
     /**
      * Indicate a user has declined the terms and conditions.
@@ -216,7 +216,7 @@ interface FitPayClient {
      * @param creditCardId credit card id
      */
     @POST("users/{userId}/creditCards/{creditCardId}/makeDefault")
-    Call<CreditCard> makeDefault(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
+    Call<Void> makeDefault(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
 
     /**
      * Transition the credit card into a deactivated state so that it may not be utilized for payment.
@@ -316,7 +316,7 @@ interface FitPayClient {
     @PATCH("users/{userId}/devices/{deviceId}")
     Call<Device> updateDevice(@Path("userId") String userId,
                               @Path("deviceId") String deviceId,
-                              @Body Device deviceData);
+                              @Body JsonObject deviceData);
 
     /**
      * Delete a single device.
@@ -325,7 +325,7 @@ interface FitPayClient {
      * @param deviceId device id
      */
     @DELETE("users/{userId}/devices/{deviceId}")
-    Call<Object> deleteDevice(@Path("userId") String userId, @Path("deviceId") String deviceId);
+    Call<Void> deleteDevice(@Path("userId") String userId, @Path("deviceId") String deviceId);
 
 
     /**

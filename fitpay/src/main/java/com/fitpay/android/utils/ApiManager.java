@@ -375,7 +375,11 @@ public class ApiManager {
      * @param creditCardId credit card id
      * @param callback     result callback
      */
-    public void deleteCreditCard(String userId, String creditCardId, ApiCallback<Void> callback) {
+    public void deleteCreditCard(final String userId, final String creditCardId, final ApiCallback<Void> callback) {
+        if (isAuthorized(callback)) {
+            Call<Void> deleteCardCall = getClient().deleteCreditCard(userId, creditCardId);
+            deleteCardCall.enqueue(new CallbackWrapper<>(callback));
+        }
     }
 
 
@@ -389,7 +393,20 @@ public class ApiManager {
      * @param creditCardId credit card id
      * @param callback     result callback
      */
-    public void acceptTerm(String userId, String creditCardId, ApiCallback<CreditCard> callback) {
+    public void acceptTerms(final String userId, final String creditCardId, final ApiCallback<CreditCard> callback) {
+        if(isAuthorized(callback)){
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    Call<CreditCard> acceptTermsCall = getClient().acceptTerms(userId, creditCardId);
+                    acceptTermsCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -402,7 +419,20 @@ public class ApiManager {
      * @param creditCardId credit card id
      * @param callback     result callback
      */
-    public void declineTerms(String userId, String creditCardId, ApiCallback<CreditCard> callback) {
+    public void declineTerms(final String userId, final String creditCardId, final ApiCallback<CreditCard> callback) {
+        if(isAuthorized(callback)){
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    Call<CreditCard> declineTermsCall = getClient().declineTerms(userId, creditCardId);
+                    declineTermsCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -414,7 +444,11 @@ public class ApiManager {
      * @param creditCardId credit card id
      * @param callback     result callback
      */
-    public void makeDefault(String userId, String creditCardId, ApiCallback<Void> callback) {
+    public void makeDefault(final String userId, final String creditCardId, final ApiCallback<Void> callback) {
+        if(isAuthorized(callback)){
+            Call<Void> makeDefaultCall = getClient().makeDefault(userId, creditCardId);
+            makeDefaultCall.enqueue(new CallbackWrapper<>(callback));
+        }
     }
 
     /**
@@ -426,7 +460,20 @@ public class ApiManager {
      * @param reason       reason data:(causedBy, reason)
      * @param callback     result callback
      */
-    public void deactivate(String userId, String creditCardId, Reason reason, ApiCallback<CreditCard> callback) {
+    public void deactivate(final String userId, final String creditCardId, final Reason reason, final ApiCallback<CreditCard> callback) {
+        if(isAuthorized(callback)){
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    Call<CreditCard> deactivateCall = getClient().deactivate(userId, creditCardId, reason);
+                    deactivateCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -438,7 +485,20 @@ public class ApiManager {
      * @param reason       reason data:(causedBy, reason)
      * @param callback     result callback
      */
-    public void reactivate(String userId, String creditCardId, Reason reason, ApiCallback<CreditCard> callback) {
+    public void reactivate(final String userId, final String creditCardId, final Reason reason, final ApiCallback<CreditCard> callback) {
+        if(isAuthorized(callback)){
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    Call<CreditCard> reactivateCall = getClient().reactivate(userId, creditCardId, reason);
+                    reactivateCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -450,8 +510,12 @@ public class ApiManager {
      * @param verificationTypeId verification type id
      * @param callback           result callback
      */
-    public void selectVerificationType(String userId, String creditCardId, String verificationTypeId,
-                                       ApiCallback<VerificationMethod> callback) {
+    public void selectVerificationType(final String userId, final String creditCardId, final String verificationTypeId,
+                                       final ApiCallback<VerificationMethod> callback) {
+        if(isAuthorized(callback)){
+            Call<VerificationMethod> selectCall = getClient().selectVerificationType(userId, creditCardId, verificationTypeId);
+            selectCall.enqueue(new CallbackWrapper<>(callback));
+        }
     }
 
     /**
@@ -464,8 +528,12 @@ public class ApiManager {
      * @param verificationCode   verification code
      * @param callback           result callback
      */
-    public void verify(String userId, String creditCardId, String verificationTypeId, String verificationCode,
-                       ApiCallback<VerificationMethod> callback) {
+    public void verify(final String userId, final String creditCardId, final String verificationTypeId, final String verificationCode,
+                       final ApiCallback<VerificationMethod> callback) {
+        if(isAuthorized(callback)){
+            Call<VerificationMethod> verifyCall = getClient().verify(userId, creditCardId, verificationTypeId, verificationCode);
+            verifyCall.enqueue(new CallbackWrapper<>(callback));
+        }
     }
 
 
@@ -477,7 +545,20 @@ public class ApiManager {
      * @param offset   Start index position for list of entities returned
      * @param callback result callback
      */
-    public void getDevices(String userId, int limit, int offset, ApiCallback<ResultCollection<Device>> callback) {
+    public void getDevices(final String userId, final int limit, final int offset, final ApiCallback<ResultCollection<Device>> callback) {
+        if(isAuthorized(callback)){
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    Call<ResultCollection<Device>> getDevicesCall = getClient().getDevices(userId, limit, offset);
+                    getDevicesCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -489,7 +570,20 @@ public class ApiManager {
      *                 osName, licenseKey, bdAddress, secureElementId, pairingTs)
      * @param callback result callback
      */
-    public void createDevice(String userId, Device device, ApiCallback<Device> callback) {
+    public void createDevice(final String userId, final Device device, final ApiCallback<Device> callback) {
+        if(isAuthorized(callback)){
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    Call<Device> createDeviceCall = getClient().createDevice(userId, device);
+                    createDeviceCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -500,7 +594,20 @@ public class ApiManager {
      * @param deviceId device id
      * @param callback result callback
      */
-    public void getDevice(String userId, String deviceId, ApiCallback<Device> callback) {
+    public void getDevice(final String userId, final String deviceId, final ApiCallback<Device> callback) {
+        if(isAuthorized(callback)){
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    Call<Device> getDeviceCall = getClient().getDevice(userId, deviceId);
+                    getDeviceCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -511,7 +618,37 @@ public class ApiManager {
      * @param deviceData device data:(firmwareRevision, softwareRevision)
      * @param callback   result callback
      */
-    public void updateDevice(String userId, String deviceId, Device deviceData, ApiCallback<Device> callback) {
+    public void updateDevice(final String userId, final String deviceId, final Device deviceData, final ApiCallback<Device> callback) {
+        if (isAuthorized(callback)) {
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    JsonArray updateData = new JsonArray();
+
+                    Map<String, Object> userMap = new ModelAdapter.ObjectConverter().convertToSimpleMap(deviceData);
+                    for(Map.Entry<String, Object> entry : userMap.entrySet()) {
+                        JsonObject item = new JsonObject();
+                        item.addProperty("op", "replace");
+                        item.addProperty("path", entry.getKey());
+                        item.addProperty("value", String.valueOf(entry.getValue()));
+
+                        updateData.add(item);
+                    }
+
+                    String userString = updateData.toString();
+
+                    JsonObject jsonObject = new JsonObject();
+                    jsonObject.addProperty("encryptedData", StringUtils.getEncryptedString(KeysManager.KEY_API, userString));
+
+                    Call<Device> updateCreditCardCall = getClient().updateDevice(userId, deviceId, jsonObject);
+                    updateCreditCardCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -521,7 +658,20 @@ public class ApiManager {
      * @param deviceId device id
      * @param callback result callback
      */
-    public void deleteDevice(String userId, String deviceId, ApiCallback<Void> callback) {
+    public void deleteDevice(final String userId, final String deviceId, final ApiCallback<Void> callback) {
+        if(isAuthorized(callback)){
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    Call<Void> deleteDeviceCall = getClient().deleteDevice(userId, deviceId);
+                    deleteDeviceCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
 
@@ -536,8 +686,21 @@ public class ApiManager {
      *                     Query will return all subsequent commits which need to be applied.
      * @param callback     result callback
      */
-    public void getCommits(String userId, String deviceId, String commitsAfter, int limit, int offset,
-                           ApiCallback<ResultCollection<Commit>> callback) {
+    public void getCommits(final String userId, final String deviceId, final String commitsAfter, final int limit, final int offset,
+                           final ApiCallback<ResultCollection<Commit>> callback) {
+        if(isAuthorized(callback)){
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    Call<ResultCollection<Commit>> deleteDeviceCall = getClient().getCommits(userId, deviceId, commitsAfter, limit, offset);
+                    deleteDeviceCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**
@@ -595,34 +758,4 @@ public class ApiManager {
      */
     public void getAssets(String adapterData, String adapterId, String assetId, ApiCallback<Object> callback) {
     }
-
-
-    /**
-     * Creates a new encryption key pair
-     *
-     * @param clientPublicKey client public key
-     * @param callback        result callback
-     */
-    public void createEncryptionKey(ECCKeyPair clientPublicKey, ApiCallback<ECCKeyPair> callback) {
-    }
-
-
-    /**
-     * Retrieve and individual key pair.
-     *
-     * @param keyId    key id
-     * @param callback result callback
-     */
-    public void getEncryptionKey(String keyId, ApiCallback<ECCKeyPair> callback) {
-    }
-
-    /**
-     * Delete and individual key pair.
-     *
-     * @param keyId    key id
-     * @param callback result callback
-     */
-    public void deleteEncryptionKey(String keyId, ApiCallback<Void> callback) {
-    }
-
 }

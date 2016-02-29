@@ -2,6 +2,7 @@ package com.fitpay.android.utils;
 
 import android.text.TextUtils;
 
+import com.fitpay.android.api.models.Device;
 import com.fitpay.android.api.models.Links;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -52,6 +53,17 @@ final class ModelAdapter {
 
     }
 
+    public static final class DeviceSerializer implements JsonSerializer<Device> {
+        public JsonElement serialize(Device data, Type typeOfSrc, JsonSerializationContext context) {
+
+            final String encryptedString = StringUtils.getEncryptedString(KeysManager.KEY_API, new GsonBuilder().create().toJson(data));
+
+            JsonObject jo = new JsonObject();
+            jo.addProperty("encryptedData", encryptedString);
+            return jo;
+        }
+    }
+
     public static final class KeyPairSerializer implements JsonSerializer<ECCKeyPair> {
         public JsonElement serialize(ECCKeyPair data, Type typeOfSrc, JsonSerializationContext context) {
 
@@ -99,6 +111,9 @@ final class ModelAdapter {
                     }
                     iterateThroughMap(deepLevel, keyName, (LinkedTreeMap) entry.getValue(), resultMap);
                 } else {
+                    if(TextUtils.isEmpty(keyName)){
+                        keyName = "/";
+                    }
                     resultMap.put(keyName + entry.getKey(), entry.getValue());
                 }
             }
