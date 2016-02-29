@@ -723,6 +723,10 @@ public class ApiManager {
      * @param callback result callback
      */
     public void getTransactions(String userId, int limit, int offset, ApiCallback<ResultCollection<Transaction>> callback) {
+        if(isAuthorized(callback)){
+            Call<ResultCollection<Transaction>> getTransactionsCall = getClient().getTransactions(userId, limit, offset);
+            getTransactionsCall.enqueue(new CallbackWrapper<>(callback));
+        }
     }
 
     /**
@@ -733,6 +737,10 @@ public class ApiManager {
      * @param callback      result callback
      */
     public void getTransaction(String userId, String transactionId, ApiCallback<Transaction> callback) {
+        if(isAuthorized(callback)){
+            Call<Transaction> getTransactionCall = getClient().getTransaction(userId, transactionId);
+            getTransactionCall.enqueue(new CallbackWrapper<>(callback));
+        }
     }
 
 
@@ -745,6 +753,10 @@ public class ApiManager {
      * @param callback    result callback
      */
     public void confirmAPDUPackage(String packageId, ApduPackage apduPackage, ApiCallback<Void> callback) {
+        if(isAuthorized(callback)){ //TODO add 200,202 responses
+            Call<Void> confirmAPDUPackage = getClient().confirmAPDUPackage(packageId, apduPackage);
+            confirmAPDUPackage.enqueue(new CallbackWrapper<>(callback));
+        }
     }
 
 
