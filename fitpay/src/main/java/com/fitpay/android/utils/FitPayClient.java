@@ -387,7 +387,7 @@ interface FitPayClient {
      *                            executedDuration, apduResponses:(commandId, commandId, responseData))
      * */
     @POST("apduPackages/{packageId}/confirm")
-    Call<Object> confirmAPDUPackage(@Path("packageId") String packageId, @Body ApduPackage apduPackage);
+    Call<Void> confirmAPDUPackage(@Path("packageId") String packageId, @Body ApduPackage apduPackage);
 
 
     /**
