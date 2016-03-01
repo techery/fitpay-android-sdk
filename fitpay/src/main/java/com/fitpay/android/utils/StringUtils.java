@@ -46,8 +46,10 @@ final class StringUtils {
         JWEObject jweObject;
         try {
             jweObject = JWEObject.parse(encryptedString);
-            jweObject.decrypt(new AESDecrypter(KeysManager.getInstance().getSecretKey(type)));
-            return jweObject.getPayload().toString();
+            if(jweObject.getHeader().getKeyID().equals(KeysManager.getInstance().getKeyId(type))) {
+                jweObject.decrypt(new AESDecrypter(KeysManager.getInstance().getSecretKey(type)));
+                return jweObject.getPayload().toString();
+            }
         } catch (ParseException | JOSEException e) {
             Constants.printError(e.toString());
         }

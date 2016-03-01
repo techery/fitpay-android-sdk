@@ -694,8 +694,8 @@ public class ApiManager {
                 @Override
                 public void run() {
 
-                    Call<ResultCollection<Commit>> deleteDeviceCall = getClient().getCommits(userId, deviceId, commitsAfter, limit, offset);
-                    deleteDeviceCall.enqueue(new CallbackWrapper<>(callback));
+                    Call<ResultCollection<Commit>> getCommitsCall = getClient().getCommits(userId, deviceId, commitsAfter, limit, offset);
+                    getCommitsCall.enqueue(new CallbackWrapper<>(callback));
                 }
             };
 
@@ -711,7 +711,20 @@ public class ApiManager {
      * @param commitId commit id
      * @param callback result callback
      */
-    public void getCommit(String userId, String deviceId, String commitId, ApiCallback<Commit> callback) {
+    public void getCommit(final String userId, final String deviceId, final String commitId, final ApiCallback<Commit> callback) {
+        if(isAuthorized(callback)){
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+
+                    Call<Commit> getCommitCall = getClient().getCommit(userId, deviceId, commitId);
+                    getCommitCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
+        }
     }
 
     /**

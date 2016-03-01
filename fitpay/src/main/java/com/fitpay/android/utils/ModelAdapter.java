@@ -4,6 +4,7 @@ import android.text.TextUtils;
 
 import com.fitpay.android.api.models.Device;
 import com.fitpay.android.api.models.Links;
+import com.fitpay.android.api.models.Payload;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
@@ -51,6 +52,30 @@ final class ModelAdapter {
             return null;
         }
 
+    }
+
+    public static final class PayloadDeserializer implements JsonDeserializer<Payload> {
+        @Override
+        public Payload deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+
+            if (!json.isJsonObject() && !TextUtils.isEmpty(json.getAsString())) {
+
+                final String decryptedString = StringUtils.getDecryptedString(KeysManager.KEY_API, json.getAsString());
+
+                if (!TextUtils.isEmpty(decryptedString)) {
+
+                    Gson gson = new Gson();
+                    LinkedTreeMap objectAsMap = gson.fromJson(decryptedString, LinkedTreeMap.class);
+
+                    Payload payload = new Payload();
+                    payload.setInfo(objectAsMap);
+
+                    return payload;
+                }
+            }
+
+            return null;
+        }
     }
 
     public static final class DeviceSerializer implements JsonSerializer<Device> {
