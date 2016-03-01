@@ -35,7 +35,7 @@ public final class CreditCard extends BaseModel {
     private String targetDeviceType;
     private String externalTokenReference;
     private List<VerificationMethod> verificationMethods;
-    private List<DeviceRef> deviceRelationships;
+    private List<Device> deviceRelationships;
     @SerializedName("encryptedData")
     private CreditCardInfo creditCardInfo;
     private String termsAssetId;
@@ -107,7 +107,7 @@ public final class CreditCard extends BaseModel {
         return verificationMethods;
     }
 
-    public List<DeviceRef> getDeviceRelationships() {
+    public List<Device> getDeviceRelationships() {
         return deviceRelationships;
     }
 

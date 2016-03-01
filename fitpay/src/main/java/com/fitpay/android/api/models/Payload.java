@@ -1,24 +1,29 @@
 package com.fitpay.android.api.models;
 
-import java.util.Map;
+import com.fitpay.android.api.enums.CommitTypes;
 
 /**
  * Created by Vlad on 01.03.2016.
  */
-public class Payload {
+public final class Payload {
+    private CreditCard creditCard;
+    private ApduPackage apduPackage;
 
-    private Map<String, Object> info;
-
-    public void setInfo(Map<String, Object> info) {
-        this.info = info;
+    public Payload(CreditCard creditCard){
+        this.creditCard = creditCard;
     }
 
-    public Map<String, Object> getInfo() {
-        return info;
+    public Payload(ApduPackage apduPackage){
+        this.apduPackage = apduPackage;
     }
 
-    @Override
-    public String toString(){
-        return "Payload";
+    public Object getData(@CommitTypes.Type String type){
+        switch (type){
+            case CommitTypes.APDU_PACKAGE:
+                return apduPackage;
+
+            default:
+                return creditCard;
+        }
     }
 }

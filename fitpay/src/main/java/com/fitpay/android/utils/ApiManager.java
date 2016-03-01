@@ -3,7 +3,6 @@ package com.fitpay.android.utils;
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
-import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.Commit;

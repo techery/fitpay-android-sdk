@@ -3,7 +3,7 @@ package com.fitpay.android.api.models;
 
 import java.util.List;
 
-public class ApduPackage {
+public final class ApduPackage {
 
     private String packageId;
     private String state;

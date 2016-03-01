@@ -2,7 +2,7 @@ package com.fitpay.android.api.models;
 
 import java.util.List;
 
-public class CardMetaData {
+public final class CardMetaData {
 
     private String labelColor;
     private String issuerName;

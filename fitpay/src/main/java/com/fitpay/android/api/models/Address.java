@@ -1,6 +1,6 @@
 package com.fitpay.android.api.models;
 
-public class Address {
+public final class Address {
 
     /**
      * description : The billing address street name and number

@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  * Generated server links. HATEOS representation
  */
-public class Links {
+public final class Links {
     private Map<String, String> links;
 
     public Links(){

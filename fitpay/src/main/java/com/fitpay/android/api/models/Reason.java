@@ -1,7 +1,7 @@
 package com.fitpay.android.api.models;
 
 
-public class Reason {
+public final class Reason {
 
     /**
      * description : Identifies the party initiating the deactivation request

@@ -1,7 +1,8 @@
-package com.fitpay.android.api.callbacks;
+package com.fitpay.android.utils;
 
 import android.support.annotation.NonNull;
 
+import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 
 import java.io.IOException;
@@ -12,9 +13,9 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Created by Vlad on 22.02.2016.
+ * Wrapper around Retrofit callback
  */
-public class CallbackWrapper<T> implements Callback<T> {
+final class CallbackWrapper<T> implements Callback<T> {
 
     private ApiCallback<T> mCallback;
 

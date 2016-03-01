@@ -3,7 +3,7 @@ package com.fitpay.android.api.models;
 import com.fitpay.android.api.enums.CommitTypes;
 import com.google.gson.annotations.SerializedName;
 
-public class Commit extends BaseModel {
+public final class Commit extends BaseModel {
 
     private String commitId;
     @CommitTypes.Type
@@ -26,4 +26,7 @@ public class Commit extends BaseModel {
         return commitId;
     }
 
+    public Object getPayload(){
+        return payload.getData(commitType);
+    }
 }

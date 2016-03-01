@@ -2,6 +2,8 @@ package com.fitpay.android.utils;
 
 import android.text.TextUtils;
 
+import com.fitpay.android.api.models.ApduPackage;
+import com.fitpay.android.api.models.CreditCard;
 import com.fitpay.android.api.models.Device;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.Payload;
@@ -25,8 +27,6 @@ import java.util.Set;
 /**
  */
 final class ModelAdapter {
-
-    private static final String ENCRYPTED_DATA = "encryptedData";
 
     public static final class DataSerializer<T> implements JsonSerializer<T>, JsonDeserializer<T> {
         public JsonElement serialize(T data, Type typeOfSrc, JsonSerializationContext context) {
@@ -64,11 +64,16 @@ final class ModelAdapter {
 
                 if (!TextUtils.isEmpty(decryptedString)) {
 
+                    Payload payload = null;
                     Gson gson = new Gson();
-                    LinkedTreeMap objectAsMap = gson.fromJson(decryptedString, LinkedTreeMap.class);
 
-                    Payload payload = new Payload();
-                    payload.setInfo(objectAsMap);
+                    if(decryptedString.contains("cardType")){
+                        CreditCard creditCard = gson.fromJson(decryptedString, CreditCard.class);
+                        payload = new Payload(creditCard);
+                    } else {
+                        ApduPackage apduPackage = gson.fromJson(decryptedString, ApduPackage.class);
+                        payload = new Payload(apduPackage);
+                    }
 
                     return payload;
                 }

@@ -3,15 +3,17 @@ package com.fitpay.android.api.models;
 
 import android.support.annotation.NonNull;
 
+import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.utils.TimestampUtils;
 
 import java.util.List;
 
-public class Device extends BaseModel {
+public final class Device extends BaseModel {
 
     /**
      * description : The type of device (PHONE, TABLET, ACTIVITY_TRACKER, SMARTWATCH, PC, CARD_EMULATOR, CLOTHING, JEWELRY, OTHER
      */
+    @DeviceTypes.Type
     private String deviceType;
 
     private String deviceIdentifier;
@@ -92,6 +94,7 @@ public class Device extends BaseModel {
 
     private Device(){}
 
+    @DeviceTypes.Type
     public String getDeviceType() {
         return deviceType;
     }
@@ -169,7 +172,7 @@ public class Device extends BaseModel {
     }
 
     public static final class Builder{
-
+        @DeviceTypes.Type
         private String deviceType;
         private String manufacturerName;
         private String deviceName;
@@ -234,7 +237,7 @@ public class Device extends BaseModel {
          * @param deviceType The type of device (PHONE, TABLET, ACTIVITY_TRACKER, SMARTWATCH, PC, CARD_EMULATOR, CLOTHING, JEWELRY, OTHER
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
-        public Builder setDeviceType(String deviceType) {
+        public Builder setDeviceType(@DeviceTypes.Type String deviceType) {
             this.deviceType = deviceType;
             return this;
         }
