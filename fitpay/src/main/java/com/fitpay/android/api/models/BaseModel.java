@@ -19,4 +19,5 @@ public class BaseModel{
     public void setLinks(Links links) {
         this.links = links;
     }
+
 }

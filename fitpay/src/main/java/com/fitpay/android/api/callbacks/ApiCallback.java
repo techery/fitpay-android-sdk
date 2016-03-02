@@ -7,11 +7,11 @@ import com.fitpay.android.api.enums.ResultCode;
  *
  * @param <T> expected response type
  */
-public interface Callback<T> {
+public interface ApiCallback<T> {
     /**
      * Successful HTTP response.
      */
-    void onResponse(T result);
+    void onSuccess(T result);
 
     /**
      * Invoked when a network or unexpected exception occurred during the HTTP request.

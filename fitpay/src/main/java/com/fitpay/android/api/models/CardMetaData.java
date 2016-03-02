@@ -2,7 +2,7 @@ package com.fitpay.android.api.models;
 
 import java.util.List;
 
-public class CardMetaData {
+public final class CardMetaData {
 
     private String labelColor;
     private String issuerName;
@@ -16,6 +16,8 @@ public class CardMetaData {
     private List<ImageAssetReference> brandLogo;
     private List<ImageAssetReference> cardBackground;
     private List<ImageAssetReference> cardBackgroundCombined;
+
+    //TODO: check values
     private List<ImageAssetReference> icon;
     private List<ImageAssetReference> issuerLogo;
 

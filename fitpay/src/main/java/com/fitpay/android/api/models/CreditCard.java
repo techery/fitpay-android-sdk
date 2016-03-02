@@ -1,202 +1,126 @@
 package com.fitpay.android.api.models;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.StringDef;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Calendar;
+import java.util.IllegalFormatException;
 import java.util.List;
 
 public final class CreditCard extends BaseModel {
 
     public static final String INITIATOR_CARDHOLDER = "CARDHOLDER";
     public static final String INITIATOR_ISSUER = "ISSUER";
+
+    @StringDef({INITIATOR_CARDHOLDER, INITIATOR_ISSUER})
+    public @interface Initiator {
+    }
+
     private String creditCardId;
     private String userId;
     @SerializedName("default")
-    private boolean defaultX;
+    private Boolean defaultX;
     private String createdTs;
-    private long createdTsEpoch;
+    private Long createdTsEpoch;
     private String lastModifiedTs;
-    private long lastModifiedTsEpoch;
+    private Long lastModifiedTsEpoch;
     private String state;
-    private
     @Initiator
-    String causedBy;
+    private String causedBy;
     private String cardType;
-    private String termsAssetId;
-    private String name;
-    private String eligibilityExpiration;
-    private long eligibilityExpirationEpoch;
-    private List<AssetReference> termsAssetReferences;
-    private List<Device> deviceRelationships;
     private CardMetaData cardMetaData;
-    private List<VerificationMethod> verificationMethods;
+    private String targetDeviceId;
+    private String targetDeviceType;
     private String externalTokenReference;
-    /**
-     * description : JSON Web Encrypted compact serialization of the credit card's information from
-     *
-     * @see CreditCardInfo
-     */
-    private String encryptedData;
+    private List<VerificationMethod> verificationMethods;
+    private List<Device> deviceRelationships;
+    @SerializedName("encryptedData")
+    private CreditCardInfo creditCardInfo;
+    private String termsAssetId;
+    private String eligibilityExpiration;
+    private Long eligibilityExpirationEpoch;
+    private List<AssetReference> termsAssetReferences;
+
+    private CreditCard(){
+        creditCardInfo = new CreditCardInfo();
+    }
 
     public String getCreditCardId() {
         return creditCardId;
-    }
-
-    public void setCreditCardId(String creditCardId) {
-        this.creditCardId = creditCardId;
     }
 
     public String getUserId() {
         return userId;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public boolean isDefaultX() {
+    public boolean isDefault() {
         return defaultX;
-    }
-
-    public void setDefaultX(boolean defaultX) {
-        this.defaultX = defaultX;
     }
 
     public String getCreatedTs() {
         return createdTs;
     }
 
-    public void setCreatedTs(String createdTs) {
-        this.createdTs = createdTs;
-    }
-
     public long getCreatedTsEpoch() {
         return createdTsEpoch;
-    }
-
-    public void setCreatedTsEpoch(long createdTsEpoch) {
-        this.createdTsEpoch = createdTsEpoch;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    public String getCardType() {
-        return cardType;
-    }
-
-    public void setCardType(String cardType) {
-        this.cardType = cardType;
-    }
-
-    public String getTermsAssetId() {
-        return termsAssetId;
-    }
-
-    public void setTermsAssetId(String termsAssetId) {
-        this.termsAssetId = termsAssetId;
-    }
-
-    public String getEligibilityExpiration() {
-        return eligibilityExpiration;
-    }
-
-    public void setEligibilityExpiration(String eligibilityExpiration) {
-        this.eligibilityExpiration = eligibilityExpiration;
-    }
-
-    public long getEligibilityExpirationEpoch() {
-        return eligibilityExpirationEpoch;
-    }
-
-    public void setEligibilityExpirationEpoch(long eligibilityExpirationEpoch) {
-        this.eligibilityExpirationEpoch = eligibilityExpirationEpoch;
-    }
-
-    public CardMetaData getCardMetaData() {
-        return cardMetaData;
-    }
-
-    public void setCardMetaData(CardMetaData cardMetaData) {
-        this.cardMetaData = cardMetaData;
-    }
-
-    public List<VerificationMethod> getVerificationMethods() {
-        return verificationMethods;
-    }
-
-    public void setVerificationMethods(List<VerificationMethod> verificationMethods) {
-        this.verificationMethods = verificationMethods;
-    }
-
-    public List<AssetReference> getTermsAssetReferences() {
-        return termsAssetReferences;
-    }
-
-    public void setTermsAssetReferences(List<AssetReference> termsAssetReferences) {
-        this.termsAssetReferences = termsAssetReferences;
-    }
-
-    public List<Device> getDeviceRelationships() {
-        return deviceRelationships;
-    }
-
-    public void setDeviceRelationships(List<Device> deviceRelationships) {
-        this.deviceRelationships = deviceRelationships;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    @Initiator
-    public String getCausedBy() {
-        return causedBy;
-    }
-
-    public void setCausedBy(@Initiator String causedBy) {
-        this.causedBy = causedBy;
     }
 
     public String getLastModifiedTs() {
         return lastModifiedTs;
     }
 
-    public void setLastModifiedTs(String lastModifiedTs) {
-        this.lastModifiedTs = lastModifiedTs;
-    }
-
     public long getLastModifiedTsEpoch() {
         return lastModifiedTsEpoch;
     }
 
-    public void setLastModifiedTsEpoch(long lastModifiedTsEpoch) {
-        this.lastModifiedTsEpoch = lastModifiedTsEpoch;
+    public String getState() {
+        return state;
+    }
+
+    public String getCausedBy() {
+        return causedBy;
+    }
+
+    public String getCardType() {
+        return cardType;
+    }
+
+    public CardMetaData getCardMetaData() {
+        return cardMetaData;
+    }
+
+    public String getTargetDeviceId() {
+        return targetDeviceId;
+    }
+
+    public String getTargetDeviceType() {
+        return targetDeviceType;
     }
 
     public String getExternalTokenReference() {
         return externalTokenReference;
     }
 
-    public String getEncryptedData() {
-        return encryptedData;
+    public List<VerificationMethod> getVerificationMethods() {
+        return verificationMethods;
     }
 
-    @StringDef({INITIATOR_CARDHOLDER, INITIATOR_ISSUER})
-    public @interface Initiator {
+    public List<Device> getDeviceRelationships() {
+        return deviceRelationships;
+    }
+
+    public CreditCardInfo getCreditCardInfo() {
+        return creditCardInfo;
     }
 
     public static final class CreditCardInfo {
+
+        /**
+         * description : Card holder name
+         */
+        private String name;
 
         /**
          * description : The credit card cvv2 code
@@ -211,61 +135,130 @@ public final class CreditCard extends BaseModel {
         /**
          * description : The credit card expiration month
          */
-        private int expMonth;
+        private Integer expMonth;
 
         /**
          * description : The credit card expiration year
          */
-        private int expYear;
+        private Integer expYear;
 
+        /**
+         * description : Card holder address
+         */
         private Address address;
 
-        public CreditCardInfo() {
-        }
-
-        public String getPan() {
-            return pan;
-        }
-
-        public void setPan(String pan) {
-            this.pan = pan;
-        }
-
-        public int getExpMonth() {
-            return expMonth;
-        }
-
-        public void setExpMonth(int expMonth) {
-            this.expMonth = expMonth;
-        }
-
-        public int getExpYear() {
-            return expYear;
-        }
-
-        public void setExpYear(int expYear) {
-            this.expYear = expYear;
-        }
-
-        public String getCvv() {
-            return cvv;
-        }
-
-        public void setCvv(String cvv) {
-            this.cvv = cvv;
-        }
-
-        public Address getAddress() {
-            return address;
-        }
-
-        public void setAddress(Address address) {
-            this.address = address;
+        private CreditCardInfo() {
         }
 
         @Override
         public String toString(){
             return "CreditCardInfo";
+        }
+    }
+
+    public static final class Builder{
+
+        private String name;
+        private String cvv;
+        private String pan;
+        private Integer expMonth;
+        private Integer expYear;
+        private Address address;
+
+        /**
+         * Creates a Builder instance that can be used to build Gson with various configuration
+         * settings. Builder follows the builder pattern, and it is typically used by first
+         * invoking various configuration methods to set desired options, and finally calling
+         * {@link #create()}.
+         */
+        public Builder(){
+        }
+
+        /**
+         * Creates a {@link CreditCard} instance based on the current configuration. This method is free of
+         * side-effects to this {@code Builder} instance and hence can be called multiple times.
+         *
+         * @return an instance of {@link CreditCard} configured with the options currently set in this builder
+         */
+        public CreditCard create(){
+            CreditCard card = new CreditCard();
+            card.creditCardInfo.name = name;
+            card.creditCardInfo.cvv = cvv;
+            card.creditCardInfo.pan = pan;
+            card.creditCardInfo.expYear = expYear;
+            card.creditCardInfo.expMonth = expMonth;
+            card.creditCardInfo.address = address;
+            return card;
+        }
+
+        /**
+         * Set card holder name
+         * @param name card holder name
+         * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
+         */
+        public Builder setName(@NonNull String name){
+            this.name = name;
+            return this;
+        }
+
+        /**
+         * Set credit card cvv2 code
+         * @param cvv cards's cvv2 code. string with 3 digits only
+         * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
+         */
+        public Builder setCVV(@NonNull String cvv) {//throws IllegalFormatException{
+
+//            String pattern = "\\d{1,3}$";
+//            if(!cvv.matches(pattern)){
+//                throw new IllegalArgumentException("incorrect value");
+//            }
+
+            this.cvv = cvv;
+            return this;
+        }
+
+        /**
+         * Set credit card primary account number (PAN)
+         * @param pan cards's PAN. string with 16 digits only
+         * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
+         */
+        public Builder setPAN(@NonNull String pan) {//throws IllegalFormatException{
+
+//            String pattern = "\\d{1,16}$";
+//            if(!cvv.matches(pattern)){
+//                throw new IllegalArgumentException("incorrect value");
+//            }
+
+            this.pan = pan;
+            return this;
+        }
+
+        /**
+         * Set credit card expiration date
+         * @param expYear cards's expiration year
+         * @param expMonth cards's expiration month
+         * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
+         */
+        public Builder setExpDate(int expYear, int expMonth) throws IllegalFormatException{
+
+            Calendar calendar = Calendar.getInstance();
+            if(expYear < calendar.get(Calendar.YEAR) && expMonth < calendar.get(Calendar.MONTH) + 1){
+                throw new IllegalArgumentException("incorrect expiration date");
+            }
+
+            this.expYear = expYear;
+            this.expMonth = expMonth;
+            return this;
+        }
+
+        /**
+         * Set card holder address
+         * @param address card holder address
+         * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
+         */
+        public Builder setAddress(@NonNull Address address){
+            this.address = address;
+            return this;
         }
     }
 }

@@ -1,8 +1,7 @@
 package com.fitpay.android.api.models;
 
 
-public class VerificationMethod {
-
+public final class VerificationMethod {
 
     private String verificationId;
     private String state;

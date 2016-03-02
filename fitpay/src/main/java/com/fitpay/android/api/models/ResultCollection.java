@@ -3,7 +3,7 @@ package com.fitpay.android.api.models;
 
 import java.util.List;
 
-public class ResultCollection<T> extends BaseModel {
+public final class ResultCollection<T> extends BaseModel {
 
     private int limit;
     private int offset;
