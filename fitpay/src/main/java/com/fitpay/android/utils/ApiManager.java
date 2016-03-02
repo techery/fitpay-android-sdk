@@ -13,11 +13,11 @@ import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.User;
+import com.fitpay.android.api.models.LoginIdentity;
 import com.fitpay.android.api.models.VerificationMethod;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -71,20 +71,10 @@ public class ApiManager {
     /**
      * User Login
      *
-     * @param login    login
-     * @param password password
+     * @param identity data for login
      * @param callback result callback
      */
-    public void loginUser(String login, String password, final ApiCallback<Void> callback) {
-
-        String apiUrl = Constants.BASE_URL;
-        String data = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", login, password);
-
-        Map<String, String> loginMap = new HashMap<>();
-        loginMap.put("response_type", "token");
-        loginMap.put("client_id", "pagare");
-        loginMap.put("redirect_uri", apiUrl.substring(0, apiUrl.length() - 1));
-        loginMap.put("credentials", data);
+    public void loginUser(LoginIdentity identity, final ApiCallback<Void> callback) {
 
         CallbackWrapper<OAuthToken> getTokenCallback = new CallbackWrapper<>(new ApiCallback<OAuthToken>() {
             @Override
@@ -101,7 +91,7 @@ public class ApiManager {
             }
         });
 
-        Call<OAuthToken> getTokenCall = getClient().loginUser(loginMap);
+        Call<OAuthToken> getTokenCall = getClient().loginUser(identity.getData());
         getTokenCall.enqueue(getTokenCallback);
     }
 
