@@ -1,21 +1,31 @@
-package com.fitpay.android.rtm;
+package com.fitpay.android.utils;
 
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.rtm.enums.SyncErrorCode;
 import com.fitpay.android.rtm.models.WebViewSessionData;
+import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.Unit;
+import com.pusher.client.Pusher;
+import com.pusher.client.PusherOptions;
+import com.pusher.client.util.HttpAuthorizer;
 
 /**
  * Created by Vlad on 12.02.2016.
  */
 public final class RTMSession extends Unit {
 
-    private final String authUrl;
     private RTMListener mListener;
 
+    private Pusher mPusher;
+
     public RTMSession(@NonNull String authUrl) {
-        this.authUrl = authUrl;
+        HttpAuthorizer authorizer = new HttpAuthorizer(authUrl);
+        PusherOptions options = new PusherOptions().setAuthorizer(authorizer);
+        mPusher = new Pusher(Constants.PUSHER_KEY);
+        mPusher.connect();
+
+        KeysManager.getInstance().updateECCKey(KeysManager.KEY_RTM, null, null);
     }
 
     public void setRTMListener(RTMListener listener) {
