@@ -72,6 +72,10 @@ class ECCKeyPair {
         this.secretKey = secretKey;
     }
 
+    public void setServerPublicKey(String serverPublicKey){
+        this.serverPublicKey = serverPublicKey;
+    }
+
     @Override
     public String toString(){
         return "ECCKeyPair";
