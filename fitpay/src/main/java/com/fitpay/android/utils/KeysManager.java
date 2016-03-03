@@ -138,11 +138,17 @@ final class KeysManager {
         return mKeysMap.get(type);
     }
 
+    public ECCKeyPair createPairForType(@KeyType int type) throws Exception {
+        ECCKeyPair keyPair = createECCKeyPair();
+        mKeysMap.put(type, keyPair);
+        return keyPair;
+    }
+
     public void updateECCKey(final @KeyType int type, @NonNull final Runnable successRunnable, final ApiCallback callback) {
 
         try {
-            ECCKeyPair keyPair = createECCKeyPair();
-            mKeysMap.put(type, keyPair);
+
+            ECCKeyPair keyPair = createPairForType(type);
 
             ApiCallback<ECCKeyPair> apiCallback = new ApiCallback<ECCKeyPair>() {
                 @Override
@@ -150,7 +156,9 @@ final class KeysManager {
                     result.setPrivateKey(mKeysMap.get(type).getPrivateKey());
                     mKeysMap.put(type, result);
 
-                    successRunnable.run();
+                    if(successRunnable != null) {
+                        successRunnable.run();
+                    }
                 }
 
                 @Override

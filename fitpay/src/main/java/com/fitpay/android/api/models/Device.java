@@ -86,13 +86,16 @@ public final class Device extends BaseModel {
     /**
      * description : The ID of a secure element in a payment capable device
      */
-    private String secureElementId;
+    private SecureElement secureElement;
 
     private List<CreditCard> cardRelationships;
 
     private String hostDeviceId;
 
-    private Device(){}
+    private String externalReferenceId;
+
+    private Device(){
+    }
 
     @DeviceTypes.Type
     public String getDeviceType() {
@@ -160,7 +163,7 @@ public final class Device extends BaseModel {
     }
 
     public String getSecureElementId() {
-        return secureElementId;
+        return secureElement != null ? secureElement.secureElementId : null;
     }
 
     public List<CreditCard> getCardRelationships() {
@@ -169,6 +172,18 @@ public final class Device extends BaseModel {
 
     public String getHostDeviceId() {
         return hostDeviceId;
+    }
+
+    public String getExternalReferenceId() {
+        return externalReferenceId;
+    }
+
+    private static class SecureElement{
+        String secureElementId;
+
+        private SecureElement(String secureElementId){
+            this.secureElementId = secureElementId;
+        }
     }
 
     public static final class Builder{
@@ -217,7 +232,7 @@ public final class Device extends BaseModel {
             device.osName = osName;
             device.licenseKey = licenseKey;
             device.bdAddress = bdAddress;
-            device.secureElementId = secureElementId;
+            device.secureElement = new SecureElement(secureElementId);
             device.pairingTs = pairingTs;
             return device;
         }

@@ -10,6 +10,9 @@ import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.AESDecrypter;
 import com.nimbusds.jose.crypto.AESEncrypter;
 
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 
 /**
@@ -17,6 +20,12 @@ import java.text.ParseException;
  */
 final class StringUtils {
 
+    /**
+     * Get encrypted string
+     * @param type key type
+     * @param decryptedString decrypted string
+     * @return encrypted string
+     */
     public static String getEncryptedString(@KeysManager.KeyType int type, String decryptedString) {
 
         JWEAlgorithm alg = JWEAlgorithm.A256GCMKW;
@@ -41,12 +50,19 @@ final class StringUtils {
         return jweObject.serialize();
     }
 
+    /**
+     * Get decrypted string
+     * @param type key type
+     * @param encryptedString encrypted string
+     * @return decrypted string
+     */
     public static String getDecryptedString(@KeysManager.KeyType int type, String encryptedString) {
 
         JWEObject jweObject;
         try {
             jweObject = JWEObject.parse(encryptedString);
-            if(jweObject.getHeader().getKeyID().equals(KeysManager.getInstance().getKeyId(type))) {
+            JWEHeader jweHeader = jweObject.getHeader();
+            if(jweHeader.getKeyID() == null || jweHeader.getKeyID().equals(KeysManager.getInstance().getKeyId(type))) {
                 jweObject.decrypt(new AESDecrypter(KeysManager.getInstance().getSecretKey(type)));
                 return jweObject.getPayload().toString();
             }
@@ -55,5 +71,27 @@ final class StringUtils {
         }
 
         return null;
+    }
+
+    /**
+     * Convert String to SHA1
+     * @param inputString original string
+     * @return converted string
+     */
+    public static String toSHA1(String inputString){
+        StringBuilder sb = new StringBuilder();
+
+        try {
+            final MessageDigest digest = MessageDigest.getInstance("SHA-1");
+            byte[] result = digest.digest(inputString.getBytes("UTF-8"));
+            for (byte b : result) // This is your byte[] result..
+            {
+                sb.append(String.format("%02X", b));
+            }
+        } catch (Exception e) {
+            Constants.printError(e.toString());
+        }
+
+        return sb.toString().toLowerCase();
     }
 }
