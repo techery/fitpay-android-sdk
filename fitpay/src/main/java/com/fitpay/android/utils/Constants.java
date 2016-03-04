@@ -9,7 +9,7 @@ public final class Constants {
 
     public static final String FIT_PAY_ERROR_TAG = "FitPayError";
 
-    static final String BASE_URL = "https://demo.pagare.me/";
+    static final String BASE_URL = "https://gi-de.pagare.me/";
     static final String API_URL = BASE_URL + "api/";
     static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     static final String DATE_FORMAT_ISO8601 = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";

@@ -9,6 +9,10 @@ import com.nimbusds.jose.JWEObject;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.AESDecrypter;
 import com.nimbusds.jose.crypto.AESEncrypter;
+import com.nimbusds.jose.util.Base64URL;
+
+import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Base64Encoder;
 
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
@@ -93,5 +97,9 @@ final class StringUtils {
         }
 
         return sb.toString().toLowerCase();
+    }
+
+    public static String base64UrlEncode(String inputString){
+        return Base64URL.encode(inputString).toString();
     }
 }

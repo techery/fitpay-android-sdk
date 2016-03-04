@@ -4,9 +4,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.StringDef;
 import android.text.TextUtils;
 import android.util.Log;
+import android.webkit.WebView;
 
 import com.fitpay.android.api.models.Device;
-import com.fitpay.android.rtm.enums.SyncErrorCode;
+import com.fitpay.android.rtm.enums.ErrorCodes;
 import com.fitpay.android.rtm.models.WebViewSessionData;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -34,16 +35,28 @@ public final class RTMSession extends Unit {
     private static final String ENCRYPTED_DATA = "encryptedData";
 
     private static final String CLIENT_DEVICE_SYNC = "client-device-sync";
-    private static final String CLIENT_DEVICE_SYNC_ACK = "client-device-sync-ack";
     private static final String CLIENT_DEVICE_DATE_RETRIEVED = "client-device-sync-data-retrieved";
     private static final String CLIENT_DEVICE_SYNC_COMPLETE = "client-device-sync-complete";
     private static final String CLIENT_DEVICE_SYNC_FAILED = "client-device-sync-failed";
+
+    private static final String CLIENT_DEVICE_SYNC_ACK = "client-device-sync-ack";
+    private static final String CLIENT_DEVICE_RECONNECTED = "client-device-reconnected";
+
+
     private static final String CLIENT_DEVICE_KEY = "client-device-key";
     private static final String CLIENT_WV_KEY = "client-wv-key";
     private static final String CLIENT_DEVICE_KEY_REQUEST = "client-device-key-request";
     private static final String CLIENT_USER_DATA = "client-user-data";
     private static final String CLIENT_USER_DATA_ACK = "client-user-data-ack";
+    private static final String CLIENT_USER_DATA_REQUEST = "client-user-data-request";
     private static final String CLIENT_AUTO_LOGOUT = "client-auto-logout";
+
+//    private static final String CLIENT_DEVICE_PING = "client-device-ping";
+
+    private static final String CLIENT_GET_ESE_DATA ="client-get-ese-data";
+    private static final String CLIENT_ESE_DATA = "client-ese-data";
+    private static final String CLIENT_SPSD_DATA = "client-spsd-data";
+
 
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({
@@ -57,6 +70,7 @@ public final class RTMSession extends Unit {
             CLIENT_DEVICE_SYNC_ACK,
             CLIENT_WV_KEY,
             CLIENT_USER_DATA_ACK,
+//            CLIENT_DEVICE_PING,
             CLIENT_AUTO_LOGOUT
     })
     private @ interface ActionType{}
@@ -94,7 +108,7 @@ public final class RTMSession extends Unit {
         }
     }
 
-    public void connectDevice(Device device){
+    public void connectDevice(@NonNull Device device){
         String elementId = device.getSecureElementId();
 
         if(TextUtils.isEmpty(elementId)){
@@ -107,8 +121,6 @@ public final class RTMSession extends Unit {
         }
 
         final String channelName = String.format("presence-%s", StringUtils.toSHA1(elementId));
-
-        Log.i("PUSHER", channelName);
 
         mChannel = mPusher.subscribePresence(channelName, presenceChannelEventListener);
 
@@ -123,6 +135,21 @@ public final class RTMSession extends Unit {
         mChannel.bind(CLIENT_WV_KEY, presenceChannelEventListener);
         mChannel.bind(CLIENT_USER_DATA_ACK, presenceChannelEventListener);
         mChannel.bind(CLIENT_AUTO_LOGOUT, presenceChannelEventListener);
+//        mChannel.bind(CLIENT_DEVICE_PING, presenceChannelEventListener);
+    }
+
+    public void openWebView(@NonNull Device device, @NonNull WebView webView){
+        String deviceData = String.format("{\"deviceType\":%s, \"manufacturerName\":%s, \"deviceName\":%s, \"secureElement\": {\"secureElementId\":%s}}",
+                device.getDeviceType(),
+                device.getManufacturerName(),
+                device.getDeviceName(),
+                device.getSecureElementId());
+
+        String url = String.format("%s/login?deviceDat=%s",
+                Constants.BASE_URL,
+                StringUtils.base64UrlEncode(deviceData));
+
+        webView.loadUrl(url);
     }
 
     public void setRTMListener(RTMListener listener) {
@@ -153,9 +180,11 @@ public final class RTMSession extends Unit {
 
             //@ActionType String type = action;
             switch (action){
+//                case CLIENT_DEVICE_PING:
+//                    break;
                 case  CLIENT_DEVICE_SYNC:
-                    mChannel.trigger("client-device-sync-ack", "");
-                    mChannel.trigger("client-device-sync-complete", "");
+                    mChannel.trigger("client-device-sync-ack", "{}");
+                    mChannel.trigger("client-device-sync-complete", "{}");
                     break;
                 case CLIENT_DEVICE_DATE_RETRIEVED:
                     break;
@@ -170,15 +199,17 @@ public final class RTMSession extends Unit {
                             keyPair.setServerPublicKey(jsonObject.get(PUBLIC_KEY).getAsString());
                         }
                         if(jsonObject.has(REQUESTER)) {
-                            mChannel.trigger("client-device-key", "{\"publicKey\":" + KeysManager.getInstance().getKeyId(KeysManager.KEY_RTM) + ",\"requester\":" + jsonObject.get(REQUESTER).getAsString() + "}");
+                            mChannel.trigger("client-device-key", "{\"publicKey\":" + KeysManager.getInstance().getPairForType(KeysManager.KEY_RTM).getPublicKey() + ",\"requester\":" + jsonObject.get(REQUESTER).getAsString() + "}");
                         }
                     }
                     break;
                 case CLIENT_DEVICE_KEY_REQUEST:
+                    mChannel.trigger("client-wv-key-request", "{\"requester\":\"device\"}");
+
                     if(jsonObject != null && jsonObject.has(REQUESTER)) {
-                            mChannel.trigger("client-device-key", "{\"publicKey\":" + KeysManager.getInstance().getKeyId(KeysManager.KEY_RTM) + ",\"requester\":" + jsonObject.get(REQUESTER).getAsString() + "}");
+                            mChannel.trigger("client-device-key", "{\"publicKey\":" + KeysManager.getInstance().getPairForType(KeysManager.KEY_RTM).getPublicKey() + ",\"requester\":" + jsonObject.get(REQUESTER).getAsString() + "}");
                     }
-//                    mChannel.trigger("client-wv-key-request", "{\"requester\":\"device\"}");
+
 //                    mChannel.trigger("client-device-key", "{\"publicKey\":" + KeysManager.getInstance().getKeyId(KeysManager.KEY_RTM) + ",\"requester\":\"wv\"}");
                     break;
                 case CLIENT_USER_DATA:
@@ -187,6 +218,7 @@ public final class RTMSession extends Unit {
                         final String decryptedData = StringUtils.getDecryptedString(KeysManager.KEY_RTM, encryptedData);
                         JsonObject decJson = mParser.parse(decryptedData).getAsJsonObject();
                     }
+                    mChannel.trigger("client-user-data-ack", "{}");
                     break;
                 case CLIENT_DEVICE_SYNC_ACK:
                     break;
@@ -206,7 +238,6 @@ public final class RTMSession extends Unit {
         @Override
         public void onSubscriptionSucceeded(String s) {
             Log.i("PUSHER", s);
-            mChannel.trigger("client-wv-key-request", "{\"requester\":\"device\"}");
         }
 
         @Override
@@ -238,9 +269,9 @@ public final class RTMSession extends Unit {
          * @param url       Provides url object to be used in WebView, or null if error occurs
          * @param errorCode Provides error object, or null if no error occurs
          */
-        void onConnect(String url, @SyncErrorCode.Code int errorCode);
+        void onConnect(String url, int errorCode);
 
-        void onError(@SyncErrorCode.Code int errorCode);
+        void onError(int errorCode);
 
         void onUserLogin(WebViewSessionData sessionData);
 
