@@ -37,8 +37,8 @@ import retrofit2.Call;
  */
 final class KeysManager {
     static final int KEY_API = 0;
-    static final int KEY_RTM = KEY_API + 1;
-    static final int KEY_WEB = KEY_RTM + 1;
+    static final int KEY_WV = KEY_API + 1;
+    static final int KEY_FPCTRL = KEY_WV + 1;
 
     private static final String ALGORITHM = "ECDH";
     private static final String EC_CURVE = "secp256r1";
@@ -47,8 +47,8 @@ final class KeysManager {
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({
             KeysManager.KEY_API,
-            KeysManager.KEY_RTM,
-            KeysManager.KEY_WEB
+            KeysManager.KEY_WV,
+            KeysManager.KEY_FPCTRL
     })
     public @interface KeyType {
     }
@@ -139,9 +139,17 @@ final class KeysManager {
     }
 
     public ECCKeyPair createPairForType(@KeyType int type) throws Exception {
+        removePairForType(type);
+
         ECCKeyPair keyPair = createECCKeyPair();
         mKeysMap.put(type, keyPair);
         return keyPair;
+    }
+
+    public void removePairForType(@KeyType int type){
+        if(mKeysMap.containsKey(type)){
+            mKeysMap.remove(type);
+        }
     }
 
     public void updateECCKey(final @KeyType int type, @NonNull final Runnable successRunnable, final ApiCallback callback) {

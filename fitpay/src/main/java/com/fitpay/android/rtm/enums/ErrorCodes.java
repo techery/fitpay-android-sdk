@@ -5,7 +5,7 @@ import android.support.annotation.IntDef;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-public class ErrorCodes {
+public final class ErrorCodes {
 
     public static final int UDEC_UNKNOWN = 0;
     public static final int UDEC_USER_ID_DOESNT_MATCH = 1;
