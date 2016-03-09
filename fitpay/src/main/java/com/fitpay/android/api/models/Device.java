@@ -8,25 +8,9 @@ import com.fitpay.android.utils.TimestampUtils;
 
 import java.util.List;
 
-public final class Device extends BaseModel {
-
-    /**
-     * description : The type of device (PHONE, TABLET, ACTIVITY_TRACKER, SMARTWATCH, PC, CARD_EMULATOR, CLOTHING, JEWELRY, OTHER
-     */
-    @DeviceTypes.Type
-    private String deviceType;
+public final class Device extends PaymentDevice {
 
     private String deviceIdentifier;
-
-    /**
-     * description : The manufacturer name of the device.
-     */
-    private String manufacturerName;
-
-    /**
-     * description : The name of the device model.
-     */
-    private String deviceName;
 
     /**
      * description : The serial number for a particular instance of the device
@@ -83,32 +67,16 @@ public final class Device extends BaseModel {
      */
     private String pairingTs;
 
-    /**
-     * description : The ID of a secure element in a payment capable device
-     */
-    private String secureElementId;
 
     private List<CreditCard> cardRelationships;
 
     private String hostDeviceId;
 
-    private Device(){}
-
-    @DeviceTypes.Type
-    public String getDeviceType() {
-        return deviceType;
+    private Device(){
     }
 
     public String getDeviceIdentifier() {
         return deviceIdentifier;
-    }
-
-    public String getManufacturerName() {
-        return manufacturerName;
-    }
-
-    public String getDeviceName() {
-        return deviceName;
     }
 
     public String getSerialNumber() {
@@ -157,10 +125,6 @@ public final class Device extends BaseModel {
 
     public String getPairingTs() {
         return pairingTs;
-    }
-
-    public String getSecureElementId() {
-        return secureElementId;
     }
 
     public List<CreditCard> getCardRelationships() {
@@ -217,7 +181,7 @@ public final class Device extends BaseModel {
             device.osName = osName;
             device.licenseKey = licenseKey;
             device.bdAddress = bdAddress;
-            device.secureElementId = secureElementId;
+            device.secureElement = new SecureElement(secureElementId);
             device.pairingTs = pairingTs;
             return device;
         }

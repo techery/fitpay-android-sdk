@@ -7,7 +7,7 @@ import com.google.gson.annotations.SerializedName;
  */
 public class BaseModel{
     @SerializedName("_links")
-    private Links links;
+    private transient Links links;
 
     public BaseModel(){
     }

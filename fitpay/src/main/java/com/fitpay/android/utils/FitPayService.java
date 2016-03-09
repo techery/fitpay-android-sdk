@@ -44,7 +44,14 @@ final class FitPayService {
                 }
 
                 if (mAuthToken != null) {
-                    builder.header(HEADER_AUTHORIZATION, String.format("%s %s", AUTHORIZATION_BEARER, mAuthToken.getAccessToken()));
+
+                    final String value = new StringBuilder()
+                            .append(AUTHORIZATION_BEARER)
+                            .append(" ")
+                            .append(mAuthToken.getAccessToken())
+                            .toString();
+
+                    builder.header(HEADER_AUTHORIZATION, value);
                 }
 
                 return chain.proceed(builder.build());
