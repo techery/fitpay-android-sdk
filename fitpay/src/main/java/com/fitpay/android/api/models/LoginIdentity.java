@@ -61,7 +61,14 @@ public final class LoginIdentity {
                 throw new NullPointerException("RedirectUri can't be null");
             }
 
-            String data = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", username, password);
+            final String data = new StringBuilder()
+                    .append("{\"username\":\"")
+                    .append(username)
+                    .append("\",\"password\":\"")
+                    .append(password)
+                    .append("\"}")
+                    .toString();
+
             loginIdentity.data.put("credentials", data);
             loginIdentity.data.put("response_type", "token");
             loginIdentity.data.put("client_id", clientId);

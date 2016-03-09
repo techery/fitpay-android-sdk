@@ -48,7 +48,7 @@ final class StringUtils {
             JWEEncrypter encrypter = new AESEncrypter(KeysManager.getInstance().getSecretKey(type));
             jweObject.encrypt(encrypter);
         } catch (JOSEException e) {
-            Constants.printError(e.toString());
+            Constants.printError(e);
         }
 
         return jweObject.serialize();
@@ -71,7 +71,7 @@ final class StringUtils {
                 return jweObject.getPayload().toString();
             }
         } catch (ParseException | JOSEException e) {
-            Constants.printError(e.toString());
+            Constants.printError(e);
         }
 
         return null;
@@ -93,7 +93,7 @@ final class StringUtils {
                 sb.append(String.format("%02X", b));
             }
         } catch (Exception e) {
-            Constants.printError(e.toString());
+            Constants.printError(e);
         }
 
         return sb.toString().toLowerCase();

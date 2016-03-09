@@ -37,7 +37,7 @@ public class TimestampUtils {
         try {
             date = dateFormat.parse(time.replaceAll("Z$", "+0000"));
         } catch (ParseException e) {
-            Constants.printError(e.toString());
+            Constants.printError(e);
         }
         return date;
     }

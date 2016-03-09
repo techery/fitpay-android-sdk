@@ -17,7 +17,12 @@ public final class Constants {
 
     static final String PUSHER_KEY = "ef31c4c7ce55c574d8f9";
 
+    public static void printError(Throwable error) {
+        printError(error.toString());
+    }
+
     public static void printError(String error) {
         Log.e(Constants.FIT_PAY_ERROR_TAG, error);
     }
 }
+

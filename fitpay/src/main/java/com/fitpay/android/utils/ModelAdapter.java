@@ -137,7 +137,7 @@ final class ModelAdapter {
             for (Map.Entry<String, Object> entry : (Iterable<Map.Entry<String, Object>>) treeMap.entrySet()) {
                 if (entry.getValue() instanceof LinkedTreeMap) {
                     if(deepLevel++ > 0) {
-                        keyName = String.format("%s/%s/", keyName, entry.getKey());
+                        keyName = keyName + entry.getKey();
                     }
                     iterateThroughMap(deepLevel, keyName, (LinkedTreeMap) entry.getValue(), resultMap);
                 } else {
