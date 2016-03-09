@@ -4,22 +4,25 @@ import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.webkit.WebView;
 
-import com.fitpay.android.api.models.Device;
+import com.fitpay.android.api.models.PaymentDevice;
 import com.fitpay.android.rtm.callbacks.RTMListener;
 import com.fitpay.android.rtm.enums.ErrorCodes;
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.nimbusds.jose.JWEHeader;
+import com.nimbusds.jose.JWEObject;
 import com.pusher.client.Pusher;
 import com.pusher.client.PusherOptions;
 import com.pusher.client.channel.PresenceChannel;
 import com.pusher.client.channel.PresenceChannelEventListener;
 import com.pusher.client.channel.User;
 import com.pusher.client.connection.ConnectionEventListener;
-import com.pusher.client.connection.ConnectionState;
 import com.pusher.client.connection.ConnectionStateChange;
 import com.pusher.client.util.HttpAuthorizer;
 
-import java.util.Locale;
+import java.text.ParseException;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -29,6 +32,10 @@ public final class RTMSession extends Unit {
 
     private static final String WV = "wv";
     private static final String FPCTRL = "fpctrl";
+    private static final String DEVICE = "device";
+
+    private static final String DESTINATION = "destination";
+    private static final String SENDER = "sender";
 
     private static final String PUBLIC_KEY = "publicKey";
     private static final String REQUESTER = "requester";
@@ -100,7 +107,7 @@ public final class RTMSession extends Unit {
      *
      * @param device payment device
      */
-    public void connectDevice(@NonNull Device device) {
+    public void connectDevice(@NonNull PaymentDevice device) {
 
         disconnectDevice();
 
@@ -120,31 +127,29 @@ public final class RTMSession extends Unit {
      * Disconnect payment device
      */
     public void disconnectDevice() {
-        if (mChannel != null && mChannel.isSubscribed()) {
+        if (mChannel != null) {
             mPusher.unsubscribe(mChannel.getName());
             mChannel = null;
         }
     }
 
     /**
-     * Open FitPay site
+     * Open FitPay site and connect to device
      *
      * @param device  payment device
      * @param webView webView
      */
-    public void openWebView(@NonNull Device device, @NonNull WebView webView) {
+    public void openWebView(@NonNull PaymentDevice device, @NonNull WebView webView) {
 
         connectDevice(device);
 
-        String deviceData = String.format("{\"deviceType\":\"%s\", \"manufacturerName\":\"%s\", \"deviceName\":\"%s\", \"secureElement\": {\"secureElementId\":\"%s\"}}",
-                device.getDeviceType(),
-                device.getManufacturerName(),
-                device.getDeviceName(),
-                device.getSecureElementId());
+        String deviceJson = new Gson().toJson(device, PaymentDevice.class);
 
-        String url = String.format("%s/login?deviceDat=%s",
-                Constants.BASE_URL,
-                StringUtils.base64UrlEncode(deviceData));
+        String url = new StringBuilder()
+                .append(Constants.BASE_URL)
+                .append("/login?deviceData=")
+                .append(StringUtils.base64UrlEncode(deviceJson))
+                .toString();
 
         webView.loadUrl(url);
     }
@@ -153,25 +158,20 @@ public final class RTMSession extends Unit {
         mListener = listener;
     }
 
-    private String getChannelName(Device device){
-        String elementId = device.getSecureElementId();
-
-        if (TextUtils.isEmpty(elementId)) {
-            elementId = device.getExternalReferenceId();
-        }
-
-        if (TextUtils.isEmpty(elementId)) {
-            throw new NullPointerException("deviceID is empty");
-        }
-
-        return String.format("presence-%s", StringUtils.toSHA1(elementId));
+    private String getChannelName(PaymentDevice deviceInfo){
+        final String elementId = deviceInfo.getSecureElementId();
+        return "presence-" + StringUtils.toSHA1(elementId);
     }
 
     private @KeysManager.KeyType Integer getKeyTypeForUser(User user){
         JsonObject json = mParser.parse(user.getInfo()).getAsJsonObject();
         String userName = json.get("user").getAsString();
 
-        switch (userName){
+        return stringToKeyType(userName);
+    }
+
+    private @KeysManager.KeyType Integer stringToKeyType(String value){
+        switch (value){
             case WV:
                 return KeysManager.KEY_WV;
 
@@ -190,7 +190,7 @@ public final class RTMSession extends Unit {
             try {
                 KeysManager.getInstance().createPairForType(type);
             } catch (Exception e) {
-                Constants.printError(e.toString());
+                Constants.printError(e);
             }
         }
     }
@@ -222,21 +222,32 @@ public final class RTMSession extends Unit {
                 case CLIENT_DEVICE_KEY_REQUEST:
                     if (jsonObject != null && jsonObject.has(REQUESTER)) {
 
+                        boolean requesterCorrect = false;
+
                         String requester = jsonObject.get(REQUESTER).getAsString();
                         switch (requester){
-                            case "wv":
-                                mChannel.trigger(CLIENT_WV_KEY_REQUEST, "{\"requester\":\"device\"}");
+                            case WV:
+                                requesterCorrect = true;
+                                mChannel.trigger(CLIENT_WV_KEY_REQUEST, "{\"requester\":\"" + DEVICE + "\"}");
                                 break;
 
-                            case "fpctrl":
-                                mChannel.trigger(CLIENT_FPCTRL_KEY_REQUEST, "{\"requester\":\"device\"}");
+                            case FPCTRL:
+                                requesterCorrect = true;
+                                mChannel.trigger(CLIENT_FPCTRL_KEY_REQUEST, "{\"requester\":\"" + DEVICE + "\"}");
                                 break;
                         }
 
-                        final String str = String.format("{\"publicKey\":\"%s\",\"requester\":\"%s\"}",
-                                KeysManager.getInstance().getPairForType(KeysManager.KEY_WV).getPublicKey(),
-                                requester);
-                        mChannel.trigger(CLIENT_DEVICE_KEY, str);
+                        if(requesterCorrect) {
+                            final String str = new StringBuilder()
+                                    .append("{\"publicKey\":\"")
+                                    .append(KeysManager.getInstance().getPairForType(KeysManager.KEY_WV).getPublicKey())
+                                    .append("\",\"requester\":\"")
+                                    .append(requester)
+                                    .append("\"}")
+                                    .toString();
+
+                            mChannel.trigger(CLIENT_DEVICE_KEY, str);
+                        }
                     }
                     break;
 
@@ -269,16 +280,40 @@ public final class RTMSession extends Unit {
 
                     if (jsonObject != null && jsonObject.has(ENCRYPTED_DATA)) {
                         final String encryptedData = jsonObject.get(ENCRYPTED_DATA).getAsString();
-                        final String decryptedData = StringUtils.getDecryptedString(KeysManager.KEY_WV, encryptedData);
-                        JsonObject decJson = mParser.parse(decryptedData).getAsJsonObject();
 
-                        isSuccessful = true;
+                        try {
+                            JWEObject jweObject;
+                            jweObject = JWEObject.parse(encryptedData);
+                            JWEHeader jweHeader = jweObject.getHeader();
+                            Map<String, Object> params = jweHeader.getCustomParams();
+                            if(params.containsKey(DESTINATION)
+                                    && params.get(DESTINATION).equals(DEVICE)
+                                    && params.containsKey(SENDER)){
+
+                                @KeysManager.KeyType Integer keyType = stringToKeyType(params.get(SENDER).toString());
+
+                                if(keyType != null) {
+                                    final String decryptedData = StringUtils.getDecryptedString(keyType, encryptedData);
+                                    //TODO: do something with decrypted data
+                                    JsonObject decJson = mParser.parse(decryptedData).getAsJsonObject();
+                                    isSuccessful = true;
+                                }
+                            }
+
+                        } catch (ParseException e) {
+                            Constants.printError(e);
+                        }
                     }
 
                     if(isSuccessful) {
                         mChannel.trigger(CLIENT_USER_DATA_ACK, "{}");
                     } else {
-                        mChannel.trigger(CLIENT_USER_DATA_FAILED, String.format(Locale.getDefault(), "{\"error\":%d}", udCode));
+                        String error = new StringBuilder()
+                                .append("{\"error\":")
+                                .append(udCode)
+                                .append("}")
+                                .toString();
+                        mChannel.trigger(CLIENT_USER_DATA_FAILED, error);
                     }
                     break;
 
