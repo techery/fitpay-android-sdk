@@ -8,6 +8,8 @@ import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Map;
 
 public final class User extends BaseModel {
 
@@ -136,14 +138,17 @@ public final class User extends BaseModel {
         }
     }
 
-    public void getCards(@NonNull ApiCallback<ResultCollection<CreditCard>> callback){
+    public void getCards(int limit, int offset, @NonNull ApiCallback<ResultCollection<CreditCard>> callback){
         Type type = new TypeToken<ResultCollection<CreditCard>>(){}.getType();
-        makeGetCall(GET_CARDS, type, callback);
+        Map<String, Integer> queryMap = new HashMap<>();
+        queryMap.put("limit", limit);
+        queryMap.put("offset", offset);
+        makeGetCall(GET_CARDS, queryMap, type, callback);
     }
 
     public void getDevices(@NonNull ApiCallback<ResultCollection<Device>> callback){
         Type type = new TypeToken<ResultCollection<Device>>(){}.getType();
-        makeGetCall(GET_DEVICES, type, callback);
+        makeGetCall(GET_DEVICES, null, type, callback);
     }
 
     public void createCard(@NonNull CreditCard card, @NonNull ApiCallback<CreditCard> callback){

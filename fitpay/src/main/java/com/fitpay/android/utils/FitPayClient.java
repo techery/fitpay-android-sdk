@@ -28,6 +28,7 @@ import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
+import retrofit2.http.QueryMap;
 import retrofit2.http.Url;
 
 interface FitPayClient {
@@ -460,7 +461,7 @@ interface FitPayClient {
     Call<Object> removeWebhook(@Body String webhookURL);
 
     @GET
-    Call<JsonElement> get(@Url String url);
+    Call<JsonElement> get(@Url String url, @QueryMap Map<String, ? extends Object> queryMap);
 
     @POST
     Call<JsonElement> post(@Url String url, @Body Object data);

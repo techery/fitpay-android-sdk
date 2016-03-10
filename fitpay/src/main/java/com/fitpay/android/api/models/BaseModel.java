@@ -9,6 +9,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 import java.lang.reflect.Type;
+import java.util.Map;
 
 /**
  * Created by Vlad on 18.02.2016.
@@ -21,11 +22,11 @@ public class BaseModel{
     public BaseModel(){
     }
 
-    protected <T extends BaseModel> void makeGetCall(String key, Type type, ApiCallback<T> callback){
+    protected <T extends BaseModel> void makeGetCall(String key, Map<String, ? extends Object> queryMap, Type type, ApiCallback<T> callback){
 
         String url = links.getLink(key);
         if(!TextUtils.isEmpty(url)){
-            ApiManager.getInstance().get(url, type, callback);
+            ApiManager.getInstance().get(url, queryMap, type, callback);
         } else {
             callback.onFailure(ResultCode.NOT_FOUND, "API endpoint is not available.");
         }
