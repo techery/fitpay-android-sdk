@@ -362,11 +362,13 @@ interface FitPayClient {
      * Get all transactions.
      *
      * @param userId user id
+     * @param creditCardId credit card id
      * @param limit Max number of transactions per page, default: 10
      * @param offset Start index position for list of entities returned
      * */
-    @GET("users/{userId}/transactions")
+    @GET("users/{userId}/creditCards/{creditCardId}/transactions")
     Call<ResultCollection<Transaction>> getTransactions(@Path("userId") String userId,
+                                                        @Path("creditCardId") String creditCardId,
                                                         @Query("limit") int limit,
                                                         @Query("offset") int offset);
 
@@ -374,10 +376,13 @@ interface FitPayClient {
      * Get a single transaction.
      *
      * @param userId user id
+     * @param creditCardId credit card id
      * @param transactionId transaction id
      * */
-    @GET("users/{userId}/transactions/{transactionId}")
-    Call<Transaction> getTransaction(@Path("userId") String userId, @Path("transactionId") String transactionId);
+    @GET("users/{userId}/creditCards/{creditCardId}/transactions/{transactionId}")
+    Call<Transaction> getTransaction(@Path("userId") String userId,
+                                     @Path("creditCardId") String creditCardId,
+                                     @Path("transactionId") String transactionId);
 
 
     /**

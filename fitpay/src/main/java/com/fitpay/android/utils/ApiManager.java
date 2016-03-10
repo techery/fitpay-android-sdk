@@ -720,13 +720,14 @@ public class ApiManager {
      * Get all transactions.
      *
      * @param userId   user id
+     * @param creditCardId credit card id
      * @param limit    Max number of transactions per page, default: 10
      * @param offset   Start index position for list of entities returned
      * @param callback result callback
      */
-    public void getTransactions(String userId, int limit, int offset, ApiCallback<ResultCollection<Transaction>> callback) {
+    public void getTransactions(String userId, String creditCardId, int limit, int offset, ApiCallback<ResultCollection<Transaction>> callback) {
         if(isAuthorized(callback)){
-            Call<ResultCollection<Transaction>> getTransactionsCall = getClient().getTransactions(userId, limit, offset);
+            Call<ResultCollection<Transaction>> getTransactionsCall = getClient().getTransactions(userId, creditCardId, limit, offset);
             getTransactionsCall.enqueue(new CallbackWrapper<>(callback));
         }
     }
@@ -735,12 +736,13 @@ public class ApiManager {
      * Get a single transaction.
      *
      * @param userId        user id
+     * @param creditCardId credit card id
      * @param transactionId transaction id
      * @param callback      result callback
      */
-    public void getTransaction(String userId, String transactionId, ApiCallback<Transaction> callback) {
+    public void getTransaction(String userId, String creditCardId, String transactionId, ApiCallback<Transaction> callback) {
         if(isAuthorized(callback)){
-            Call<Transaction> getTransactionCall = getClient().getTransaction(userId, transactionId);
+            Call<Transaction> getTransactionCall = getClient().getTransaction(userId, creditCardId, transactionId);
             getTransactionCall.enqueue(new CallbackWrapper<>(callback));
         }
     }
