@@ -778,7 +778,7 @@ public class ApiManager {
     public void getAssets(String adapterData, String adapterId, String assetId, ApiCallback<Object> callback) {
     }
 
-    public <T extends BaseModel> void get(String url, Map<String, ? extends Object> queryMap, final Type type, final ApiCallback<T> callback) {
+    public <T extends BaseModel> void get(String url, Map<String, Object> queryMap, final Type type, final ApiCallback<T> callback) {
         Call<JsonElement> getDataCall = getClient().get(url, queryMap);
         getDataCall.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
             @Override

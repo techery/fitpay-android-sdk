@@ -461,7 +461,7 @@ interface FitPayClient {
     Call<Object> removeWebhook(@Body String webhookURL);
 
     @GET
-    Call<JsonElement> get(@Url String url, @QueryMap Map<String, ? extends Object> queryMap);
+    Call<JsonElement> get(@Url String url, @QueryMap Map<String, Object> queryMap);
 
     @POST
     Call<JsonElement> post(@Url String url, @Body Object data);

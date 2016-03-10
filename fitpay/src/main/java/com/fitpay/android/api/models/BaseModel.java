@@ -22,7 +22,7 @@ public class BaseModel{
     public BaseModel(){
     }
 
-    protected <T extends BaseModel> void makeGetCall(String key, Map<String, ? extends Object> queryMap, Type type, ApiCallback<T> callback){
+    protected <T extends BaseModel> void makeGetCall(String key, Map<String, Object> queryMap, Type type, ApiCallback<T> callback){
 
         String url = links.getLink(key);
         if(!TextUtils.isEmpty(url)){

@@ -139,16 +139,21 @@ public final class User extends BaseModel {
     }
 
     public void getCards(int limit, int offset, @NonNull ApiCallback<ResultCollection<CreditCard>> callback){
-        Type type = new TypeToken<ResultCollection<CreditCard>>(){}.getType();
-        Map<String, Integer> queryMap = new HashMap<>();
+        Map<String, Object> queryMap = new HashMap<>();
         queryMap.put("limit", limit);
         queryMap.put("offset", offset);
+
+        Type type = new TypeToken<ResultCollection<CreditCard>>(){}.getType();
         makeGetCall(GET_CARDS, queryMap, type, callback);
     }
 
-    public void getDevices(@NonNull ApiCallback<ResultCollection<Device>> callback){
+    public void getDevices(int limit, int offset, @NonNull ApiCallback<ResultCollection<Device>> callback){
+        Map<String, Object> queryMap = new HashMap<>();
+        queryMap.put("limit", limit);
+        queryMap.put("offset", offset);
+
         Type type = new TypeToken<ResultCollection<Device>>(){}.getType();
-        makeGetCall(GET_DEVICES, null, type, callback);
+        makeGetCall(GET_DEVICES, queryMap, type, callback);
     }
 
     public void createCard(@NonNull CreditCard card, @NonNull ApiCallback<CreditCard> callback){
