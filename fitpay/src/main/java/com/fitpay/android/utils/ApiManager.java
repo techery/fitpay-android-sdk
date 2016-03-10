@@ -5,19 +5,22 @@ import android.support.annotation.NonNull;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.ApduPackage;
+import com.fitpay.android.api.models.BaseModel;
 import com.fitpay.android.api.models.Commit;
 import com.fitpay.android.api.models.CreditCard;
 import com.fitpay.android.api.models.Device;
+import com.fitpay.android.api.models.LoginIdentity;
 import com.fitpay.android.api.models.Reason;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.User;
-import com.fitpay.android.api.models.LoginIdentity;
 import com.fitpay.android.api.models.VerificationMethod;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -773,5 +776,37 @@ public class ApiManager {
      * @param callback    result callback
      */
     public void getAssets(String adapterData, String adapterId, String assetId, ApiCallback<Object> callback) {
+    }
+
+    public <T extends BaseModel> void get(String url, final Type type, final ApiCallback<T> callback) {
+        Call<JsonElement> getDataCall = getClient().get(url);
+        getDataCall.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
+            @Override
+            public void onSuccess(JsonElement result) {
+                T response = Constants.getGson().fromJson(result, type);
+                callback.onSuccess(response);
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                callback.onFailure(errorCode, errorMessage);
+            }
+        }));
+    }
+
+    public <T extends BaseModel, U extends BaseModel> void post(String url, U data, final Type type, final ApiCallback<T> callback) {
+        Call<JsonElement> postDataCall = getClient().post(url, data);
+        postDataCall.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
+            @Override
+            public void onSuccess(JsonElement result) {
+                T response = Constants.getGson().fromJson(result, type);
+                callback.onSuccess(response);
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                callback.onFailure(errorCode, errorMessage);
+            }
+        }));
     }
 }

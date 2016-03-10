@@ -2,10 +2,17 @@ package com.fitpay.android.api.models;
 
 import android.support.annotation.NonNull;
 
+import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.utils.TimestampUtils;
 import com.google.gson.annotations.SerializedName;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
 
 public final class User extends BaseModel {
+
+    private static final String GET_DEVICES = "devices";
+    private static final String GET_CARDS = "creditCards";
 
     private String id;
 
@@ -127,6 +134,26 @@ public final class User extends BaseModel {
         public String toString() {
             return "UserInfo";
         }
+    }
+
+    public void getCards(@NonNull ApiCallback<ResultCollection<CreditCard>> callback){
+        Type type = new TypeToken<ResultCollection<CreditCard>>(){}.getType();
+        makeGetCall(GET_CARDS, type, callback);
+    }
+
+    public void getDevices(@NonNull ApiCallback<ResultCollection<Device>> callback){
+        Type type = new TypeToken<ResultCollection<Device>>(){}.getType();
+        makeGetCall(GET_DEVICES, type, callback);
+    }
+
+    public void createCard(@NonNull CreditCard card, @NonNull ApiCallback<CreditCard> callback){
+        Type type = new TypeToken<CreditCard>(){}.getType();
+        makePostCall(GET_CARDS, card, type, callback);
+    }
+
+    public void createDevice(@NonNull Device device, @NonNull ApiCallback<Device> callback){
+        Type type = new TypeToken<CreditCard>(){}.getType();
+        makePostCall(GET_CARDS, device, type, callback);
     }
 
     public static final class Builder{

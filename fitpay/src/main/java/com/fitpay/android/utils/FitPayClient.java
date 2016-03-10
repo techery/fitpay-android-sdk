@@ -11,6 +11,7 @@ import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.User;
 import com.fitpay.android.api.models.VerificationMethod;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.util.Map;
@@ -18,7 +19,6 @@ import java.util.Map;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
-import retrofit2.http.Field;
 import retrofit2.http.FieldMap;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
@@ -28,6 +28,7 @@ import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
+import retrofit2.http.Url;
 
 interface FitPayClient {
 
@@ -458,4 +459,9 @@ interface FitPayClient {
     @DELETE("config/webhook")
     Call<Object> removeWebhook(@Body String webhookURL);
 
+    @GET
+    Call<JsonElement> get(@Url String url);
+
+    @POST
+    Call<JsonElement> post(@Url String url, @Body Object data);
 }

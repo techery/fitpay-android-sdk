@@ -65,19 +65,9 @@ final class FitPayService {
         clientBuilder.addInterceptor(interceptor);
         clientBuilder.addInterceptor(logging);
 
-        Gson gson = new GsonBuilder()
-                .setDateFormat(Constants.DATE_FORMAT)
-                .registerTypeAdapter(ECCKeyPair.class, new ModelAdapter.KeyPairSerializer())
-                .registerTypeAdapter(Links.class, new ModelAdapter.LinksDeserializer())
-//                .registerTypeAdapter(Device.class, new ModelAdapter.DeviceSerializer())
-                .registerTypeAdapter(User.UserInfo.class, new ModelAdapter.DataSerializer<>())
-                .registerTypeAdapter(CreditCard.CreditCardInfo.class, new ModelAdapter.DataSerializer<>())
-                .registerTypeAdapter(Payload.class, new ModelAdapter.PayloadDeserializer())
-                .create();
-
         mAPIClient = new Retrofit.Builder()
                 .baseUrl(Constants.API_URL)
-                .addConverterFactory(GsonConverterFactory.create(gson))
+                .addConverterFactory(GsonConverterFactory.create(Constants.getGson()))
                 .client(clientBuilder.build())
                 .build()
                 .create(FitPayClient.class);

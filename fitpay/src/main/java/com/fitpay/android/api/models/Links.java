@@ -14,10 +14,6 @@ public final class Links {
         links = new HashMap<>();
     }
 
-    public Set<String> getLinks() {
-        return links.keySet();
-    }
-
     public void setLink(String key, String value){
         links.put(key, value);
     }
