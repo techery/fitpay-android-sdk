@@ -1,7 +1,8 @@
 package com.fitpay.android.api.models;
 
 import android.support.annotation.NonNull;
-import android.text.TextUtils;
+
+import com.fitpay.android.utils.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,19 +46,19 @@ public final class LoginIdentity {
         public LoginIdentity create() throws IllegalArgumentException{
             LoginIdentity loginIdentity = new LoginIdentity();
 
-            if(TextUtils.isEmpty(username)){
+            if(StringUtils.isEmpty(username)){
                 throw new NullPointerException("Username can't be null");
             }
 
-            if(TextUtils.isEmpty(password)){
+            if(StringUtils.isEmpty(password)){
                 throw new NullPointerException("Password can't be null");
             }
 
-            if(TextUtils.isEmpty(clientId)){
+            if(StringUtils.isEmpty(clientId)){
                 throw new NullPointerException("ClientId can't be null");
             }
 
-            if(TextUtils.isEmpty(redirectUri)){
+            if(StringUtils.isEmpty(redirectUri)){
                 throw new NullPointerException("RedirectUri can't be null");
             }
 

@@ -1,6 +1,5 @@
 package com.fitpay.android.utils;
 
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.gson.annotations.SerializedName;
@@ -36,7 +35,7 @@ final class OAuthToken {
     }
 
     public String getUserId() {
-        if (TextUtils.isEmpty(userId) && !TextUtils.isEmpty(accessToken)) {
+        if (StringUtils.isEmpty(userId) && !StringUtils.isEmpty(accessToken)) {
             JWT jwt = null;
             try {
                 jwt = JWTParser.parse(accessToken);
