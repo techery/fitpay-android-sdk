@@ -3,8 +3,7 @@ package com.fitpay.android.api.models.user;
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
-import com.fitpay.android.api.models.BaseModel;
-import com.fitpay.android.api.models.CreditCard;
+import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.Device;
 import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.utils.TimestampUtils;
@@ -18,6 +17,7 @@ public final class User extends UserModel {
 
     private static final String GET_DEVICES = "devices";
     private static final String GET_CARDS = "creditCards";
+
 
     /**
      * Delete user from your organization.

@@ -36,21 +36,21 @@ public class BaseModel{
         return url;
     }
 
-    protected <T extends BaseModel> void makeGetCall(String key, Map<String, Object> queryMap, Type type, ApiCallback<T> callback){
+    protected <T> void makeGetCall(String key, Map<String, Object> queryMap, Type type, ApiCallback<T> callback){
         String url = getLink(key, callback);
         if(url != null){
             ApiManager.getInstance().get(url, queryMap, type, callback);
         }
     }
 
-    protected <T extends BaseModel, U extends BaseModel> void makePostCall(String key, U data, Type type, ApiCallback<T> callback){
+    protected <T, U> void makePostCall(String key, U data, Type type, ApiCallback<T> callback){
         String url = getLink(key, callback);
         if(url != null){
             ApiManager.getInstance().post(url, data, type, callback);
         }
     }
 
-    protected<T extends BaseModel, U extends BaseModel> void makePatchCall(U data, boolean encrypt, Type type, ApiCallback<T> callback) {
+    protected<T, U> void makePatchCall(U data, boolean encrypt, Type type, ApiCallback<T> callback) {
         String url = getLink(SELF, callback);
         if (url != null) {
             ApiManager.getInstance().patch(url, data, encrypt, type, callback);

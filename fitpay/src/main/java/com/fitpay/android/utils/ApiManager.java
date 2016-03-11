@@ -7,7 +7,7 @@ import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.BaseModel;
 import com.fitpay.android.api.models.Commit;
-import com.fitpay.android.api.models.CreditCard;
+import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.Device;
 import com.fitpay.android.api.models.LoginIdentity;
 import com.fitpay.android.api.models.Reason;
@@ -190,67 +190,6 @@ public class ApiManager {
     }
 
     /**
-     * Update the details of an existing credit card.
-     *
-     * @param userId       user id
-     * @param creditCardId credit card id
-     * @param creditCard   credit card data to update:(name (Card holder name), address/street1, address/street2,
-     *                     address/city, address/state, address/postalCode, address/countryCode)
-     * @param callback     result callback
-     */
-    public void updateCreditCard(final String userId, final String creditCardId, final CreditCard creditCard, final ApiCallback<CreditCard> callback) {
-        if (isAuthorized(callback)) {
-
-            Runnable onSuccess = new Runnable() {
-                @Override
-                public void run() {
-
-                    JsonArray updateData = new JsonArray();
-
-                    Map<String, Object> userMap = new ObjectConverter().convertToSimpleMap(creditCard);
-                    for(Map.Entry<String, Object> entry : userMap.entrySet()) {
-                        JsonObject item = new JsonObject();
-                        item.addProperty("op", "replace");
-                        item.addProperty("path", entry.getKey());
-                        item.addProperty("value", String.valueOf(entry.getValue()));
-
-                        updateData.add(item);
-                    }
-
-                    String userString = updateData.toString();
-
-                    JsonObject jsonObject = new JsonObject();
-                    jsonObject.addProperty("encryptedData", StringUtils.getEncryptedString(KeysManager.KEY_API, userString));
-
-                    Call<CreditCard> updateCreditCardCall = getClient().updateCreditCard(userId, creditCardId, jsonObject);
-                    updateCreditCardCall.enqueue(new CallbackWrapper<>(callback));
-                }
-            };
-
-            checkKeyAndMakeCall(onSuccess, callback);
-        }
-    }
-
-    /**
-     * Delete a single credit card from a user's profile.
-     * If you delete a card that is currently the default source,
-     * then the most recently added source will become the new default.
-     * If you delete a card that is the last remaining source on the customer
-     * then the default_source attribute will become null.
-     *
-     * @param userId       user id
-     * @param creditCardId credit card id
-     * @param callback     result callback
-     */
-    public void deleteCreditCard(final String userId, final String creditCardId, final ApiCallback<Void> callback) {
-        if (isAuthorized(callback)) {
-            Call<Void> deleteCardCall = getClient().deleteCreditCard(userId, creditCardId);
-            deleteCardCall.enqueue(new CallbackWrapper<>(callback));
-        }
-    }
-
-
-    /**
      * Indicate a user has accepted the terms and conditions presented
      * when the credit card was first added to the user's profile.
      * This link will only be available when the credit card is awaiting the user
@@ -295,72 +234,6 @@ public class ApiManager {
 
                     Call<CreditCard> declineTermsCall = getClient().declineTerms(userId, creditCardId);
                     declineTermsCall.enqueue(new CallbackWrapper<>(callback));
-                }
-            };
-
-            checkKeyAndMakeCall(onSuccess, callback);
-        }
-    }
-
-    /**
-     * Mark the credit card as the default payment instrument.
-     * If another card is currently marked as the default,
-     * the default will automatically transition to the indicated credit card.
-     *
-     * @param userId       user id
-     * @param creditCardId credit card id
-     * @param callback     result callback
-     */
-    public void makeDefault(final String userId, final String creditCardId, final ApiCallback<Void> callback) {
-        if(isAuthorized(callback)){
-            Call<Void> makeDefaultCall = getClient().makeDefault(userId, creditCardId);
-            makeDefaultCall.enqueue(new CallbackWrapper<>(callback));
-        }
-    }
-
-    /**
-     * Transition the credit card into a deactivated state so that it may not be utilized for payment.
-     * This link will only be available for qualified credit cards that are currently in an active state.
-     *
-     * @param userId       user id
-     * @param creditCardId credit card id
-     * @param reason       reason data:(causedBy, reason)
-     * @param callback     result callback
-     */
-    public void deactivate(final String userId, final String creditCardId, final Reason reason, final ApiCallback<CreditCard> callback) {
-        if(isAuthorized(callback)){
-
-            Runnable onSuccess = new Runnable() {
-                @Override
-                public void run() {
-
-                    Call<CreditCard> deactivateCall = getClient().deactivate(userId, creditCardId, reason);
-                    deactivateCall.enqueue(new CallbackWrapper<>(callback));
-                }
-            };
-
-            checkKeyAndMakeCall(onSuccess, callback);
-        }
-    }
-
-    /**
-     * Transition the credit card into an active state where it can be utilized for payment.
-     * This link will only be available for qualified credit cards that are currently in a deactivated state.
-     *
-     * @param userId       user id
-     * @param creditCardId credit card id
-     * @param reason       reason data:(causedBy, reason)
-     * @param callback     result callback
-     */
-    public void reactivate(final String userId, final String creditCardId, final Reason reason, final ApiCallback<CreditCard> callback) {
-        if(isAuthorized(callback)){
-
-            Runnable onSuccess = new Runnable() {
-                @Override
-                public void run() {
-
-                    Call<CreditCard> reactivateCall = getClient().reactivate(userId, creditCardId, reason);
-                    reactivateCall.enqueue(new CallbackWrapper<>(callback));
                 }
             };
 
@@ -545,22 +418,6 @@ public class ApiManager {
     }
 
     /**
-     * Get all transactions.
-     *
-     * @param userId   user id
-     * @param creditCardId credit card id
-     * @param limit    Max number of transactions per page, default: 10
-     * @param offset   Start index position for list of entities returned
-     * @param callback result callback
-     */
-    public void getTransactions(String userId, String creditCardId, int limit, int offset, ApiCallback<ResultCollection<Transaction>> callback) {
-        if(isAuthorized(callback)){
-            Call<ResultCollection<Transaction>> getTransactionsCall = getClient().getTransactions(userId, creditCardId, limit, offset);
-            getTransactionsCall.enqueue(new CallbackWrapper<>(callback));
-        }
-    }
-
-    /**
      * Get a single transaction.
      *
      * @param userId        user id
@@ -574,7 +431,6 @@ public class ApiManager {
             getTransactionCall.enqueue(new CallbackWrapper<>(callback));
         }
     }
-
 
     /**
      * Endpoint to allow for returning responses to APDU execution.
@@ -603,7 +459,7 @@ public class ApiManager {
     public void getAssets(String adapterData, String adapterId, String assetId, ApiCallback<Object> callback) {
     }
 
-    public <T extends BaseModel> void get(String url, Map<String, Object> queryMap, final Type type, final ApiCallback<T> callback) {
+    public <T> void get(String url, Map<String, Object> queryMap, final Type type, final ApiCallback<T> callback) {
         Call<JsonElement> getDataCall = getClient().get(url, queryMap);
         getDataCall.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
             @Override
@@ -619,8 +475,10 @@ public class ApiManager {
         }));
     }
 
-    public <T extends BaseModel, U extends BaseModel> void post(String url, U data, final Type type, final ApiCallback<T> callback) {
-        Call<JsonElement> postDataCall = getClient().post(url, data);
+    public <T, U> void post(String url, U data, final Type type, final ApiCallback<T> callback) {
+        Call<JsonElement> postDataCall = data != null ?
+                getClient().post(url, data) : getClient().post(url);
+
         postDataCall.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
             @Override
             public void onSuccess(JsonElement result) {
@@ -635,7 +493,7 @@ public class ApiManager {
         }));
     }
 
-    public <T extends BaseModel, U extends BaseModel> void patch(String url, U data, boolean encrypt, final Type type, final ApiCallback<T> callback) {
+    public <T, U> void patch(String url, U data, boolean encrypt, final Type type, final ApiCallback<T> callback) {
 
         JsonArray updateData = new JsonArray();
 
@@ -676,7 +534,7 @@ public class ApiManager {
         }));
     }
 
-    public <T extends BaseModel, U extends BaseModel> void put(String url, U data, final Type type, final ApiCallback<T> callback) {
+    public <T, U> void put(String url, U data, final Type type, final ApiCallback<T> callback) {
 //        Call<JsonElement> putDataCall = getClient().post(url, data);
 //        postDataCall.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
 //            @Override

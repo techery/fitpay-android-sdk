@@ -4,6 +4,7 @@ package com.fitpay.android.api.models;
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.enums.DeviceTypes;
+import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.utils.TimestampUtils;
 
 import java.util.List;

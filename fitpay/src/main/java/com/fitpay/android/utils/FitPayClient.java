@@ -2,7 +2,7 @@ package com.fitpay.android.utils;
 
 import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.Commit;
-import com.fitpay.android.api.models.CreditCard;
+import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.Device;
 import com.fitpay.android.api.models.Reason;
 import com.fitpay.android.api.models.Relationship;
@@ -96,32 +96,6 @@ interface FitPayClient {
     @GET("users/{userId}/creditCards/{creditCardId}")
     Call<CreditCard> getCreditCard(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
 
-    /**
-     * Update the details of an existing credit card.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     * @param creditCard credit card data to update:(name (Card holder name), address/street1, address/street2,
-     *                   address/city, address/state, address/postalCode, address/countryCode)
-     */
-    @PATCH("users/{userId}/creditCards/{creditCardId}")
-    Call<CreditCard> updateCreditCard(@Path("userId") String userId,
-                                      @Path("creditCardId") String creditCardId,
-                                      @Body JsonObject creditCard);
-
-    /**
-     * Delete a single credit card from a user's profile.
-     * If you delete a card that is currently the default source,
-     * then the most recently added source will become the new default.
-     * If you delete a card that is the last remaining source on the customer
-     * then the default_source attribute will become null.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     */
-    @DELETE("users/{userId}/creditCards/{creditCardId}")
-    Call<Void> deleteCreditCard(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
-
 
     /**
      * Indicate a user has accepted the terms and conditions presented
@@ -146,43 +120,6 @@ interface FitPayClient {
      */
     @POST("users/{userId}/creditCards/{creditCardId}/declineTerms")
     Call<CreditCard> declineTerms(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
-
-    /**
-     * Mark the credit card as the default payment instrument.
-     * If another card is currently marked as the default,
-     * the default will automatically transition to the indicated credit card.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     */
-    @POST("users/{userId}/creditCards/{creditCardId}/makeDefault")
-    Call<Void> makeDefault(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
-
-    /**
-     * Transition the credit card into a deactivated state so that it may not be utilized for payment.
-     * This link will only be available for qualified credit cards that are currently in an active state.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     * @param reason reason data:(causedBy, reason)
-     */
-    @POST("users/{userId}/creditCards/{creditCardId}/deactivate")
-    Call<CreditCard> deactivate(@Path("userId") String userId,
-                                @Path("creditCardId") String creditCardId,
-                                @Body Reason reason);
-
-    /**
-     * Transition the credit card into an active state where it can be utilized for payment.
-     * This link will only be available for qualified credit cards that are currently in a deactivated state.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     * @param reason reason data:(causedBy, reason)
-     */
-    @POST("users/{userId}/creditCards/{creditCardId}/reactivate")
-    Call<CreditCard> reactivate(@Path("userId") String userId,
-                                @Path("creditCardId") String creditCardId,
-                                @Body Reason reason);
 
     /**
      * When an issuer requires additional authentication to verify the identity of the cardholder,
@@ -274,20 +211,6 @@ interface FitPayClient {
                            @Path("commitId") String commitId);
 
     /**
-     * Get all transactions.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     * @param limit Max number of transactions per page, default: 10
-     * @param offset Start index position for list of entities returned
-     * */
-    @GET("users/{userId}/creditCards/{creditCardId}/transactions")
-    Call<ResultCollection<Transaction>> getTransactions(@Path("userId") String userId,
-                                                        @Path("creditCardId") String creditCardId,
-                                                        @Query("limit") int limit,
-                                                        @Query("offset") int offset);
-
-    /**
      * Get a single transaction.
      *
      * @param userId user id
@@ -375,6 +298,9 @@ interface FitPayClient {
 
     @GET
     Call<JsonElement> get(@Url String url, @QueryMap Map<String, Object> queryMap);
+
+    @POST
+    Call<JsonElement> post(@Url String url);
 
     @POST
     Call<JsonElement> post(@Url String url, @Body Object data);

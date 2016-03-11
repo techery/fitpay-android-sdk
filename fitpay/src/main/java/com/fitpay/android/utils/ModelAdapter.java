@@ -3,7 +3,7 @@ package com.fitpay.android.utils;
 import android.text.TextUtils;
 
 import com.fitpay.android.api.models.ApduPackage;
-import com.fitpay.android.api.models.CreditCard;
+import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.Device;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.Payload;
@@ -17,10 +17,8 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.google.gson.internal.LinkedTreeMap;
 
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 

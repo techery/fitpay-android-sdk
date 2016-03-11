@@ -1,159 +1,101 @@
-package com.fitpay.android.api.models;
+package com.fitpay.android.api.models.card;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.StringDef;
 
-import com.google.gson.annotations.SerializedName;
+import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.models.Address;
+import com.fitpay.android.api.models.Reason;
+import com.fitpay.android.api.models.ResultCollection;
+import com.fitpay.android.api.models.Transaction;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.IllegalFormatException;
-import java.util.List;
+import java.util.Map;
 
-public final class CreditCard extends BaseModel {
+public final class CreditCard extends CreditCardModel {
 
-    public static final String INITIATOR_CARDHOLDER = "CARDHOLDER";
-    public static final String INITIATOR_ISSUER = "ISSUER";
+    private static final String REACTIVATE = "reactivate";
+    private static final String DEACTIVATE = "deactivate";
+    private static final String TRANSACTIONS = "transactions";
+    private static final String MAKE_DEFAULT = "makeDefault";
 
-    @StringDef({INITIATOR_CARDHOLDER, INITIATOR_ISSUER})
-    public @interface Initiator {
+    /**
+     * Transition the credit card into an active state where it can be utilized for payment.
+     * This link will only be available for qualified credit cards that are currently in a deactivated state.
+     *
+     * @param reason       reason data:(causedBy, reason)
+     * @param callback     result callback
+     */
+    public void reactivate(@NonNull Reason reason, @NonNull ApiCallback<CreditCard> callback){
+        Type type = new TypeToken<CreditCard>(){}.getType();
+        makePostCall(REACTIVATE, reason, type, callback);
     }
 
-    private String creditCardId;
-    private String userId;
-    @SerializedName("default")
-    private Boolean defaultX;
-    private String createdTs;
-    private Long createdTsEpoch;
-    private String lastModifiedTs;
-    private Long lastModifiedTsEpoch;
-    private String state;
-    @Initiator
-    private String causedBy;
-    private String cardType;
-    private CardMetaData cardMetaData;
-    private String targetDeviceId;
-    private String targetDeviceType;
-    private String externalTokenReference;
-    private List<VerificationMethod> verificationMethods;
-    private List<Device> deviceRelationships;
-    @SerializedName("encryptedData")
-    private CreditCardInfo creditCardInfo;
-    private String termsAssetId;
-    private String eligibilityExpiration;
-    private Long eligibilityExpirationEpoch;
-    private List<AssetReference> termsAssetReferences;
-
-    private CreditCard(){
-        creditCardInfo = new CreditCardInfo();
+    /**
+     * Transition the credit card into a deactivated state so that it may not be utilized for payment.
+     * This link will only be available for qualified credit cards that are currently in an active state.
+     *
+     * @param reason       reason data:(causedBy, reason)
+     * @param callback     result callback
+     */
+    public void deactivate(@NonNull Reason reason, @NonNull ApiCallback<CreditCard> callback){
+        Type type = new TypeToken<CreditCard>(){}.getType();
+        makePostCall(DEACTIVATE, reason, type, callback);
     }
 
-    public String getCreditCardId() {
-        return creditCardId;
+    /**
+     * Mark the credit card as the default payment instrument.
+     * If another card is currently marked as the default,
+     * the default will automatically transition to the indicated credit card.
+     *
+     * @param callback     result callback
+     */
+    public void makeDefault(@NonNull ApiCallback<Void> callback){
+        Type type = new TypeToken<Void>(){}.getType();
+        makePostCall(MAKE_DEFAULT, null, type, callback);
     }
 
-    public String getUserId() {
-        return userId;
+    /**
+     * Delete a single credit card from a user's profile.
+     * If you delete a card that is currently the default source,
+     * then the most recently added source will become the new default.
+     * If you delete a card that is the last remaining source on the customer
+     * then the default_source attribute will become null.
+     *
+     * @param callback     result callback
+     */
+    public void deleteCard(@NonNull ApiCallback<Void> callback){
+        makeDeleteCall(callback);
     }
 
-    public boolean isDefault() {
-        return defaultX;
+    /**
+     * Update the details of an existing credit card.
+     *
+     * @param creditCard   credit card data to update:(name (Card holder name), address/street1, address/street2,
+     *                     address/city, address/state, address/postalCode, address/countryCode)
+     * @param callback     result callback
+     */
+    public void updateCard(@NonNull CreditCard creditCard, @NonNull ApiCallback<CreditCard> callback){
+        Type type = new TypeToken<CreditCard>(){}.getType();
+        makePatchCall(creditCard, true, type, callback);
     }
 
-    public String getCreatedTs() {
-        return createdTs;
-    }
-
-    public long getCreatedTsEpoch() {
-        return createdTsEpoch;
-    }
-
-    public String getLastModifiedTs() {
-        return lastModifiedTs;
-    }
-
-    public long getLastModifiedTsEpoch() {
-        return lastModifiedTsEpoch;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public String getCausedBy() {
-        return causedBy;
-    }
-
-    public String getCardType() {
-        return cardType;
-    }
-
-    public CardMetaData getCardMetaData() {
-        return cardMetaData;
-    }
-
-    public String getTargetDeviceId() {
-        return targetDeviceId;
-    }
-
-    public String getTargetDeviceType() {
-        return targetDeviceType;
-    }
-
-    public String getExternalTokenReference() {
-        return externalTokenReference;
-    }
-
-    public List<VerificationMethod> getVerificationMethods() {
-        return verificationMethods;
-    }
-
-    public List<Device> getDeviceRelationships() {
-        return deviceRelationships;
-    }
-
-    public CreditCardInfo getCreditCardInfo() {
-        return creditCardInfo;
-    }
-
-    public static final class CreditCardInfo {
-
-        /**
-         * description : Card holder name
-         */
-        private String name;
-
-        /**
-         * description : The credit card cvv2 code
-         */
-        private String cvv;
-
-        /**
-         * description : The credit card number, also known as a Primary Account Number (PAN)
-         */
-        private String pan;
-
-        /**
-         * description : The credit card expiration month
-         */
-        private Integer expMonth;
-
-        /**
-         * description : The credit card expiration year
-         */
-        private Integer expYear;
-
-        /**
-         * description : Card holder address
-         */
-        private Address address;
-
-        private CreditCardInfo() {
-        }
-
-        @Override
-        public String toString(){
-            return "CreditCardInfo";
-        }
+    /**
+     * Get all transactions.
+     *
+     * @param limit    Max number of transactions per page, default: 10
+     * @param offset   Start index position for list of entities returned
+     * @param callback result callback
+     */
+    public void getTransactions(int limit, int offset, ApiCallback<ResultCollection<Transaction>> callback){
+        Type type = new TypeToken<ResultCollection<Transaction>>(){}.getType();
+        Map<String, Object> queryMap = new HashMap<>();
+        queryMap.put("limit", limit);
+        queryMap.put("offset", offset);
+        makeGetCall(TRANSACTIONS, queryMap, type, callback);
     }
 
     public static final class Builder{
