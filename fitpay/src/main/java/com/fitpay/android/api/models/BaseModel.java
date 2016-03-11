@@ -1,10 +1,10 @@
 package com.fitpay.android.api.models;
 
-import android.text.TextUtils;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.utils.ApiManager;
+import com.fitpay.android.utils.StringUtils;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -28,7 +28,7 @@ public class BaseModel{
     private <T> String getLink(String key, ApiCallback<T> callback){
         String url = links.getLink(key);
 
-        if(TextUtils.isEmpty(url)){
+        if(StringUtils.isEmpty(url)){
             callback.onFailure(ResultCode.NOT_FOUND, "API endpoint is not available.");
             url = null;
         }

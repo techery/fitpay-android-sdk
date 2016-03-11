@@ -1,6 +1,5 @@
 package com.fitpay.android.utils;
 
-import android.text.TextUtils;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -34,7 +33,7 @@ final class ObjectConverter {
                 }
                 iterateThroughMap(deepLevel, keyName, (LinkedTreeMap) entry.getValue(), resultMap);
             } else {
-                if (TextUtils.isEmpty(keyName)) {
+                if (StringUtils.isEmpty(keyName)) {
                     keyName = "/";
                 }
                 resultMap.put(keyName + entry.getKey(), entry.getValue());

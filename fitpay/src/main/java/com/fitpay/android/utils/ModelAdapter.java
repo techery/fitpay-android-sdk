@@ -1,7 +1,5 @@
 package com.fitpay.android.utils;
 
-import android.text.TextUtils;
-
 import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.CreditCard;
 import com.fitpay.android.api.models.Device;
@@ -39,11 +37,11 @@ final class ModelAdapter {
         @Override
         public T deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
 
-            if (!json.isJsonObject() && !TextUtils.isEmpty(json.getAsString())) {
+            if (!json.isJsonObject() && !StringUtils.isEmpty(json.getAsString())) {
 
                 final String decryptedString = StringUtils.getDecryptedString(KeysManager.KEY_API, json.getAsString());
 
-                if (!TextUtils.isEmpty(decryptedString)) {
+                if (!StringUtils.isEmpty(decryptedString)) {
                     Gson gson = new Gson();
                     return gson.fromJson(decryptedString, typeOfT);
                 }
@@ -58,11 +56,11 @@ final class ModelAdapter {
         @Override
         public Payload deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
 
-            if (!json.isJsonObject() && !TextUtils.isEmpty(json.getAsString())) {
+            if (!json.isJsonObject() && !StringUtils.isEmpty(json.getAsString())) {
 
                 final String decryptedString = StringUtils.getDecryptedString(KeysManager.KEY_API, json.getAsString());
 
-                if (!TextUtils.isEmpty(decryptedString)) {
+                if (!StringUtils.isEmpty(decryptedString)) {
 
                     Payload payload = null;
                     Gson gson = new Gson();
