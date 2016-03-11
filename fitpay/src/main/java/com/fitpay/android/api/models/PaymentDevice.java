@@ -5,7 +5,7 @@ import com.fitpay.android.api.enums.DeviceTypes;
 /**
  * Created by Vlad on 09.03.2016.
  */
-public class PaymentDevice extends BaseModel{
+public class PaymentDevice extends BaseModel {
 
     /**
      * The type of device (PHONE, TABLET, ACTIVITY_TRACKER, SMARTWATCH, PC, CARD_EMULATOR, CLOTHING, JEWELRY, OTHER

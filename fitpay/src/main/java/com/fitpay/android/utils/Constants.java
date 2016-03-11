@@ -5,7 +5,7 @@ import android.util.Log;
 import com.fitpay.android.api.models.CreditCard;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.Payload;
-import com.fitpay.android.api.models.User;
+import com.fitpay.android.api.models.user.UserInfo;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -32,7 +32,7 @@ public final class Constants {
                     .setDateFormat(Constants.DATE_FORMAT)
                     .registerTypeAdapter(ECCKeyPair.class, new ModelAdapter.KeyPairSerializer())
                     .registerTypeAdapter(Links.class, new ModelAdapter.LinksDeserializer())
-                    .registerTypeAdapter(User.UserInfo.class, new ModelAdapter.DataSerializer<>())
+                    .registerTypeAdapter(UserInfo.class, new ModelAdapter.DataSerializer<>())
                     .registerTypeAdapter(CreditCard.CreditCardInfo.class, new ModelAdapter.DataSerializer<>())
                     .registerTypeAdapter(Payload.class, new ModelAdapter.PayloadDeserializer())
                     .create();

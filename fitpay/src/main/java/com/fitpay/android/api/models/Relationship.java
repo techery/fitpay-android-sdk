@@ -1,6 +1,6 @@
 package com.fitpay.android.api.models;
 
-public final class Relationship extends BaseModel{
+public final class Relationship extends BaseModel {
 
     //TODO: add @Card
 

@@ -8,7 +8,7 @@ import com.fitpay.android.api.models.Reason;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.api.models.Transaction;
-import com.fitpay.android.api.models.User;
+import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.VerificationMethod;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -22,7 +22,6 @@ import retrofit2.http.DELETE;
 import retrofit2.http.FieldMap;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
-import retrofit2.http.Header;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
@@ -41,49 +40,13 @@ interface FitPayClient {
     Call<OAuthToken> loginUser(@FieldMap Map<String, String> options);
 
     /**
-     * Returns a list of all users that belong to your organization.
-     * The customers are returned sorted by creation date,
-     * with the most recently created customers appearing first.
-     *
-     * @param limit Max number of profiles per page, default: 10
-     * @param offset Start index position for list of entities returned
-     */
-    @GET("users")
-    Call<ResultCollection<User>> getUsers(@Header("fp-api-key")String fpKey, @Query("limit") int limit, @Query("offset") int offset);
-
-    /**
-     * Creates a new user within your organization.
-     *
-     * @param user user data (firstName, lastName, birthDate, email)
-     */
-    @POST("users")
-    Call<User> createUser(@Body User user);
-
-    /**
-     * Delete a single user from your organization.
-     *
-     * @param userId user id
-     */
-    @DELETE("users/{userId}")
-    Call<Void> deleteUser(@Path("userId") String userId);
-
-    /**
-     * Update the details of an existing user.
-     *
-     * @param userId user id
-     * @param user user data to update:(firstName, lastName, birthDate, originAccountCreatedTs, termsAcceptedTs, termsVersion)
-     */
-    @PATCH("users/{userId}")
-    Call<User> updateUser(@Path("userId") String userId, @Body JsonObject user);
-
-    /**
      * Retrieves the details of an existing user.
      * You need only supply the unique user identifier that was returned upon user creation.
      *
      * @param userId user id
      */
     @GET("users/{userId}")
-    Call<User> getUser(@Header("fp-api-key")String fpKey, @Path("userId") String userId);
+    Call<User> getUser(@Path("userId") String userId);
 
 
     /**
@@ -122,32 +85,6 @@ interface FitPayClient {
                                     @Query("creditCardId") String creditCardId,
                                     @Query("deviceId") String deviceId);
 
-
-
-    /**
-     * For a single user, retrieve a pagable collection of tokenized credit cards in their profile.
-     *
-     * @param userId user id
-     * @param limit Max number of credit cards per page, default: 10
-     * @param offset Start index position for list of entities returned
-     */
-    @GET("users/{userId}/creditCards")
-    Call<ResultCollection<CreditCard>> getCreditCards(@Path("userId") String userId,
-                                                      @Query("limit") int limit,
-                                                      @Query("offset") int offset);
-
-    /**
-     * Add a single credit card to a user's profile.
-     * If the card owner has no default card, then the new card will become the default.
-     * However, if the owner already has a default then it will not change.
-     * To change the default, you should update the user to have a new "default_source".
-     *
-     * @param userId user id
-     * @param creditCard credit card data:(pan, expMonth, expYear, cvv, name,
-     *                   address data:(street1, street2, street3, city, state, postalCode, country))
-     */
-    @POST("users/{userId}/creditCards")
-    Call<CreditCard> createCreditCard(@Path("userId") String userId, @Body CreditCard creditCard);
 
     /**
      * Retrieves the details of an existing credit card.
@@ -274,30 +211,6 @@ interface FitPayClient {
                               @Path("creditCardId") String creditCardId,
                               @Path("verificationTypeId") String verificationTypeId,
                               @Body String verificationCode);
-
-
-    /**
-     * For a single user, retrieve a pagable collection of devices in their profile.
-     *
-     * @param userId user id
-     * @param limit Max number of devices per page, default: 10
-     * @param offset Start index position for list of entities returned
-     */
-    @GET("users/{userId}/devices")
-    Call<ResultCollection<Device>> getDevices(@Path("userId") String userId,
-                                       @Query("limit") int limit,
-                                       @Query("offset") int offset);
-
-    /**
-     * For a single user, create a new device in their profile.
-     *
-     * @param userId user id
-     * @param device device data to create:(deviceType, manufacturerName, deviceName, serialNumber,
-     *               modelNumber, hardwareRevision, firmwareRevision, softwareRevision, systemId,
-     *               osName, licenseKey, bdAddress, secureElementId, pairingTs)
-     */
-    @POST("users/{userId}/devices")
-    Call<Device> createDevice(@Path("userId") String userId, @Body Device device);
 
     /**
      * Retrieves the details of an existing device.
@@ -465,4 +378,13 @@ interface FitPayClient {
 
     @POST
     Call<JsonElement> post(@Url String url, @Body Object data);
+
+    @PUT
+    Call<JsonElement> put(@Url String url, @QueryMap Map<String, Object> queryMap);
+
+    @PATCH
+    Call<JsonElement> patch(@Url String url, @Body JsonElement data);
+
+    @DELETE
+    Call<Void> delete(@Url String url);
 }

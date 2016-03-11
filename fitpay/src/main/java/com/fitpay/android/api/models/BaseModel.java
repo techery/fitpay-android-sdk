@@ -15,6 +15,9 @@ import java.util.Map;
  * Created by Vlad on 18.02.2016.
  */
 public class BaseModel{
+
+    protected static final String SELF = "self";
+
     @Expose(serialize = false)
     @SerializedName("_links")
     protected Links links;
@@ -22,24 +25,43 @@ public class BaseModel{
     public BaseModel(){
     }
 
-    protected <T extends BaseModel> void makeGetCall(String key, Map<String, Object> queryMap, Type type, ApiCallback<T> callback){
-
+    private <T> String getLink(String key, ApiCallback<T> callback){
         String url = links.getLink(key);
-        if(!TextUtils.isEmpty(url)){
-            ApiManager.getInstance().get(url, queryMap, type, callback);
-        } else {
+
+        if(TextUtils.isEmpty(url)){
             callback.onFailure(ResultCode.NOT_FOUND, "API endpoint is not available.");
+            url = null;
+        }
+
+        return url;
+    }
+
+    protected <T extends BaseModel> void makeGetCall(String key, Map<String, Object> queryMap, Type type, ApiCallback<T> callback){
+        String url = getLink(key, callback);
+        if(url != null){
+            ApiManager.getInstance().get(url, queryMap, type, callback);
         }
     }
 
     protected <T extends BaseModel, U extends BaseModel> void makePostCall(String key, U data, Type type, ApiCallback<T> callback){
-        String url = links.getLink(key);
-        if(!TextUtils.isEmpty(url)){
+        String url = getLink(key, callback);
+        if(url != null){
             ApiManager.getInstance().post(url, data, type, callback);
-        } else {
-            callback.onFailure(ResultCode.NOT_FOUND, "API endpoint is not available.");
         }
     }
 
+    protected<T extends BaseModel, U extends BaseModel> void makePatchCall(U data, boolean encrypt, Type type, ApiCallback<T> callback) {
+        String url = getLink(SELF, callback);
+        if (url != null) {
+            ApiManager.getInstance().patch(url, data, encrypt, type, callback);
+        }
+    }
+
+    protected void makeDeleteCall(ApiCallback<Void> callback){
+        String url = getLink(SELF,callback);
+        if(url != null){
+            ApiManager.getInstance().delete(url, callback);
+        }
+    }
 
 }

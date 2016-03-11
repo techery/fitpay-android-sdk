@@ -14,7 +14,7 @@ import com.fitpay.android.api.models.Reason;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.api.models.Transaction;
-import com.fitpay.android.api.models.User;
+import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.VerificationMethod;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -26,7 +26,7 @@ import java.util.Map;
 import retrofit2.Call;
 
 /*
- * Created by andrews on 22.02.16.
+ * API manager
  */
 public class ApiManager {
 
@@ -98,81 +98,6 @@ public class ApiManager {
         getTokenCall.enqueue(getTokenCallback);
     }
 
-//    /**
-//     * Returns a list of all users that belong to your organization.
-//     * The customers are returned sorted by creation date,
-//     * with the most recently created customers appearing first.
-//     *
-//     * @param limit    Max number of profiles per page, default: 10
-//     * @param offset   Start index position for list of entities returned
-//     * @param callback result callback
-//     */
-//    public void getUsers(int limit, int offset, ApiCallback<ResultCollection<User>> callback) {
-//    }
-
-//    /**
-//     * Creates a new user within your organization.
-//     *
-//     * @param user     user data (firstName, lastName, birthDate, email)
-//     * @param callback result callback
-//     */
-//    public void createUser(User user, ApiCallback<User> callback) {
-//    }
-
-    /**
-     * Delete a single user from your organization.
-     *
-     * @param userId   user id
-     * @param callback result callback
-     */
-    public void deleteUser(String userId, ApiCallback<Void> callback) {
-        if(isAuthorized(callback)){
-            Call<Void> deleteUserCall = getClient().deleteUser(userId);
-            deleteUserCall.enqueue(new CallbackWrapper<>(callback));
-        }
-    }
-
-    /**
-     * Update the details of an existing user.
-     *
-     * @param userId   user id
-     * @param user     user data to update:(firstName, lastName, birthDate, originAccountCreatedTs,
-     *                 termsAcceptedTs, termsVersion)
-     * @param callback result callback
-     */
-    public void updateUser(final String userId, final User user, final ApiCallback<User> callback) {
-        if(isAuthorized(callback)){
-
-            Runnable onSuccess = new Runnable() {
-                @Override
-                public void run() {
-
-                    JsonArray updateData = new JsonArray();
-
-                    Map<String, Object> userMap = new ModelAdapter.ObjectConverter().convertToSimpleMap(user);
-                    for(Map.Entry<String, Object> entry : userMap.entrySet()) {
-                        JsonObject item = new JsonObject();
-                        item.addProperty("op", "replace");
-                        item.addProperty("path", entry.getKey());
-                        item.addProperty("value", String.valueOf(entry.getValue()));
-
-                        updateData.add(item);
-                    }
-
-                    String userString = updateData.toString();
-
-                    JsonObject jsonObject = new JsonObject();
-                    jsonObject.addProperty("encryptedData", StringUtils.getEncryptedString(KeysManager.KEY_API, userString));
-
-                    Call<User> updateUserCall = getClient().updateUser(userId, jsonObject);
-                    updateUserCall.enqueue(new CallbackWrapper<>(callback));
-                }
-            };
-
-            checkKeyAndMakeCall(onSuccess, callback);
-        }
-    }
-
     /**
      * Retrieves the details of an existing user.
      * You need only supply the unique user identifier that was returned upon user creation.
@@ -185,7 +110,7 @@ public class ApiManager {
             Runnable onSuccess = new Runnable() {
                 @Override
                 public void run() {
-                    Call<User> getUserCall = getClient().getUser(KeysManager.getInstance().getKeyId(KeysManager.KEY_API), apiService.getUserId());
+                    Call<User> getUserCall = getClient().getUser(apiService.getUserId());
                     getUserCall.enqueue(new CallbackWrapper<>(callback));
                 }
             };
@@ -241,56 +166,6 @@ public class ApiManager {
         }
     }
 
-
-    /**
-     * For a single user, retrieve a pagable collection of tokenized credit cards in their profile.
-     *
-     * @param userId   user id
-     * @param limit    Max number of credit cards per page, default: 10
-     * @param offset   Start index position for list of entities returned
-     * @param callback result callback
-     */
-    public void getCreditCards(final String userId, final int limit, final int offset, final ApiCallback<ResultCollection<CreditCard>> callback) {
-        if(isAuthorized(callback)){
-
-            Runnable onSuccess = new Runnable() {
-                @Override
-                public void run() {
-                    Call<ResultCollection<CreditCard>> getCreditCardsCall = getClient().getCreditCards(userId, limit, offset);
-                    getCreditCardsCall.enqueue(new CallbackWrapper<>(callback));
-                }
-            };
-
-            checkKeyAndMakeCall(onSuccess, callback);
-        }
-    }
-
-    /**
-     * Add a single credit card to a user's profile.
-     * If the card owner has no default card, then the new card will become the default.
-     * However, if the owner already has a default then it will not change.
-     * To change the default, you should update the user to have a new "default_source".
-     *
-     * @param userId     user id
-     * @param creditCard credit card data:(pan, expMonth, expYear, cvv, name,
-     *                   address data:(street1, street2, street3, city, state, postalCode, country))
-     * @param callback   result callback
-     */
-    public void createCreditCard(final String userId, final CreditCard creditCard, final ApiCallback<CreditCard> callback) {
-        if (isAuthorized(callback)) {
-
-            Runnable onSuccess = new Runnable() {
-                @Override
-                public void run() {
-                    Call<CreditCard> createCreditCardCall = getClient().createCreditCard(userId, creditCard);
-                    createCreditCardCall.enqueue(new CallbackWrapper<>(callback));
-                }
-            };
-
-            checkKeyAndMakeCall(onSuccess, callback);
-        }
-    }
-
     /**
      * Retrieves the details of an existing credit card.
      * You need only supply the unique identifier that was returned upon creation.
@@ -332,7 +207,7 @@ public class ApiManager {
 
                     JsonArray updateData = new JsonArray();
 
-                    Map<String, Object> userMap = new ModelAdapter.ObjectConverter().convertToSimpleMap(creditCard);
+                    Map<String, Object> userMap = new ObjectConverter().convertToSimpleMap(creditCard);
                     for(Map.Entry<String, Object> entry : userMap.entrySet()) {
                         JsonObject item = new JsonObject();
                         item.addProperty("op", "replace");
@@ -528,56 +403,6 @@ public class ApiManager {
         }
     }
 
-
-    /**
-     * For a single user, retrieve a pagable collection of devices in their profile.
-     *
-     * @param userId   user id
-     * @param limit    Max number of devices per page, default: 10
-     * @param offset   Start index position for list of entities returned
-     * @param callback result callback
-     */
-    public void getDevices(final String userId, final int limit, final int offset, final ApiCallback<ResultCollection<Device>> callback) {
-        if(isAuthorized(callback)){
-
-            Runnable onSuccess = new Runnable() {
-                @Override
-                public void run() {
-
-                    Call<ResultCollection<Device>> getDevicesCall = getClient().getDevices(userId, limit, offset);
-                    getDevicesCall.enqueue(new CallbackWrapper<>(callback));
-                }
-            };
-
-            checkKeyAndMakeCall(onSuccess, callback);
-        }
-    }
-
-    /**
-     * For a single user, create a new device in their profile.
-     *
-     * @param userId   user id
-     * @param device   device data to create:(deviceType, manufacturerName, deviceName, serialNumber,
-     *                 modelNumber, hardwareRevision, firmwareRevision, softwareRevision, systemId,
-     *                 osName, licenseKey, bdAddress, secureElementId, pairingTs)
-     * @param callback result callback
-     */
-    public void createDevice(final String userId, final Device device, final ApiCallback<Device> callback) {
-        if(isAuthorized(callback)){
-
-            Runnable onSuccess = new Runnable() {
-                @Override
-                public void run() {
-
-                    Call<Device> createDeviceCall = getClient().createDevice(userId, device);
-                    createDeviceCall.enqueue(new CallbackWrapper<>(callback));
-                }
-            };
-
-            checkKeyAndMakeCall(onSuccess, callback);
-        }
-    }
-
     /**
      * Retrieves the details of an existing device.
      * You need only supply the unique identifier that was returned upon creation.
@@ -619,7 +444,7 @@ public class ApiManager {
 
                     JsonArray updateData = new JsonArray();
 
-                    Map<String, Object> userMap = new ModelAdapter.ObjectConverter().convertToSimpleMap(deviceData);
+                    Map<String, Object> userMap = new ObjectConverter().convertToSimpleMap(deviceData);
                     for(Map.Entry<String, Object> entry : userMap.entrySet()) {
                         JsonObject item = new JsonObject();
                         item.addProperty("op", "replace");
@@ -808,5 +633,67 @@ public class ApiManager {
                 callback.onFailure(errorCode, errorMessage);
             }
         }));
+    }
+
+    public <T extends BaseModel, U extends BaseModel> void patch(String url, U data, boolean encrypt, final Type type, final ApiCallback<T> callback) {
+
+        JsonArray updateData = new JsonArray();
+
+        Map<String, Object> userMap = ObjectConverter.convertToSimpleMap(data);
+        for(Map.Entry<String, Object> entry : userMap.entrySet()) {
+            JsonObject item = new JsonObject();
+            item.addProperty("op", "replace");
+            item.addProperty("path", entry.getKey());
+            item.addProperty("value", String.valueOf(entry.getValue()));
+
+            updateData.add(item);
+        }
+
+        Call<JsonElement> patchDataCall = null;
+
+        if(encrypt) {
+            String userString = updateData.toString();
+
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("encryptedData", StringUtils.getEncryptedString(KeysManager.KEY_API, userString));
+
+            patchDataCall = getClient().patch(url, jsonObject);
+        } else {
+            patchDataCall = getClient().patch(url, updateData);
+        }
+
+        patchDataCall.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
+            @Override
+            public void onSuccess(JsonElement result) {
+                T response = Constants.getGson().fromJson(result, type);
+                callback.onSuccess(response);
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                callback.onFailure(errorCode, errorMessage);
+            }
+        }));
+    }
+
+    public <T extends BaseModel, U extends BaseModel> void put(String url, U data, final Type type, final ApiCallback<T> callback) {
+//        Call<JsonElement> putDataCall = getClient().post(url, data);
+//        postDataCall.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
+//            @Override
+//            public void onSuccess(JsonElement result) {
+//                T response = Constants.getGson().fromJson(result, type);
+//                callback.onSuccess(response);
+//            }
+//
+//            @Override
+//            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+//                callback.onFailure(errorCode, errorMessage);
+//            }
+//        }));
+    }
+
+    public void delete(String url, final ApiCallback<Void> callback) {
+        Call<Void> deleteDataCall = getClient().delete(url);
+        deleteDataCall.enqueue(new CallbackWrapper<>(callback));
     }
 }

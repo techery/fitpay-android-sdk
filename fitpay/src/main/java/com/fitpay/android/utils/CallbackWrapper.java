@@ -25,7 +25,7 @@ final class CallbackWrapper<T> implements Callback<T> {
     @Override
     public void onResponse(Call<T> call, Response<T> response) {
         if(mCallback != null) {
-            if (response.isSuccess() && response.errorBody() == null && response.body() != null){
+            if (response.isSuccess() && response.errorBody() == null){
                 mCallback.onSuccess(response.body());
             } else {
                 @ResultCode.Code int errorCode = response.code();

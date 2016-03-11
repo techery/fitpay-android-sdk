@@ -1,166 +1,97 @@
-package com.fitpay.android.api.models;
+package com.fitpay.android.api.models.user;
 
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.models.BaseModel;
+import com.fitpay.android.api.models.CreditCard;
+import com.fitpay.android.api.models.Device;
+import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.utils.TimestampUtils;
-import com.google.gson.annotations.SerializedName;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class User extends BaseModel {
+public final class User extends UserModel {
 
     private static final String GET_DEVICES = "devices";
     private static final String GET_CARDS = "creditCards";
 
-    private String id;
-
     /**
-     * description : JSON Web Encrypted compact serialization of the user's information from
+     * Delete user from your organization.
      *
-     * @see UserInfo
+     * @param callback result callback
      */
-    @SerializedName("encryptedData")
-    private UserInfo userInfo;
+    public void deleteUser(@NonNull ApiCallback<Void> callback){
+        makeDeleteCall(callback);
+    }
 
     /**
-     * description : ISO8601 string providing the date of the creation of original user account.   If not known use the current date
+     * Update the details of an existing user.
+     *
+     * @param user     user data to update: firstName, lastName, birthDate, originAccountCreatedTs, termsAcceptedTs, termsVersion
+     * @param callback result callback
      */
-    private String originAccountCreatedTs;
+    public void updateUser(@NonNull User user, @NonNull ApiCallback<User> callback){
+        Type type = new TypeToken<User>(){}.getType();
+        makePatchCall(user, true, type, callback);
+    }
 
     /**
-     * description : ISO8601 string providing the date that the FitPay terms and conditions were accepted.
+     * Retrieve a pagable collection of tokenized credit cards in their profile.
+     *
+     * @param limit    Max number of credit cards per page, default: 10
+     * @param offset   Start index position for list of entities returned
+     * @param callback result callback
      */
-    private String termsAcceptedTs;
-
-    /**
-     * description : The version of the FitPay terms and conditions that were accepted
-     */
-    private String termsVersion;
-
-    private String createdTs;
-    private Long createdTsEpoch;
-    private Long termsAcceptedTsEpoch;
-    private Long originAccountCreatedTsEpoch;
-
-    private User() {
-        userInfo = new UserInfo();
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getTermsVersion() {
-        return termsVersion;
-    }
-
-    public String getTermsAcceptedTs() {
-        return termsAcceptedTs;
-    }
-
-    public long getTermsAcceptedTsEpoch() {
-        return termsAcceptedTsEpoch;
-    }
-
-    public String getCreatedTs() {
-        return createdTs;
-    }
-
-    public long getCreatedTsEpoch() {
-        return createdTsEpoch;
-    }
-
-    public String getOriginAccountCreatedTs() {
-        return originAccountCreatedTs;
-    }
-
-    public long getOriginAccountCreatedTsEpoch() {
-        return originAccountCreatedTsEpoch;
-    }
-
-    public String getUsername() {
-        return userInfo.username;
-    }
-
-    public String getFirstName() {
-        return userInfo.firstName;
-    }
-
-    public String getLastName() {
-        return userInfo.lastName;
-    }
-
-    public String getBirthDate() {
-        return userInfo.birthDate;
-    }
-
-    public String getEmail() {
-        return userInfo.email;
-    }
-
-    public static final class UserInfo {
-
-        /**
-         * description : The user's username
-         */
-        private String username;
-
-        /**
-         * description : The user's first name
-         */
-        private String firstName;
-
-        /**
-         * description : The user's last name
-         */
-        private String lastName;
-
-        /**
-         * description : The user's birthdate in YYYY-MM-DD format
-         */
-        private String birthDate;
-
-        /**
-         * description : The user's email address, formatted as {string}@{domain}.{extension}
-         */
-        private String email;
-
-        private UserInfo() {
-        }
-
-        @Override
-        public String toString() {
-            return "UserInfo";
-        }
-    }
-
-    public void getCards(int limit, int offset, @NonNull ApiCallback<ResultCollection<CreditCard>> callback){
+    public void getCreditCards(int limit, int offset, @NonNull ApiCallback<ResultCollection<CreditCard>> callback){
+        Type type = new TypeToken<ResultCollection<CreditCard>>(){}.getType();
         Map<String, Object> queryMap = new HashMap<>();
         queryMap.put("limit", limit);
         queryMap.put("offset", offset);
-
-        Type type = new TypeToken<ResultCollection<CreditCard>>(){}.getType();
         makeGetCall(GET_CARDS, queryMap, type, callback);
     }
 
+    /**
+     * retrieve a pagable collection of devices in their profile.
+     *
+     * @param limit    Max number of devices per page, default: 10
+     * @param offset   Start index position for list of entities returned
+     * @param callback result callback
+     */
     public void getDevices(int limit, int offset, @NonNull ApiCallback<ResultCollection<Device>> callback){
+        Type type = new TypeToken<ResultCollection<Device>>(){}.getType();
         Map<String, Object> queryMap = new HashMap<>();
         queryMap.put("limit", limit);
         queryMap.put("offset", offset);
-
-        Type type = new TypeToken<ResultCollection<Device>>(){}.getType();
         makeGetCall(GET_DEVICES, queryMap, type, callback);
     }
 
-    public void createCard(@NonNull CreditCard card, @NonNull ApiCallback<CreditCard> callback){
+    /**
+     * Add a single credit card to a user's profile.
+     * If the card owner has no default card, then the new card will become the default.
+     * However, if the owner already has a default then it will not change.
+     * To change the default, you should update the user to have a new "default_source".
+     *
+     * @param creditCard credit card data:(pan, expMonth, expYear, cvv, name,
+     *                   address data:(street1, street2, street3, city, state, postalCode, country))
+     * @param callback   result callback
+     */
+    public void createCreditCard(@NonNull CreditCard creditCard, @NonNull ApiCallback<CreditCard> callback){
         Type type = new TypeToken<CreditCard>(){}.getType();
-        makePostCall(GET_CARDS, card, type, callback);
+        makePostCall(GET_CARDS, creditCard, type, callback);
     }
 
+    /**
+     * Add a new device to a user's profile.
+     *
+     * @param device   device data to create:(deviceType, manufacturerName, deviceName, serialNumber,
+     *                 modelNumber, hardwareRevision, firmwareRevision, softwareRevision, systemId,
+     *                 osName, licenseKey, bdAddress, secureElementId, pairingTs)
+     * @param callback result callback
+     */
     public void createDevice(@NonNull Device device, @NonNull ApiCallback<Device> callback){
         Type type = new TypeToken<CreditCard>(){}.getType();
         makePostCall(GET_CARDS, device, type, callback);

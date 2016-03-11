@@ -1,13 +1,5 @@
 package com.fitpay.android.utils;
 
-import com.fitpay.android.api.models.CreditCard;
-import com.fitpay.android.api.models.Device;
-import com.fitpay.android.api.models.Links;
-import com.fitpay.android.api.models.Payload;
-import com.fitpay.android.api.models.User;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import java.io.IOException;
 
 import okhttp3.Interceptor;
@@ -24,6 +16,7 @@ final class FitPayService {
 
     private static final String HEADER_AUTHORIZATION = "Authorization";
     private static final String AUTHORIZATION_BEARER = "Bearer";
+    private static final String FP_KEY_ID = "fp-key-id";
 
     private FitPayClient mAPIClient;
     private OAuthToken mAuthToken;
@@ -40,7 +33,7 @@ final class FitPayService {
 
                 String keyId = KeysManager.getInstance().getKeyId(KeysManager.KEY_API);
                 if (keyId != null) {
-                    builder.header("fp-key-id", keyId);
+                    builder.header(FP_KEY_ID, keyId);
                 }
 
                 if (mAuthToken != null) {
