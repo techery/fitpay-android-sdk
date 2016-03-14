@@ -5,17 +5,15 @@ import android.support.annotation.NonNull;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.ApduPackage;
-import com.fitpay.android.api.models.BaseModel;
 import com.fitpay.android.api.models.Commit;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.Device;
 import com.fitpay.android.api.models.LoginIdentity;
-import com.fitpay.android.api.models.Reason;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.user.User;
-import com.fitpay.android.api.models.VerificationMethod;
+import com.fitpay.android.api.models.card.VerificationMethod;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -186,75 +184,6 @@ public class ApiManager {
             };
 
             checkKeyAndMakeCall(onSuccess, callback);
-        }
-    }
-
-    /**
-     * Indicate a user has accepted the terms and conditions presented
-     * when the credit card was first added to the user's profile.
-     * This link will only be available when the credit card is awaiting the user
-     * to accept or decline the presented terms and conditions.
-     *
-     * @param userId       user id
-     * @param creditCardId credit card id
-     * @param callback     result callback
-     */
-    public void acceptTerms(final String userId, final String creditCardId, final ApiCallback<CreditCard> callback) {
-        if(isAuthorized(callback)){
-
-            Runnable onSuccess = new Runnable() {
-                @Override
-                public void run() {
-
-                    Call<CreditCard> acceptTermsCall = getClient().acceptTerms(userId, creditCardId);
-                    acceptTermsCall.enqueue(new CallbackWrapper<>(callback));
-                }
-            };
-
-            checkKeyAndMakeCall(onSuccess, callback);
-        }
-    }
-
-    /**
-     * Indicate a user has declined the terms and conditions.
-     * Once declined the credit card will be in a final state, no other actions may be taken.
-     * This link will only be available when the credit card is awaiting the user to accept
-     * or decline the presented terms and conditions.
-     *
-     * @param userId       user id
-     * @param creditCardId credit card id
-     * @param callback     result callback
-     */
-    public void declineTerms(final String userId, final String creditCardId, final ApiCallback<CreditCard> callback) {
-        if(isAuthorized(callback)){
-
-            Runnable onSuccess = new Runnable() {
-                @Override
-                public void run() {
-
-                    Call<CreditCard> declineTermsCall = getClient().declineTerms(userId, creditCardId);
-                    declineTermsCall.enqueue(new CallbackWrapper<>(callback));
-                }
-            };
-
-            checkKeyAndMakeCall(onSuccess, callback);
-        }
-    }
-
-    /**
-     * When an issuer requires additional authentication to verify the identity of the cardholder,
-     * this indicates the user has selected the specified verification method by the indicated verificationTypeId.
-     *
-     * @param userId             user id
-     * @param creditCardId       credit card id
-     * @param verificationTypeId verification type id
-     * @param callback           result callback
-     */
-    public void selectVerificationType(final String userId, final String creditCardId, final String verificationTypeId,
-                                       final ApiCallback<VerificationMethod> callback) {
-        if(isAuthorized(callback)){
-            Call<VerificationMethod> selectCall = getClient().selectVerificationType(userId, creditCardId, verificationTypeId);
-            selectCall.enqueue(new CallbackWrapper<>(callback));
         }
     }
 

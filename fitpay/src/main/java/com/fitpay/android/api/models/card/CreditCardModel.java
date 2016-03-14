@@ -4,15 +4,14 @@ import com.fitpay.android.api.enums.CardInitiators;
 import com.fitpay.android.api.models.AssetReference;
 import com.fitpay.android.api.models.BaseModel;
 import com.fitpay.android.api.models.Device;
-import com.fitpay.android.api.models.VerificationMethod;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
 /**
- * Created by Vlad on 11.03.2016.
+ * Credit card model
  */
-public class CreditCardModel extends BaseModel {
+abstract class CreditCardModel extends BaseModel {
 
     protected String creditCardId;
     protected String userId;

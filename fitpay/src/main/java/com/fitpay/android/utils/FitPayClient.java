@@ -4,15 +4,13 @@ import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.Commit;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.Device;
-import com.fitpay.android.api.models.Reason;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.ResultCollection;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.user.User;
-import com.fitpay.android.api.models.VerificationMethod;
+import com.fitpay.android.api.models.card.VerificationMethod;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 
 import java.util.Map;
 
@@ -95,44 +93,6 @@ interface FitPayClient {
      */
     @GET("users/{userId}/creditCards/{creditCardId}")
     Call<CreditCard> getCreditCard(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
-
-
-    /**
-     * Indicate a user has accepted the terms and conditions presented
-     * when the credit card was first added to the user's profile.
-     * This link will only be available when the credit card is awaiting the user
-     * to accept or decline the presented terms and conditions.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     */
-    @POST("users/{userId}/creditCards/{creditCardId}/acceptTerms")
-    Call<CreditCard> acceptTerms(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
-
-    /**
-     * Indicate a user has declined the terms and conditions.
-     * Once declined the credit card will be in a final state, no other actions may be taken.
-     * This link will only be available when the credit card is awaiting the user to accept
-     * or decline the presented terms and conditions.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     */
-    @POST("users/{userId}/creditCards/{creditCardId}/declineTerms")
-    Call<CreditCard> declineTerms(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
-
-    /**
-     * When an issuer requires additional authentication to verify the identity of the cardholder,
-     * this indicates the user has selected the specified verification method by the indicated verificationTypeId.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     * @param verificationTypeId verification type id
-     */
-    @POST("users/{userId}/creditCards/{creditCardId}/verificationMethods/{verificationTypeId}/select")
-    Call<VerificationMethod> selectVerificationType(@Path("userId") String userId,
-                                              @Path("creditCardId") String creditCardId,
-                                              @Path("verificationTypeId") String verificationTypeId);
 
     /**
      * If a verification method is selected that requires an entry of a pin code, this transition will be available.

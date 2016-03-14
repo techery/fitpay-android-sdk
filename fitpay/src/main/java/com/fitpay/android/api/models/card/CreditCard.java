@@ -17,10 +17,38 @@ import java.util.Map;
 
 public final class CreditCard extends CreditCardModel {
 
+    private static final String ACCEPT_TERMS = "acceptTerms";
+    private static final String DECLINE_TERMS = "declineTerms";
     private static final String REACTIVATE = "reactivate";
     private static final String DEACTIVATE = "deactivate";
     private static final String TRANSACTIONS = "transactions";
     private static final String MAKE_DEFAULT = "makeDefault";
+
+    /**
+     * Indicate a user has accepted the terms and conditions presented
+     * when the credit card was first added to the user's profile.
+     * This link will only be available when the credit card is awaiting the user
+     * to accept or decline the presented terms and conditions.
+     *
+     * @param callback     result callback
+     */
+    public void acceptTerms(@NonNull ApiCallback<CreditCard> callback){
+        Type type = new TypeToken<CreditCard>(){}.getType();
+        makePostCall(ACCEPT_TERMS, null, type, callback);
+    }
+
+    /**
+     * Indicate a user has declined the terms and conditions.
+     * Once declined the credit card will be in a final state, no other actions may be taken.
+     * This link will only be available when the credit card is awaiting the user to accept
+     * or decline the presented terms and conditions.
+     *
+     * @param callback     result callback
+     */
+    public void declineTerms(@NonNull ApiCallback<CreditCard> callback){
+        Type type = new TypeToken<CreditCard>(){}.getType();
+        makePostCall(DECLINE_TERMS, null, type, callback);
+    }
 
     /**
      * Transition the credit card into an active state where it can be utilized for payment.
