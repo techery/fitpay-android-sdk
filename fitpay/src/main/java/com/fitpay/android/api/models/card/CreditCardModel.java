@@ -3,7 +3,7 @@ package com.fitpay.android.api.models.card;
 import com.fitpay.android.api.enums.CardInitiators;
 import com.fitpay.android.api.models.AssetReference;
 import com.fitpay.android.api.models.BaseModel;
-import com.fitpay.android.api.models.Device;
+import com.fitpay.android.api.models.device.Device;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;

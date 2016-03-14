@@ -2,7 +2,7 @@ package com.fitpay.android.utils;
 
 import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.card.CreditCard;
-import com.fitpay.android.api.models.Device;
+import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.Payload;
 import com.google.gson.Gson;

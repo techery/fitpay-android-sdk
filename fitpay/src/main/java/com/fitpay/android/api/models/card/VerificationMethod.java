@@ -5,9 +5,6 @@ import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.google.gson.JsonObject;
-import com.google.gson.reflect.TypeToken;
-
-import java.lang.reflect.Type;
 
 public final class VerificationMethod extends VerificationMethodModel{
     private static final String SELECT = "select";
@@ -18,8 +15,7 @@ public final class VerificationMethod extends VerificationMethodModel{
      * this indicates the user has selected the specified verification method.
      */
     public void select(@NonNull ApiCallback<VerificationMethod> callback){
-        Type type = new TypeToken<VerificationMethod>(){}.getType();
-        makePostCall(SELECT, null, type, callback);
+        makePostCall(SELECT, null, VerificationMethod.class, callback);
     }
 
     /**
@@ -29,9 +25,8 @@ public final class VerificationMethod extends VerificationMethodModel{
      * @param callback           result callback
      */
     public void verify(@NonNull String verificationCode, @NonNull ApiCallback<VerificationMethod> callback){
-        Type type = new TypeToken<VerificationMethod>(){}.getType();
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("verificationCode", verificationCode);
-        makePostCall(VERIFY, jsonObject, type, callback);
+        makePostCall(VERIFY, jsonObject, VerificationMethod.class, callback);
     }
 }

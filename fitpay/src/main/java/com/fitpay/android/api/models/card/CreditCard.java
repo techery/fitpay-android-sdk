@@ -5,11 +5,8 @@ import android.support.annotation.NonNull;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.models.Address;
 import com.fitpay.android.api.models.Reason;
-import com.fitpay.android.api.models.ResultCollection;
-import com.fitpay.android.api.models.Transaction;
-import com.google.gson.reflect.TypeToken;
+import com.fitpay.android.api.models.collection.Collections;
 
-import java.lang.reflect.Type;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.IllegalFormatException;
@@ -33,8 +30,7 @@ public final class CreditCard extends CreditCardModel {
      * @param callback     result callback
      */
     public void acceptTerms(@NonNull ApiCallback<CreditCard> callback){
-        Type type = new TypeToken<CreditCard>(){}.getType();
-        makePostCall(ACCEPT_TERMS, null, type, callback);
+        makePostCall(ACCEPT_TERMS, null, CreditCard.class, callback);
     }
 
     /**
@@ -46,8 +42,7 @@ public final class CreditCard extends CreditCardModel {
      * @param callback     result callback
      */
     public void declineTerms(@NonNull ApiCallback<CreditCard> callback){
-        Type type = new TypeToken<CreditCard>(){}.getType();
-        makePostCall(DECLINE_TERMS, null, type, callback);
+        makePostCall(DECLINE_TERMS, null, CreditCard.class, callback);
     }
 
     /**
@@ -58,8 +53,7 @@ public final class CreditCard extends CreditCardModel {
      * @param callback     result callback
      */
     public void reactivate(@NonNull Reason reason, @NonNull ApiCallback<CreditCard> callback){
-        Type type = new TypeToken<CreditCard>(){}.getType();
-        makePostCall(REACTIVATE, reason, type, callback);
+        makePostCall(REACTIVATE, reason, CreditCard.class, callback);
     }
 
     /**
@@ -70,8 +64,7 @@ public final class CreditCard extends CreditCardModel {
      * @param callback     result callback
      */
     public void deactivate(@NonNull Reason reason, @NonNull ApiCallback<CreditCard> callback){
-        Type type = new TypeToken<CreditCard>(){}.getType();
-        makePostCall(DEACTIVATE, reason, type, callback);
+        makePostCall(DEACTIVATE, reason, CreditCard.class, callback);
     }
 
     /**
@@ -82,8 +75,7 @@ public final class CreditCard extends CreditCardModel {
      * @param callback     result callback
      */
     public void makeDefault(@NonNull ApiCallback<Void> callback){
-        Type type = new TypeToken<Void>(){}.getType();
-        makePostCall(MAKE_DEFAULT, null, type, callback);
+        makePostCall(MAKE_DEFAULT, null, Void.class, callback);
     }
 
     /**
@@ -107,8 +99,7 @@ public final class CreditCard extends CreditCardModel {
      * @param callback     result callback
      */
     public void updateCard(@NonNull CreditCard creditCard, @NonNull ApiCallback<CreditCard> callback){
-        Type type = new TypeToken<CreditCard>(){}.getType();
-        makePatchCall(creditCard, true, type, callback);
+        makePatchCall(creditCard, true, CreditCard.class, callback);
     }
 
     /**
@@ -118,12 +109,11 @@ public final class CreditCard extends CreditCardModel {
      * @param offset   Start index position for list of entities returned
      * @param callback result callback
      */
-    public void getTransactions(int limit, int offset, ApiCallback<ResultCollection<Transaction>> callback){
-        Type type = new TypeToken<ResultCollection<Transaction>>(){}.getType();
+    public void getTransactions(int limit, int offset, ApiCallback<Collections.TransactionCollection> callback){
         Map<String, Object> queryMap = new HashMap<>();
         queryMap.put("limit", limit);
         queryMap.put("offset", offset);
-        makeGetCall(TRANSACTIONS, queryMap, type, callback);
+        makeGetCall(TRANSACTIONS, queryMap, Collections.TransactionCollection.class, callback);
     }
 
     public static final class Builder{

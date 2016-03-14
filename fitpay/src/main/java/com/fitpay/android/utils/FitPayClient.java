@@ -1,15 +1,6 @@
 package com.fitpay.android.utils;
 
-import com.fitpay.android.api.models.ApduPackage;
-import com.fitpay.android.api.models.Commit;
-import com.fitpay.android.api.models.card.CreditCard;
-import com.fitpay.android.api.models.Device;
-import com.fitpay.android.api.models.Relationship;
-import com.fitpay.android.api.models.ResultCollection;
-import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.user.User;
-import com.fitpay.android.api.models.card.VerificationMethod;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 
 import java.util.Map;
@@ -46,167 +37,6 @@ interface FitPayClient {
     @GET("users/{userId}")
     Call<User> getUser(@Path("userId") String userId);
 
-
-    /**
-     * Get a single relationship.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     * @param deviceId device id
-     */
-    @GET("users/{userId}/relationships")
-    Call<Relationship> getRelationship(@Path("userId") String userId,
-                                       @Query("creditCardId") String creditCardId,
-                                       @Query("deviceId") String deviceId);
-
-    /**
-     * Creates a relationship between a device and a creditCard.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     * @param deviceId device id
-     */
-    @PUT("users/{userId}/relationships")
-    Call<Relationship> createRelationship(@Path("userId") String userId,
-                                          @Query("creditCardId") String creditCardId,
-                                          @Query("deviceId") String deviceId);
-
-    /**
-     * Removes a relationship between a device and a creditCard if it exists.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     * @param deviceId device id
-     */
-    @DELETE("users/{userId}/relationships")
-    Call<Void> deleteRelationship(@Path("userId") String userId,
-                                    @Query("creditCardId") String creditCardId,
-                                    @Query("deviceId") String deviceId);
-
-
-    /**
-     * Retrieves the details of an existing credit card.
-     * You need only supply the unique identifier that was returned upon creation.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     */
-    @GET("users/{userId}/creditCards/{creditCardId}")
-    Call<CreditCard> getCreditCard(@Path("userId") String userId, @Path("creditCardId") String creditCardId);
-
-    /**
-     * If a verification method is selected that requires an entry of a pin code, this transition will be available.
-     * Not all verification methods will include a secondary verification step through the FitPay API.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     * @param verificationTypeId verification type id
-     * @param verificationCode verification code
-     */
-    @POST("users/{userId}/creditCards/{creditCardId}/verificationMethods/{verificationTypeId}/verify")
-    Call<VerificationMethod> verify(@Path("userId") String userId,
-                              @Path("creditCardId") String creditCardId,
-                              @Path("verificationTypeId") String verificationTypeId,
-                              @Body String verificationCode);
-
-    /**
-     * Retrieves the details of an existing device.
-     * You need only supply the unique identifier that was returned upon creation.
-     *
-     * @param userId user id
-     * @param deviceId device id
-     */
-    @GET("users/{userId}/devices/{deviceId}")
-    Call<Device> getDevice(@Path("userId") String userId, @Path("deviceId") String deviceId);
-
-    /**
-     * Update the details of an existing device.
-     *
-     * @param userId user id
-     * @param deviceId device id
-     * @param deviceData device data:(firmwareRevision, softwareRevision)
-     */
-    @PATCH("users/{userId}/devices/{deviceId}")
-    Call<Device> updateDevice(@Path("userId") String userId,
-                              @Path("deviceId") String deviceId,
-                              @Body JsonArray deviceData);
-
-    /**
-     * Delete a single device.
-     *
-     * @param userId user id
-     * @param deviceId device id
-     */
-    @DELETE("users/{userId}/devices/{deviceId}")
-    Call<Void> deleteDevice(@Path("userId") String userId, @Path("deviceId") String deviceId);
-
-
-    /**
-     * Retrieves a collection of all events that should be committed to this device.
-     *
-     * @param userId user id
-     * @param deviceId device id
-     * @param limit Max number of events per page, default: 10
-     * @param offset Start index position for list of entities returned
-     * @param commitsAfter The last commit successfully applied.
-     *                     Query will return all subsequent commits which need to be applied.
-     */
-    @GET("users/{userId}/devices/{deviceId}/commits")
-    Call<ResultCollection<Commit>> getCommits(@Path("userId") String userId,
-                                              @Path("deviceId") String deviceId,
-                                              @Query("commitsAfter") String commitsAfter,
-                                              @Query("limit") int limit,
-                                              @Query("offset") int offset);
-
-    /**
-     * Retrieves an individual commit.
-     *
-     * @param userId user id
-     * @param deviceId device id
-     * @param commitId commit id
-     */
-    @GET("users/{userId}/devices/{deviceId}/commits/{commitId}")
-    Call<Commit> getCommit(@Path("userId") String userId,
-                           @Path("deviceId") String deviceId,
-                           @Path("commitId") String commitId);
-
-    /**
-     * Get a single transaction.
-     *
-     * @param userId user id
-     * @param creditCardId credit card id
-     * @param transactionId transaction id
-     * */
-    @GET("users/{userId}/creditCards/{creditCardId}/transactions/{transactionId}")
-    Call<Transaction> getTransaction(@Path("userId") String userId,
-                                     @Path("creditCardId") String creditCardId,
-                                     @Path("transactionId") String transactionId);
-
-
-    /**
-     * Endpoint to allow for returning responses to APDU execution.
-     *
-     * @param packageId package id
-     * @param apduPackage package confirmation data:(packageId, state, executedTs,
-     *                            executedDuration, apduResponses:(commandId, commandId, responseData))
-     * */
-    @POST("apduPackages/{packageId}/confirm")
-    Call<Void> confirmAPDUPackage(@Path("packageId") String packageId, @Body ApduPackage apduPackage);
-
-
-    /**
-     * Retrieve an individual asset (i.e. terms and conditions)
-     *
-     * @param adapterData adapter data
-     * @param adapterId adapter id
-     * @param assetId asset id
-     * */
-    @GET("assets")
-    Call<Object> getAssets(@Query("adapterData") String adapterData,
-                          @Query("adapterId") String adapterId,
-                          @Query("assetId") String assetId);
-
-
     /**
      * Creates a new encryption key pair
      *
@@ -234,7 +64,7 @@ interface FitPayClient {
 
 
     /**
-     * //TODO: add description when it becomes available on API documentation page
+     * Get webhook
      *
      * */
     @GET("config/webhook")

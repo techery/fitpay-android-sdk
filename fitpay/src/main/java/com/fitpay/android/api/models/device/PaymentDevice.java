@@ -1,6 +1,7 @@
-package com.fitpay.android.api.models;
+package com.fitpay.android.api.models.device;
 
 import com.fitpay.android.api.enums.DeviceTypes;
+import com.fitpay.android.api.models.BaseModel;
 
 /**
  * Created by Vlad on 09.03.2016.

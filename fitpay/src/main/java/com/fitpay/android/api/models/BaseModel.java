@@ -58,7 +58,7 @@ public class BaseModel{
     }
 
     protected void makeDeleteCall(ApiCallback<Void> callback){
-        String url = getLink(SELF,callback);
+        String url = getLink(SELF, callback);
         if(url != null){
             ApiManager.getInstance().delete(url, callback);
         }

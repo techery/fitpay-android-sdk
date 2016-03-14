@@ -1,139 +1,51 @@
-package com.fitpay.android.api.models;
+package com.fitpay.android.api.models.device;
 
 
 import android.support.annotation.NonNull;
 
+import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.api.models.card.CreditCard;
+import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.utils.TimestampUtils;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-public final class Device extends PaymentDevice {
+public final class Device extends DeviceModel {
 
-    private String deviceIdentifier;
-
-    /**
-     * description : The serial number for a particular instance of the device
-     */
-    private String serialNumber;
+    private static final String COMMITS = "commits";
 
     /**
-     * description : The model number that is assigned by the device vendor.
+     * Update the details of an existing device.
+     *
+     * @param callback   result callback
      */
-    private String modelNumber;
+    public void updateDevice(@NonNull Device device, @NonNull ApiCallback<Device> callback){
+        makePatchCall(device, false, Device.class, callback);
+    }
 
     /**
-     * description : The hardware revision for the hardware within the device.
+     * Delete a single device.
+     *
+     * @param callback result callback
      */
-    private String hardwareRevision;
+    public void deleteDevice(@NonNull ApiCallback<Void> callback){
+        makeDeleteCall(callback);
+    }
 
     /**
-     * description : The firmware revision for the firmware within the device.
+     * Retrieves a collection of all events that should be committed to this device.
+     *
+     * @param limit        Max number of events per page, default: 10
+     * @param offset       Start index position for list of entities returned
+     * @param callback     result callback
      */
-    private String firmwareRevision;
-
-    /**
-     * description : The software revision for the software within the device.
-     */
-    private String softwareRevision;
-
-    private String createdTs;
-
-    private Long createdTsEpoch;
-
-    /**
-     * description : The name of the operating system
-     */
-    private String osName;
-
-    /**
-     * description : A structure containing an Organizationally Unique Identifier (OUI)
-     * followed by a manufacturer-defined identifier and is unique for each individual instance of the product.
-     */
-    private String systemId;
-
-    /**
-     * description : The license key parameter is used to read or write the license key of the device
-     */
-    private String licenseKey;
-
-    /**
-     * description : The BD address parameter is used to read the Bluetooth device address
-     */
-    private String bdAddress;
-
-    /**
-     * description : The time the device was paired
-     */
-    private String pairingTs;
-
-
-    private List<CreditCard> cardRelationships;
-
-    private String hostDeviceId;
-
-    private Device(){
-    }
-
-    public String getDeviceIdentifier() {
-        return deviceIdentifier;
-    }
-
-    public String getSerialNumber() {
-        return serialNumber;
-    }
-
-    public String getModelNumber() {
-        return modelNumber;
-    }
-
-    public String getHardwareRevision() {
-        return hardwareRevision;
-    }
-
-    public String getFirmwareRevision() {
-        return firmwareRevision;
-    }
-
-    public String getSoftwareRevision() {
-        return softwareRevision;
-    }
-
-    public String getCreatedTs() {
-        return createdTs;
-    }
-
-    public long getCreatedTsEpoch() {
-        return createdTsEpoch;
-    }
-
-    public String getOsName() {
-        return osName;
-    }
-
-    public String getSystemId() {
-        return systemId;
-    }
-
-    public String getLicenseKey() {
-        return licenseKey;
-    }
-
-    public String getBdAddress() {
-        return bdAddress;
-    }
-
-    public String getPairingTs() {
-        return pairingTs;
-    }
-
-    public List<CreditCard> getCardRelationships() {
-        return cardRelationships;
-    }
-
-    public String getHostDeviceId() {
-        return hostDeviceId;
+    public void getCommits(int limit, int offset, final ApiCallback<Collections.CommitsCollection> callback) {
+        Map<String, Object> queryMap = new HashMap<>();
+        queryMap.put("limit", limit);
+        queryMap.put("offset", offset);
+        makeGetCall(COMMITS, queryMap, Collections.CommitsCollection.class, callback);
     }
 
     public static final class Builder{

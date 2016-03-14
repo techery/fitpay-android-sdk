@@ -4,12 +4,10 @@ import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.models.card.CreditCard;
-import com.fitpay.android.api.models.Device;
-import com.fitpay.android.api.models.ResultCollection;
+import com.fitpay.android.api.models.collection.Collections;
+import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.utils.TimestampUtils;
-import com.google.gson.reflect.TypeToken;
 
-import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,8 +33,7 @@ public final class User extends UserModel {
      * @param callback result callback
      */
     public void updateUser(@NonNull User user, @NonNull ApiCallback<User> callback){
-        Type type = new TypeToken<User>(){}.getType();
-        makePatchCall(user, true, type, callback);
+        makePatchCall(user, true, User.class, callback);
     }
 
     /**
@@ -46,12 +43,11 @@ public final class User extends UserModel {
      * @param offset   Start index position for list of entities returned
      * @param callback result callback
      */
-    public void getCreditCards(int limit, int offset, @NonNull ApiCallback<ResultCollection<CreditCard>> callback){
-        Type type = new TypeToken<ResultCollection<CreditCard>>(){}.getType();
+    public void getCreditCards(int limit, int offset, @NonNull ApiCallback<Collections.CreditCardCollection> callback){
         Map<String, Object> queryMap = new HashMap<>();
         queryMap.put("limit", limit);
         queryMap.put("offset", offset);
-        makeGetCall(GET_CARDS, queryMap, type, callback);
+        makeGetCall(GET_CARDS, queryMap, Collections.CreditCardCollection.class, callback);
     }
 
     /**
@@ -61,12 +57,11 @@ public final class User extends UserModel {
      * @param offset   Start index position for list of entities returned
      * @param callback result callback
      */
-    public void getDevices(int limit, int offset, @NonNull ApiCallback<ResultCollection<Device>> callback){
-        Type type = new TypeToken<ResultCollection<Device>>(){}.getType();
+    public void getDevices(int limit, int offset, @NonNull ApiCallback<Collections.DeviceCollection> callback){
         Map<String, Object> queryMap = new HashMap<>();
         queryMap.put("limit", limit);
         queryMap.put("offset", offset);
-        makeGetCall(GET_DEVICES, queryMap, type, callback);
+        makeGetCall(GET_DEVICES, queryMap, Collections.DeviceCollection.class, callback);
     }
 
     /**
@@ -80,8 +75,7 @@ public final class User extends UserModel {
      * @param callback   result callback
      */
     public void createCreditCard(@NonNull CreditCard creditCard, @NonNull ApiCallback<CreditCard> callback){
-        Type type = new TypeToken<CreditCard>(){}.getType();
-        makePostCall(GET_CARDS, creditCard, type, callback);
+        makePostCall(GET_CARDS, creditCard, CreditCard.class, callback);
     }
 
     /**
@@ -93,8 +87,7 @@ public final class User extends UserModel {
      * @param callback result callback
      */
     public void createDevice(@NonNull Device device, @NonNull ApiCallback<Device> callback){
-        Type type = new TypeToken<CreditCard>(){}.getType();
-        makePostCall(GET_CARDS, device, type, callback);
+        makePostCall(GET_DEVICES, device, Device.class, callback);
     }
 
     public static final class Builder{
