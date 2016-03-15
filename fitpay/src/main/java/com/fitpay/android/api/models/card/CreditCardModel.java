@@ -1,6 +1,7 @@
 package com.fitpay.android.api.models.card;
 
 import com.fitpay.android.api.enums.CardInitiators;
+import com.fitpay.android.api.models.AssetReference;
 import com.fitpay.android.api.models.BaseModel;
 import com.google.gson.annotations.SerializedName;
 

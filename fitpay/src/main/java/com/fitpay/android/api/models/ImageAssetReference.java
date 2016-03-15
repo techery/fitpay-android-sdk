@@ -1,4 +1,4 @@
-package com.fitpay.android.api.models.card;
+package com.fitpay.android.api.models;
 
 /**
  * Created by Vlad on 19.02.2016.
