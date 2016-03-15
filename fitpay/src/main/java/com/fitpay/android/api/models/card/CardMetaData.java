@@ -1,7 +1,5 @@
 package com.fitpay.android.api.models.card;
 
-import com.fitpay.android.api.models.ImageAssetReference;
-
 import java.util.List;
 
 public final class CardMetaData {

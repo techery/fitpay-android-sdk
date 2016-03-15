@@ -1,9 +1,9 @@
-package com.fitpay.android.api.models;
+package com.fitpay.android.api.models.card;
 
 /**
  * Created by Vlad on 19.02.2016.
  */
-public final class ImageAssetReference extends AssetReference{
+public final class ImageAssetReference extends AssetReference {
     private int width;
     private int height;
 

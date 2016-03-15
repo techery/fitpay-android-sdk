@@ -6,15 +6,23 @@ import android.support.annotation.NonNull;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.api.models.card.CreditCard;
+import com.fitpay.android.api.models.card.CreditCardRef;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.utils.TimestampUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public final class Device extends DeviceModel {
 
     private static final String COMMITS = "commits";
+
+    private List<CreditCardRef> cardRelationships;
+
+    public List<CreditCardRef> getCardRelationships() {
+        return cardRelationships;
+    }
 
     /**
      * Update the details of an existing device.

@@ -3,13 +3,14 @@ package com.fitpay.android.api.models.card;
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
-import com.fitpay.android.api.models.Address;
-import com.fitpay.android.api.models.Reason;
+import com.fitpay.android.api.models.device.Address;
 import com.fitpay.android.api.models.collection.Collections;
+import com.fitpay.android.api.models.device.DeviceRef;
 
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.IllegalFormatException;
+import java.util.List;
 import java.util.Map;
 
 public final class CreditCard extends CreditCardModel {
@@ -20,6 +21,12 @@ public final class CreditCard extends CreditCardModel {
     private static final String DEACTIVATE = "deactivate";
     private static final String TRANSACTIONS = "transactions";
     private static final String MAKE_DEFAULT = "makeDefault";
+
+    private List<DeviceRef> deviceRelationships;
+
+    public List<DeviceRef> getDeviceRelationships() {
+        return deviceRelationships;
+    }
 
     /**
      * Indicate a user has accepted the terms and conditions presented

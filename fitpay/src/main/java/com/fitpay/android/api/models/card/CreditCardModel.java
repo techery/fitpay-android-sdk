@@ -1,9 +1,7 @@
 package com.fitpay.android.api.models.card;
 
 import com.fitpay.android.api.enums.CardInitiators;
-import com.fitpay.android.api.models.AssetReference;
 import com.fitpay.android.api.models.BaseModel;
-import com.fitpay.android.api.models.device.Device;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
@@ -30,7 +28,6 @@ abstract class CreditCardModel extends BaseModel {
     protected String targetDeviceType;
     protected String externalTokenReference;
     protected List<VerificationMethod> verificationMethods;
-    protected List<Device> deviceRelationships;
     @SerializedName("encryptedData")
     protected CreditCardInfo creditCardInfo;
     protected String termsAssetId;
@@ -100,10 +97,6 @@ abstract class CreditCardModel extends BaseModel {
 
     public List<VerificationMethod> getVerificationMethods() {
         return verificationMethods;
-    }
-
-    public List<Device> getDeviceRelationships() {
-        return deviceRelationships;
     }
 
     public CreditCardInfo getCreditCardInfo() {
