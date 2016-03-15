@@ -25,4 +25,12 @@ public final class Links {
 
         return null;
     }
+
+    public String getReadableKeys(){
+        if(links.keySet().size() > 0) {
+            return "self, " + links.keySet().toString();
+        }
+
+        return "self";
+    }
 }

@@ -1,5 +1,7 @@
 package com.fitpay.android.utils;
 
+import com.fitpay.android.api.models.ApduPackage;
+import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.user.User;
 import com.google.gson.JsonElement;
 
@@ -38,13 +40,34 @@ interface FitPayClient {
     Call<User> getUser(@Path("userId") String userId);
 
     /**
+     * Creates a relationship between a device and a creditCard.
+     *
+     * @param userId user id
+     * @param creditCardId credit card id
+     * @param deviceId device id
+     */
+    @PUT("users/{userId}/relationships")
+    Call<Relationship> createRelationship(@Path("userId") String userId,
+                                          @Query("creditCardId") String creditCardId,
+                                          @Query("deviceId") String deviceId);
+
+    /**
+     * Endpoint to allow for returning responses to APDU execution.
+     *
+     * @param packageId package id
+     * @param apduPackage package confirmation data:(packageId, state, executedTs,
+     *                            executedDuration, apduResponses:(commandId, commandId, responseData))
+     * */
+    @POST("apduPackages/{packageId}/confirm")
+    Call<Void> confirmAPDUPackage(@Path("packageId") String packageId, @Body ApduPackage apduPackage);
+
+    /**
      * Creates a new encryption key pair
      *
      * @param clientPublicKey client public key
      * */
     @POST("config/encryptionKeys")
     Call<ECCKeyPair> createEncryptionKey(@Body ECCKeyPair clientPublicKey);
-
 
     /**
      * Retrieve and individual key pair.
@@ -61,7 +84,6 @@ interface FitPayClient {
      * */
     @DELETE("config/encryptionKeys/{keyId}")
     Call<Void> deleteEncryptionKey(@Query("keyId") String keyId);
-
 
     /**
      * Get webhook

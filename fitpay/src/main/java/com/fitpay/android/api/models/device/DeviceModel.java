@@ -1,9 +1,5 @@
 package com.fitpay.android.api.models.device;
 
-import com.fitpay.android.api.models.card.CreditCard;
-
-import java.util.List;
-
 /**
  * Created by Vlad on 14.03.2016.
  */
@@ -67,7 +63,6 @@ abstract class DeviceModel extends PaymentDevice {
     protected String pairingTs;
 
 
-    protected List<CreditCard> cardRelationships;
 
     protected String hostDeviceId;
 
@@ -126,9 +121,7 @@ abstract class DeviceModel extends PaymentDevice {
         return pairingTs;
     }
 
-    public List<CreditCard> getCardRelationships() {
-        return cardRelationships;
-    }
+
 
     public String getHostDeviceId() {
         return hostDeviceId;

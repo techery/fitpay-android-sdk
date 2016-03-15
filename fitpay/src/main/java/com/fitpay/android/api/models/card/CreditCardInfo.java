@@ -1,6 +1,6 @@
 package com.fitpay.android.api.models.card;
 
-import com.fitpay.android.api.models.Address;
+import com.fitpay.android.api.models.device.Address;
 
 /**
  * Created by Vlad on 11.03.2016.

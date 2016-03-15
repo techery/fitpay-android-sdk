@@ -1,6 +1,8 @@
 package com.fitpay.android.api.models;
 
 
+import android.support.annotation.NonNull;
+
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.utils.ApiManager;
@@ -25,11 +27,15 @@ public class BaseModel{
     public BaseModel(){
     }
 
+    public void self(@NonNull ApiCallback callback){
+        makeGetCall(SELF, null, getClass(), callback);
+    }
+
     private <T> String getLink(String key, ApiCallback<T> callback){
         String url = links.getLink(key);
 
         if(StringUtils.isEmpty(url)){
-            callback.onFailure(ResultCode.NOT_FOUND, "API endpoint is not available.");
+            callback.onFailure(ResultCode.NOT_FOUND, "API endpoint is not available. You can use: " + links.getReadableKeys());
             url = null;
         }
 

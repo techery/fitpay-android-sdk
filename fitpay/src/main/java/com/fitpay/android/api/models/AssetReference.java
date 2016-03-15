@@ -9,4 +9,8 @@ public class AssetReference extends BaseModel {
     public String getMimeType() {
         return mimeType;
     }
+
+    public String getUrl(){
+        return links.getLink(SELF);
+    }
 }

@@ -5,14 +5,9 @@ import android.support.annotation.NonNull;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.ApduPackage;
-import com.fitpay.android.api.models.Commit;
-import com.fitpay.android.api.models.card.CreditCard;
-import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.LoginIdentity;
 import com.fitpay.android.api.models.Relationship;
-import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.user.User;
-import com.fitpay.android.api.models.card.VerificationMethod;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -116,6 +111,22 @@ public class ApiManager {
         }
     }
 
+
+    /**
+     * Creates a relationship between a device and a creditCard.
+     *
+     * @param userId       user id
+     * @param creditCardId credit card id
+     * @param deviceId     device id
+     * @param callback     result callback
+     */
+    public void createRelationship(String userId, String creditCardId, String deviceId, ApiCallback<Relationship> callback) {
+        if(isAuthorized(callback)){
+            Call<Relationship> createRelationshipCall = getClient().createRelationship(userId, creditCardId, deviceId);
+            createRelationshipCall.enqueue(new CallbackWrapper<>(callback));
+        }
+    }
+
 //    /**
 //     * Get a single relationship.
 //     *
@@ -128,37 +139,6 @@ public class ApiManager {
 //        if(isAuthorized(callback)){
 //            Call<Relationship> getRelationshipCall = getClient().getRelationship(userId, creditCardId, deviceId);
 //            getRelationshipCall.enqueue(new CallbackWrapper<>(callback));
-//        }
-//    }
-//
-//
-//    /**
-//     * Creates a relationship between a device and a creditCard.
-//     *
-//     * @param userId       user id
-//     * @param creditCardId credit card id
-//     * @param deviceId     device id
-//     * @param callback     result callback
-//     */
-//    public void createRelationship(String userId, String creditCardId, String deviceId, ApiCallback<Relationship> callback) {
-//        if(isAuthorized(callback)){
-//            Call<Relationship> createRelationshipCall = getClient().createRelationship(userId, creditCardId, deviceId);
-//            createRelationshipCall.enqueue(new CallbackWrapper<>(callback));
-//        }
-//    }
-//
-//    /**
-//     * Removes a relationship between a device and a creditCard if it exists.
-//     *
-//     * @param userId       user id
-//     * @param creditCardId credit card id
-//     * @param deviceId     device id
-//     * @param callback     result callback
-//     */
-//    public void deleteRelationship(String userId, String creditCardId, String deviceId, ApiCallback<Void> callback) {
-//        if(isAuthorized(callback)){
-//            Call<Void> deleteRelationshipCall = getClient().deleteRelationship(userId, creditCardId, deviceId);
-//            deleteRelationshipCall.enqueue(new CallbackWrapper<>(callback));
 //        }
 //    }
 //
@@ -248,36 +228,24 @@ public class ApiManager {
 //        }
 //    }
 //
-//    /**
-//     * Endpoint to allow for returning responses to APDU execution.
-//     *
-//     * @param packageId   package id
-//     * @param apduPackage package confirmation data:(packageId, state, executedTs,
-//     *                    executedDuration, apduResponses:(commandId, commandId, responseData))
-//     * @param callback    result callback
-//     */
-//    public void confirmAPDUPackage(String packageId, ApduPackage apduPackage, ApiCallback<Void> callback) {
-//        if(isAuthorized(callback)){ //TODO add 200,202 responses
-//            Call<Void> confirmAPDUPackage = getClient().confirmAPDUPackage(packageId, apduPackage);
-//            confirmAPDUPackage.enqueue(new CallbackWrapper<>(callback));
-//        }
-//    }
-//
-//
-//    /**
-//     * Retrieve an individual asset (i.e. terms and conditions)
-//     *
-//     * @param adapterData adapter data
-//     * @param adapterId   adapter id
-//     * @param assetId     asset id
-//     * @param callback    result callback
-//     */
-//    public void getAssets(String adapterData, String adapterId, String assetId, ApiCallback<Object> callback) {
-//    }
 
-    public <T> void get(String url, Map<String, Object> queryMap, final Type type, final ApiCallback<T> callback) {
-        Call<JsonElement> getDataCall = getClient().get(url, queryMap);
-        getDataCall.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
+    /**
+     * Endpoint to allow for returning responses to APDU execution.
+     *
+     * @param packageId   package id
+     * @param apduPackage package confirmation data:(packageId, state, executedTs,
+     *                    executedDuration, apduResponses:(commandId, commandId, responseData))
+     * @param callback    result callback
+     */
+    public void confirmAPDUPackage(String packageId, ApduPackage apduPackage, ApiCallback<Void> callback) {
+        if(isAuthorized(callback)){ //TODO add 200,202 responses
+            Call<Void> confirmAPDUPackage = getClient().confirmAPDUPackage(packageId, apduPackage);
+            confirmAPDUPackage.enqueue(new CallbackWrapper<>(callback));
+        }
+    }
+
+    private <T> void makeCall(final Call<JsonElement> call, final Type type, final ApiCallback<T> callback){
+        call.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
             @Override
             public void onSuccess(JsonElement result) {
                 T response = Constants.getGson().fromJson(result, type);
@@ -291,26 +259,18 @@ public class ApiManager {
         }));
     }
 
-    public <T, U> void post(String url, U data, final Type type, final ApiCallback<T> callback) {
+    public <T> void get(final String url, final Map<String, Object> queryMap, final Type type, final ApiCallback<T> callback) {
+        Call<JsonElement> getDataCall = getClient().get(url, queryMap);
+        makeCall(getDataCall, type, callback);
+    }
+
+    public <T, U> void post(final String url, final U data, final Type type, final ApiCallback<T> callback) {
         Call<JsonElement> postDataCall = data != null ?
                 getClient().post(url, data) : getClient().post(url);
-
-        postDataCall.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
-            @Override
-            public void onSuccess(JsonElement result) {
-                T response = Constants.getGson().fromJson(result, type);
-                callback.onSuccess(response);
-            }
-
-            @Override
-            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                callback.onFailure(errorCode, errorMessage);
-            }
-        }));
+        makeCall(postDataCall, type, callback);
     }
 
-    public <T, U> void patch(String url, U data, boolean encrypt, final Type type, final ApiCallback<T> callback) {
-
+    public <T, U> void patch(final String url, final U data, final boolean encrypt, final Type type, final ApiCallback<T> callback) {
         JsonArray updateData = new JsonArray();
 
         Map<String, Object> userMap = ObjectConverter.convertToSimpleMap(data);
@@ -336,34 +296,12 @@ public class ApiManager {
             patchDataCall = getClient().patch(url, updateData);
         }
 
-        patchDataCall.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
-            @Override
-            public void onSuccess(JsonElement result) {
-                T response = Constants.getGson().fromJson(result, type);
-                callback.onSuccess(response);
-            }
-
-            @Override
-            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                callback.onFailure(errorCode, errorMessage);
-            }
-        }));
+        makeCall(patchDataCall, type, callback);
     }
 
-    public <T, U> void put(String url, U data, final Type type, final ApiCallback<T> callback) {
-//        Call<JsonElement> putDataCall = getClient().post(url, data);
-//        postDataCall.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
-//            @Override
-//            public void onSuccess(JsonElement result) {
-//                T response = Constants.getGson().fromJson(result, type);
-//                callback.onSuccess(response);
-//            }
-//
-//            @Override
-//            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-//                callback.onFailure(errorCode, errorMessage);
-//            }
-//        }));
+    public <T, U> void put(final String url, final U data, final Type type, final ApiCallback<T> callback) {
+        Call<JsonElement> putDataCall = getClient().post(url, data);
+        makeCall(putDataCall, type, callback);
     }
 
     public void delete(String url, final ApiCallback<Void> callback) {
