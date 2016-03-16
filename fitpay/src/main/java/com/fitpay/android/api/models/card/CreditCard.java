@@ -3,7 +3,6 @@ package com.fitpay.android.api.models.card;
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
-import com.fitpay.android.api.models.device.Address;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.DeviceRef;
 

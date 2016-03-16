@@ -3,6 +3,7 @@ package com.fitpay.android.api.models;
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.utils.StringUtils;
+import com.fitpay.android.utils.ValidationException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,23 +44,23 @@ public final class LoginIdentity {
          *
          * @return an instance of {@link LoginIdentity} configured with the options currently set in this builder
          */
-        public LoginIdentity create() throws IllegalArgumentException{
+        public LoginIdentity create() throws ValidationException{
             LoginIdentity loginIdentity = new LoginIdentity();
 
             if(StringUtils.isEmpty(username)){
-                throw new NullPointerException("Username can't be null");
+                throw new ValidationException("Username can't be null");
             }
 
             if(StringUtils.isEmpty(password)){
-                throw new NullPointerException("Password can't be null");
+                throw new ValidationException("Password can't be null");
             }
 
             if(StringUtils.isEmpty(clientId)){
-                throw new NullPointerException("ClientId can't be null");
+                throw new ValidationException("ClientId can't be null");
             }
 
             if(StringUtils.isEmpty(redirectUri)){
-                throw new NullPointerException("RedirectUri can't be null");
+                throw new ValidationException("RedirectUri can't be null");
             }
 
             final String data = new StringBuilder()

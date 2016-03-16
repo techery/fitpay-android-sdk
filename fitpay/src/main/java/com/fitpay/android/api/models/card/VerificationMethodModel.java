@@ -12,11 +12,8 @@ abstract class VerificationMethodModel extends BaseModel {
     private String methodType;
     private String value;
     private String verificationResult;
-    private String createdTs;
     private long createdTsEpoch;
-    private String lastModifiedTs;
     private long lastModifiedTsEpoch;
-    private String verifiedTs;
     private long verifiedTsEpoch;
 
     public String getVerificationId() {
@@ -27,7 +24,7 @@ abstract class VerificationMethodModel extends BaseModel {
         return state;
     }
 
-    public String getEthodType() {
+    public String getMethodType() {
         return methodType;
     }
 
@@ -39,24 +36,12 @@ abstract class VerificationMethodModel extends BaseModel {
         return verificationResult;
     }
 
-    public String getCreatedTs() {
-        return createdTs;
-    }
-
     public long getCreatedTsEpoch() {
         return createdTsEpoch;
     }
 
-    public String getLastModifiedTs() {
-        return lastModifiedTs;
-    }
-
     public long getLastModifiedTsEpoch() {
         return lastModifiedTsEpoch;
-    }
-
-    public String getVerifiedTs() {
-        return verifiedTs;
     }
 
     public long getVerifiedTsEpoch() {
