@@ -95,8 +95,8 @@ public final class User extends UserModel {
         private String firstName;
         private String lastName;
         private String birthDate;
-        private String originAccountCreatedAt;
-        private String termsAcceptedAt;
+        private long originAccountCreatedAtEpoch;
+        private long termsAcceptedAtEpoch;
         private String termsVersion;
 
         /**
@@ -119,8 +119,8 @@ public final class User extends UserModel {
             user.userInfo.firstName = firstName;
             user.userInfo.lastName = lastName;
             user.userInfo.birthDate = birthDate;
-            user.originAccountCreatedTs = originAccountCreatedAt;
-            user.termsAcceptedTs = termsAcceptedAt;
+            user.originAccountCreatedTsEpoch = originAccountCreatedAtEpoch;
+            user.termsAcceptedTsEpoch = termsAcceptedAtEpoch;
             user.termsVersion = termsVersion;
             return user;
         }
@@ -161,7 +161,8 @@ public final class User extends UserModel {
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
         public Builder setOriginAccountCreatedAt(long originAccountCreatedAt) {
-            this.originAccountCreatedAt = TimestampUtils.getISO8601StringForTime(originAccountCreatedAt);
+            this.originAccountCreatedAtEpoch = originAccountCreatedAt;
+//            this.originAccountCreatedAt = TimestampUtils.getISO8601StringForTime(originAccountCreatedAt);
             return this;
         }
 
@@ -171,7 +172,8 @@ public final class User extends UserModel {
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
         public Builder setTermsAcceptedAt(long termsAcceptedAt) {
-            this.termsAcceptedAt = TimestampUtils.getISO8601StringForTime(termsAcceptedAt);
+            this.termsAcceptedAtEpoch = termsAcceptedAt;
+//            this.termsAcceptedAt = TimestampUtils.getISO8601StringForTime(termsAcceptedAt);
             return this;
         }
 
