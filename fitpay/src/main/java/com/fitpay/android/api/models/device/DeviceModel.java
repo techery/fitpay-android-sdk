@@ -32,8 +32,6 @@ abstract class DeviceModel extends PaymentDevice {
      */
     protected String softwareRevision;
 
-    protected String createdTs;
-
     protected Long createdTsEpoch;
 
     /**
@@ -93,10 +91,6 @@ abstract class DeviceModel extends PaymentDevice {
         return softwareRevision;
     }
 
-    public String getCreatedTs() {
-        return createdTs;
-    }
-
     public long getCreatedTsEpoch() {
         return createdTsEpoch;
     }
@@ -120,8 +114,6 @@ abstract class DeviceModel extends PaymentDevice {
     public String getPairingTs() {
         return pairingTs;
     }
-
-
 
     public String getHostDeviceId() {
         return hostDeviceId;

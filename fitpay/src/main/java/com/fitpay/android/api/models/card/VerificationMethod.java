@@ -13,6 +13,8 @@ public final class VerificationMethod extends VerificationMethodModel{
     /**
      * When an issuer requires additional authentication to verify the identity of the cardholder,
      * this indicates the user has selected the specified verification method.
+     *
+     * @param callback           result callback
      */
     public void select(@NonNull ApiCallback<VerificationMethod> callback){
         makePostCall(SELECT, null, VerificationMethod.class, callback);

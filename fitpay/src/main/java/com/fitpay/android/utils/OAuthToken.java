@@ -42,7 +42,7 @@ final class OAuthToken {
                 JSONObject jsonObject = jwt.getJWTClaimsSet().toJSONObject();
                 userId = (String)jsonObject.get("user_id");
             } catch (ParseException e) {
-                Log.e("ERROR", e.toString());
+                Constants.printError(e.toString());
             }
         }
 

@@ -16,9 +16,7 @@ abstract class CreditCardModel extends BaseModel {
     protected String userId;
     @SerializedName("default")
     protected Boolean defaultX;
-    protected String createdTs;
     protected Long createdTsEpoch;
-    protected String lastModifiedTs;
     protected Long lastModifiedTsEpoch;
     protected String state;
     @CardInitiators.Initiator
@@ -32,7 +30,6 @@ abstract class CreditCardModel extends BaseModel {
     @SerializedName("encryptedData")
     protected CreditCardInfo creditCardInfo;
     protected String termsAssetId;
-    protected String eligibilityExpiration;
     protected Long eligibilityExpirationEpoch;
     protected List<AssetReference> termsAssetReferences;
 
@@ -52,16 +49,8 @@ abstract class CreditCardModel extends BaseModel {
         return defaultX;
     }
 
-    public String getCreatedTs() {
-        return createdTs;
-    }
-
     public long getCreatedTsEpoch() {
         return createdTsEpoch;
-    }
-
-    public String getLastModifiedTs() {
-        return lastModifiedTs;
     }
 
     public long getLastModifiedTsEpoch() {
@@ -100,7 +89,27 @@ abstract class CreditCardModel extends BaseModel {
         return verificationMethods;
     }
 
-    public CreditCardInfo getCreditCardInfo() {
-        return creditCardInfo;
+    public String getName() {
+        return creditCardInfo.name;
+    }
+
+    public String getCVV() {
+        return creditCardInfo.cvv;
+    }
+
+    public String getPan() {
+        return creditCardInfo.pan;
+    }
+
+    public Integer getExpMonth() {
+        return creditCardInfo.expMonth;
+    }
+
+    public Integer getExpYear() {
+        return creditCardInfo.expYear;
+    }
+
+    public Address getAddress() {
+        return creditCardInfo.address;
     }
 }
