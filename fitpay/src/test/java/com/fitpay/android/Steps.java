@@ -1,6 +1,7 @@
 package com.fitpay.android;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.LoginIdentity;
 import com.fitpay.android.api.models.card.Address;
@@ -11,6 +12,7 @@ import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.utils.ApiManager;
+import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 
 import org.junit.Assert;
@@ -19,7 +21,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-/**
+/***
  * Created by Vlad on 16.03.2016.
  */
 public class Steps {
@@ -27,14 +29,12 @@ public class Steps {
 
     private User currentUser;
     private Collections.CreditCardCollection cardsCollection;
-    private Collections.DeviceCollection devicesCollection;
     private CreditCard currentCard;
     private Device currentDevice;
 
     public void destroy(){
         currentUser = null;
         cardsCollection = null;
-        devicesCollection = null;
     }
 
     public void login() throws InterruptedException {
@@ -50,7 +50,7 @@ public class Steps {
                     .setClientId("pagare")
                     .setRedirectUri("https://demo.pagare.me")
                     .create();
-        } catch (ValidationException e) {
+        } catch (ValidationException ignored) {
         }
 
         Assert.assertNotNull(loginIdentity);
@@ -91,6 +91,90 @@ public class Steps {
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertNotNull(currentUser);
         Assert.assertNotNull(currentUser.getUsername());
+    }
+
+    public void selfUser() throws InterruptedException {
+        Assert.assertNotNull(currentUser);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        currentUser.self(new ApiCallback<User>() {
+            @Override
+            public void onSuccess(User result) {
+                Assert.assertNotNull(result);
+                currentUser = result;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertNotNull(currentUser.getUsername());
+    }
+
+    public void updateUser() throws InterruptedException {
+        Assert.assertNotNull(currentUser);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        String firstName = "John";
+        String lastName = "Doe";
+        long currentTimestamp = System.currentTimeMillis();
+        String timestampString = TimestampUtils.getISO8601StringForTime(currentTimestamp);
+        String termsVersion = "0.0.2";
+        User patchingUser = new User.Builder()
+                .setFirstName(firstName)
+                .setLastName(lastName)
+                .setBirthDate(currentTimestamp)
+                .setTermsVersion(termsVersion)
+                .create();
+
+        currentUser.updateUser(patchingUser, new ApiCallback<User>() {
+            @Override
+            public void onSuccess(User result) {
+                Assert.assertNotNull(result);
+                currentUser = result;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+
+        Assert.assertNotNull(currentUser);
+        Assert.assertEquals(currentUser.getFirstName(), firstName);
+        Assert.assertEquals(currentUser.getLastName(), lastName);
+        Assert.assertEquals(currentUser.getBirthDate(), timestampString);
+        Assert.assertEquals(currentUser.getTermsVersion(), termsVersion);
+    }
+
+    public void deleteUser() throws InterruptedException {
+        Assert.assertNotNull(currentUser);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
+
+        currentUser.deleteUser(new ApiCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                isRequestSuccess[0] = true;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
     }
 
     public void createCard() throws InterruptedException {
@@ -419,6 +503,70 @@ public class Steps {
         Assert.assertFalse(transactionCollection[0].getResults().size() == 0);
     }
 
+    public void createDevice() throws InterruptedException {
+        Assert.assertNotNull(currentUser);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        String manufacturerName = "X111";
+        String deviceName = "X-111";
+        String firmwareRevision = "111.111";
+        String hardwareRevision = "1.1.1";
+        String modelNumber = "AB111";
+        String serialNumber = "1111AB";
+        String softwareRevision = "1.1.1";
+        String systemId = "0x111AA";
+        String oSName = "A1111";
+        String licenseKey = "aaaaaa-1111-1111-1111-111111111111";
+        String bdAddress = "bbbbbb-1111-1111-1111-111111111111";
+        long pairingTs = System.currentTimeMillis();
+        String stringTimestamp = TimestampUtils.getISO8601StringForTime(pairingTs);
+        String secureElementId = "cccccc-1111-1111-1111-1111111111";
+        Device newDevice = new Device.Builder()
+                .setDeviceType(DeviceTypes.WATCH)
+                .setManufacturerName(manufacturerName)
+                .setDeviceName(deviceName)
+                .setFirmwareRevision(firmwareRevision)
+                .setHardwareRevision(hardwareRevision)
+                .setModelNumber(modelNumber)
+                .setSerialNumber(serialNumber)
+                .setSoftwareRevision(softwareRevision)
+                .setSystemId(systemId)
+                .setOSName(oSName)
+                .setLicenseKey(licenseKey)
+                .setBdAddress(bdAddress)
+                .setPairingTs(pairingTs)
+                .setSecureElementId(secureElementId)
+                .create();
+
+        currentUser.createDevice(newDevice, new ApiCallback<Device>() {
+            @Override
+            public void onSuccess(Device result) {
+                currentDevice = result;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertNotNull(currentDevice);
+        Assert.assertEquals(currentDevice.getManufacturerName(), manufacturerName);
+        Assert.assertEquals(currentDevice.getDeviceName(), deviceName);
+        Assert.assertEquals(currentDevice.getFirmwareRevision(), firmwareRevision);
+        Assert.assertEquals(currentDevice.getHardwareRevision(), hardwareRevision);
+        Assert.assertEquals(currentDevice.getModelNumber(), modelNumber);
+        Assert.assertEquals(currentDevice.getSerialNumber(), serialNumber);
+        Assert.assertEquals(currentDevice.getSoftwareRevision(), softwareRevision);
+        Assert.assertEquals(currentDevice.getSystemId(), systemId);
+        Assert.assertEquals(currentDevice.getOsName(), oSName);
+//        Assert.assertEquals(currentDevice.getLicenseKey(), licenseKey);//todo check
+//        Assert.assertEquals(currentDevice.getBdAddress(), bdAddress);
+        Assert.assertEquals(currentDevice.getPairingTs(), stringTimestamp);
+        Assert.assertEquals(currentDevice.getSecureElementId(), secureElementId);
+    }
 
     public void getDevices() throws InterruptedException {
         Assert.assertNotNull(currentUser);
@@ -428,7 +576,7 @@ public class Steps {
         currentUser.getDevices(10, 0, new ApiCallback<Collections.DeviceCollection>() {
             @Override
             public void onSuccess(Collections.DeviceCollection result) {
-                devicesCollection = result;
+                Assert.assertNotNull(result);
                 latch.countDown();
             }
 
@@ -439,6 +587,80 @@ public class Steps {
         });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Assert.assertNotNull(devicesCollection);
+    }
+
+    public void selfDevice() throws InterruptedException {
+        Assert.assertNotNull(currentDevice);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        currentDevice.self(new ApiCallback<Device>() {
+            @Override
+            public void onSuccess(Device result) {
+                Assert.assertNotNull(result);
+                currentDevice = result;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertNotNull(currentDevice);
+    }
+
+    public void updateDevice() throws InterruptedException {
+        Assert.assertNotNull(currentDevice);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        String firmwareRevision = "222.222";
+        String softwareRevision = "2.2.2";
+        Device newDevice = new Device.Builder()
+                .setFirmwareRevision(firmwareRevision)
+                .setSoftwareRevision(softwareRevision)
+                .create();
+
+        currentDevice.updateDevice(newDevice, new ApiCallback<Device>() {
+            @Override
+            public void onSuccess(Device result) {
+                Assert.assertNotNull(result);
+                currentDevice = result;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertNotNull(currentDevice);
+        Assert.assertEquals(currentDevice.getFirmwareRevision(), firmwareRevision);
+        Assert.assertEquals(currentDevice.getSoftwareRevision(), softwareRevision);
+    }
+
+    public void deleteDevice() throws InterruptedException {
+        Assert.assertNotNull(currentDevice);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
+
+        currentDevice.deleteDevice(new ApiCallback<Void>() {
+            @Override
+            public void onSuccess(Void result) {
+                isRequestSuccess[0] = true;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
     }
 }

@@ -107,8 +107,6 @@ public class FitPayTest {
                 .setFirstName(firstName)
                 .setLastName(lastName)
                 .setBirthDate(currentTimestamp)
-                .setOriginAccountCreatedAt(currentTimestamp)
-                .setTermsAcceptedAt(currentTimestamp)
                 .setTermsVersion(termsVersion)
                 .create();
 
@@ -132,8 +130,6 @@ public class FitPayTest {
         Assert.assertEquals(currentUser.getFirstName(), firstName);
         Assert.assertEquals(currentUser.getLastName(), lastName);
         Assert.assertEquals(currentUser.getBirthDate(), timestampString);
-//        Assert.assertEquals(currentUser.getOriginAccountCreatedTs(), timestampString);
-//        Assert.assertEquals(currentUser.getTermsAcceptedTs(), timestampString);
         Assert.assertEquals(currentUser.getTermsVersion(), termsVersion);
     }
 
