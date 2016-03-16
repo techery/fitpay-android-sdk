@@ -89,7 +89,27 @@ abstract class CreditCardModel extends BaseModel {
         return verificationMethods;
     }
 
-    public CreditCardInfo getCreditCardInfo() {
-        return creditCardInfo;
+    public String getName() {
+        return creditCardInfo.name;
+    }
+
+    public String getCVV() {
+        return creditCardInfo.cvv;
+    }
+
+    public String getPan() {
+        return creditCardInfo.pan;
+    }
+
+    public Integer getExpMonth() {
+        return creditCardInfo.expMonth;
+    }
+
+    public Integer getExpYear() {
+        return creditCardInfo.expYear;
+    }
+
+    public Address getAddress() {
+        return creditCardInfo.address;
     }
 }
