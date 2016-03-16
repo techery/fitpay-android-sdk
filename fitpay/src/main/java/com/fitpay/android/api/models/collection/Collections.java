@@ -1,6 +1,6 @@
 package com.fitpay.android.api.models.collection;
 
-import com.fitpay.android.api.models.Commit;
+import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.device.Device;
