@@ -7,7 +7,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class DeviceTest {
+public class CommitTest {
 
     private static Steps steps = null;
 
@@ -27,34 +27,28 @@ public class DeviceTest {
     }
 
     @Test
-    public void test03_createDevice() throws InterruptedException {
-        steps.createDevice();
-    }
-
-    @Test
-    public void test04_getDevices() throws InterruptedException {
+    public void test03_getDevices() throws InterruptedException {
         steps.getDevices();
     }
 
     @Test
-    public void test05_selfDevice() throws InterruptedException {
-        steps.selfDevice();
+    public void test04_getCommits() throws InterruptedException {
+        steps.getCommits();
     }
 
     @Test
-    public void test06_updateDevice() throws InterruptedException {
-        steps.updateDevice();
+    public void test05_selfCommit() throws InterruptedException {
+        steps.selfCommit();
     }
 
     @Test
-    public void test07_deleteDevices() throws InterruptedException {
-        steps.deleteTestDevices();
+    public void test06_previousCommit() throws InterruptedException {
+        steps.previousCommit();
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
         steps.destroy();
     }
-
 
 }
