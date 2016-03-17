@@ -12,7 +12,7 @@ public class CreditCardTest {
     private static Steps steps = null;
 
     @BeforeClass
-    public static void init(){
+    public static void init() {
         steps = new Steps();
     }
 
@@ -83,5 +83,5 @@ public class CreditCardTest {
     public static void tearDown() throws Exception {
         steps.destroy();
     }
-}
 
+}
