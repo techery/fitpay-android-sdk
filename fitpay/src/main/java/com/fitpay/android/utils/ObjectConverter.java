@@ -29,7 +29,12 @@ final class ObjectConverter {
         for (Map.Entry<String, Object> entry : (Iterable<Map.Entry<String, Object>>) treeMap.entrySet()) {
             if (entry.getValue() instanceof LinkedTreeMap) {
                 if (deepLevel++ > 0) {
-                    keyName = keyName + entry.getKey();
+                    keyName = new StringBuilder()
+                            .append(keyName)
+                            .append("/")
+                            .append(entry.getKey())
+                            .append("/")
+                            .toString();
                 }
                 iterateThroughMap(deepLevel, keyName, (LinkedTreeMap) entry.getValue(), resultMap);
             } else {

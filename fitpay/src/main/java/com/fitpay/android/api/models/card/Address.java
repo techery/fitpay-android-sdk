@@ -33,11 +33,6 @@ public final class Address {
     private String postalCode;
 
     /**
-     * description : The billing address country
-     */
-    private String country;
-
-    /**
      * description : The billing address country code
      */
     private String countryCode;
@@ -71,10 +66,6 @@ public final class Address {
         this.countryCode = countryCode;
     }
 
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
     public String getStreet1() {
         return street1;
     }
@@ -101,9 +92,5 @@ public final class Address {
 
     public String getCountryCode() {
         return countryCode;
-    }
-
-    public String getCountry() {
-        return country;
     }
 }

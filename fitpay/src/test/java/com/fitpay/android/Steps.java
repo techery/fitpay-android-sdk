@@ -171,7 +171,7 @@ public class Steps {
         address.setCity("Boulder");
         address.setState("CO");
         address.setPostalCode("80302");
-        address.setCountry("US");
+        address.setCountryCode("US");
         address.setStreet1("1035 Pearl St");
 
         CreditCard creditCard = new CreditCard.Builder()
@@ -320,7 +320,7 @@ public class Steps {
 
         Address address = new Address();
         address.setCity("New York");
-        address.setState("NY");//todo can we do this?
+        address.setState("NY");
 
         CreditCard creditCard = new CreditCard.Builder()
                 .setAddress(address)
@@ -480,10 +480,12 @@ public class Steps {
         final CountDownLatch latch = new CountDownLatch(size);
         final int[] success = {0};
 
+        int isNotTestCard = 0;
         for (int i = 0; i < size; i++) {
             CreditCard card = cards.get(i);
 
             if(card.getName() == null || !card.getName().equals("TEST CARD")) {
+                isNotTestCard++;
                 latch.countDown();
             } else {
                 card.deleteCard(new ApiCallback<Void>() {
@@ -498,15 +500,13 @@ public class Steps {
                         latch.countDown();
                     }
                 });
-            } else {
-                latch.countDown();
             }
         }
 
         latch.await(TIMEOUT * size, TimeUnit.SECONDS);
 
         getCards();
-        Assert.assertEquals(0, cardsCollection.getResults().size());
+        Assert.assertEquals(isNotTestCard, cardsCollection.getResults().size());
     }
 
     public void getTransactions() throws InterruptedException {

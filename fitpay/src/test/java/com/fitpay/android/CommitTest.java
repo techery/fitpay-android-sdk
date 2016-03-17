@@ -49,6 +49,7 @@ public class CommitTest {
     @AfterClass
     public static void tearDown() throws Exception {
         steps.destroy();
+        steps = null;
     }
 
 }
