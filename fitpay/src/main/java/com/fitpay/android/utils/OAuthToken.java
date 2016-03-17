@@ -1,6 +1,5 @@
 package com.fitpay.android.utils;
 
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.gson.annotations.SerializedName;
@@ -36,14 +35,14 @@ final class OAuthToken {
     }
 
     public String getUserId() {
-        if (TextUtils.isEmpty(userId) && !TextUtils.isEmpty(accessToken)) {
+        if (StringUtils.isEmpty(userId) && !StringUtils.isEmpty(accessToken)) {
             JWT jwt = null;
             try {
                 jwt = JWTParser.parse(accessToken);
                 JSONObject jsonObject = jwt.getJWTClaimsSet().toJSONObject();
                 userId = (String)jsonObject.get("user_id");
             } catch (ParseException e) {
-                Log.e("ERROR", e.toString());
+                Constants.printError(e.toString());
             }
         }
 

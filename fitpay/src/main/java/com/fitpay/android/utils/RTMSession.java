@@ -1,10 +1,9 @@
 package com.fitpay.android.utils;
 
 import android.support.annotation.NonNull;
-import android.text.TextUtils;
 import android.webkit.WebView;
 
-import com.fitpay.android.api.models.PaymentDevice;
+import com.fitpay.android.api.models.device.PaymentDevice;
 import com.fitpay.android.rtm.callbacks.RTMListener;
 import com.fitpay.android.rtm.enums.ErrorCodes;
 import com.google.gson.Gson;
@@ -214,7 +213,7 @@ public final class RTMSession extends Unit {
             boolean isSuccessful= false;
 
             JsonObject jsonObject = null;
-            if (!TextUtils.isEmpty(data)) {
+            if (!StringUtils.isEmpty(data)) {
                 jsonObject = mParser.parse(data).getAsJsonObject();
             }
 

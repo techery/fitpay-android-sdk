@@ -6,7 +6,6 @@ import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 
 import java.io.IOException;
-import java.util.Stack;
 
 import retrofit2.Call;
 import retrofit2.Callback;

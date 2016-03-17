@@ -1,6 +1,7 @@
 package com.fitpay.android.api.models;
 
 import com.fitpay.android.api.enums.CommitTypes;
+import com.fitpay.android.api.models.card.CreditCard;
 
 /**
  * Created by Vlad on 01.03.2016.

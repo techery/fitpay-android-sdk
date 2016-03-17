@@ -1,6 +1,6 @@
 package com.fitpay.android.paymentDevice;
 
-import com.fitpay.android.api.models.Device;
+import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentDevice.enums.PaymentDeviceAlert;
 import com.fitpay.android.utils.Unit;
 

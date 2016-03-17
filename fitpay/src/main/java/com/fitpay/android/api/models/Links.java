@@ -14,10 +14,6 @@ public final class Links {
         links = new HashMap<>();
     }
 
-    public Set<String> getLinks() {
-        return links.keySet();
-    }
-
     public void setLink(String key, String value){
         links.put(key, value);
     }
@@ -28,5 +24,13 @@ public final class Links {
         }
 
         return null;
+    }
+
+    public String getReadableKeys(){
+        if(links.keySet().size() > 0) {
+            return "self, " + links.keySet().toString();
+        }
+
+        return "self";
     }
 }

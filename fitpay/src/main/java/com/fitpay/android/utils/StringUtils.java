@@ -22,7 +22,7 @@ import java.text.ParseException;
 /**
  * Created by Vlad on 26.02.2016.
  */
-final class StringUtils {
+public final class StringUtils {
 
     /**
      * Get encrypted string
@@ -101,5 +101,9 @@ final class StringUtils {
 
     public static String base64UrlEncode(String inputString){
         return Base64URL.encode(inputString).toString();
+    }
+
+    public static boolean isEmpty(String str) {
+        return str == null || str.length() == 0;
     }
 }

@@ -1,4 +1,4 @@
-package com.fitpay.android.api.models;
+package com.fitpay.android.api.models.card;
 
 public final class Address {
 
