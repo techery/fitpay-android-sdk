@@ -1,24 +1,23 @@
 package com.fitpay.android.api.models.card;
 
 
+import com.fitpay.android.api.enums.CardInitiators;
+
 public final class Reason {
 
-    /**
-     * description : Identifies the party initiating the deactivation request
-     * enum : ["CARDHOLDER","ISSUER"]
-     */
-
+    @CardInitiators.Initiator
     private String causedBy;
     /**
      * description : The reason that the credit card is to deactivated
      */
     private String reason;
 
+    @CardInitiators.Initiator
     public String getCausedBy() {
         return causedBy;
     }
 
-    public void setCausedBy(String causedBy) {
+    public void setCausedBy(@CardInitiators.Initiator String causedBy) {
         this.causedBy = causedBy;
     }
 

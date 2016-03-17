@@ -75,6 +75,12 @@ public class CreditCardTest {
     }
 
     @Test
+    public void test12_declineTerms() throws InterruptedException {
+        steps.createCard();
+        steps.declineTerms();
+    }
+
+    @Test
     public void test12_deleteTestCards() throws InterruptedException {
         steps.deleteTestCards();
     }

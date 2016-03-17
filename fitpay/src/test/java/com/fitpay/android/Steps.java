@@ -1,6 +1,7 @@
 package com.fitpay.android;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.enums.CardInitiators;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.LoginIdentity;
 import com.fitpay.android.api.models.card.Address;
@@ -155,6 +156,29 @@ public class Steps {
         Assert.assertEquals(currentCard.getState(), "PENDING_VERIFICATION");
     }
 
+    public void declineTerms() throws InterruptedException {
+        Assert.assertNotNull(currentCard);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        currentCard.declineTerms(new ApiCallback<CreditCard>() {
+            @Override
+            public void onSuccess(CreditCard result) {
+                currentCard = result;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertNotNull(currentCard);
+        Assert.assertEquals(currentCard.getState(), "DECLINED_TERMS_AND_CONDITIONS");
+    }
+
     public void selectCard() throws InterruptedException {
         Assert.assertNotNull(currentCard);
 
@@ -240,8 +264,8 @@ public class Steps {
         final CountDownLatch latch = new CountDownLatch(1);
 
         Reason reason = new Reason();
-        reason.setReason("a");
-        reason.setCausedBy("b");
+        reason.setReason("lost");
+        reason.setCausedBy(CardInitiators.INITIATOR_CARDHOLDER);
 
         currentCard.deactivate(reason, new ApiCallback<CreditCard>() {
             @Override
@@ -266,8 +290,8 @@ public class Steps {
         final CountDownLatch latch = new CountDownLatch(1);
 
         Reason reason = new Reason();
-        reason.setReason("c");
-        reason.setCausedBy("d");
+        reason.setReason("found");
+        reason.setCausedBy(CardInitiators.INITIATOR_CARDHOLDER);
 
         currentCard.reactivate(reason, new ApiCallback<CreditCard>() {
             @Override
@@ -365,7 +389,7 @@ public class Steps {
         for(int i = 0; i < size; i++){
             CreditCard card = cards.get(i);
 
-            if(!card.getName().equals("TEST CARD")) {
+            if(card.getName() == null || !card.getName().equals("TEST CARD")) {
                 latch.countDown();
             } else {
                 card.deleteCard(new ApiCallback<Void>() {
