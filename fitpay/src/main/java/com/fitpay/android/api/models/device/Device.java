@@ -8,6 +8,7 @@ import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.card.CreditCardRef;
 import com.fitpay.android.api.models.collection.Collections;
+import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.utils.TimestampUtils;
 
 import java.util.HashMap;
@@ -17,11 +18,21 @@ import java.util.Map;
 public final class Device extends DeviceModel {
 
     private static final String COMMITS = "commits";
+    private static final String USER = "user";
 
     private List<CreditCardRef> cardRelationships;
 
     public List<CreditCardRef> getCardRelationships() {
         return cardRelationships;
+    }
+
+    /**
+     * Get current user
+     *
+     * @param callback   result callback
+     */
+    public void getUser(@NonNull ApiCallback<User> callback){
+        makeGetCall(USER, null, User.class, callback);
     }
 
     /**
