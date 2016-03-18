@@ -599,7 +599,7 @@ public class Steps {
         String stringTimestamp = TimestampUtils.getISO8601StringForTime(pairingTs);
         String secureElementId = "cccccc-1111-1111-1111-1111111111";
         Device newDevice = new Device.Builder()
-                .setDeviceType(DeviceTypes.WATCH)
+                .setDeviceType(DeviceTypes.SMART_STRAP)
                 .setManufacturerName(manufacturerName)
                 .setDeviceName(deviceName)
                 .setFirmwareRevision(firmwareRevision)
@@ -638,8 +638,10 @@ public class Steps {
         Assert.assertEquals(softwareRevision, currentDevice.getSoftwareRevision());
         Assert.assertEquals(systemId, currentDevice.getSystemId());
         Assert.assertEquals(oSName, currentDevice.getOsName());
-//        Assert.assertEquals(licenseKey, currentDevice.getLicenseKey());//todo check
-//        Assert.assertEquals(bdAddress, currentDevice.getBdAddress());
+        if (DeviceTypes.SMART_STRAP.equals(currentDevice.getDeviceType())) {
+            Assert.assertEquals(licenseKey, currentDevice.getLicenseKey());//todo check
+            Assert.assertEquals(bdAddress, currentDevice.getBdAddress());
+        }
         Assert.assertEquals(stringTimestamp, currentDevice.getPairingTs());
         Assert.assertEquals(secureElementId, currentDevice.getSecureElementId());
     }
@@ -724,6 +726,30 @@ public class Steps {
         Assert.assertNotNull(currentDevice);
         Assert.assertEquals(firmwareRevision, currentDevice.getFirmwareRevision());
         Assert.assertEquals(softwareRevision, currentDevice.getSoftwareRevision());
+    }
+
+    public void getDeviceUser() throws InterruptedException {
+        Assert.assertNotNull(currentDevice);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
+
+        currentDevice.getUser(new ApiCallback<User>() {
+            @Override
+            public void onSuccess(User result) {
+                isRequestSuccess[0] = true;
+                currentUser = result;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
+        Assert.assertNotNull(currentUser);
     }
 
     public void deleteDevice() throws InterruptedException {
