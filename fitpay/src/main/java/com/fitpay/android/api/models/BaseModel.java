@@ -13,10 +13,10 @@ import com.google.gson.annotations.SerializedName;
 import java.lang.reflect.Type;
 import java.util.Map;
 
-/**
+/***
  * Created by Vlad on 18.02.2016.
  */
-public class BaseModel{
+public class BaseModel {
 
     protected static final String SELF = "self";
 
@@ -24,17 +24,17 @@ public class BaseModel{
     @SerializedName("_links")
     protected Links links;
 
-    public BaseModel(){
+    public BaseModel() {
     }
 
-    public void self(@NonNull ApiCallback callback){
+    public void self(@NonNull ApiCallback callback) {
         makeGetCall(SELF, null, getClass(), callback);
     }
 
-    private <T> String getLink(String key, ApiCallback<T> callback){
+    private <T> String getLink(String key, ApiCallback<T> callback) {
         String url = links.getLink(key);
 
-        if(StringUtils.isEmpty(url)){
+        if (StringUtils.isEmpty(url)) {
             callback.onFailure(ResultCode.NOT_FOUND, "API endpoint is not available. You can use: " + links.getReadableKeys());
             url = null;
         }
@@ -42,30 +42,30 @@ public class BaseModel{
         return url;
     }
 
-    protected <T> void makeGetCall(String key, Map<String, Object> queryMap, Type type, ApiCallback<T> callback){
+    protected <T> void makeGetCall(String key, Map<String, Object> queryMap, Type type, ApiCallback<T> callback) {
         String url = getLink(key, callback);
-        if(url != null){
+        if (url != null) {
             ApiManager.getInstance().get(url, queryMap, type, callback);
         }
     }
 
-    protected <T, U> void makePostCall(String key, U data, Type type, ApiCallback<T> callback){
+    protected <T, U> void makePostCall(String key, U data, Type type, ApiCallback<T> callback) {
         String url = getLink(key, callback);
-        if(url != null){
+        if (url != null) {
             ApiManager.getInstance().post(url, data, type, callback);
         }
     }
 
-    protected<T, U> void makePatchCall(U data, boolean encrypt, Type type, ApiCallback<T> callback) {
+    protected <T, U> void makePatchCall(U data, boolean encrypt, Type type, ApiCallback<T> callback) {
         String url = getLink(SELF, callback);
         if (url != null) {
             ApiManager.getInstance().patch(url, data, encrypt, type, callback);
         }
     }
 
-    protected void makeDeleteCall(ApiCallback<Void> callback){
+    protected void makeDeleteCall(ApiCallback<Void> callback) {
         String url = getLink(SELF, callback);
-        if(url != null){
+        if (url != null) {
             ApiManager.getInstance().delete(url, callback);
         }
     }
