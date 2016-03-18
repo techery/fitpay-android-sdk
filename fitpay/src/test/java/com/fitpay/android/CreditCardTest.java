@@ -39,19 +39,19 @@ public class CreditCardTest {
     @Test
     public void test05_acceptCard() throws InterruptedException {
         steps.acceptTerms();
-        steps.getCard();
+        steps.selfCard();
     }
 
     @Test
     public void test06_selectCard() throws InterruptedException {
         steps.selectCard();
-        steps.getCard();
+        steps.selfCard();
     }
 
     @Test
     public void test07_verifyCard() throws InterruptedException {
         steps.verifyCard();
-        steps.getCard();
+        steps.selfCard();
     }
 
     @Test
