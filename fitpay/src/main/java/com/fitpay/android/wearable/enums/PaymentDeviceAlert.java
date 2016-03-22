@@ -1,4 +1,4 @@
-package com.fitpay.android.paymentDevice.enums;
+package com.fitpay.android.wearable.enums;
 
 import android.support.annotation.StringDef;
 

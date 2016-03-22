@@ -1,7 +1,7 @@
-package com.fitpay.android.paymentDevice;
+package com.fitpay.android.wearable;
 
 import com.fitpay.android.api.models.device.Device;
-import com.fitpay.android.paymentDevice.enums.PaymentDeviceAlert;
+import com.fitpay.android.wearable.enums.PaymentDeviceAlert;
 import com.fitpay.android.utils.Unit;
 
 import java.util.ArrayList;
