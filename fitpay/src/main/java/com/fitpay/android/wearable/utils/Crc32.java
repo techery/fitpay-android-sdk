@@ -2,8 +2,6 @@ package com.fitpay.android.wearable.utils;
 
 import android.util.Log;
 
-import com.fitpay.android.wearable.Hex;
-
 import java.nio.ByteBuffer;
 import java.util.zip.CRC32;
 import java.util.zip.Checksum;

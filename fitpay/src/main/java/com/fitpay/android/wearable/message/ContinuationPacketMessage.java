@@ -1,6 +1,6 @@
 package com.fitpay.android.wearable.message;
 
-import com.fitpay.wearabledevice.Hex;
+import com.fitpay.android.wearable.utils.Hex;
 
 /**
  * Created by tgs on 3/4/16.

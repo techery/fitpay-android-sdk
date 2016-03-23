@@ -1,4 +1,4 @@
-package com.fitpay.android.wearable;
+package com.fitpay.android.wearable.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;

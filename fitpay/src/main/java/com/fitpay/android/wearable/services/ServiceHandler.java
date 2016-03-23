@@ -1,7 +1,8 @@
-package com.fitpay.android.wearable;
+package com.fitpay.android.wearable.services;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
+import android.content.Context;
 
 import java.util.Collections;
 import java.util.List;
@@ -11,6 +12,13 @@ import java.util.UUID;
  * Created by ssteveli on 1/22/16.
  */
 public abstract class ServiceHandler {
+
+    protected final Context context;
+
+    public ServiceHandler(Context context) {
+        this.context = context;
+    }
+
     public void close() {
 
     }
@@ -45,5 +53,17 @@ public abstract class ServiceHandler {
 
     public BluetoothGattService buildService() {
         return null;
+    }
+
+    public List<BluetoothGattCharacteristic> getCharacteristics() {
+        return null;
+    }
+
+    public String getCharacteristicName(BluetoothGattCharacteristic characteristic) {
+        return null;
+    }
+
+    public boolean isAdvertised() {
+        return false;
     }
 }

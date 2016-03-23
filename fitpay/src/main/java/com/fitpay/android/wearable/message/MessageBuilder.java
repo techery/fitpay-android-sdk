@@ -2,7 +2,7 @@ package com.fitpay.android.wearable.message;
 
 import android.util.Log;
 
-import com.fitpay.wearabledevice.Hex;
+import com.fitpay.android.wearable.utils.Hex;
 
 import java.util.Calendar;
 import java.util.Date;
