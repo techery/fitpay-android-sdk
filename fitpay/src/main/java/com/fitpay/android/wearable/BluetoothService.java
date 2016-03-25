@@ -17,11 +17,13 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.fitpay.android.wearable.callbacks.DeviceCallback;
-import com.fitpay.android.wearable.services.ServiceHandler;
+import com.fitpay.android.wearable.services.deviceinfo.DeviceInformationConstants;
+import com.fitpay.android.wearable.services.payment.PaymentServiceConstants;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class BluetoothService extends Service {
     private final String TAG = this.getClass().getName();
@@ -32,9 +34,10 @@ public class BluetoothService extends Service {
 
     private String mBluetoothDeviceAddress;
 
-    private List<ServiceHandler> mServiceHandlers;
-
     private DeviceCallback mDeviceCallback;
+
+    // Queues for characteristic read (synchronous)
+    private ConcurrentLinkedQueue<BluetoothGattCharacteristic> mQueue;
 
     public class LocalBinder extends Binder {
         public BluetoothService getService() {
@@ -58,21 +61,12 @@ public class BluetoothService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        mServiceHandlers = new ArrayList<>();
+        mQueue = new ConcurrentLinkedQueue<>();
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-
-        if (mServiceHandlers != null) {
-            for (ServiceHandler handler : mServiceHandlers) {
-                handler.close();
-            }
-
-            mServiceHandlers.clear();
-            mServiceHandlers = null;
-        }
     }
 
     public void setDeviceCallback(DeviceCallback callback) {
@@ -203,8 +197,21 @@ public class BluetoothService extends Service {
                 List<BluetoothGattService> gattServices = mBluetoothGatt.getServices();
 
                 for (BluetoothGattService gattService : gattServices) {
-                    mBluetoothGattService = gattService;
+                    UUID uuid = gattService.getUuid();
+
+                    if(DeviceInformationConstants.SERVICE_UUID.equals(uuid)){
+                        for(BluetoothGattCharacteristic bgc : gattService.getCharacteristics()){
+                            mQueue.offer(bgc);
+                        }
+                    } else if(PaymentServiceConstants.SERVICE_UUID.equals(uuid)){
+                        for(BluetoothGattCharacteristic bgc : gattService.getCharacteristics()){
+                            mQueue.offer(bgc);
+                        }
+                    }
                 }
+
+                gatt.readCharacteristic(mQueue.poll());
+
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
             }
@@ -212,6 +219,14 @@ public class BluetoothService extends Service {
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+            if(status == BluetoothGatt.GATT_SUCCESS){
+
+                BluetoothGattCharacteristic nextRequest = mQueue.poll();
+                if(nextRequest != null){
+                     gatt.readCharacteristic(nextRequest);
+                }
+
+            }
         }
 
         @Override
@@ -233,17 +248,6 @@ public class BluetoothService extends Service {
         }
     };
 
-    public ServiceHandler getServiceHandler(Class clazz) {
-        if (mServiceHandlers != null) {
-            for (ServiceHandler candidate : mServiceHandlers) {
-                if (candidate.getClass().equals(clazz)) {
-                    return candidate;
-                }
-            }
-        }
-
-        return null;
-    }
 //
 //    // Filtering by custom UUID is broken in Android 4.3 and 4.4, see:
 //    //   http://stackoverflow.com/questions/18019161/startlescan-with-128-bit-uuids-doesnt-work-on-native-android-ble-implementation?noredirect=1#comment27879874_18019161

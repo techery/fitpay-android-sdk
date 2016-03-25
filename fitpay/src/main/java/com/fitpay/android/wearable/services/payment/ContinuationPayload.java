@@ -1,15 +1,14 @@
 package com.fitpay.android.wearable.services.payment;
 
-import android.os.ParcelUuid;
 import android.util.Log;
 
+import com.fitpay.android.wearable.message.ContinuationPacketMessage;
 import com.fitpay.android.wearable.utils.Hex;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.UUID;
 
 /**
  * Created by ssteveli on 1/26/16.
@@ -19,35 +18,24 @@ public class ContinuationPayload {
     private final static String LOG_TAG = ContinuationPayload.class.getCanonicalName();
 
     private final HashMap<Integer, byte[]> data;
-    private final ParcelUuid targetUuid;
+    private final UUID targetUuid;
 
-    public ContinuationPayload(ParcelUuid targetUuid) {
+    public ContinuationPayload(UUID targetUuid) {
         this.data = new HashMap<>();
         this.targetUuid = targetUuid;
     }
 
-    public void processPacket(byte[] packet) throws IOException {
-        if (packet == null || packet.length < 2) {
+    public void processPacket(ContinuationPacketMessage message) throws IOException {
+        if (message == null) {
             return;
         }
 
-        DataInputStream in = new DataInputStream(new ByteArrayInputStream(packet));
-        try {
-            int sortOrder = in.readUnsignedShort();
-            byte[] packetData = new byte[packet.length-2];
-            in.read(packetData, 0, packet.length-2);
-
-            if (data.containsKey(sortOrder)) {
-                Log.d(LOG_TAG, "received duplicate continuation packet #" + sortOrder);
-            }
-
-            Log.d(LOG_TAG, "received packet #" + sortOrder + ": [" + Hex.bytesToHexString(packetData) + "]");
-            data.put(sortOrder, packetData);
-        } finally {
-            if (in != null) {
-                in.close();
-            }
+        if (data.containsKey(message.getSortOrder())) {
+            Log.d(LOG_TAG, "received duplicate continuation packet #" + message.getSortOrder());
         }
+
+        Log.d(LOG_TAG, "received packet #" + message.getSortOrder() + ": [" + Hex.bytesToHexString(message.getData()) + "]");
+        data.put(message.getSortOrder(), message.getData());
     }
 
     public byte[] getValue() throws IOException {
@@ -63,7 +51,7 @@ public class ContinuationPayload {
         return out.toByteArray();
     }
 
-    public ParcelUuid getTargetUuid() {
+    public UUID getTargetUuid() {
         return targetUuid;
     }
 }

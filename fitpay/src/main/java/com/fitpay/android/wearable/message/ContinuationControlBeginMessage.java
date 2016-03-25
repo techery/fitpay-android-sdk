@@ -1,11 +1,16 @@
 package com.fitpay.android.wearable.message;
 
+import android.os.ParcelUuid;
+
+import com.fitpay.android.wearable.utils.BluetoothUuid;
+import com.fitpay.android.wearable.utils.Hex;
+
 import java.util.UUID;
 
 /**
  * Created by tgs on 3/4/16.
  */
-public class ContinuationControlBeginMessage extends BleMessage {
+public class ContinuationControlBeginMessage extends ContinuationControlMessage {
 
     private UUID uuid;
 
@@ -19,6 +24,31 @@ public class ContinuationControlBeginMessage extends BleMessage {
         return this;
     }
 
+    public ContinuationControlBeginMessage withMessage(byte[] message) {
+
+        if (message == null || message.length == 0) {
+            return this;
+        }
+
+        if (message[0] != 0x00) {
+            throw new IllegalArgumentException("message is not a valid continuation control begin message: " + Hex.bytesToHexString(message));
+        }
+
+
+        if (message.length != 17) {
+            throw new IllegalArgumentException("message is not a valid continuation control begin message: " + Hex.bytesToHexString(message));
+        }
+
+        ParcelUuid targetUuid = null;
+        byte[] uuidBytes = new byte[16];
+        System.arraycopy(message, 1, uuidBytes, 0, 16);
+        targetUuid = BluetoothUuid.parseUuidFrom(uuidBytes);
+        this.uuid = targetUuid.getUuid();
+
+        return this;
+    }
+
+
     public byte[] getMessage() {
         byte[] id = getLittleEndianBytes(this.uuid);
         byte[] message = new byte[1 + id.length];
@@ -27,5 +57,21 @@ public class ContinuationControlBeginMessage extends BleMessage {
         return message;
     }
 
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        builder
+                .append(ContinuationControlBeginMessage.class.getSimpleName())
+                .append('(')
+                .append("uuid: ")
+                .append(this.getUuid());
+
+        return builder.toString();
+    }
 
 }

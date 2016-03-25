@@ -40,7 +40,7 @@ public class Hex {
 
     public static byte[] hexStringToBytes(String s) {
         if (s == null || s.length() == 0) {
-            throw new IllegalArgumentException("invalid hex string, it's empty");
+            return new byte[0] ; //throw new IllegalArgumentException("invalid hex string, it's empty");
         }
 
         if ((s.length() % 2) != 0) {
@@ -90,4 +90,5 @@ public class Hex {
     private static boolean ignore(char c) {
         return (c == '\n' || c == '\r' || c == '\t' || c == ' ');
     }
+
 }

@@ -1,5 +1,6 @@
 package com.fitpay.android.wearable.message;
 
+import com.fitpay.android.wearable.utils.Conversions;
 import com.fitpay.android.wearable.utils.Hex;
 
 /**
@@ -35,20 +36,20 @@ public class ApduResultMessage extends BleMessage {
             case 0:
                 throw new IllegalArgumentException("must define the sequence number");
             case 1:
-                this.sequenceId = new byte[] { 0x00, sequenceId[0]};
+                this.sequenceId = new byte[] { sequenceId[0], 0x00};  // little endian
                 break;
             case 2:
-                this.sequenceId = sequenceId;
+                this.sequenceId = Conversions.reverseBytes(sequenceId);
                 break;
             default:
-                throw new IllegalStateException("must be a two element byte array");
+                throw new IllegalArgumentException("must be a two element byte array");
         }
         return this;
     }
 
     public ApduResultMessage withSequenceId(int sequenceId) {
         String val = Integer.toHexString(sequenceId);
-        if (val.length() == 1) {
+        if ((val.length() & 1) != 0) {
             val = "0" + val;
         }
         return withSequenceId(Hex.hexStringToBytes(val));

@@ -1,5 +1,7 @@
 package com.fitpay.android.wearable.message;
 
+import com.fitpay.android.wearable.utils.Conversions;
+
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
@@ -36,11 +38,7 @@ public abstract class BleMessage {
 
     protected byte[] getLittleEndianBytes(UUID uuid) {
         byte[] bytes = getUuidBytes(uuid);
-        byte[] val = new byte[bytes.length];
-        int pos = bytes.length;
-        for (int i = 0; i < bytes.length; i++) {
-            val[i] = bytes[--pos];
-        }
-        return val;
+        return Conversions.reverseBytes(bytes);
     }
+
 }
