@@ -28,9 +28,4 @@ public class GattCharacteristicWriteOperation extends GattOperation {
         characteristic.setValue(mValue);
         gatt.writeCharacteristic(characteristic);
     }
-
-    @Override
-    public boolean hasAvailableCompletionCallback() {
-        return true;
-    }
 }

@@ -10,7 +10,7 @@ import com.orhanobut.logger.Logger;
 
 public final class Constants {
 
-    public static final String FIT_PAY_ERROR_TAG = "FitPayError";
+    public static final String FIT_PAY_TAG = "FitPay";
 
     static final String BASE_URL = "https://gi-de.pagare.me/";
     static final String API_URL = BASE_URL + "api/";
@@ -42,7 +42,7 @@ public final class Constants {
     }
 
     public static void printError(String error) {
-        Logger.t(FIT_PAY_ERROR_TAG).e(error);
+        Logger.t(FIT_PAY_TAG).e(error);
     }
 }
 

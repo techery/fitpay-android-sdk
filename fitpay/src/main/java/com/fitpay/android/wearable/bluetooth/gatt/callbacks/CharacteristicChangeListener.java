@@ -1,4 +1,4 @@
-package com.fitpay.android.wearable.bluetooth.gatt;
+package com.fitpay.android.wearable.bluetooth.gatt.callbacks;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 

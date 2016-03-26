@@ -4,12 +4,13 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattDescriptor;
 
-import com.fitpay.android.wearable.bluetooth.gatt.GattDescriptorReadCallback;
+import com.fitpay.android.wearable.bluetooth.gatt.callbacks.GattDescriptorReadCallback;
+import com.fitpay.android.wearable.bluetooth.gatt.interfaces.DescriptionReader;
 import com.orhanobut.logger.Logger;
 
 import java.util.UUID;
 
-public class GattDescriptorReadOperation extends GattOperation {
+public class GattDescriptorReadOperation extends GattOperation implements DescriptionReader{
 
     private final UUID mService;
     private final UUID mCharacteristic;
@@ -32,10 +33,6 @@ public class GattDescriptorReadOperation extends GattOperation {
     }
 
     @Override
-    public boolean hasAvailableCompletionCallback() {
-        return true;
-    }
-
     public void onRead(BluetoothGattDescriptor descriptor) {
         mCallback.call(descriptor.getValue());
     }

@@ -38,9 +38,4 @@ public class GattSetNotificationOperation extends GattOperation {
         descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
         gatt.writeDescriptor(descriptor);
     }
-
-    @Override
-    public boolean hasAvailableCompletionCallback() {
-        return false;
-    }
 }

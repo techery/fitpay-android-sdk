@@ -27,9 +27,4 @@ public class GattDescriptorWriteOperation extends GattOperation {
         BluetoothGattDescriptor descriptor = gatt.getService(mService).getCharacteristic(mCharacteristic).getDescriptor(mDescriptor);
         gatt.writeDescriptor(descriptor);
     }
-
-    @Override
-    public boolean hasAvailableCompletionCallback() {
-        return true;
-    }
 }
