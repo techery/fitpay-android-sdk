@@ -1,6 +1,5 @@
 package com.fitpay.android.wearable.bluetooth.gatt.operations;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattDescriptor;
 
@@ -10,12 +9,7 @@ import java.util.UUID;
 
 public class GattDescriptorWriteOperation extends GattOperation {
 
-    private final UUID mService;
-    private final UUID mCharacteristic;
-    private final UUID mDescriptor;
-
-    public GattDescriptorWriteOperation(BluetoothDevice device, UUID service, UUID characteristic, UUID descriptor) {
-        super(device);
+    public GattDescriptorWriteOperation(UUID service, UUID characteristic, UUID descriptor) {
         mService = service;
         mCharacteristic = characteristic;
         mDescriptor = descriptor;

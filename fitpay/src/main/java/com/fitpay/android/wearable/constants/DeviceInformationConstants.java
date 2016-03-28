@@ -1,4 +1,4 @@
-package com.fitpay.android.wearable.services.deviceinfo;
+package com.fitpay.android.wearable.constants;
 
 import java.util.UUID;
 

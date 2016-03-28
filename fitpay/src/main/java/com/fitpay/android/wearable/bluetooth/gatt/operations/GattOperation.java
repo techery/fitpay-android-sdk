@@ -1,40 +1,38 @@
 package com.fitpay.android.wearable.bluetooth.gatt.operations;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 
 import com.fitpay.android.wearable.utils.OperationQueue;
 
-public abstract class GattOperation{
+import java.util.UUID;
+
+public abstract class GattOperation {
 
     private static final int DEFAULT_TIMEOUT_IN_MILLIS = 30000;
 
-    protected BluetoothDevice mDevice;
+    protected UUID mService;
+    protected UUID mCharacteristic;
+    protected UUID mDescriptor;
     protected OperationQueue mNestedQueue;
 
     public abstract void execute(BluetoothGatt bluetoothGatt);
 
-    public GattOperation(BluetoothDevice device) {
-        mDevice = device;
-    }
-
-    public BluetoothDevice getDevice() {
-        return mDevice;
+    public GattOperation() {
     }
 
     public int getTimeoutMs() {
         return DEFAULT_TIMEOUT_IN_MILLIS;
     }
 
-    public void setNestedQueue(OperationQueue queue){
+    public void setNestedQueue(OperationQueue queue) {
         mNestedQueue = queue;
     }
 
-    public OperationQueue getNestedQueue(){
+    public OperationQueue getNestedQueue() {
         return mNestedQueue;
     }
 
-    public boolean hasNested(){
+    public boolean hasNested() {
         return mNestedQueue != null && mNestedQueue.size() > 0;
     }
 }

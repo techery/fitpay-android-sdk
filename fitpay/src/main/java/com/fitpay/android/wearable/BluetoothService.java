@@ -1,35 +1,36 @@
-package com.fitpay.android.wearable.bluetooth.gatt;
+package com.fitpay.android.wearable;
 
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 
-import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
-import com.fitpay.android.wearable.bluetooth.gatt.operations.GattConnectOperation;
+import com.fitpay.android.wearable.bluetooth.gatt.GattManager;
+import com.fitpay.android.wearable.bluetooth.gatt.callbacks.GattCharacteristicReadCallback;
+import com.fitpay.android.wearable.bluetooth.gatt.operations.GattCharacteristicReadOperation;
+import com.fitpay.android.wearable.bluetooth.gatt.operations.GattCharacteristicWriteOperation;
+import com.fitpay.android.wearable.bluetooth.gatt.operations.GattDeviceCharacteristicsOperation;
 import com.fitpay.android.wearable.bluetooth.gatt.operations.GattOperation;
 import com.fitpay.android.wearable.bluetooth.gatt.operations.GattOperationBundle;
-import com.fitpay.android.wearable.bluetooth.gatt.operations.GattDeviceCharacteristicsReadOperator;
-import com.fitpay.android.wearable.callbacks.DeviceCallback;
+import com.fitpay.android.wearable.bluetooth.gatt.operations.GattSetIndicationOperation;
+import com.fitpay.android.wearable.bluetooth.gatt.operations.GattSetNotificationOperation;
+import com.fitpay.android.wearable.constants.PaymentServiceConstants;
+import com.fitpay.android.wearable.models.NFCInfo;
 import com.orhanobut.logger.Logger;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.UUID;
 
 public class BluetoothService extends Service {
 
     private BluetoothAdapter mBluetoothAdapter;
-    private DeviceCallback mDeviceCallback;
-
+    private BluetoothDevice mDevice;
     private GattManager mGattManager;
-
-    // Queues for characteristic read (synchronous)
-    private ConcurrentLinkedQueue<BluetoothGattCharacteristic> mQueue;
 
     private final IBinder mBinder = new LocalBinder();
 
@@ -53,18 +54,11 @@ public class BluetoothService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        mQueue = new ConcurrentLinkedQueue<>();
-
-        mGattManager = new GattManager(this);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-    }
-
-    public void setDeviceCallback(DeviceCallback callback) {
-        mDeviceCallback = callback;
     }
 
     /**
@@ -89,16 +83,51 @@ public class BluetoothService extends Service {
             return false;
         }
 
-        if (mGattManager == null) {
-            return false;
+        if(mDevice != device && mGattManager != null){
+            mGattManager.close();
+            mGattManager = null;
         }
 
-        GattOperationBundle bundle = new GattOperationBundle();
-//        bundle.addOperation(new GattConnectOperation(device));
-        bundle.addOperation(new GattDeviceCharacteristicsReadOperator(device));
-        mGattManager.queue(bundle);
+        mDevice = device;
+        mGattManager = new GattManager(this, device);
 
+//        GattOperationBundle bundle = new GattOperationBundle();
+//        bundle.addOperation(new GattDeviceCharacteristicsOperation(device));
+//        mGattManager.queue(bundle);
+
+        setNFCState(NFCInfo.STATE_ENABLED);
+        getNFCState();
         return true;
+    }
+
+    public void getNFCState() {
+        GattOperation getNFCOperation = new GattCharacteristicReadOperation(
+                PaymentServiceConstants.SERVICE_UUID,
+                UUID.fromString(PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE),
+                new GattCharacteristicReadCallback() {
+                    @Override
+                    public void call(byte[] characteristic) {
+                        RxBus.getInstance().post(new NFCInfo(characteristic));
+                    }
+                });
+        mGattManager.queue(getNFCOperation);
+    }
+
+    public void setNFCState(@NFCInfo.State int state){
+
+        GattOperation setNFCIndication = new GattSetIndicationOperation(
+                PaymentServiceConstants.SERVICE_UUID,
+                UUID.fromString(PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE),
+                PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
+        );
+        mGattManager.queue(setNFCIndication);
+
+        GattOperation setNFCOperation = new GattCharacteristicWriteOperation(
+                PaymentServiceConstants.SERVICE_UUID,
+                UUID.fromString(PaymentServiceConstants.CHARACTERISTIC_SECURITY_WRITE),
+                NFCInfo.convertStateToByte(state)
+        );
+        mGattManager.queue(setNFCOperation);
     }
 
     /**

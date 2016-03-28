@@ -26,23 +26,27 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class GattManager {
 
     private Context mContext;
+    private BluetoothGatt mGatt;
+    private BluetoothDevice mDevice;
+
     private OperationConcurrentQueue mQueue;
-    private ConcurrentHashMap<String, BluetoothGatt> mGatts;
     private GattOperation mCurrentOperation;
+
     private HashMap<UUID, ArrayList<CharacteristicChangeListener>> mCharacteristicChangeListeners;
     private AsyncTask<Void, Void, Void> mCurrentOperationTimeout;
 
-    public GattManager(Context context) {
+    public GattManager(Context context, BluetoothDevice device) {
         mContext = context;
+        mDevice = device;
         mQueue = new OperationConcurrentQueue();
-        mGatts = new ConcurrentHashMap<>();
         mCurrentOperation = null;
         mCharacteristicChangeListeners = new HashMap<>();
     }
 
     public void close(){
-        for(BluetoothGatt gatt : mGatts.values()){
-            gatt.close();
+        if(mGatt != null){
+            mGatt.disconnect();
+            mGatt.close();
         }
     }
 
@@ -79,22 +83,21 @@ public class GattManager {
 
         resetTimer(operation.getTimeoutMs());
 
-        final BluetoothDevice device = operation.getDevice();
-        if(mGatts.containsKey(device.getAddress())) {
-            execute(mGatts.get(device.getAddress()), operation);
+        if(mGatt != null) {
+            execute(mGatt, operation);
         } else {
-            device.connectGatt(mContext, false, new BluetoothGattCallback() {
+            mDevice.connectGatt(mContext, false, new BluetoothGattCallback() {
                 @Override
                 public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                     super.onConnectionStateChange(gatt, status, newState);
 
                     if (newState == BluetoothProfile.STATE_CONNECTED) {
-                        Logger.i("Gatt connected to device " + device.getAddress());
-                        mGatts.put(device.getAddress(), gatt);
-                        gatt.discoverServices();
+                        Logger.i("Gatt connected to device " + mDevice.getAddress());
+                        mGatt = gatt;
+                        mGatt.discoverServices();
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                        Logger.i("Disconnected from gatt server " + device.getAddress() + ", newState: " + newState);
-                        mGatts.remove(device.getAddress());
+                        Logger.i("Disconnected from gatt server " + mDevice.getAddress() + ", newState: " + newState);
+                        mGatt = null;
                         setCurrentOperation(null);
                         gatt.close();
                         drive();
@@ -125,7 +128,7 @@ public class GattManager {
                 public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
                     super.onCharacteristicWrite(gatt, characteristic, status);
 
-                    Logger.d("Characteristic " + characteristic.getUuid() + "written to on device " + device.getAddress());
+                    Logger.d("Characteristic " + characteristic.getUuid() + "written to on device " + mDevice.getAddress());
                     setCurrentOperation(null);
                     drive();
                 }
@@ -134,10 +137,10 @@ public class GattManager {
                 public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                     super.onCharacteristicChanged(gatt, characteristic);
 
-                    Logger.e("Characteristic " + characteristic.getUuid() + "was changed, device: " + device.getAddress());
+                    Logger.e("Characteristic " + characteristic.getUuid() + "was changed, device: " + mDevice.getAddress());
                     if (mCharacteristicChangeListeners.containsKey(characteristic.getUuid())) {
                         for (CharacteristicChangeListener listener : mCharacteristicChangeListeners.get(characteristic.getUuid())) {
-                            listener.onCharacteristicChanged(device.getAddress(), characteristic);
+                            listener.onCharacteristicChanged(mDevice.getAddress(), characteristic);
                         }
                     }
                 }

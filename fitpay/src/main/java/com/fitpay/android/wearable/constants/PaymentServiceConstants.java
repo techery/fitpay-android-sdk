@@ -1,4 +1,4 @@
-package com.fitpay.android.wearable.services.payment;
+package com.fitpay.android.wearable.constants;
 
 import java.util.UUID;
 

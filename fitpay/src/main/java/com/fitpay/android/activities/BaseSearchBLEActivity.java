@@ -21,7 +21,7 @@ import android.widget.Toast;
 
 import com.fitpay.android.R;
 import com.fitpay.android.wearable.callbacks.SearchCallback;
-import com.fitpay.android.wearable.services.deviceinfo.DeviceInformationConstants;
+import com.fitpay.android.wearable.constants.DeviceInformationConstants;
 
 import java.util.ArrayList;
 import java.util.List;

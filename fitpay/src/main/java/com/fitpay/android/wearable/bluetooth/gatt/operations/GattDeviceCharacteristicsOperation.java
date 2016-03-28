@@ -4,16 +4,18 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.wearable.bluetooth.gatt.callbacks.GattCharacteristicReadCallback;
-import com.fitpay.android.wearable.services.deviceinfo.DeviceInformationConstants;
-import com.fitpay.android.wearable.services.payment.PaymentServiceConstants;
+import com.fitpay.android.wearable.constants.DeviceInformationConstants;
+import com.fitpay.android.wearable.constants.PaymentServiceConstants;
 import com.fitpay.android.wearable.utils.Hex;
 import com.fitpay.android.wearable.utils.OperationQueue;
-import com.orhanobut.logger.Logger;
 
 import java.util.UUID;
 
-public class GattDeviceCharacteristicsReadOperator extends GattOperation {
+public class GattDeviceCharacteristicsOperation extends GattOperation {
+
+    private BluetoothDevice mDevice;
 
     private String manufacturerName;
     private String modelNumber;
@@ -24,8 +26,9 @@ public class GattDeviceCharacteristicsReadOperator extends GattOperation {
     private String systemId;
     private String secureElementId;
 
-    public GattDeviceCharacteristicsReadOperator(final BluetoothDevice device) {
-        super(device);
+    public GattDeviceCharacteristicsOperation(final BluetoothDevice device) {
+
+        mDevice = device;
 
         OperationQueue bundle = new OperationQueue();
 
@@ -80,7 +83,6 @@ public class GattDeviceCharacteristicsReadOperator extends GattOperation {
                     }
                 }));
         bundle.push(new GattCharacteristicReadOperation(
-                getDevice(),
                 PaymentServiceConstants.SERVICE_UUID,
                 UUID.fromString(PaymentServiceConstants.CHARACTERISTIC_SECURE_ELEMENT_ID),
                 new GattCharacteristicReadCallback() {
@@ -95,16 +97,22 @@ public class GattDeviceCharacteristicsReadOperator extends GattOperation {
 
     @Override
     public void execute(BluetoothGatt gatt) {
-        Logger.i("DONE");
         Device device = new Device.Builder()
-                .setBdAddress(getDevice().getAddress())
+                .setBdAddress(mDevice.getAddress())
+                .setModelNumber(modelNumber)
+                .setManufacturerName(manufacturerName)
+                .setSerialNumber(serialNumber)
+                .setSystemId(systemId)
+                .setSecureElementId(secureElementId)
                 .setFirmwareRevision(firmwareRevision)
                 .setSoftwareRevision(softwareRevision)
                 .setHardwareRevision(hardwareRevision)
                 .create();
+
+        RxBus.getInstance().post(device);
     }
 
     private GattOperation createOperation(String characteristicUUID, GattCharacteristicReadCallback callback) {
-        return new GattCharacteristicReadOperation(getDevice(), DeviceInformationConstants.SERVICE_UUID, UUID.fromString(characteristicUUID), callback);
+        return new GattCharacteristicReadOperation(DeviceInformationConstants.SERVICE_UUID, UUID.fromString(characteristicUUID), callback);
     }
 }

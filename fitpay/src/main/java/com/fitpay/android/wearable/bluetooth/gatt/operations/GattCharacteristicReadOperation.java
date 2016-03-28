@@ -1,6 +1,5 @@
 package com.fitpay.android.wearable.bluetooth.gatt.operations;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 
@@ -11,12 +10,10 @@ import com.orhanobut.logger.Logger;
 import java.util.UUID;
 
 public class GattCharacteristicReadOperation extends GattOperation implements CharacteristicReader {
-    private final UUID mService;
-    private final UUID mCharacteristic;
+
     private final GattCharacteristicReadCallback mCallback;
 
-    public GattCharacteristicReadOperation(BluetoothDevice device, UUID service, UUID characteristic, GattCharacteristicReadCallback callback) {
-        super(device);
+    public GattCharacteristicReadOperation(UUID service, UUID characteristic, GattCharacteristicReadCallback callback) {
         mService = service;
         mCharacteristic = characteristic;
         mCallback = callback;

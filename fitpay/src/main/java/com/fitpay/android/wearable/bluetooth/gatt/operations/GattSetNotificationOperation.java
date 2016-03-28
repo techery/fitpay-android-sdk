@@ -1,32 +1,22 @@
 package com.fitpay.android.wearable.bluetooth.gatt.operations;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
-
-import com.fitpay.android.wearable.bluetooth.gatt.GattManager;
 
 import java.util.UUID;
 
 public class GattSetNotificationOperation extends GattOperation {
 
-    private GattManager mGattManager;
-
-    private final UUID mServiceUuid;
-    private final UUID mCharacteristicUuid;
-    private final UUID mDescriptorUuid;
-
-    public GattSetNotificationOperation(BluetoothDevice device, UUID serviceUuid, UUID characteristicUuid, UUID descriptorUuid) {
-        super(device);
-        mServiceUuid = serviceUuid;
-        mCharacteristicUuid = characteristicUuid;
-        mDescriptorUuid = descriptorUuid;
+    public GattSetNotificationOperation(UUID serviceUuid, UUID characteristicUuid, UUID descriptorUuid) {
+        mService = serviceUuid;
+        mCharacteristic = characteristicUuid;
+        mDescriptor = descriptorUuid;
     }
 
     @Override
     public void execute(BluetoothGatt gatt) {
-        BluetoothGattCharacteristic characteristic = gatt.getService(mServiceUuid).getCharacteristic(mCharacteristicUuid);
+        BluetoothGattCharacteristic characteristic = gatt.getService(mService).getCharacteristic(mCharacteristic);
         boolean enable = true;
         gatt.setCharacteristicNotification(characteristic, enable);
         try {
@@ -34,8 +24,12 @@ public class GattSetNotificationOperation extends GattOperation {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(mDescriptorUuid);
-        descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(mDescriptor);
+        descriptor.setValue(getConfigurationValue());
         gatt.writeDescriptor(descriptor);
+    }
+
+    protected byte[] getConfigurationValue() {
+        return BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE;
     }
 }
