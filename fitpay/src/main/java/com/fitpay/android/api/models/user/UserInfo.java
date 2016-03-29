@@ -1,9 +1,12 @@
 package com.fitpay.android.api.models.user;
 
-/**
+import android.os.Parcel;
+import android.os.Parcelable;
+
+/***
  * Created by Vlad on 11.03.2016.
  */
-public final class UserInfo {
+public final class UserInfo implements Parcelable {
 
     /**
      * description : The user's username
@@ -37,4 +40,38 @@ public final class UserInfo {
     public String toString() {
         return "UserInfo";
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(this.username);
+        dest.writeString(this.firstName);
+        dest.writeString(this.lastName);
+        dest.writeString(this.birthDate);
+        dest.writeString(this.email);
+    }
+
+    protected UserInfo(Parcel in) {
+        this.username = in.readString();
+        this.firstName = in.readString();
+        this.lastName = in.readString();
+        this.birthDate = in.readString();
+        this.email = in.readString();
+    }
+
+    public static final Parcelable.Creator<UserInfo> CREATOR = new Parcelable.Creator<UserInfo>() {
+        @Override
+        public UserInfo createFromParcel(Parcel source) {
+            return new UserInfo(source);
+        }
+
+        @Override
+        public UserInfo[] newArray(int size) {
+            return new UserInfo[size];
+        }
+    };
 }

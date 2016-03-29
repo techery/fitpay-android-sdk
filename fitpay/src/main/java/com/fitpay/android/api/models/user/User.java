@@ -1,8 +1,11 @@
 package com.fitpay.android.api.models.user;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
@@ -11,11 +14,53 @@ import com.fitpay.android.utils.TimestampUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class User extends UserModel {
+public final class User extends UserModel implements Parcelable {
 
     private static final String GET_DEVICES = "devices";
     private static final String GET_CARDS = "creditCards";
 
+    public User(){
+    }
+
+    public User(Parcel in) {
+        this.id = in.readString();
+        this.userInfo = in.readParcelable(UserInfo.class.getClassLoader());
+        this.termsVersion = in.readString();
+        this.createdTsEpoch = (Long) in.readValue(Long.class.getClassLoader());
+        this.termsAcceptedTsEpoch = (Long) in.readValue(Long.class.getClassLoader());
+        this.originAccountCreatedTsEpoch = (Long) in.readValue(Long.class.getClassLoader());
+        this.links = in.readParcelable(Links.class.getClassLoader());
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(this.id);
+        dest.writeParcelable(this.userInfo, flags);
+        dest.writeString(this.termsVersion);
+        dest.writeValue(this.createdTsEpoch);
+        dest.writeValue(this.termsAcceptedTsEpoch);
+        dest.writeValue(this.originAccountCreatedTsEpoch);
+        dest.writeParcelable(this.links, flags);
+    }
+
+    public static final Parcelable.Creator<User> CREATOR
+            = new Parcelable.Creator<User>() {
+
+        @Override
+        public User createFromParcel(Parcel in) {
+            return new User(in);
+        }
+
+        @Override
+        public User[] newArray(int size) {
+            return new User[size];
+        }
+    };
 
     /**
      * Delete user from your organization.

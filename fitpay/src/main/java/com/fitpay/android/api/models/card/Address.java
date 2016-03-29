@@ -1,6 +1,9 @@
 package com.fitpay.android.api.models.card;
 
-public final class Address {
+import android.os.Parcel;
+import android.os.Parcelable;
+
+public final class Address implements Parcelable {
 
     /**
      * description : The billing address street name and number
@@ -93,4 +96,45 @@ public final class Address {
     public String getCountryCode() {
         return countryCode;
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(this.street1);
+        dest.writeString(this.street2);
+        dest.writeString(this.street3);
+        dest.writeString(this.city);
+        dest.writeString(this.state);
+        dest.writeString(this.postalCode);
+        dest.writeString(this.countryCode);
+    }
+
+    public Address() {
+    }
+
+    protected Address(Parcel in) {
+        this.street1 = in.readString();
+        this.street2 = in.readString();
+        this.street3 = in.readString();
+        this.city = in.readString();
+        this.state = in.readString();
+        this.postalCode = in.readString();
+        this.countryCode = in.readString();
+    }
+
+    public static final Parcelable.Creator<Address> CREATOR = new Parcelable.Creator<Address>() {
+        @Override
+        public Address createFromParcel(Parcel source) {
+            return new Address(source);
+        }
+
+        @Override
+        public Address[] newArray(int size) {
+            return new Address[size];
+        }
+    };
 }
