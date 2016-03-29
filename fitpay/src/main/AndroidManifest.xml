@@ -11,7 +11,7 @@
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false"/>
 
     <application>
-        <service android:name=".wearable.BluetoothService"
+        <service android:name=".wearable.WearableService"
             android:enabled="true"
             android:exported="false"/>
     </application>
