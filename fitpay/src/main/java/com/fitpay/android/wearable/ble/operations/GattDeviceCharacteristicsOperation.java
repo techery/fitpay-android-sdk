@@ -35,51 +35,51 @@ public class GattDeviceCharacteristicsOperation extends GattOperation {
         bundle.push(createOperation(DeviceInformationConstants.CHARACTERISTIC_MANUFACTURER_NAME_STRING,
                 new GattCharacteristicReadCallback() {
                     @Override
-                    public void call(byte[] characteristic) {
-                        manufacturerName = Hex.bytesToHexString(characteristic);
+                    public void call(byte[] data) {
+                        manufacturerName = Hex.bytesToHexString(data);
                     }
                 }
         ));
         bundle.push(createOperation(DeviceInformationConstants.CHARACTERISTIC_MODEL_NUMBER_STRING,
                 new GattCharacteristicReadCallback() {
                     @Override
-                    public void call(byte[] characteristic) {
-                        modelNumber = Hex.bytesToHexString(characteristic);
+                    public void call(byte[] data) {
+                        modelNumber = Hex.bytesToHexString(data);
                     }
                 }));
         bundle.push(createOperation(DeviceInformationConstants.CHARACTERISTIC_SERIAL_NUMBER_STRING,
                 new GattCharacteristicReadCallback() {
                     @Override
-                    public void call(byte[] characteristic) {
-                        serialNumber = Hex.bytesToHexString(characteristic);
+                    public void call(byte[] data) {
+                        serialNumber = Hex.bytesToHexString(data);
                     }
                 }));
         bundle.push(createOperation(DeviceInformationConstants.CHARACTERISTIC_FIRMWARE_REVISION_STRING,
                 new GattCharacteristicReadCallback() {
                     @Override
-                    public void call(byte[] characteristic) {
-                        firmwareRevision = Hex.bytesToHexString(characteristic);
+                    public void call(byte[] data) {
+                        firmwareRevision = Hex.bytesToHexString(data);
                     }
                 }));
         bundle.push(createOperation(DeviceInformationConstants.CHARACTERISTIC_SOFTWARE_REVISION_STRING,
                 new GattCharacteristicReadCallback() {
                     @Override
-                    public void call(byte[] characteristic) {
-                        softwareRevision = Hex.bytesToHexString(characteristic);
+                    public void call(byte[] data) {
+                        softwareRevision = Hex.bytesToHexString(data);
                     }
                 }));
         bundle.push(createOperation(DeviceInformationConstants.CHARACTERISTIC_HARDWARE_REVISION_STRING,
                 new GattCharacteristicReadCallback() {
                     @Override
-                    public void call(byte[] characteristic) {
-                        hardwareRevision = Hex.bytesToHexString(characteristic);
+                    public void call(byte[] data) {
+                        hardwareRevision = Hex.bytesToHexString(data);
                     }
                 }));
         bundle.push(createOperation(DeviceInformationConstants.CHARACTERISTIC_SYSTEM_ID,
                 new GattCharacteristicReadCallback() {
                     @Override
-                    public void call(byte[] characteristic) {
-                        systemId = Hex.bytesToHexString(characteristic);
+                    public void call(byte[] data) {
+                        systemId = Hex.bytesToHexString(data);
                     }
                 }));
         bundle.push(new GattCharacteristicReadOperation(
@@ -87,8 +87,8 @@ public class GattDeviceCharacteristicsOperation extends GattOperation {
                 PaymentServiceConstants.CHARACTERISTIC_SECURE_ELEMENT_ID,
                 new GattCharacteristicReadCallback() {
                     @Override
-                    public void call(byte[] characteristic) {
-                        secureElementId = Hex.bytesToHexString(characteristic);
+                    public void call(byte[] data) {
+                        secureElementId = Hex.bytesToHexString(data);
                     }
                 }));
 

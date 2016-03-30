@@ -34,7 +34,7 @@ public class RxBus {
 
     public <T> Subscription register(final Class<T> eventClass, Action1<T> onNext) {
         return mBus
-                .filter(event -> event.getClass().equals(eventClass))
+                .filter(event -> eventClass.isAssignableFrom(event.getClass()))
                 .map(obj -> (T) obj)
                 .subscribe(onNext);
     }

@@ -11,6 +11,7 @@ public interface IWearable {
     void getDeviceInfo();
     void getSecurityState();
     void setSecurityState(boolean enabled);
-    void sendAdpuPackage(byte[] pkgData);
+    void sendApduPackage(byte[] data);
+    void sendTransactionData(byte[] data);
     void resetDevice();
 }

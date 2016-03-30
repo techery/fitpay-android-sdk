@@ -17,7 +17,6 @@ import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
 import com.fitpay.android.wearable.ble.utils.OperationConcurrentQueue;
 import com.orhanobut.logger.Logger;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -41,8 +40,9 @@ public class GattManager {
         mCharacteristicChangeListeners = new HashMap<>();
     }
 
-    public void disconnect(){
+    public synchronized void disconnect(){
         mCharacteristicChangeListeners.clear();
+        mQueue.clear();
 
         if(mGatt != null){
             mGatt.disconnect();
@@ -52,6 +52,7 @@ public class GattManager {
     public void close(){
         if(mGatt != null){
             mGatt.close();
+            mGatt = null;
         }
     }
 
@@ -76,9 +77,13 @@ public class GattManager {
             Logger.e("tried to drive, but currentOperation was not null, " + mCurrentOperation);
             return;
         }
+
         if( mQueue.size() == 0) {
             Logger.v("Queue empty, drive loop stopped.");
             mCurrentOperation = null;
+            if(mCurrentOperationTimeout != null) {
+                mCurrentOperationTimeout.cancel(true);
+            }
             return;
         }
 
@@ -102,9 +107,7 @@ public class GattManager {
                         mGatt.discoverServices();
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                         Logger.i("Disconnected from gatt server " + mDevice.getAddress() + ", newState: " + newState);
-                        mGatt = null;
-                        setCurrentOperation(null);
-                        gatt.close();
+                        mCurrentOperation = null;
                         drive();
                     }
                 }

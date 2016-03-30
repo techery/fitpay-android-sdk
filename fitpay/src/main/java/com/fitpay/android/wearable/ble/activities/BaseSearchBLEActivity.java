@@ -21,7 +21,7 @@ import android.widget.Toast;
 
 import com.fitpay.android.R;
 import com.fitpay.android.wearable.ble.constants.DeviceInformationConstants;
-import com.fitpay.android.wearable.listeners.SearchListener;
+import com.fitpay.android.wearable.ble.callbacks.DeviceSearchListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +30,7 @@ import java.util.UUID;
 /**
  * Activity to select available BLE device
  */
-public abstract class BaseSearchBLEActivity extends AppCompatActivity implements SearchListener {
+public abstract class BaseSearchBLEActivity extends AppCompatActivity implements DeviceSearchListener {
 
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.

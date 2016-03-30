@@ -72,8 +72,8 @@ public class WearableService extends Service {
         mWearable.setSecurityState(enabled);
     }
 
-    public void sendAdpuPackage(byte[] pkgData) {
-        mWearable.sendAdpuPackage(pkgData);
+    public void sendApduPackage(byte[] data) {
+        mWearable.sendApduPackage(data);
     }
 
     public void resetDevice() {

@@ -11,6 +11,7 @@ import com.fitpay.android.utils.StringUtils;
 import com.fitpay.android.wearable.ble.callbacks.CharacteristicChangeListener;
 import com.fitpay.android.wearable.ble.callbacks.GattCharacteristicReadCallback;
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
+import com.fitpay.android.wearable.ble.message.NotificationMessage;
 import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
 import com.fitpay.android.wearable.ble.operations.GattCharacteristicReadOperation;
 import com.fitpay.android.wearable.ble.operations.GattCharacteristicWriteOperation;
@@ -19,13 +20,14 @@ import com.fitpay.android.wearable.ble.operations.GattDeviceCharacteristicsOpera
 import com.fitpay.android.wearable.ble.operations.GattOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
 import com.fitpay.android.wearable.ble.operations.GattSetIndicationOperation;
+import com.fitpay.android.wearable.interfaces.ISecureMessage;
 import com.fitpay.android.wearable.model.Wearable;
 import com.orhanobut.logger.Logger;
 
 import java.util.UUID;
 
 /**
- * Created by Vlad on 29.03.2016.
+ * Manage data exchange with device via Bluetooth
  */
 public final class BluetoothWearable extends Wearable {
 
@@ -110,8 +112,8 @@ public final class BluetoothWearable extends Wearable {
                 PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE,
                 new GattCharacteristicReadCallback() {
                     @Override
-                    public void call(byte[] characteristic) {
-                        RxBus.getInstance().post(new SecurityStateMessage().withData(characteristic));
+                    public void call(byte[] data) {
+                        RxBus.getInstance().post(new SecurityStateMessage().withData(data));
                     }
                 });
         mGattManager.queue(getNFCOperation);
@@ -128,8 +130,18 @@ public final class BluetoothWearable extends Wearable {
     }
 
     @Override
-    public void sendAdpuPackage(byte[] value) {
+    public void sendApduPackage(byte[] data) {
 
+    }
+
+    @Override
+    public void sendTransactionData(byte[] data) {
+        GattOperation setTransactionOperation = new GattCharacteristicWriteOperation(
+                PaymentServiceConstants.SERVICE_UUID,
+                PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION,
+                data
+        );
+        mGattManager.queue(setTransactionOperation);
     }
 
     @Override
@@ -181,12 +193,12 @@ public final class BluetoothWearable extends Wearable {
         );
         bundle.addOperation(transactionIndication);
 
-        GattOperation applicaitonControlIndication = new GattSetIndicationOperation(
+        GattOperation applicationControlIndication = new GattSetIndicationOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL,
                 PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
         );
-        bundle.addOperation(applicaitonControlIndication);
+        bundle.addOperation(applicationControlIndication);
 
         mGattManager.queue(bundle);
 
@@ -208,7 +220,8 @@ public final class BluetoothWearable extends Wearable {
             UUID uuid = characteristic.getUuid();
 
             if(PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE.equals(uuid)){
-                RxBus.getInstance().post(new SecurityStateMessage().withData(characteristic.getValue()));
+                ISecureMessage securityStateMessage = new SecurityStateMessage().withData(characteristic.getValue());
+                RxBus.getInstance().post(securityStateMessage);
             } else if(PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(uuid)){
 
             } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL.equals(uuid)){
@@ -216,7 +229,8 @@ public final class BluetoothWearable extends Wearable {
             } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET.equals(uuid)){
 
             } else if(PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION.equals(uuid)){
-
+                NotificationMessage notificationMessage = new NotificationMessage().withData(characteristic.getValue());
+                RxBus.getInstance().post(notificationMessage);
             } else if(PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL.equals(uuid)){
 
             }
