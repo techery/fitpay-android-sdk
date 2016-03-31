@@ -11,8 +11,10 @@ import com.fitpay.android.utils.StringUtils;
 import com.fitpay.android.wearable.ble.callbacks.CharacteristicChangeListener;
 import com.fitpay.android.wearable.ble.callbacks.GattCharacteristicReadCallback;
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
+import com.fitpay.android.wearable.ble.message.ApduResultMessage;
 import com.fitpay.android.wearable.ble.message.NotificationMessage;
 import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
+import com.fitpay.android.wearable.ble.operations.GattApduOperation;
 import com.fitpay.android.wearable.ble.operations.GattCharacteristicReadOperation;
 import com.fitpay.android.wearable.ble.operations.GattCharacteristicWriteOperation;
 import com.fitpay.android.wearable.ble.operations.GattConnectOperation;
@@ -34,6 +36,8 @@ public final class BluetoothWearable extends Wearable {
     private BluetoothDevice mDevice;
     private BluetoothAdapter mBluetoothAdapter;
     private GattManager mGattManager;
+
+    private int apduSequenceId;
 
     public BluetoothWearable(Context context, BluetoothDevice device) {
         super(context, device.getAddress());
@@ -131,7 +135,8 @@ public final class BluetoothWearable extends Wearable {
 
     @Override
     public void sendApduPackage(byte[] data) {
-
+        GattOperation sendApduOperation = new GattApduOperation(apduSequenceId++, data);
+        mGattManager.queue(sendApduOperation);
     }
 
     @Override
@@ -201,39 +206,5 @@ public final class BluetoothWearable extends Wearable {
         bundle.addOperation(applicationControlIndication);
 
         mGattManager.queue(bundle);
-
-        addCharacteristicListener(PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE);
-        addCharacteristicListener(PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT);
-        addCharacteristicListener(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL);
-        addCharacteristicListener(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET);
-        addCharacteristicListener(PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION);
-        addCharacteristicListener(PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL);
     }
-
-    private void addCharacteristicListener(UUID characteristicUuid){
-        mGattManager.addCharacteristicChangeListener(characteristicUuid, characteristicChangeListener);
-    }
-
-    private CharacteristicChangeListener characteristicChangeListener = new CharacteristicChangeListener() {
-        @Override
-        public void onCharacteristicChanged(BluetoothGattCharacteristic characteristic) {
-            UUID uuid = characteristic.getUuid();
-
-            if(PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE.equals(uuid)){
-                ISecureMessage securityStateMessage = new SecurityStateMessage().withData(characteristic.getValue());
-                RxBus.getInstance().post(securityStateMessage);
-            } else if(PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(uuid)){
-
-            } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL.equals(uuid)){
-
-            } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET.equals(uuid)){
-
-            } else if(PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION.equals(uuid)){
-                NotificationMessage notificationMessage = new NotificationMessage().withData(characteristic.getValue());
-                RxBus.getInstance().post(notificationMessage);
-            } else if(PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL.equals(uuid)){
-
-            }
-        }
-    };
 }

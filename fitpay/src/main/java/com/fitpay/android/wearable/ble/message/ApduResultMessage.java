@@ -2,11 +2,15 @@ package com.fitpay.android.wearable.ble.message;
 
 import com.fitpay.android.wearable.ble.utils.Conversions;
 import com.fitpay.android.wearable.ble.utils.Hex;
+import com.fitpay.android.wearable.interfaces.IApduMessage;
+
+import java.lang.reflect.Array;
+import java.util.Arrays;
 
 /**
  * Created by tgs on 3/4/16.
  */
-public class ApduResultMessage extends BleMessage {
+public class ApduResultMessage extends BleMessage implements IApduMessage {
 
     private byte result;
     private byte[] sequenceId;
@@ -61,6 +65,32 @@ public class ApduResultMessage extends BleMessage {
         }
         this.data = data;
         return this;
+    }
+
+    public ApduResultMessage withMessage(byte[] msg){
+        if (msg == null || msg.length < 3) {
+            throw new IllegalArgumentException("message is too short");
+        }
+
+        result = msg[0];
+        sequenceId = Arrays.copyOfRange(msg, 1, 3);
+        data = Arrays.copyOfRange(msg, 3, msg.length);
+
+        return this;
+    }
+
+    @Override
+    public byte getResult() {
+        return result;
+    }
+
+    public int getSequenceId(){
+        return Conversions.getIntValueFromLittleEndianBytes(sequenceId);
+    }
+
+    @Override
+    public byte[] getData() {
+        return data;
     }
 
     public byte[] getMessage() {

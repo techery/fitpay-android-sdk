@@ -2,6 +2,7 @@ package com.fitpay.android.utils;
 
 import rx.Observable;
 import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.subjects.PublishSubject;
 import rx.subjects.SerializedSubject;
@@ -36,6 +37,7 @@ public class RxBus {
         return mBus
                 .filter(event -> eventClass.isAssignableFrom(event.getClass()))
                 .map(obj -> (T) obj)
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(onNext);
     }
 

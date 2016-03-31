@@ -9,12 +9,19 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.AsyncTask;
 
+import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.wearable.ble.callbacks.CharacteristicChangeListener;
+import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
 import com.fitpay.android.wearable.ble.interfaces.CharacteristicReader;
+import com.fitpay.android.wearable.ble.message.ApduResultMessage;
+import com.fitpay.android.wearable.ble.message.NotificationMessage;
+import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
 import com.fitpay.android.wearable.ble.operations.GattDescriptorReadOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
 import com.fitpay.android.wearable.ble.utils.OperationConcurrentQueue;
+import com.fitpay.android.wearable.interfaces.IApduMessage;
+import com.fitpay.android.wearable.interfaces.ISecureMessage;
 import com.orhanobut.logger.Logger;
 
 import java.util.HashMap;
@@ -29,7 +36,8 @@ public class GattManager {
     private OperationConcurrentQueue mQueue;
     private GattOperation mCurrentOperation;
 
-    private HashMap<UUID, CharacteristicChangeListener> mCharacteristicChangeListeners;
+    private int lastApduSequenceId;
+
     private AsyncTask<Void, Void, Void> mCurrentOperationTimeout;
 
     public GattManager(Context context, BluetoothDevice device) {
@@ -37,11 +45,9 @@ public class GattManager {
         mDevice = device;
         mQueue = new OperationConcurrentQueue();
         mCurrentOperation = null;
-        mCharacteristicChangeListeners = new HashMap<>();
     }
 
     public synchronized void disconnect(){
-        mCharacteristicChangeListeners.clear();
         mQueue.clear();
 
         if(mGatt != null){
@@ -94,6 +100,11 @@ public class GattManager {
         resetTimer(operation.getTimeoutMs());
 
         if(mGatt != null) {
+
+            if(operation instanceof IApduMessage){
+                lastApduSequenceId = ((IApduMessage) operation).getSequenceId();
+            }
+
             execute(mGatt, operation);
         } else {
             mDevice.connectGatt(mContext, false, new BluetoothGattCallback() {
@@ -137,6 +148,7 @@ public class GattManager {
                     super.onCharacteristicWrite(gatt, characteristic, status);
 
                     Logger.d("Characteristic " + characteristic.getUuid() + "written to on device " + mDevice.getAddress());
+
                     setCurrentOperation(null);
                     drive();
                 }
@@ -145,9 +157,29 @@ public class GattManager {
                 public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                     super.onCharacteristicChanged(gatt, characteristic);
 
-                    Logger.w("Characteristic " + characteristic.getUuid() + "was changed, device: " + mDevice.getAddress());
-                    if (mCharacteristicChangeListeners.containsKey(characteristic.getUuid())) {
-                        mCharacteristicChangeListeners.get(characteristic.getUuid()).onCharacteristicChanged(characteristic);
+                    UUID uuid = characteristic.getUuid();
+
+                    Logger.d("Characteristic changed: " + uuid);
+
+                    if(PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE.equals(uuid)){
+                        ISecureMessage securityStateMessage = new SecurityStateMessage().withData(characteristic.getValue());
+                        RxBus.getInstance().post(securityStateMessage);
+                    } else if(PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION.equals(uuid)){
+                        NotificationMessage notificationMessage = new NotificationMessage().withData(characteristic.getValue());
+                        RxBus.getInstance().post(notificationMessage);
+                    } else if(PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(uuid)){
+                        ApduResultMessage apduResultMessage = new ApduResultMessage().withMessage(characteristic.getValue());
+                        if(lastApduSequenceId == apduResultMessage.getSequenceId()) {
+                            RxBus.getInstance().post(apduResultMessage);
+                        } else {
+                            //TODO: send error
+                        }
+                    } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL.equals(uuid)){
+
+                    } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET.equals(uuid)){
+
+                    } else if(PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL.equals(uuid)){
+
                     }
                 }
 
@@ -163,6 +195,7 @@ public class GattManager {
                 @Override
                 public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
                     super.onDescriptorWrite(gatt, descriptor, status);
+
                     setCurrentOperation(null);
                     drive();
                 }
@@ -180,12 +213,6 @@ public class GattManager {
 
     public synchronized void setCurrentOperation(GattOperation currentOperation) {
         mCurrentOperation = currentOperation;
-    }
-
-    public void addCharacteristicChangeListener(UUID characteristicUuid, CharacteristicChangeListener characteristicChangeListener) {
-        if(!mCharacteristicChangeListeners.containsKey(characteristicUuid)) {
-            mCharacteristicChangeListeners.put(characteristicUuid, characteristicChangeListener);
-        }
     }
 
     public void queue(GattOperationBundle bundle) {

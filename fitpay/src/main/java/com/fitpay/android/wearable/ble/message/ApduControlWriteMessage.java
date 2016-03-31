@@ -28,6 +28,31 @@ public class ApduControlWriteMessage extends BleMessage {
         return this;
     }
 
+    public ApduControlWriteMessage withSequenceId(int sequenceId) {
+        this.sequenceId = sequenceId;
+        return this;
+    }
+
+    public ApduControlWriteMessage withData(byte[] data) {
+        apduCommand = data;
+
+        message = new byte[3 + ((null == data) ? 0 : data.length)];
+
+        String val = Integer.toHexString(sequenceId);
+        if ((val.length() & 1) != 0) {
+            val = "0" + val;
+        }
+
+        byte[] byteSequenceId = new byte[] { Hex.hexStringToBytes(val)[0], 0x00};
+        System.arraycopy(byteSequenceId, 0, message, 1, byteSequenceId.length);
+
+        if (null != data && data.length > 0) {
+            System.arraycopy(data, 0, message, 1 + byteSequenceId.length, data.length);
+        }
+
+        return this;
+    }
+
     public byte[] getMessage() {
         return message;
     }

@@ -186,7 +186,7 @@ public abstract class BaseSearchBLEActivity extends AppCompatActivity implements
         }
     }
 
-    private void scanLeDevice(final boolean enable) {
+    protected void scanLeDevice(final boolean enable) {
 
         if (enable) {
             if(!scanning) {
@@ -214,7 +214,7 @@ public abstract class BaseSearchBLEActivity extends AppCompatActivity implements
                 if (!mDevicesList.contains(device)) {
                     mDevicesList.add(device);
 
-                    onNewDevice();
+                    onNewDevice(device);
                 }
             }
         });

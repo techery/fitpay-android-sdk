@@ -1,11 +1,13 @@
 package com.fitpay.android.wearable.ble.message;
 
+import com.fitpay.android.wearable.interfaces.INotificationMessage;
+
 import java.util.Date;
 
 /**
  * Created by tgs on 3/4/16.
  */
-public class NotificationMessage extends BleMessage {
+public class NotificationMessage extends BleMessage implements INotificationMessage{
 
     private Date date;
     private byte[] type;
@@ -82,4 +84,18 @@ public class NotificationMessage extends BleMessage {
         return message;
     }
 
+    @Override
+    public Date getDate() {
+        return date;
+    }
+
+    @Override
+    public byte[] getData() {
+        return data;
+    }
+
+    @Override
+    public byte[] getType() {
+        return type;
+    }
 }
