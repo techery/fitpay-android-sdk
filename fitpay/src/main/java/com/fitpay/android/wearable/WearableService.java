@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 
+import com.fitpay.android.api.models.apdu.ApduPackage;
+import com.fitpay.android.api.models.apdu.ApduResponse;
+import com.fitpay.android.api.models.apdu.ApduResult;
 import com.fitpay.android.wearable.interfaces.IWearable;
 import com.orhanobut.logger.Logger;
 
@@ -72,8 +75,8 @@ public class WearableService extends Service {
         mWearable.setSecurityState(enabled);
     }
 
-    public void sendApduPackage(byte[] data) {
-        mWearable.sendApduPackage(data);
+    public void sendApduPackage(ApduPackage apduPackage) {
+        mWearable.sendApduPackage(apduPackage);
     }
 
     public void resetDevice() {

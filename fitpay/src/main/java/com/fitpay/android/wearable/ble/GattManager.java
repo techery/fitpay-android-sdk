@@ -8,22 +8,32 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.wearable.ble.callbacks.CharacteristicChangeListener;
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
 import com.fitpay.android.wearable.ble.interfaces.CharacteristicReader;
 import com.fitpay.android.wearable.ble.message.ApduResultMessage;
+import com.fitpay.android.wearable.ble.message.ContinuationControlBeginMessage;
+import com.fitpay.android.wearable.ble.message.ContinuationControlEndMessage;
+import com.fitpay.android.wearable.ble.message.ContinuationControlMessage;
+import com.fitpay.android.wearable.ble.message.ContinuationControlMessageFactory;
+import com.fitpay.android.wearable.ble.message.ContinuationPacketMessage;
 import com.fitpay.android.wearable.ble.message.NotificationMessage;
 import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
 import com.fitpay.android.wearable.ble.operations.GattDescriptorReadOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
+import com.fitpay.android.wearable.ble.utils.ContinuationPayload;
+import com.fitpay.android.wearable.ble.utils.Crc32;
+import com.fitpay.android.wearable.ble.utils.Hex;
 import com.fitpay.android.wearable.ble.utils.OperationConcurrentQueue;
 import com.fitpay.android.wearable.interfaces.IApduMessage;
 import com.fitpay.android.wearable.interfaces.ISecureMessage;
 import com.orhanobut.logger.Logger;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -36,6 +46,7 @@ public class GattManager {
     private OperationConcurrentQueue mQueue;
     private GattOperation mCurrentOperation;
 
+    private ContinuationPayload continuationPayload = null;
     private int lastApduSequenceId;
 
     private AsyncTask<Void, Void, Void> mCurrentOperationTimeout;
@@ -158,25 +169,82 @@ public class GattManager {
                     super.onCharacteristicChanged(gatt, characteristic);
 
                     UUID uuid = characteristic.getUuid();
+                    byte[] value = characteristic.getValue();
 
                     Logger.d("Characteristic changed: " + uuid);
 
                     if(PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE.equals(uuid)){
-                        ISecureMessage securityStateMessage = new SecurityStateMessage().withData(characteristic.getValue());
+                        ISecureMessage securityStateMessage = new SecurityStateMessage().withData(value);
                         RxBus.getInstance().post(securityStateMessage);
                     } else if(PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION.equals(uuid)){
-                        NotificationMessage notificationMessage = new NotificationMessage().withData(characteristic.getValue());
+                        NotificationMessage notificationMessage = new NotificationMessage().withData(value);
                         RxBus.getInstance().post(notificationMessage);
                     } else if(PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(uuid)){
-                        ApduResultMessage apduResultMessage = new ApduResultMessage().withMessage(characteristic.getValue());
+                        ApduResultMessage apduResultMessage = new ApduResultMessage().withMessage(value);
                         if(lastApduSequenceId == apduResultMessage.getSequenceId()) {
                             RxBus.getInstance().post(apduResultMessage);
                         } else {
                             //TODO: send error
                         }
                     } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL.equals(uuid)){
+                            Logger.d("continuation control write received [" + Hex.bytesToHexString(value) + "], length [" + value.length + "]");
+                            ContinuationControlMessage continuationControlMessage = ContinuationControlMessageFactory.withMessage(value);
+                            Logger.d("continuation control message: " + continuationControlMessage);
 
+                            // start continuation packet
+                            if (continuationControlMessage instanceof ContinuationControlBeginMessage) {
+                                if (continuationPayload != null) {
+                                    Logger.d("continuation was previously started, resetting to blank");
+                                }
+
+                                continuationPayload = new ContinuationPayload(((ContinuationControlBeginMessage) continuationControlMessage).getUuid());
+
+                                Logger.d("continuation start control received, ready to receive continuation data");
+                            } else if (continuationControlMessage instanceof ContinuationControlEndMessage) {
+                                Logger.d("continuation control end received.  process update to characteristic: " + continuationPayload.getTargetUuid());
+                                UUID targetUuid = continuationPayload.getTargetUuid();
+                                byte[] payloadValue = null;
+                                try {
+                                    payloadValue = continuationPayload.getValue();
+                                    continuationPayload = null;
+                                    Logger.d("complete continuation data [" + Hex.bytesToHexString(payloadValue) + "]");
+                                } catch (IOException e) {
+                                    continuationPayload = null;
+                                    Logger.e("error parsing continuation data", e);
+                                    //TODO: send error
+                                }
+
+                                long checkSumValue = Crc32.getCRC32Checksum(payloadValue);
+                                long expectedChecksumValue = ((ContinuationControlEndMessage) continuationControlMessage).getChecksum();
+                                if (checkSumValue != expectedChecksumValue) {
+                                    Logger.e("Checksums not equal.  input data checksum: " + checkSumValue
+                                            + ", expected value as provided on continuation end: " + expectedChecksumValue);
+                                    //TODO: send error
+                                }
+
+                                if (PaymentServiceConstants.CHARACTERISTIC_APDU_CONTROL.equals(targetUuid.toString())) {
+                                    Logger.d("continuation is for APDU Control");
+                                } else {
+                                    Logger.w("Code does not handle continuation for characteristic: " + targetUuid);
+                                }
+                        }
                     } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET.equals(uuid)){
+
+                        Logger.d("continuation data packet received [" + Hex.bytesToHexString(value) + "]");
+                        ContinuationPacketMessage continuationPacketMessage = new ContinuationPacketMessage().withMessage(value);
+                        Logger.d("parsed continuation packet message: " + continuationPacketMessage);
+
+                        if (continuationPayload == null) {
+                            Logger.e("invalid continuation, no start received on control characteristic");
+                            //TODO: send error
+                        }
+
+                        try {
+                            continuationPayload.processPacket(continuationPacketMessage);
+                        } catch (Exception e) {
+                            Logger.e("exception handling continuation packet", e);
+                            //TODO: send error
+                        }
 
                     } else if(PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL.equals(uuid)){
 

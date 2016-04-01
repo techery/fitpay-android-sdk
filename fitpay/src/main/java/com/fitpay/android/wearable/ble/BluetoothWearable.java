@@ -2,17 +2,14 @@ package com.fitpay.android.wearable.ble;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 
+import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
-import com.fitpay.android.wearable.ble.callbacks.CharacteristicChangeListener;
 import com.fitpay.android.wearable.ble.callbacks.GattCharacteristicReadCallback;
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
-import com.fitpay.android.wearable.ble.message.ApduResultMessage;
-import com.fitpay.android.wearable.ble.message.NotificationMessage;
 import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
 import com.fitpay.android.wearable.ble.operations.GattApduOperation;
 import com.fitpay.android.wearable.ble.operations.GattCharacteristicReadOperation;
@@ -22,11 +19,8 @@ import com.fitpay.android.wearable.ble.operations.GattDeviceCharacteristicsOpera
 import com.fitpay.android.wearable.ble.operations.GattOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
 import com.fitpay.android.wearable.ble.operations.GattSetIndicationOperation;
-import com.fitpay.android.wearable.interfaces.ISecureMessage;
 import com.fitpay.android.wearable.model.Wearable;
 import com.orhanobut.logger.Logger;
-
-import java.util.UUID;
 
 /**
  * Manage data exchange with device via Bluetooth
@@ -36,8 +30,6 @@ public final class BluetoothWearable extends Wearable {
     private BluetoothDevice mDevice;
     private BluetoothAdapter mBluetoothAdapter;
     private GattManager mGattManager;
-
-    private int apduSequenceId;
 
     public BluetoothWearable(Context context, BluetoothDevice device) {
         super(context, device.getAddress());
@@ -134,8 +126,8 @@ public final class BluetoothWearable extends Wearable {
     }
 
     @Override
-    public void sendApduPackage(byte[] data) {
-        GattOperation sendApduOperation = new GattApduOperation(apduSequenceId++, data);
+    public void sendApduPackage(ApduPackage apduPackage) {
+        GattOperation sendApduOperation = new GattApduOperation(apduPackage);
         mGattManager.queue(sendApduOperation);
     }
 

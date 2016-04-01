@@ -1,6 +1,5 @@
 package com.fitpay.android.utils;
 
-import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.user.User;
 import com.google.gson.JsonElement;
@@ -42,9 +41,9 @@ interface FitPayClient {
     /**
      * Creates a relationship between a device and a creditCard.
      *
-     * @param userId user id
+     * @param userId       user id
      * @param creditCardId credit card id
-     * @param deviceId device id
+     * @param deviceId     device id
      */
     @PUT("users/{userId}/relationships")
     Call<Relationship> createRelationship(@Path("userId") String userId,
@@ -52,20 +51,10 @@ interface FitPayClient {
                                           @Query("deviceId") String deviceId);
 
     /**
-     * Endpoint to allow for returning responses to APDU execution.
-     *
-     * @param packageId package id
-     * @param apduPackage package confirmation data:(packageId, state, executedTs,
-     *                            executedDuration, apduResponses:(commandId, commandId, responseData))
-     * */
-    @POST("apduPackages/{packageId}/confirm")
-    Call<Void> confirmAPDUPackage(@Path("packageId") String packageId, @Body ApduPackage apduPackage);
-
-    /**
      * Creates a new encryption key pair
      *
      * @param clientPublicKey client public key
-     * */
+     */
     @POST("config/encryptionKeys")
     Call<ECCKeyPair> createEncryptionKey(@Body ECCKeyPair clientPublicKey);
 
@@ -73,7 +62,7 @@ interface FitPayClient {
      * Retrieve and individual key pair.
      *
      * @param keyId key id
-     * */
+     */
     @GET("config/encryptionKeys/{keyId}")
     Call<ECCKeyPair> getEncryptionKey(@Query("keyId") String keyId);
 
@@ -81,14 +70,13 @@ interface FitPayClient {
      * Delete and individual key pair.
      *
      * @param keyId key id
-     * */
+     */
     @DELETE("config/encryptionKeys/{keyId}")
     Call<Void> deleteEncryptionKey(@Query("keyId") String keyId);
 
     /**
      * Get webhook
-     *
-     * */
+     */
     @GET("config/webhook")
     Call<Object> getWebhook();
 
@@ -96,7 +84,7 @@ interface FitPayClient {
      * Sets the webhook endpoint you would like FitPay to send notifications to, must be a valid URL.
      *
      * @param webhookURL webhook URL
-     * */
+     */
     @PUT("config/webhook")
     Call<Object> setWebhook(@Body String webhookURL);
 
@@ -104,7 +92,7 @@ interface FitPayClient {
      * Removes the current webhook endpoint, unsubscribing you from all Fitpay notifications.
      *
      * @param webhookURL webhook URL
-     * */
+     */
     @DELETE("config/webhook")
     Call<Object> removeWebhook(@Body String webhookURL);
 
