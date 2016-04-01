@@ -34,3 +34,6 @@ out/
 .settings/
 .metadata/
 tmp/
+
+#swp files
+*.swp
