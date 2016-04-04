@@ -1,97 +1,105 @@
 package com.fitpay.android.wearable.ble.operations;
 
 import android.bluetooth.BluetoothGatt;
+import android.util.Pair;
 
+import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.models.apdu.ApduCommand;
+import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
-import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
-import com.fitpay.android.wearable.ble.message.ApduControlWriteMessage;
-import com.fitpay.android.wearable.ble.message.ContinuationControlBeginMessage;
-import com.fitpay.android.wearable.ble.message.ContinuationControlEndMessage;
-import com.fitpay.android.wearable.ble.message.ContinuationPacketMessage;
+import com.fitpay.android.api.models.apdu.ApduPackageResponse;
+import com.fitpay.android.utils.RxBus;
+import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.wearable.ble.utils.OperationQueue;
+import com.fitpay.android.wearable.interfaces.IApduMessage;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import rx.Subscription;
+import rx.functions.Action1;
 
 public class GattApduOperation extends GattOperation {
 
+    private ApduPackage mPackage;
+    private ApduPackageResponse mResult;
+
+    private Subscription mApduSubscription;
+    private Map<Integer, String> mSequencesMap;
+
+    private long mStartTime;
+
     public GattApduOperation(ApduPackage apduPackage) {
 
+        this.mPackage = apduPackage;
+        this.mResult = new ApduPackageResponse(apduPackage.getPackageId());
+
+        mSequencesMap = new HashMap<>();
         mNestedQueue = new OperationQueue();
 
+        mNestedQueue.add(new GattOperation() {
+            @Override
+            public void execute(BluetoothGatt bluetoothGatt) {
+                mStartTime = System.currentTimeMillis();
+            }
+
+            @Override
+            public boolean canRunNextOperation() {
+                return true;
+            }
+        });
+
         for (ApduCommand command : apduPackage.getApduCommands()) {
-            if(command.getCommand().getBytes().length <= 17){
-                createSimpleOperation(command);
+            if (command.getCommand().length <= 17) {
+                mNestedQueue.add(new GattApduBasicOperation(command));
             } else {
-                createContinuationOperation(command);
+                mNestedQueue.add(new GattApduComplexOperation(command));
             }
         }
+
+        mApduSubscription = RxBus.getInstance().register(IApduMessage.class, new Action1<IApduMessage>() {
+            @Override
+            public void call(IApduMessage apduMessage) {
+
+                int sId = apduMessage.getSequenceId();
+
+                if (mSequencesMap.containsKey(sId)) {
+                    ApduCommandResult result = new ApduCommandResult(mSequencesMap.get(sId), apduMessage);
+                    mResult.addResult(result);
+                }
+            }
+        });
     }
 
     @Override
     public void execute(BluetoothGatt gatt) {
-    }
+        mApduSubscription.unsubscribe();
 
-    private void createSimpleOperation(ApduCommand command){
-        final ApduControlWriteMessage apduControlWriteMessage = new ApduControlWriteMessage()
-                .withSequenceId(command.getSequence())
-                .withData(command.getCommand().getBytes());
+        long endTime = System.currentTimeMillis();
+        int duration = (int) ((endTime - mStartTime) / 1000);
 
-        GattOperation apduControlWrite = new GattCharacteristicWriteOperation(
-                PaymentServiceConstants.SERVICE_UUID,
-                PaymentServiceConstants.CHARACTERISTIC_APDU_CONTROL,
-                apduControlWriteMessage.getMessage());
+        @ResponseState.ApduState String state = ResponseState.SUCCESSFUL;
 
-        mNestedQueue.add(apduControlWrite);
-    }
-
-    private void createContinuationOperation(ApduCommand command){
-
-        /*begin*/
-        ContinuationControlBeginMessage beingMsg = new ContinuationControlBeginMessage()
-                .withUuid(PaymentServiceConstants.CHARACTERISTIC_APDU_CONTROL);
-
-        GattOperation continuationStartWrite = new GattCharacteristicWriteOperation(
-                PaymentServiceConstants.SERVICE_UUID,
-                PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL,
-                beingMsg.getMessage());
-
-        mNestedQueue.add(continuationStartWrite);
-
-        /*packets*/
-        int currentPos = 0;
-        int sortOrder = 0;
-
-        byte[] msg = command.getCommand().getBytes();
-
-        byte[] dataToSend = null;
-        while (currentPos < msg.length) {
-            int len = Math.min(msg.length - currentPos, ContinuationPacketMessage.getMaxDataLength());
-            dataToSend = new byte[len];
-            System.arraycopy(msg, currentPos, dataToSend, 0, len);
-
-            ContinuationPacketMessage packetMessage = new ContinuationPacketMessage()
-                    .withSortOrder(sortOrder)
-                    .withData(dataToSend);
-
-            GattOperation packetWrite = new GattCharacteristicWriteOperation(
-                    PaymentServiceConstants.SERVICE_UUID,
-                    PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET,
-                    packetMessage.getMessage());
-
-            mNestedQueue.add(packetWrite);
-
-            currentPos+=len;
-            sortOrder++;
+        if (TimestampUtils.getDateForISO8601String(mPackage.getValidUntil()).getTime() < endTime) {
+            state = ResponseState.EXPIRED;
+        } else {
+            for (ApduCommandResult result : mResult.getResults()) {
+                if (!ApduCommandResult.SUCCESS_RESULT.equals(result.getResponseCode())) {
+                    state = ResponseState.FAILED;
+                }
+            }
         }
 
-        /*end*/
-        ContinuationControlEndMessage endMsg= new ContinuationControlEndMessage()
-                .withPayload(command.getCommand().getBytes());
+        mResult.setExecutedDuration(duration);
+        mResult.setExecutedTsEpoch(endTime);
+        mResult.setState(state);
 
-        GattOperation continuationEndWrite = new GattCharacteristicWriteOperation(
-                PaymentServiceConstants.SERVICE_UUID,
-                PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL,
-                endMsg.getMessage());
+        Pair<ApduPackage, ApduPackageResponse> pair = new Pair<>(mPackage, mResult);
+        RxBus.getInstance().post(pair);
+    }
 
-        mNestedQueue.add(continuationEndWrite);
+    @Override
+    public boolean canRunNextOperation() {
+        return true;
     }
 }

@@ -6,8 +6,7 @@ import android.os.Binder;
 import android.os.IBinder;
 
 import com.fitpay.android.api.models.apdu.ApduPackage;
-import com.fitpay.android.api.models.apdu.ApduResponse;
-import com.fitpay.android.api.models.apdu.ApduResult;
+import com.fitpay.android.wearable.enums.States;
 import com.fitpay.android.wearable.interfaces.IWearable;
 import com.orhanobut.logger.Logger;
 
@@ -42,7 +41,7 @@ public class WearableService extends Service {
     public void onDestroy() {
         super.onDestroy();
 
-        if(mWearable != null){
+        if (mWearable != null) {
             mWearable.close();
         }
     }
@@ -50,7 +49,7 @@ public class WearableService extends Service {
     public void pairWithDevice(IWearable wearable) {
         mWearable = wearable;
 
-        if(mWearable.isInitialized()){
+        if (mWearable.isInitialized()) {
             mWearable.connect();
         } else {
             Logger.e("Wearable is not initialized");
@@ -58,28 +57,28 @@ public class WearableService extends Service {
     }
 
     public void disconnect() {
-        if(mWearable != null) {
+        if (mWearable != null) {
             mWearable.disconnect();
         }
     }
 
-    public void getDeviceInfo(){
+    public void getDeviceInfo() {
         mWearable.getDeviceInfo();
     }
 
-    public void getSecurityState() {
-        mWearable.getSecurityState();
+    public void getNFCState() {
+        mWearable.getNFCState();
     }
 
-    public void setSecurityState(boolean enabled) {
-        mWearable.setSecurityState(enabled);
+    public void setNFCState(@States.NFC byte state) {
+        mWearable.setNFCState(state);
     }
 
     public void sendApduPackage(ApduPackage apduPackage) {
         mWearable.sendApduPackage(apduPackage);
     }
 
-    public void resetDevice() {
-        mWearable.resetDevice();
+    public void setSecureElementState(@States.SecureElement byte state) {
+        mWearable.setSecureElementState(state);
     }
 }

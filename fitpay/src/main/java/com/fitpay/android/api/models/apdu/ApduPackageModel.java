@@ -10,6 +10,7 @@ abstract class ApduPackageModel extends BaseModel {
     private String seIdType;
     private String targetDeviceType;
     private String targetDeviceId;
+    private String packageId;
     private String seId;
     private String targetAid;
     private String validUntil;
@@ -27,6 +28,10 @@ abstract class ApduPackageModel extends BaseModel {
 
     public String getTargetDeviceId() {
         return targetDeviceId;
+    }
+
+    public String getPackageId() {
+        return packageId;
     }
 
     public String getSeId() {

@@ -19,6 +19,7 @@ import com.fitpay.android.wearable.ble.operations.GattDeviceCharacteristicsOpera
 import com.fitpay.android.wearable.ble.operations.GattOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
 import com.fitpay.android.wearable.ble.operations.GattSetIndicationOperation;
+import com.fitpay.android.wearable.enums.States;
 import com.fitpay.android.wearable.model.Wearable;
 import com.orhanobut.logger.Logger;
 
@@ -102,7 +103,7 @@ public final class BluetoothWearable extends Wearable {
     }
 
     @Override
-    public void getSecurityState() {
+    public void getNFCState() {
         GattOperation getNFCOperation = new GattCharacteristicReadOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE,
@@ -116,11 +117,11 @@ public final class BluetoothWearable extends Wearable {
     }
 
     @Override
-    public void setSecurityState(boolean enabled) {
+    public void setNFCState(@States.NFC byte state) {
         GattOperation setNFCOperation = new GattCharacteristicWriteOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_SECURITY_WRITE,
-                new byte[]{(byte) (enabled ? 0x01 : 0x00)}
+                new byte[]{state}
         );
         mGattManager.queue(setNFCOperation);
     }
@@ -142,11 +143,11 @@ public final class BluetoothWearable extends Wearable {
     }
 
     @Override
-    public void resetDevice() {
+    public void setSecureElementState(@States.SecureElement byte state) {
         GattOperation resetOperation = new GattCharacteristicWriteOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_DEVICE_RESET,
-                new byte[]{0x01}
+                new byte[]{state}
         );
         mGattManager.queue(resetOperation);
     }

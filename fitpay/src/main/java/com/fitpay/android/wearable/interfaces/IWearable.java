@@ -1,6 +1,7 @@
 package com.fitpay.android.wearable.interfaces;
 
 import com.fitpay.android.api.models.apdu.ApduPackage;
+import com.fitpay.android.wearable.enums.States;
 
 /**
  * Created by Vlad on 29.03.2016.
@@ -11,9 +12,9 @@ public interface IWearable {
     void disconnect();
     void close();
     void getDeviceInfo();
-    void getSecurityState();
-    void setSecurityState(boolean enabled);
+    void getNFCState();
+    void setNFCState(@States.NFC byte state);
     void sendApduPackage(ApduPackage apduPackage);
     void sendTransactionData(byte[] data);
-    void resetDevice();
+    void setSecureElementState(@States.SecureElement byte state);
 }

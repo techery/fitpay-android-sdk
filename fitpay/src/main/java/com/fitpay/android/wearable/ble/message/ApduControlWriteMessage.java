@@ -38,12 +38,7 @@ public class ApduControlWriteMessage extends BleMessage {
 
         message = new byte[3 + ((null == data) ? 0 : data.length)];
 
-        String val = Integer.toHexString(sequenceId);
-        if ((val.length() & 1) != 0) {
-            val = "0" + val;
-        }
-
-        byte[] byteSequenceId = new byte[] { Hex.hexStringToBytes(val)[0], 0x00};
+        byte[] byteSequenceId = Hex.sequenceToBytes(sequenceId);
         System.arraycopy(byteSequenceId, 0, message, 1, byteSequenceId.length);
 
         if (null != data && data.length > 0) {

@@ -52,11 +52,8 @@ public class ApduResultMessage extends BleMessage implements IApduMessage {
     }
 
     public ApduResultMessage withSequenceId(int sequenceId) {
-        String val = Integer.toHexString(sequenceId);
-        if ((val.length() & 1) != 0) {
-            val = "0" + val;
-        }
-        return withSequenceId(Hex.hexStringToBytes(val));
+        this.sequenceId = Hex.sequenceToBytes(sequenceId);
+        return this;
     }
 
     public ApduResultMessage withData(byte[] data) {

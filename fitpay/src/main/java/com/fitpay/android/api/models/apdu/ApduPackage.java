@@ -13,11 +13,11 @@ public class ApduPackage extends ApduPackageModel {
     /**
      * Endpoint to allow for returning responses to APDU execution.
      *
-     * @param apduResult package confirmation data:(packageId, state, executedTs, executedDuration, apduResponses:(commandId, commandId, responseData))
+     * @param apduPackageResponse package confirmation data:(packageId, state, executedTs, executedDuration, apduResponses:(commandId, commandId, responseData))
      * @param callback   result callback
      */
-    public void confirm(@NonNull ApduResult apduResult, @NonNull ApiCallback<Void> callback) {
-        makePostCall(APDU_RESPONSE, apduResult, Void.class, callback);
+    public void confirm(@NonNull ApduPackageResponse apduPackageResponse, @NonNull ApiCallback<Void> callback) {
+        makePostCall(APDU_RESPONSE, apduPackageResponse, Void.class, callback);
     }
 
 }

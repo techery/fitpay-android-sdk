@@ -87,6 +87,15 @@ public class Hex {
         return out.toByteArray();
     }
 
+    public static byte[] sequenceToBytes(int sequenceId){
+        String val = Integer.toHexString(sequenceId);
+        if ((val.length() & 1) != 0) {
+            val = "0" + val;
+        }
+
+        return new byte[] { Hex.hexStringToBytes(val)[0], 0x00};
+    }
+
     private static boolean ignore(char c) {
         return (c == '\n' || c == '\r' || c == '\t' || c == ' ');
     }

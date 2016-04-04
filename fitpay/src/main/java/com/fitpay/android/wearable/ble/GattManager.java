@@ -8,13 +8,12 @@ import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.AsyncTask;
-import android.util.Log;
 
 import com.fitpay.android.utils.RxBus;
-import com.fitpay.android.wearable.ble.callbacks.CharacteristicChangeListener;
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
 import com.fitpay.android.wearable.ble.interfaces.CharacteristicReader;
 import com.fitpay.android.wearable.ble.message.ApduResultMessage;
+import com.fitpay.android.wearable.ble.message.ApplicationControlMessage;
 import com.fitpay.android.wearable.ble.message.ContinuationControlBeginMessage;
 import com.fitpay.android.wearable.ble.message.ContinuationControlEndMessage;
 import com.fitpay.android.wearable.ble.message.ContinuationControlMessage;
@@ -22,6 +21,7 @@ import com.fitpay.android.wearable.ble.message.ContinuationControlMessageFactory
 import com.fitpay.android.wearable.ble.message.ContinuationPacketMessage;
 import com.fitpay.android.wearable.ble.message.NotificationMessage;
 import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
+import com.fitpay.android.wearable.ble.operations.GattApduBaseOperation;
 import com.fitpay.android.wearable.ble.operations.GattDescriptorReadOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
@@ -34,7 +34,6 @@ import com.fitpay.android.wearable.interfaces.ISecureMessage;
 import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.UUID;
 
 public class GattManager {
@@ -79,8 +78,8 @@ public class GattManager {
             mQueue.remove(mCurrentOperation);
         }
         Logger.v("Queue size after: " + mQueue.size());
-        mCurrentOperation = null;
-        drive();
+
+        driveNext();
     }
 
     public synchronized void queue(GattOperation gattOperation) {
@@ -110,12 +109,11 @@ public class GattManager {
 
         resetTimer(operation.getTimeoutMs());
 
+        if(operation instanceof GattApduBaseOperation){
+            lastApduSequenceId = ((GattApduBaseOperation) operation).getSequenceId();
+        }
+
         if(mGatt != null) {
-
-            if(operation instanceof IApduMessage){
-                lastApduSequenceId = ((IApduMessage) operation).getSequenceId();
-            }
-
             execute(mGatt, operation);
         } else {
             mDevice.connectGatt(mContext, false, new BluetoothGattCallback() {
@@ -129,8 +127,7 @@ public class GattManager {
                         mGatt.discoverServices();
                     } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                         Logger.i("Disconnected from gatt server " + mDevice.getAddress() + ", newState: " + newState);
-                        mCurrentOperation = null;
-                        drive();
+                        driveNext();
                     }
                 }
 
@@ -150,8 +147,7 @@ public class GattManager {
                         ((CharacteristicReader)mCurrentOperation).onRead(characteristic);
                     }
 
-                    setCurrentOperation(null);
-                    drive();
+                    driveNext();
                 }
 
                 @Override
@@ -160,8 +156,7 @@ public class GattManager {
 
                     Logger.d("Characteristic " + characteristic.getUuid() + "written to on device " + mDevice.getAddress());
 
-                    setCurrentOperation(null);
-                    drive();
+                    driveNext();
                 }
 
                 @Override
@@ -186,6 +181,8 @@ public class GattManager {
                         } else {
                             //TODO: send error
                         }
+
+                        driveNext();
                     } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL.equals(uuid)){
                             Logger.d("continuation control write received [" + Hex.bytesToHexString(value) + "], length [" + value.length + "]");
                             ContinuationControlMessage continuationControlMessage = ContinuationControlMessageFactory.withMessage(value);
@@ -222,8 +219,13 @@ public class GattManager {
                                     //TODO: send error
                                 }
 
-                                if (PaymentServiceConstants.CHARACTERISTIC_APDU_CONTROL.equals(targetUuid.toString())) {
-                                    Logger.d("continuation is for APDU Control");
+                                if (PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(targetUuid)) {
+                                    Logger.d("continuation is for APDU Result");
+
+                                    ApduResultMessage apduResultMessage = new ApduResultMessage().withMessage(payloadValue);
+                                    RxBus.getInstance().post(apduResultMessage);
+
+                                    driveNext();
                                 } else {
                                     Logger.w("Code does not handle continuation for characteristic: " + targetUuid);
                                 }
@@ -247,28 +249,31 @@ public class GattManager {
                         }
 
                     } else if(PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL.equals(uuid)){
-
+                        ApplicationControlMessage applicationControlMessage = new ApplicationControlMessage()
+                                .withDeviceReset(value);
+                        RxBus.getInstance().post(applicationControlMessage);
                     }
                 }
 
                 @Override
                 public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
                     super.onDescriptorRead(gatt, descriptor, status);
-
                     ((GattDescriptorReadOperation) mCurrentOperation).onRead(descriptor);
-                    setCurrentOperation(null);
-                    drive();
+                    driveNext();
                 }
 
                 @Override
                 public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
                     super.onDescriptorWrite(gatt, descriptor, status);
-
-                    setCurrentOperation(null);
-                    drive();
+                    driveNext();
                 }
             });
         }
+    }
+
+    private void driveNext(){
+        setCurrentOperation(null);
+        drive();
     }
 
     private void execute(BluetoothGatt gatt, GattOperation operation) {
@@ -277,6 +282,10 @@ public class GattManager {
         }
 
         operation.execute(gatt);
+
+        if(operation.canRunNextOperation()){
+            driveNext();
+        }
     }
 
     public synchronized void setCurrentOperation(GattOperation currentOperation) {

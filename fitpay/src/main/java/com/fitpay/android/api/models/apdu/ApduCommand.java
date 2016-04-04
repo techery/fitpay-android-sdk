@@ -1,5 +1,7 @@
 package com.fitpay.android.api.models.apdu;
 
+import com.fitpay.android.wearable.ble.utils.Hex;
+
 /**
  * Created by Vlad on 01.04.2016.
  */
@@ -25,8 +27,8 @@ public final class ApduCommand {
         return sequence;
     }
 
-    public String getCommand() {
-        return command;
+    public byte[] getCommand() {
+        return Hex.hexStringToBytes(command);
     }
 
     public String getType() {

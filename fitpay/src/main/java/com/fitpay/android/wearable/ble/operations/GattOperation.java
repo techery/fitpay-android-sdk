@@ -35,4 +35,8 @@ public abstract class GattOperation {
     public boolean hasNested() {
         return mNestedQueue != null && mNestedQueue.size() > 0;
     }
+
+    public boolean canRunNextOperation(){
+        return false;
+    }
 }
