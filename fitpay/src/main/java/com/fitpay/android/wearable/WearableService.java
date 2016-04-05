@@ -5,12 +5,11 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 
-import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.wearable.enums.States;
 import com.fitpay.android.wearable.interfaces.IWearable;
 import com.orhanobut.logger.Logger;
 
-public class WearableService extends Service {
+public final class WearableService extends Service {
 
     private IWearable mWearable;
 
@@ -49,36 +48,48 @@ public class WearableService extends Service {
     public void pairWithDevice(IWearable wearable) {
         mWearable = wearable;
 
-        if (mWearable.isInitialized()) {
-            mWearable.connect();
-        } else {
-            Logger.e("Wearable is not initialized");
+        switch (mWearable.getState()) {
+            case States.INITIALIZED:
+                mWearable.connect();
+                break;
+
+            case States.DISCONNECTED:
+                mWearable.reconnect();
+                break;
+
+            default:
+                Logger.e("Can't connect to device");
+                break;
         }
     }
 
     public void disconnect() {
-        if (mWearable != null) {
+        if (mWearable != null && mWearable.getState() == States.CONNECTED) {
             mWearable.disconnect();
         }
     }
 
-    public void getDeviceInfo() {
-        mWearable.getDeviceInfo();
-    }
-
-    public void getNFCState() {
-        mWearable.getNFCState();
-    }
-
-    public void setNFCState(@States.NFC byte state) {
-        mWearable.setNFCState(state);
-    }
-
-    public void sendApduPackage(ApduPackage apduPackage) {
-        mWearable.sendApduPackage(apduPackage);
-    }
-
-    public void setSecureElementState(@States.SecureElement byte state) {
-        mWearable.setSecureElementState(state);
-    }
+//    public void getDeviceInfo() {
+//        mWearable.getDeviceInfo();
+//    }
+//
+//    public void getNFCState() {
+//        mWearable.getNFCState();
+//    }
+//
+//    public void setNFCState(@States.NFC byte state) {
+//        mWearable.setNFCState(state);
+//    }
+//
+//    public void sendApduPackage(ApduPackage apduPackage) {
+//        mWearable.sendApduPackage(apduPackage);
+//    }
+//
+//    public void setSecureElementState(@States.SecureElement byte state) {
+//        mWearable.setSecureElementState(state);
+//    }
+//
+//    public void sendTransaction(byte[] data){
+//        mWearable.sendTransactionData(data);
+//    }
 }

@@ -1,24 +1,25 @@
 package com.fitpay.android.wearable.ble.message;
 
-import java.util.Random;
+import com.fitpay.android.wearable.interfaces.IControlMessage;
 
 /**
  * Created by tgs on 3/4/16.
  */
-public class ApplicationControlMessage extends BleMessage {
+public class ApplicationControlMessage extends BleMessage implements IControlMessage {
 
-    private byte result;
-    private byte[] message;
+    private byte[] data;
 
-    public ApplicationControlMessage withDeviceReset(byte[] value) {
-        final int numberOfBytes = 36;
-        this.message = new byte[numberOfBytes];
-        new Random().nextBytes(this.message);
+    public ApplicationControlMessage withData(byte[] value) {
+        this.data = value;
         return this;
     }
 
     public byte[] getMessage() {
-        return message;
+        return data;
     }
 
+    @Override
+    public byte[] getData() {
+        return data;
+    }
 }

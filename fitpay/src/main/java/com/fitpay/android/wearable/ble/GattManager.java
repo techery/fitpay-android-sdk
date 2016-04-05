@@ -10,6 +10,8 @@ import android.content.Context;
 import android.os.AsyncTask;
 
 import com.fitpay.android.utils.RxBus;
+import com.fitpay.android.wearable.ble.operations.GattConnectOperation;
+import com.fitpay.android.wearable.listeners.ConnectionStateListener;
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
 import com.fitpay.android.wearable.ble.interfaces.CharacteristicReader;
 import com.fitpay.android.wearable.ble.message.ApduResultMessage;
@@ -29,43 +31,53 @@ import com.fitpay.android.wearable.ble.utils.ContinuationPayload;
 import com.fitpay.android.wearable.ble.utils.Crc32;
 import com.fitpay.android.wearable.ble.utils.Hex;
 import com.fitpay.android.wearable.ble.utils.OperationConcurrentQueue;
-import com.fitpay.android.wearable.interfaces.IApduMessage;
+import com.fitpay.android.wearable.enums.States;
 import com.fitpay.android.wearable.interfaces.ISecureMessage;
 import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
 import java.util.UUID;
 
-public class GattManager {
+public final class GattManager {
 
     private Context mContext;
     private BluetoothGatt mGatt;
     private BluetoothDevice mDevice;
 
     private OperationConcurrentQueue mQueue;
-    private GattOperation mCurrentOperation;
+    private GattOperation mCurrentOperation = null;
 
-    private ContinuationPayload continuationPayload = null;
-    private int lastApduSequenceId;
+    private ContinuationPayload mContinuationPayload = null;
+    private int mLastApduSequenceId;
 
     private AsyncTask<Void, Void, Void> mCurrentOperationTimeout;
 
-    public GattManager(Context context, BluetoothDevice device) {
+    private ConnectionStateListener mStateListener;
+
+    public GattManager(Context context, BluetoothDevice device, ConnectionStateListener listener) {
         mContext = context;
         mDevice = device;
         mQueue = new OperationConcurrentQueue();
-        mCurrentOperation = null;
+        mStateListener = listener;
+    }
+
+    public void reconnect(){
+        queue(new GattConnectOperation());
     }
 
     public synchronized void disconnect(){
         mQueue.clear();
+
+        mStateListener.onStateChanged(States.DISCONNECTING);
 
         if(mGatt != null){
             mGatt.disconnect();
         }
     }
 
-    public void close(){
+    public synchronized void close(){
+        mQueue.clear();
+
         if(mGatt != null){
             mGatt.close();
             mGatt = null;
@@ -110,24 +122,53 @@ public class GattManager {
         resetTimer(operation.getTimeoutMs());
 
         if(operation instanceof GattApduBaseOperation){
-            lastApduSequenceId = ((GattApduBaseOperation) operation).getSequenceId();
+            mLastApduSequenceId = ((GattApduBaseOperation) operation).getSequenceId();
         }
 
         if(mGatt != null) {
             execute(mGatt, operation);
         } else {
+            mStateListener.onStateChanged(States.CONNECTING);
+
             mDevice.connectGatt(mContext, false, new BluetoothGattCallback() {
                 @Override
                 public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                     super.onConnectionStateChange(gatt, status, newState);
 
-                    if (newState == BluetoothProfile.STATE_CONNECTED) {
-                        Logger.i("Gatt connected to device " + mDevice.getAddress());
-                        mGatt = gatt;
-                        mGatt.discoverServices();
-                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                        Logger.i("Disconnected from gatt server " + mDevice.getAddress() + ", newState: " + newState);
-                        driveNext();
+                    switch (newState){
+                        case BluetoothProfile.STATE_CONNECTED:
+                            mStateListener.onStateChanged(States.CONNECTED);
+
+                            Logger.i("Gatt connected to device " + mDevice.getAddress());
+
+                            mGatt = gatt;
+                            mGatt.discoverServices();
+                            break;
+
+                        case BluetoothProfile.STATE_DISCONNECTED:
+                            mStateListener.onStateChanged(States.DISCONNECTED);
+
+                            Logger.i("Disconnected from gatt server " + mDevice.getAddress() + ", newState: " + newState);
+
+                            setCurrentOperation(null);
+
+                            //Fix: Android Issue 97501:	BLE reconnect issue
+                            if(mGatt != null) {
+                                close();
+                            } else {
+                                mQueue.clear();
+                                gatt.close();
+                            }
+
+                            break;
+
+                        case BluetoothProfile.STATE_CONNECTING:
+                            mStateListener.onStateChanged(States.CONNECTING);
+                            break;
+
+                        case BluetoothProfile.STATE_DISCONNECTING:
+                            mStateListener.onStateChanged(States.DISCONNECTING);
+                            break;
                     }
                 }
 
@@ -176,7 +217,7 @@ public class GattManager {
                         RxBus.getInstance().post(notificationMessage);
                     } else if(PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(uuid)){
                         ApduResultMessage apduResultMessage = new ApduResultMessage().withMessage(value);
-                        if(lastApduSequenceId == apduResultMessage.getSequenceId()) {
+                        if(mLastApduSequenceId == apduResultMessage.getSequenceId()) {
                             RxBus.getInstance().post(apduResultMessage);
                         } else {
                             //TODO: send error
@@ -190,23 +231,23 @@ public class GattManager {
 
                             // start continuation packet
                             if (continuationControlMessage instanceof ContinuationControlBeginMessage) {
-                                if (continuationPayload != null) {
+                                if (mContinuationPayload != null) {
                                     Logger.d("continuation was previously started, resetting to blank");
                                 }
 
-                                continuationPayload = new ContinuationPayload(((ContinuationControlBeginMessage) continuationControlMessage).getUuid());
+                                mContinuationPayload = new ContinuationPayload(((ContinuationControlBeginMessage) continuationControlMessage).getUuid());
 
                                 Logger.d("continuation start control received, ready to receive continuation data");
                             } else if (continuationControlMessage instanceof ContinuationControlEndMessage) {
-                                Logger.d("continuation control end received.  process update to characteristic: " + continuationPayload.getTargetUuid());
-                                UUID targetUuid = continuationPayload.getTargetUuid();
+                                Logger.d("continuation control end received.  process update to characteristic: " + mContinuationPayload.getTargetUuid());
+                                UUID targetUuid = mContinuationPayload.getTargetUuid();
                                 byte[] payloadValue = null;
                                 try {
-                                    payloadValue = continuationPayload.getValue();
-                                    continuationPayload = null;
+                                    payloadValue = mContinuationPayload.getValue();
+                                    mContinuationPayload = null;
                                     Logger.d("complete continuation data [" + Hex.bytesToHexString(payloadValue) + "]");
                                 } catch (IOException e) {
-                                    continuationPayload = null;
+                                    mContinuationPayload = null;
                                     Logger.e("error parsing continuation data", e);
                                     //TODO: send error
                                 }
@@ -236,13 +277,13 @@ public class GattManager {
                         ContinuationPacketMessage continuationPacketMessage = new ContinuationPacketMessage().withMessage(value);
                         Logger.d("parsed continuation packet message: " + continuationPacketMessage);
 
-                        if (continuationPayload == null) {
+                        if (mContinuationPayload == null) {
                             Logger.e("invalid continuation, no start received on control characteristic");
                             //TODO: send error
                         }
 
                         try {
-                            continuationPayload.processPacket(continuationPacketMessage);
+                            mContinuationPayload.processPacket(continuationPacketMessage);
                         } catch (Exception e) {
                             Logger.e("exception handling continuation packet", e);
                             //TODO: send error
@@ -250,7 +291,7 @@ public class GattManager {
 
                     } else if(PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL.equals(uuid)){
                         ApplicationControlMessage applicationControlMessage = new ApplicationControlMessage()
-                                .withDeviceReset(value);
+                                .withData(value);
                         RxBus.getInstance().post(applicationControlMessage);
                     }
                 }

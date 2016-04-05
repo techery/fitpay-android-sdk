@@ -2,6 +2,8 @@ package com.fitpay.android.wearable.model;
 
 import android.content.Context;
 
+import com.fitpay.android.utils.RxBus;
+import com.fitpay.android.wearable.enums.States;
 import com.fitpay.android.wearable.interfaces.IWearable;
 
 /**
@@ -11,7 +13,7 @@ public abstract class Wearable implements IWearable {
 
     protected Context mContext;
     protected String mAddress;
-    protected boolean initialized;
+    protected @States.Wearable int state;
 
     public Wearable(Context context, String address){
         mContext = context;
@@ -19,7 +21,13 @@ public abstract class Wearable implements IWearable {
     }
 
     @Override
-    public boolean isInitialized(){
-        return initialized;
+    public @States.Wearable int getState(){
+        return state;
+    }
+
+    @Override
+    public void setState(@States.Wearable int state){
+        this.state = state;
+        RxBus.getInstance().post(this);
     }
 }

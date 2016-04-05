@@ -12,6 +12,7 @@ import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.wearable.ble.utils.OperationQueue;
 import com.fitpay.android.wearable.interfaces.IApduMessage;
+import com.fitpay.android.wearable.model.ApduPair;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -66,6 +67,8 @@ public class GattApduOperation extends GattOperation {
                 if (mSequencesMap.containsKey(sId)) {
                     ApduCommandResult result = new ApduCommandResult(mSequencesMap.get(sId), apduMessage);
                     mResult.addResult(result);
+
+                    mSequencesMap.remove(sId);
                 }
             }
         });
@@ -94,8 +97,7 @@ public class GattApduOperation extends GattOperation {
         mResult.setExecutedTsEpoch(endTime);
         mResult.setState(state);
 
-        Pair<ApduPackage, ApduPackageResponse> pair = new Pair<>(mPackage, mResult);
-        RxBus.getInstance().post(pair);
+        RxBus.getInstance().post(new ApduPair(mPackage, mResult));
     }
 
     @Override

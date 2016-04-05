@@ -8,6 +8,7 @@ import android.content.Context;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
+import com.fitpay.android.wearable.listeners.ConnectionStateListener;
 import com.fitpay.android.wearable.ble.callbacks.GattCharacteristicReadCallback;
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
 import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
@@ -18,7 +19,6 @@ import com.fitpay.android.wearable.ble.operations.GattConnectOperation;
 import com.fitpay.android.wearable.ble.operations.GattDeviceCharacteristicsOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
-import com.fitpay.android.wearable.ble.operations.GattSetIndicationOperation;
 import com.fitpay.android.wearable.enums.States;
 import com.fitpay.android.wearable.model.Wearable;
 import com.orhanobut.logger.Logger;
@@ -26,7 +26,7 @@ import com.orhanobut.logger.Logger;
 /**
  * Manage data exchange with device via Bluetooth
  */
-public final class BluetoothWearable extends Wearable {
+public final class BluetoothWearable extends Wearable implements ConnectionStateListener{
 
     private BluetoothDevice mDevice;
     private BluetoothAdapter mBluetoothAdapter;
@@ -50,7 +50,7 @@ public final class BluetoothWearable extends Wearable {
             return;
         }
 
-        initialized = true;
+        setState(States.INITIALIZED);
     }
 
     /**
@@ -74,15 +74,19 @@ public final class BluetoothWearable extends Wearable {
             return;
         }
 
-        mGattManager = new GattManager(mContext, device);
+        mGattManager = new GattManager(mContext, device, this);
         mGattManager.queue(new GattConnectOperation());
 
-        startDataIndication();
     }
 
     @Override
     public void disconnect() {
         mGattManager.disconnect();
+    }
+
+    @Override
+    public void reconnect() {
+        mGattManager.reconnect();
     }
 
     /**
@@ -152,52 +156,8 @@ public final class BluetoothWearable extends Wearable {
         mGattManager.queue(resetOperation);
     }
 
-    private void startDataIndication() {
-
-        GattOperationBundle bundle = new GattOperationBundle();
-
-        GattOperation nfcIndication = new GattSetIndicationOperation(
-                PaymentServiceConstants.SERVICE_UUID,
-                PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE,
-                PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
-        );
-        bundle.addOperation(nfcIndication);
-
-        GattOperation adpuResultIndication = new GattSetIndicationOperation(
-                PaymentServiceConstants.SERVICE_UUID,
-                PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT,
-                PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
-        );
-        bundle.addOperation(adpuResultIndication);
-
-        GattOperation continuationControlIndication = new GattSetIndicationOperation(
-                PaymentServiceConstants.SERVICE_UUID,
-                PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL,
-                PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
-        );
-        bundle.addOperation(continuationControlIndication);
-
-        GattOperation continuationPacketIndication = new GattSetIndicationOperation(
-                PaymentServiceConstants.SERVICE_UUID,
-                PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET,
-                PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
-        );
-        bundle.addOperation(continuationPacketIndication);
-
-        GattOperation transactionIndication = new GattSetIndicationOperation(
-                PaymentServiceConstants.SERVICE_UUID,
-                PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION,
-                PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
-        );
-        bundle.addOperation(transactionIndication);
-
-        GattOperation applicationControlIndication = new GattSetIndicationOperation(
-                PaymentServiceConstants.SERVICE_UUID,
-                PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL,
-                PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
-        );
-        bundle.addOperation(applicationControlIndication);
-
-        mGattManager.queue(bundle);
+    @Override
+    public void onStateChanged(@States.Wearable int state) {
+        setState(state);
     }
 }
