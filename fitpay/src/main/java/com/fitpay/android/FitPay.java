@@ -43,6 +43,7 @@ public final class FitPay {
 
         if (!mUnits.containsKey(unitName)) {
             mUnits.put(unitName, unit);
+
             unit.onAdd();
         }
 
@@ -53,9 +54,10 @@ public final class FitPay {
         String unitName = clazz.getName();
 
         if (mUnits.containsKey(unitName)) {
+            mUnits.remove(unitName);
+
             Unit unit = mUnits.get(unitName);
             unit.onRemove();
-            mUnits.remove(unitName);
         }
 
         return this;
@@ -69,6 +71,6 @@ public final class FitPay {
             return (T) unit;
         }
 
-        return null;
+        throw new NullPointerException("You need to create > " + name + " < at first");
     }
 }

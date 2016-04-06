@@ -11,7 +11,7 @@ import android.os.AsyncTask;
 
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.wearable.ble.operations.GattConnectOperation;
-import com.fitpay.android.wearable.listeners.ConnectionStateListener;
+import com.fitpay.android.wearable.callbacks.ConnectionListener;
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
 import com.fitpay.android.wearable.ble.interfaces.CharacteristicReader;
 import com.fitpay.android.wearable.ble.message.ApduResultMessage;
@@ -52,13 +52,13 @@ public final class GattManager {
 
     private AsyncTask<Void, Void, Void> mCurrentOperationTimeout;
 
-    private ConnectionStateListener mStateListener;
+    private ConnectionListener mConnectionCallback;
 
-    public GattManager(Context context, BluetoothDevice device, ConnectionStateListener listener) {
+    public GattManager(Context context, BluetoothDevice device, ConnectionListener callback) {
         mContext = context;
         mDevice = device;
         mQueue = new OperationConcurrentQueue();
-        mStateListener = listener;
+        mConnectionCallback = callback;
     }
 
     public void reconnect(){
@@ -68,7 +68,7 @@ public final class GattManager {
     public synchronized void disconnect(){
         mQueue.clear();
 
-        mStateListener.onStateChanged(States.DISCONNECTING);
+        mConnectionCallback.onConnectionStateChanged(States.DISCONNECTING);
 
         if(mGatt != null){
             mGatt.disconnect();
@@ -128,7 +128,7 @@ public final class GattManager {
         if(mGatt != null) {
             execute(mGatt, operation);
         } else {
-            mStateListener.onStateChanged(States.CONNECTING);
+            mConnectionCallback.onConnectionStateChanged(States.CONNECTING);
 
             mDevice.connectGatt(mContext, false, new BluetoothGattCallback() {
                 @Override
@@ -137,7 +137,7 @@ public final class GattManager {
 
                     switch (newState){
                         case BluetoothProfile.STATE_CONNECTED:
-                            mStateListener.onStateChanged(States.CONNECTED);
+                            mConnectionCallback.onConnectionStateChanged(States.CONNECTED);
 
                             Logger.i("Gatt connected to device " + mDevice.getAddress());
 
@@ -146,7 +146,7 @@ public final class GattManager {
                             break;
 
                         case BluetoothProfile.STATE_DISCONNECTED:
-                            mStateListener.onStateChanged(States.DISCONNECTED);
+                            mConnectionCallback.onConnectionStateChanged(States.DISCONNECTED);
 
                             Logger.i("Disconnected from gatt server " + mDevice.getAddress() + ", newState: " + newState);
 
@@ -163,11 +163,11 @@ public final class GattManager {
                             break;
 
                         case BluetoothProfile.STATE_CONNECTING:
-                            mStateListener.onStateChanged(States.CONNECTING);
+                            mConnectionCallback.onConnectionStateChanged(States.CONNECTING);
                             break;
 
                         case BluetoothProfile.STATE_DISCONNECTING:
-                            mStateListener.onStateChanged(States.DISCONNECTING);
+                            mConnectionCallback.onConnectionStateChanged(States.DISCONNECTING);
                             break;
                     }
                 }

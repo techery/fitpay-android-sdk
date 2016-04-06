@@ -8,7 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Created by Vlad on 01.03.2016.
  */
-public class CommitTypes {
+public final class CommitTypes {
     public static final String CREDITCARD_CREATED = "CREDITCARD_CREATED";
     public static final String CREDITCARD_DEACTIVATED = "CREDITCARD_DEACTIVATED";
     public static final String CREDITCARD_ACTIVATED = "CREDITCARD_ACTIVATED";

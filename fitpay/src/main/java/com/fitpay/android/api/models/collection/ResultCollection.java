@@ -26,4 +26,12 @@ class ResultCollection<T> extends ResultCollectionModel<T>{
     public void getPrev(@NonNull ApiCallback<? extends ResultCollection<T>> callback) {
         makeGetCall(PREV, null, this.getClass(), callback);
     }
+
+    public boolean hasNext(){
+        return hasLink(NEXT);
+    }
+
+    public boolean hasPrev(){
+        return hasLink(PREV);
+    }
 }

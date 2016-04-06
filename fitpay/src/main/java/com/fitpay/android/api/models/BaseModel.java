@@ -3,6 +3,7 @@ package com.fitpay.android.api.models;
 
 import android.support.annotation.NonNull;
 
+import com.fitpay.android.FitPay;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.utils.ApiManager;
@@ -68,6 +69,10 @@ public class BaseModel{
         if(url != null){
             ApiManager.getInstance().delete(url, callback);
         }
+    }
+
+    protected boolean hasLink(String key){
+        return links.getLink(key) != null;
     }
 
 }

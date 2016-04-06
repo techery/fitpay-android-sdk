@@ -8,7 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Created by Vlad on 11.03.2016.
  */
-public class CardInitiators {
+public final class CardInitiators {
     public static final String INITIATOR_CARDHOLDER = "CARDHOLDER";
     public static final String INITIATOR_ISSUER = "ISSUER";
 

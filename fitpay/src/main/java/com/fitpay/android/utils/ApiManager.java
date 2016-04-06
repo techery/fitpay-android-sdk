@@ -19,7 +19,7 @@ import retrofit2.Call;
 /*
  * API manager
  */
-public class ApiManager {
+public class ApiManager extends Unit{
 
     private static ApiManager sInstance;
     private FitPayService apiService;

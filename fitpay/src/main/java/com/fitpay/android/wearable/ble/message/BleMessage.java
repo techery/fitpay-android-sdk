@@ -1,7 +1,6 @@
 package com.fitpay.android.wearable.ble.message;
 
 import com.fitpay.android.wearable.ble.utils.Conversions;
-import com.fitpay.android.wearable.interfaces.IMessage;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -9,7 +8,7 @@ import java.util.UUID;
 /**
  * Created by tgs on 3/4/16.
  */
-public abstract class BleMessage implements IMessage{
+public abstract class BleMessage {
 
     public static final int MAX_MESSAGE_LENGTH = 20;
 
@@ -21,6 +20,7 @@ public abstract class BleMessage implements IMessage{
 
     public final static byte[] PROTOCOL_ERROR_DUPLICATE_SEQUENCE_NUMBER = new byte[] { 0x00, 0x01};
 
+    abstract byte[] getMessage();
 
     /**
      * Value returned is big endian

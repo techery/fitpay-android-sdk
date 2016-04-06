@@ -5,7 +5,7 @@ import android.support.annotation.StringDef;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-public class PaymentDeviceAlert {
+public final class PaymentDeviceAlert {
 
     public static final String TRANSACTION = "Transaction";
     public static final String SECURITY = "Security";

@@ -3,13 +3,14 @@ package com.fitpay.android.wearable.model;
 import android.content.Context;
 
 import com.fitpay.android.utils.RxBus;
+import com.fitpay.android.wearable.callbacks.ConnectionListener;
 import com.fitpay.android.wearable.enums.States;
 import com.fitpay.android.wearable.interfaces.IWearable;
 
 /**
  * Created by Vlad on 29.03.2016.
  */
-public abstract class Wearable implements IWearable {
+public abstract class Wearable implements IWearable, ConnectionListener{
 
     protected Context mContext;
     protected String mAddress;
@@ -29,5 +30,15 @@ public abstract class Wearable implements IWearable {
     public void setState(@States.Wearable int state){
         this.state = state;
         RxBus.getInstance().post(this);
+    }
+
+    @Override
+    public void onConnectionStateChanged(@States.Wearable int state) {
+        setState(state);
+    }
+
+    @Override
+    public String getMacAddress(){
+        return mAddress;
     }
 }

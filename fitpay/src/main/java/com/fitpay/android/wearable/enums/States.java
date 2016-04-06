@@ -8,7 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Created by Vlad on 04.04.2016.
  */
-public class States {
+public final class States {
     public static final byte DISABLE = (byte) 0x00;
     public static final byte ENABLE = (byte) 0x01;
     public static final byte DONT_CHANGE = (byte) 0xFF;

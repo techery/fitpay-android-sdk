@@ -1,7 +1,6 @@
 package com.fitpay.android.wearable.ble.operations;
 
 import android.bluetooth.BluetoothGatt;
-import android.util.Pair;
 
 import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.models.apdu.ApduCommand;
@@ -12,7 +11,7 @@ import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.wearable.ble.utils.OperationQueue;
 import com.fitpay.android.wearable.interfaces.IApduMessage;
-import com.fitpay.android.wearable.model.ApduPair;
+import com.fitpay.android.wearable.utils.ApduPair;
 
 import java.util.HashMap;
 import java.util.Map;

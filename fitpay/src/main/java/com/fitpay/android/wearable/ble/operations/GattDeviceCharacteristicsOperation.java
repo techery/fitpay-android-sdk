@@ -1,6 +1,5 @@
 package com.fitpay.android.wearable.ble.operations;
 
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 
 import com.fitpay.android.api.models.device.Device;
@@ -15,7 +14,7 @@ import java.util.UUID;
 
 public class GattDeviceCharacteristicsOperation extends GattOperation {
 
-    private BluetoothDevice mDevice;
+    private String mAddress;
 
     private String manufacturerName;
     private String modelNumber;
@@ -26,9 +25,9 @@ public class GattDeviceCharacteristicsOperation extends GattOperation {
     private String systemId;
     private String secureElementId;
 
-    public GattDeviceCharacteristicsOperation(final BluetoothDevice device) {
+    public GattDeviceCharacteristicsOperation(final String macAddress) {
 
-        mDevice = device;
+        mAddress = macAddress;
 
         mNestedQueue = new OperationQueue();
 
@@ -96,7 +95,7 @@ public class GattDeviceCharacteristicsOperation extends GattOperation {
     @Override
     public void execute(BluetoothGatt gatt) {
         Device device = new Device.Builder()
-                .setBdAddress(mDevice.getAddress())
+                .setBdAddress(mAddress)
                 .setModelNumber(modelNumber)
                 .setManufacturerName(manufacturerName)
                 .setSerialNumber(serialNumber)

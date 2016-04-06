@@ -8,7 +8,7 @@ import android.content.Context;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
-import com.fitpay.android.wearable.listeners.ConnectionStateListener;
+import com.fitpay.android.wearable.callbacks.ConnectionListener;
 import com.fitpay.android.wearable.ble.callbacks.GattCharacteristicReadCallback;
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
 import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
@@ -26,16 +26,13 @@ import com.orhanobut.logger.Logger;
 /**
  * Manage data exchange with device via Bluetooth
  */
-public final class BluetoothWearable extends Wearable implements ConnectionStateListener{
+public final class BluetoothWearable extends Wearable {
 
-    private BluetoothDevice mDevice;
     private BluetoothAdapter mBluetoothAdapter;
     private GattManager mGattManager;
 
-    public BluetoothWearable(Context context, BluetoothDevice device) {
-        super(context, device.getAddress());
-
-        mDevice = device;
+    public BluetoothWearable(Context context, String deviceAddress) {
+        super(context, deviceAddress);
 
         BluetoothManager mBluetoothManager = (BluetoothManager) mContext.getSystemService(Context.BLUETOOTH_SERVICE);
 
@@ -102,7 +99,7 @@ public final class BluetoothWearable extends Wearable implements ConnectionState
     @Override
     public void getDeviceInfo() {
         GattOperationBundle bundle = new GattOperationBundle();
-        bundle.addOperation(new GattDeviceCharacteristicsOperation(mDevice));
+        bundle.addOperation(new GattDeviceCharacteristicsOperation(mAddress));
         mGattManager.queue(bundle);
     }
 
@@ -154,10 +151,5 @@ public final class BluetoothWearable extends Wearable implements ConnectionState
                 new byte[]{state}
         );
         mGattManager.queue(resetOperation);
-    }
-
-    @Override
-    public void onStateChanged(@States.Wearable int state) {
-        setState(state);
     }
 }

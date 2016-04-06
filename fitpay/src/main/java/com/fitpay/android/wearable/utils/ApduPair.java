@@ -1,4 +1,4 @@
-package com.fitpay.android.wearable.model;
+package com.fitpay.android.wearable.utils;
 
 import android.util.Pair;
 
@@ -8,7 +8,7 @@ import com.fitpay.android.api.models.apdu.ApduPackageResponse;
 /**
  * Created by Vlad on 05.04.2016.
  */
-public class ApduPair extends Pair<ApduPackage, ApduPackageResponse> {
+public final class ApduPair extends Pair<ApduPackage, ApduPackageResponse> {
     /**
      * Constructor for a Pair.
      *

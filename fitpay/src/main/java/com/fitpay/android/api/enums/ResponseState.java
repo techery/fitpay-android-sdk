@@ -8,7 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Created by Vlad on 04.04.2016.
  */
-public class ResponseState {
+public final class ResponseState {
     public static final String SUCCESSFUL = "SUCCESSFUL";
     public static final String FAILED = "FAILED";
     public static final String EXPIRED = "EXPIRED";

@@ -5,9 +5,11 @@ import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
+import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.card.CreditCardRef;
 import com.fitpay.android.api.models.collection.Collections;
+import com.fitpay.android.api.models.collection.ResultCollectionModel;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.utils.TimestampUtils;
 
@@ -58,13 +60,40 @@ public final class Device extends DeviceModel {
      *
      * @param limit        Max number of events per page, default: 10
      * @param offset       Start index position for list of entities returned
+     * @param lastCommitId last commit id
      * @param callback     result callback
      */
-    public void getCommits(int limit, int offset, final ApiCallback<Collections.CommitsCollection> callback) {
+    public void getCommits(int limit, int offset, String lastCommitId, final ApiCallback<Collections.CommitsCollection> callback) {
         Map<String, Object> queryMap = new HashMap<>();
         queryMap.put("limit", limit);
         queryMap.put("offset", offset);
+        if(lastCommitId != null){
+            queryMap.put("commitsAfter", lastCommitId);
+        }
         makeGetCall(COMMITS, queryMap, Collections.CommitsCollection.class, callback);
+    }
+
+    /**
+     * Retrieves a collection of all events that should be committed to this device.
+     * Limit: 10
+     * Offset: 0
+     *
+     * @param callback     result callback
+     */
+    public void getCommits(final ApiCallback<Collections.CommitsCollection> callback) {
+        this.getCommits(10, 0, null, callback);
+    }
+
+    /**
+     * Retrieves a collection of all events that should be committed to this device.
+     * Limit: 10
+     * Offset: 0
+     *
+     * @param lastCommitId last commit id
+     * @param callback     result callback
+     */
+    public void getCommits(String lastCommitId, final ApiCallback<Collections.CommitsCollection> callback) {
+        this.getCommits(10, 0, lastCommitId, callback);
     }
 
     public static final class Builder{
