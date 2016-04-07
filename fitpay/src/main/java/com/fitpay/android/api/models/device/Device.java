@@ -7,10 +7,12 @@ import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
+import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.card.CreditCardRef;
 import com.fitpay.android.api.models.collection.Collections;
+import com.fitpay.android.api.models.collection.ResultCollectionModel;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.utils.TimestampUtils;
 
@@ -58,7 +60,7 @@ public final class Device extends DeviceModel implements Parcelable {
     }
 
     /**
-     * Retrieves a collection of all events that should be committed to this device.
+     * Retrieves a collection of events that should be committed to this device.
      *
      * @param limit        Max number of events per page, default: 10
      * @param offset       Start index position for list of entities returned
@@ -76,7 +78,7 @@ public final class Device extends DeviceModel implements Parcelable {
     }
 
     /**
-     * Retrieves a collection of all events that should be committed to this device.
+     * Retrieves a collection of events that should be committed to this device.
      *
      * @param limit        Max number of events per page, default: 10
      * @param offset       Start index position for list of entities returned
@@ -87,7 +89,7 @@ public final class Device extends DeviceModel implements Parcelable {
     }
 
     /**
-     * Retrieves a collection of all events that should be committed to this device.
+     * Retrieves a collection of events that should be committed to this device.
      * Limit: 10
      * Offset: 0
      *
@@ -98,7 +100,7 @@ public final class Device extends DeviceModel implements Parcelable {
     }
 
     /**
-     * Retrieves a collection of all events that should be committed to this device.
+     * Retrieves a collection of events that should be committed to this device.
      * Limit: 10
      * Offset: 0
      *
@@ -107,6 +109,35 @@ public final class Device extends DeviceModel implements Parcelable {
      */
     public void getCommits(String lastCommitId, final ApiCallback<Collections.CommitsCollection> callback) {
         this.getCommits(10, 0, lastCommitId, callback);
+    }
+
+    /**
+     * Retrieves all events that should be committed to this device.
+     * Limit: 10
+     * Offset: 0
+     *
+     * @param lastCommitId last commit id
+     * @param callback     result callback
+     */
+    public void getAllCommits(String lastCommitId, final ApiCallback<Collections.CommitsCollection> callback) {
+        final Collections.CommitsCollection allCommits = new Collections.CommitsCollection();
+        getCommits(lastCommitId, new ApiCallback<Collections.CommitsCollection>() {
+            @Override
+            public void onSuccess(Collections.CommitsCollection result) {
+                allCommits.addCollection(result.getResults());
+
+                if(result.hasNext()){
+                    getCommits(result.getLimit(), result.getOffset(), this);
+                } else {
+                    callback.onSuccess(allCommits);
+                }
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                callback.onFailure(errorCode, errorMessage);
+            }
+        });
     }
 
     public static final class Builder{

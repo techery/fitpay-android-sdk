@@ -78,12 +78,20 @@ public final class BluetoothWearable extends Wearable {
 
     @Override
     public void disconnect() {
-        mGattManager.disconnect();
+        if(mGattManager != null) {
+            mGattManager.disconnect();
+        } else {
+            Logger.w("GattManager is null");
+        }
     }
 
     @Override
     public void reconnect() {
-        mGattManager.reconnect();
+        if(mGattManager != null) {
+            mGattManager.reconnect();
+        } else {
+            Logger.w("GattManager is null");
+        }
     }
 
     /**

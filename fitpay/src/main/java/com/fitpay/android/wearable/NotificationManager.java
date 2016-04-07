@@ -1,5 +1,6 @@
 package com.fitpay.android.wearable;
 
+import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.wearable.callbacks.SyncListener;
@@ -124,6 +125,24 @@ public final class NotificationManager {
                 }
             }
         }));
+
+        mSyncSubscriptions.add(RxBus.getInstance().register(Commit.class, new Action1<Commit>() {
+            @Override
+            public void call(Commit commit) {
+                for(SyncListener syncListener : mSyncListeners){
+                    syncListener.onNonApduCommit(commit);
+                }
+            }
+        }));
+
+        mSyncSubscriptions.add(RxBus.getInstance().register(ApduPair.class, new Action1<ApduPair>() {
+            @Override
+            public void call(ApduPair pair) {
+                for(SyncListener listener : mSyncListeners) {
+                    listener.onApduPackageResultReceived(pair);
+                }
+            }
+        }));
     }
 
     private void unsubscribeFromSync(){
@@ -140,7 +159,9 @@ public final class NotificationManager {
             subscribeToWearable();
         }
 
-        mWearableListeners.add(listener);
+        if(!mWearableListeners.contains(listener)) {
+            mWearableListeners.add(listener);
+        }
     }
 
     public void removeWearableListener(WearableListener listener){
@@ -156,10 +177,12 @@ public final class NotificationManager {
             subscribeToSync();
         }
 
-        mSyncListeners.add(listener);
+        if(!mSyncListeners.contains(listener)) {
+            mSyncListeners.add(listener);
+        }
     }
 
-    public void removeSyncListener(WearableListener listener){
+    public void removeSyncListener(SyncListener listener){
         mSyncListeners.remove(listener);
 
         if(mSyncListeners.size() == 0){

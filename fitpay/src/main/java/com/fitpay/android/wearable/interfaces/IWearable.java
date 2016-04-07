@@ -1,10 +1,11 @@
 package com.fitpay.android.wearable.interfaces;
 
 import com.fitpay.android.api.models.apdu.ApduPackage;
+import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.wearable.enums.States;
 
 /**
- * Created by Vlad on 29.03.2016.
+ * abstract interface of wearable payment device
  */
 public interface IWearable {
     void connect();

@@ -13,27 +13,31 @@ import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.utils.RxBus;
-import com.fitpay.android.wearable.callbacks.WearableListener;
+import com.fitpay.android.wearable.callbacks.SyncListener;
 import com.fitpay.android.wearable.enums.States;
 import com.fitpay.android.wearable.enums.SyncEvent;
 import com.fitpay.android.wearable.interfaces.IWearable;
 import com.fitpay.android.wearable.utils.ApduPair;
 import com.orhanobut.logger.Logger;
 
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Map;
 
 import me.alexrs.prefs.lib.Prefs;
 
+/**
+ * Connection and synchronization service
+ */
 public final class WearableService extends Service {
 
     private static final String KEY_COMMIT_ID = "commitId";
 
     private IWearable mWearable;
-    private Device mDevice;
 
     private String mLastCommitId;
+    private @SyncEvent.State Integer mSyncEventState;
 
-    private HashSet<ApduPackage> mSyncSet = new HashSet<>();
+    private Map<ApduPackage, Commit> mSyncMap = new HashMap<>();
 
     private final IBinder mBinder = new LocalBinder();
 
@@ -56,8 +60,6 @@ public final class WearableService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-
-
     }
 
     @Override
@@ -85,14 +87,10 @@ public final class WearableService extends Service {
      */
     public void pairWithDevice(@NonNull IWearable wearable) {
 
-        if (mWearable != null
-                && !mWearable.getMacAddress().equals(wearable.getMacAddress())
-                && mWearable.getState() == States.CONNECTED) {
+        if (mWearable != null && !mWearable.getMacAddress().equals(wearable.getMacAddress()) && mWearable.getState() == States.CONNECTED) {
             mWearable.disconnect();
             mWearable.close();
             mWearable = null;
-        } else {
-            return;
         }
 
         mWearable = wearable;
@@ -125,22 +123,29 @@ public final class WearableService extends Service {
     /**
      * Sync data between FitPay server and payment device
      *
-     * @param device hypermedia device
+     * @param device device object with hypermedia data
      */
-    public void syncData(Device device) {
+    public void syncData(@NonNull Device device) {
 
-        if (mWearable == null) {
-            throw new NullPointerException("You should pair with a payment device at first");
+        if (mWearable == null || mWearable.getState() != States.CONNECTED) {
+            //throw new RuntimeException("You should pair with a payment device at first");
+            Logger.e("You should pair with a payment device at first");
+            return;
         }
 
-        NotificationManager.getInstance().addWearableListener(mWearableListener);
+        if(mSyncEventState != null &&
+                (mSyncEventState == SyncEvent.STARTED || mSyncEventState == SyncEvent.IN_PROGRESS)){
+            Logger.w("Sync already in progress. Try again later");
+            return;
+        }
+
+        NotificationManager.getInstance().addSyncListener(mSyncListener);
 
         mLastCommitId = Prefs.with(this).getString(KEY_COMMIT_ID, null);
 
         RxBus.getInstance().post(new SyncEvent(SyncEvent.STARTED));
 
-        mDevice = device;
-        mDevice.getCommits(mLastCommitId, new ApiCallback<Collections.CommitsCollection>() {
+        device.getAllCommits(mLastCommitId, new ApiCallback<Collections.CommitsCollection>() {
             @Override
             public void onSuccess(Collections.CommitsCollection result) {
 
@@ -148,10 +153,14 @@ public final class WearableService extends Service {
 
                 for (Commit commit : result.getResults()) {
                     Object payload = commit.getPayload();
+
                     if (payload instanceof ApduPackage) {
                         ApduPackage pkg = (ApduPackage) payload;
+                        mSyncMap.put(pkg, commit);
+
                         mWearable.sendApduPackage(pkg);
-                        mSyncSet.add(pkg);
+                    } else {
+                        RxBus.getInstance().post(commit);
                     }
                 }
 
@@ -168,45 +177,35 @@ public final class WearableService extends Service {
     }
 
     private void checkSyncForComplete() {
-        if (mSyncSet.size() == 0) {
-            NotificationManager.getInstance().removeWearableListener(mWearableListener);
+        if (mSyncMap.size() == 0) {
+            NotificationManager.getInstance().removeSyncListener(mSyncListener);
+
             RxBus.getInstance().post(new SyncEvent(SyncEvent.COMPLETED));
         }
     }
 
-    private WearableListener mWearableListener = new WearableListener() {
+    private SyncListener mSyncListener = new SyncListener() {
         @Override
-        public void onDeviceStateChanged(@States.Wearable int state) {
-
+        public void onSyncStateChanged(@SyncEvent.State int state) {
+            mSyncEventState = state;
         }
 
         @Override
-        public void onDeviceInfoReceived(Device device) {
-
+        public void onNonApduCommit(Commit commit) {
         }
 
         @Override
-        public void onNFCStateReceived(boolean isEnabled) {
+        public void onApduPackageResultReceived(ApduPair pair) {
+            if (mSyncMap.containsKey(pair.first)){
 
-        }
+                Commit commit = mSyncMap.get(pair.first);
+                mSyncMap.remove(pair.first);
 
-        @Override
-        public void onTransactionReceived(byte[] data) {
-
-        }
-
-        @Override
-        public void onApduPackageResultReceived(final ApduPair pair) {
-            if (mSyncSet.contains(pair.first)){
-                mSyncSet.remove(pair.first);
-
-                pair.first.confirm(pair.second, new ApiCallback<Void>() {
+                commit.confirm(pair.second, new ApiCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
                         mLastCommitId = pair.first.getSeId();
                         Prefs.with(WearableService.this).save(KEY_COMMIT_ID, mLastCommitId);
-
-                        checkSyncForComplete();
                     }
 
                     @Override
@@ -215,11 +214,8 @@ public final class WearableService extends Service {
                     }
                 });
             }
-        }
 
-        @Override
-        public void onApplicationControlReceived(byte[] data) {
-
+            checkSyncForComplete();
         }
     };
 }

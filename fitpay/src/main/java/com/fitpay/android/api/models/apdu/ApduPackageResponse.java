@@ -15,11 +15,11 @@ public final class ApduPackageResponse {
     private String state;
     private long executedTsEpoch;
     private int executedDuration;
-    private List<ApduCommandResult> apduCommandResults;
+    private List<ApduCommandResponse> apduResponses;
 
     public ApduPackageResponse(String packageId){
         this.packageId = packageId;
-        apduCommandResults = new ArrayList<>();
+        apduResponses = new ArrayList<>();
     }
 
     public String getPackageId() {
@@ -51,11 +51,11 @@ public final class ApduPackageResponse {
         this.executedDuration = executedDuration;
     }
 
-    public List<ApduCommandResult> getResults() {
-        return apduCommandResults;
+    public List<ApduCommandResponse> getResponses() {
+        return apduResponses;
     }
 
-    public void addResult(ApduCommandResult result){
-        apduCommandResults.add(result);
+    public void addResponse(ApduCommandResponse response){
+        apduResponses.add(response);
     }
 }

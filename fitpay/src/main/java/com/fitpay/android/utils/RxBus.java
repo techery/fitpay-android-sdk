@@ -1,5 +1,7 @@
 package com.fitpay.android.utils;
 
+import com.orhanobut.logger.Logger;
+
 import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -25,20 +27,18 @@ public class RxBus {
 
     private final Subject<Object, Object> mBus = new SerializedSubject<>(PublishSubject.create());
 
-    public void send(Object o) {
-        mBus.onNext(o);
-    }
-
-    public Observable<Object> toObserverable() {
-        return mBus;
-    }
-
     public <T> Subscription register(final Class<T> eventClass, Action1<T> onNext) {
         return mBus
+                .asObservable()
                 .filter(event -> eventClass.isAssignableFrom(event.getClass()))
                 .map(obj -> (T) obj)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(onNext);
+                .subscribe(onNext, new Action1<Throwable>() {
+                    @Override
+                    public void call(Throwable throwable) {
+                        Logger.e(throwable.toString());
+                    }
+                });
     }
 
     public void post(Object object){

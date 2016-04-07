@@ -15,7 +15,7 @@ public final class CommitTypes {
     public static final String CREDITCARD_DELETED = "CREDITCARD_DELETED";
     public static final String RESET_DEFAULT_CREDITCARD = "RESET_DEFAULT_CREDITCARD";
     public static final String SET_DEFAULT_CREDITCARD = "SET_DEFAULT_CREDITCARD";
-    public static final String APDU_PACKAGE = "APDU_PACKAGE ";
+    public static final String APDU_PACKAGE = "APDU_PACKAGE";
 
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({

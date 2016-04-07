@@ -1,7 +1,7 @@
 package com.fitpay.android.wearable.interfaces;
 
 /**
- * Created by Vlad on 29.03.2016.
+ * abstract interface for APDU object
  */
 public interface IApduMessage {
     byte getResult();

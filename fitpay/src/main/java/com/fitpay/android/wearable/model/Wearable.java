@@ -8,7 +8,7 @@ import com.fitpay.android.wearable.enums.States;
 import com.fitpay.android.wearable.interfaces.IWearable;
 
 /**
- * Created by Vlad on 29.03.2016.
+ * Base model for wearable payment device
  */
 public abstract class Wearable implements IWearable, ConnectionListener{
 

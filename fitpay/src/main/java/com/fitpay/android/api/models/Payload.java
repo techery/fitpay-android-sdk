@@ -20,12 +20,18 @@ public final class Payload{
     }
 
     public Object getData(@CommitTypes.Type String type) {
+        Object dataToReturn = null;
+
         switch (type) {
             case CommitTypes.APDU_PACKAGE:
-                return apduPackage;
+                dataToReturn = apduPackage;
+                break;
 
             default:
-                return creditCard;
+                dataToReturn = creditCard;
+                break;
         }
+
+        return dataToReturn;
     }
 }

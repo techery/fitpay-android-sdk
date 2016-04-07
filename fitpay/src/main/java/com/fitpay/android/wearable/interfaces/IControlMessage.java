@@ -1,7 +1,7 @@
 package com.fitpay.android.wearable.interfaces;
 
 /**
- * Created by Vlad on 29.03.2016.
+ * abstract interface for Control object
  */
 public interface IControlMessage {
     byte[] getData();

@@ -217,10 +217,11 @@ public final class GattManager {
                         RxBus.getInstance().post(notificationMessage);
                     } else if(PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(uuid)){
                         ApduResultMessage apduResultMessage = new ApduResultMessage().withMessage(value);
+
                         if(mLastApduSequenceId == apduResultMessage.getSequenceId()) {
                             RxBus.getInstance().post(apduResultMessage);
                         } else {
-                            //TODO: send error
+                            Logger.e("Wrong sequenceID. lastSequenceID:" + mLastApduSequenceId + " currentID:" + apduResultMessage.getSequenceId());
                         }
 
                         driveNext();
@@ -249,7 +250,8 @@ public final class GattManager {
                                 } catch (IOException e) {
                                     mContinuationPayload = null;
                                     Logger.e("error parsing continuation data", e);
-                                    //TODO: send error
+
+                                    driveNext();
                                 }
 
                                 long checkSumValue = Crc32.getCRC32Checksum(payloadValue);
@@ -257,7 +259,8 @@ public final class GattManager {
                                 if (checkSumValue != expectedChecksumValue) {
                                     Logger.e("Checksums not equal.  input data checksum: " + checkSumValue
                                             + ", expected value as provided on continuation end: " + expectedChecksumValue);
-                                    //TODO: send error
+
+                                    driveNext();
                                 }
 
                                 if (PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(targetUuid)) {
@@ -279,14 +282,16 @@ public final class GattManager {
 
                         if (mContinuationPayload == null) {
                             Logger.e("invalid continuation, no start received on control characteristic");
-                            //TODO: send error
+
+                            driveNext();
                         }
 
                         try {
                             mContinuationPayload.processPacket(continuationPacketMessage);
                         } catch (Exception e) {
                             Logger.e("exception handling continuation packet", e);
-                            //TODO: send error
+
+                            driveNext();
                         }
 
                     } else if(PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL.equals(uuid)){
