@@ -5,7 +5,7 @@ import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 
-class ResultCollection<T> extends ResultCollectionModel<T>{
+class ResultCollection<T> extends ResultCollectionModel<T> {
     private static final String FIRST = "first";
     private static final String LAST = "last";
     private static final String NEXT = "next";
