@@ -80,7 +80,7 @@ public class GattApduOperation extends GattOperation {
         long endTime = System.currentTimeMillis();
         int duration = (int) ((endTime - mStartTime) / 1000);
 
-        @ResponseState.ApduState String state = ResponseState.SUCCESSFUL;
+        @ResponseState.ApduState String state = ResponseState.PROCESSED;
 
         if (TimestampUtils.getDateForISO8601String(mPackage.getValidUntil()).getTime() < endTime) {
             state = ResponseState.EXPIRED;

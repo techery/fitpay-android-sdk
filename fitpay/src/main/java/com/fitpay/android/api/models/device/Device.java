@@ -7,12 +7,10 @@ import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
-import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.card.CreditCardRef;
 import com.fitpay.android.api.models.collection.Collections;
-import com.fitpay.android.api.models.collection.ResultCollectionModel;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.utils.TimestampUtils;
 
@@ -75,6 +73,17 @@ public final class Device extends DeviceModel implements Parcelable {
             queryMap.put("commitsAfter", lastCommitId);
         }
         makeGetCall(COMMITS, queryMap, Collections.CommitsCollection.class, callback);
+    }
+
+    /**
+     * Retrieves a collection of all events that should be committed to this device.
+     *
+     * @param limit        Max number of events per page, default: 10
+     * @param offset       Start index position for list of entities returned
+     * @param callback     result callback
+     */
+    public void getCommits(int limit, int offset, final ApiCallback<Collections.CommitsCollection> callback) {
+        this.getCommits(limit, offset, null, callback);
     }
 
     /**
