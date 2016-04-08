@@ -47,13 +47,19 @@ public class DeviceTest {
     }
 
     @Test
-    public void test07_deleteDevice() throws InterruptedException {
-        steps.deleteDevice();
+    public void test07_getDeviceUser() throws InterruptedException {
+        steps.getDeviceUser();
+    }
+
+    @Test
+    public void test08_deleteDevices() throws InterruptedException {
+        steps.deleteTestDevices();
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
         steps.destroy();
+        steps = null;
     }
 
 

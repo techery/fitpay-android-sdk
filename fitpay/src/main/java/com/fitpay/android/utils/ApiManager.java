@@ -4,7 +4,6 @@ import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
-import com.fitpay.android.api.models.ApduPackage;
 import com.fitpay.android.api.models.LoginIdentity;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.user.User;
@@ -20,7 +19,7 @@ import retrofit2.Call;
 /*
  * API manager
  */
-public class ApiManager {
+public class ApiManager extends Unit{
 
     private static ApiManager sInstance;
     private FitPayService apiService;
@@ -121,7 +120,7 @@ public class ApiManager {
      * @param callback     result callback
      */
     public void createRelationship(String userId, String creditCardId, String deviceId, ApiCallback<Relationship> callback) {
-        if(isAuthorized(callback)){
+        if (isAuthorized(callback)) {
             Call<Relationship> createRelationshipCall = getClient().createRelationship(userId, creditCardId, deviceId);
             createRelationshipCall.enqueue(new CallbackWrapper<>(callback));
         }
@@ -229,22 +228,7 @@ public class ApiManager {
 //    }
 //
 
-    /**
-     * Endpoint to allow for returning responses to APDU execution.
-     *
-     * @param packageId   package id
-     * @param apduPackage package confirmation data:(packageId, state, executedTs,
-     *                    executedDuration, apduResponses:(commandId, commandId, responseData))
-     * @param callback    result callback
-     */
-    public void confirmAPDUPackage(String packageId, ApduPackage apduPackage, ApiCallback<Void> callback) {
-        if(isAuthorized(callback)){ //TODO add 200,202 responses
-            Call<Void> confirmAPDUPackage = getClient().confirmAPDUPackage(packageId, apduPackage);
-            confirmAPDUPackage.enqueue(new CallbackWrapper<>(callback));
-        }
-    }
-
-    private <T> void makeCall(final Call<JsonElement> call, final Type type, final ApiCallback<T> callback){
+    private <T> void makeCall(final Call<JsonElement> call, final Type type, final ApiCallback<T> callback) {
         call.enqueue(new CallbackWrapper<>(new ApiCallback<JsonElement>() {
             @Override
             public void onSuccess(JsonElement result) {
@@ -274,7 +258,7 @@ public class ApiManager {
         JsonArray updateData = new JsonArray();
 
         Map<String, Object> userMap = ObjectConverter.convertToSimpleMap(data);
-        for(Map.Entry<String, Object> entry : userMap.entrySet()) {
+        for (Map.Entry<String, Object> entry : userMap.entrySet()) {
             JsonObject item = new JsonObject();
             item.addProperty("op", "replace");
             item.addProperty("path", entry.getKey());
@@ -285,7 +269,7 @@ public class ApiManager {
 
         Call<JsonElement> patchDataCall = null;
 
-        if(encrypt) {
+        if (encrypt) {
             String userString = updateData.toString();
 
             JsonObject jsonObject = new JsonObject();

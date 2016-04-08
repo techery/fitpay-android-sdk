@@ -1,10 +1,14 @@
 package com.fitpay.android.api.models.card;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import com.fitpay.android.api.models.ImageAssetReference;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public final class CardMetaData {
+public final class CardMetaData implements Parcelable {
 
     private String labelColor;
     private String issuerName;
@@ -134,4 +138,64 @@ public final class CardMetaData {
     public void setIssuerLogo(List<ImageAssetReference> issuerLogo) {
         this.issuerLogo = issuerLogo;
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(this.labelColor);
+        dest.writeString(this.issuerName);
+        dest.writeString(this.shortDescription);
+        dest.writeString(this.longDescription);
+        dest.writeString(this.contactUrl);
+        dest.writeString(this.contactPhone);
+        dest.writeString(this.contactEmail);
+        dest.writeString(this.termsAndConditionsUrl);
+        dest.writeString(this.privacyPolicyUrl);
+        dest.writeList(this.brandLogo);
+        dest.writeList(this.cardBackground);
+        dest.writeList(this.cardBackgroundCombined);
+        dest.writeList(this.icon);
+        dest.writeList(this.issuerLogo);
+    }
+
+    public CardMetaData() {
+    }
+
+    protected CardMetaData(Parcel in) {
+        this.labelColor = in.readString();
+        this.issuerName = in.readString();
+        this.shortDescription = in.readString();
+        this.longDescription = in.readString();
+        this.contactUrl = in.readString();
+        this.contactPhone = in.readString();
+        this.contactEmail = in.readString();
+        this.termsAndConditionsUrl = in.readString();
+        this.privacyPolicyUrl = in.readString();
+        this.brandLogo = new ArrayList<>();
+        in.readList(this.brandLogo, ImageAssetReference.class.getClassLoader());
+        this.cardBackground = new ArrayList<>();
+        in.readList(this.cardBackground, ImageAssetReference.class.getClassLoader());
+        this.cardBackgroundCombined = new ArrayList<>();
+        in.readList(this.cardBackgroundCombined, ImageAssetReference.class.getClassLoader());
+        this.icon = new ArrayList<>();
+        in.readList(this.icon, ImageAssetReference.class.getClassLoader());
+        this.issuerLogo = new ArrayList<>();
+        in.readList(this.issuerLogo, ImageAssetReference.class.getClassLoader());
+    }
+
+    public static final Parcelable.Creator<CardMetaData> CREATOR = new Parcelable.Creator<CardMetaData>() {
+        @Override
+        public CardMetaData createFromParcel(Parcel source) {
+            return new CardMetaData(source);
+        }
+
+        @Override
+        public CardMetaData[] newArray(int size) {
+            return new CardMetaData[size];
+        }
+    };
 }

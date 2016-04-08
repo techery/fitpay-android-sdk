@@ -36,14 +36,10 @@ public class UserTest {
         steps.updateUser();
     }
 
-    @Test
-    public void test05_deleteUser() throws InterruptedException {
-        steps.deleteUser();
-    }
-
     @AfterClass
     public static void tearDown() throws Exception {
         steps.destroy();
+        steps = null;
     }
 
 }

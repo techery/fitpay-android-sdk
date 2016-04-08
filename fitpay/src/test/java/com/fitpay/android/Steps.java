@@ -2,13 +2,16 @@ package com.fitpay.android;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
+import com.fitpay.android.api.enums.CardInitiators;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.LoginIdentity;
+import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.card.Address;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.card.Reason;
 import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
+import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.utils.ApiManager;
@@ -29,12 +32,16 @@ public class Steps {
 
     private User currentUser;
     private Collections.CreditCardCollection cardsCollection;
+    private Collections.DeviceCollection devicesCollection;
     private CreditCard currentCard;
     private Device currentDevice;
+    private Commit currentCommit;
 
-    public void destroy(){
+    public void destroy() {
         currentUser = null;
         cardsCollection = null;
+        currentDevice = null;
+        currentCommit = null;
     }
 
     public void login() throws InterruptedException {
@@ -97,11 +104,12 @@ public class Steps {
         Assert.assertNotNull(currentUser);
 
         final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
 
         currentUser.self(new ApiCallback<User>() {
             @Override
             public void onSuccess(User result) {
-                Assert.assertNotNull(result);
+                isRequestSuccess[0] = true;
                 currentUser = result;
                 latch.countDown();
             }
@@ -113,6 +121,8 @@ public class Steps {
         });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
+        Assert.assertNotNull(currentUser);
         Assert.assertNotNull(currentUser.getUsername());
     }
 
@@ -149,32 +159,10 @@ public class Steps {
         latch.await(TIMEOUT, TimeUnit.SECONDS);
 
         Assert.assertNotNull(currentUser);
-        Assert.assertEquals(currentUser.getFirstName(), firstName);
-        Assert.assertEquals(currentUser.getLastName(), lastName);
-        Assert.assertEquals(currentUser.getBirthDate(), timestampString);
-        Assert.assertEquals(currentUser.getTermsVersion(), termsVersion);
-    }
-
-    public void deleteUser() throws InterruptedException {
-        Assert.assertNotNull(currentUser);
-
-        final CountDownLatch latch = new CountDownLatch(1);
-        final boolean[] isRequestSuccess = {false};
-
-        currentUser.deleteUser(new ApiCallback<Void>() {
-            @Override
-            public void onSuccess(Void result) {
-                isRequestSuccess[0] = true;
-                latch.countDown();
-            }
-
-            @Override
-            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                latch.countDown();
-            }
-        });
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Assert.assertTrue(isRequestSuccess[0]);
+        Assert.assertEquals(firstName, currentUser.getFirstName());
+        Assert.assertEquals(lastName, currentUser.getLastName());
+        Assert.assertEquals(timestampString, currentUser.getBirthDate());
+        Assert.assertEquals(termsVersion, currentUser.getTermsVersion());
     }
 
     public void createCard() throws InterruptedException {
@@ -182,19 +170,30 @@ public class Steps {
 
         final CountDownLatch latch = new CountDownLatch(1);
 
+        String cardName = "TEST CARD";
+        int expYear = 2018;
+        int expMonth = 10;
+        String city = "Boulder";
+        String state = "CO";
+        String postalCode = "80302";
+        String countryCode = "US";
+        String street1 = "1035 Pearl St";
+        String cvv = "133";
+        String pan = "5454545454545454";
+
         Address address = new Address();
-        address.setCity("Boulder");
-        address.setState("CO");
-        address.setPostalCode("80302");
-        address.setCountry("US");
-        address.setStreet1("1035 Pearl St");
+        address.setCity(city);
+        address.setState(state);
+        address.setPostalCode(postalCode);
+        address.setCountryCode(countryCode);
+        address.setStreet1(street1);
 
         CreditCard creditCard = new CreditCard.Builder()
-                .setCVV("133")
-                .setPAN("5454545454545454")
-                .setExpDate(2018, 10)
+                .setCVV(cvv)
+                .setPAN(pan)
+                .setExpDate(expYear, expMonth)
                 .setAddress(address)
-                .setName("TEST CARD")
+                .setName(cardName)
                 .create();
 
         currentUser.createCreditCard(creditCard, new ApiCallback<CreditCard>() {
@@ -212,18 +211,46 @@ public class Steps {
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertNotNull(currentCard);
-        Assert.assertEquals(currentCard.getName(), "TEST CARD");
-        Assert.assertEquals(currentCard.getState(), "ELIGIBLE");
+        Assert.assertEquals(cardName, currentCard.getName());
+        Assert.assertEquals(city, currentCard.getAddress().getCity());
+        Assert.assertEquals(state, currentCard.getAddress().getState());
+        Assert.assertEquals(postalCode, currentCard.getAddress().getPostalCode());
+        Assert.assertEquals(countryCode, currentCard.getAddress().getCountryCode());
+        Assert.assertEquals(street1, currentCard.getAddress().getStreet1());
+        Assert.assertNotNull(currentCard.getCVV());
+        Assert.assertTrue(currentCard.getPan().endsWith(pan.substring(12)));
+        Assert.assertTrue(expYear == currentCard.getExpYear());
+        Assert.assertTrue(expMonth == currentCard.getExpMonth());
+        Assert.assertEquals("ELIGIBLE", currentCard.getState());
     }
 
     public void acceptTerms() throws InterruptedException {
+        getDevices();
+        Assert.assertNotNull(currentUser);
         Assert.assertNotNull(currentCard);
+        Assert.assertNotNull(currentDevice);
 
-        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch latch = new CountDownLatch(2);
+        final boolean[] isRequestSuccess = {false};
+
+        ApiManager.getInstance().createRelationship(currentUser.getId(), currentCard.getCreditCardId(),
+                currentDevice.getDeviceIdentifier(), new ApiCallback<Relationship>() {
+                    @Override
+                    public void onSuccess(Relationship result) {
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                        latch.countDown();
+                    }
+                });
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
 
         currentCard.acceptTerms(new ApiCallback<CreditCard>() {
             @Override
             public void onSuccess(CreditCard result) {
+                isRequestSuccess[0] = true;
                 currentCard = result;
                 latch.countDown();
             }
@@ -236,7 +263,34 @@ public class Steps {
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertNotNull(currentCard);
-        Assert.assertEquals(currentCard.getState(), "PENDING_VERIFICATION");
+        Assert.assertTrue(isRequestSuccess[0]);
+        Assert.assertEquals("PENDING_VERIFICATION", currentCard.getState());
+    }
+
+    public void declineTerms() throws InterruptedException {
+        Assert.assertNotNull(currentCard);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
+
+        currentCard.declineTerms(new ApiCallback<CreditCard>() {
+            @Override
+            public void onSuccess(CreditCard result) {
+                isRequestSuccess[0] = true;
+                currentCard = result;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
+        Assert.assertNotNull(currentCard);
+        Assert.assertEquals(currentCard.getState(), "DECLINED_TERMS_AND_CONDITIONS");
     }
 
     public void selectCard() throws InterruptedException {
@@ -244,10 +298,12 @@ public class Steps {
 
         final CountDownLatch latch = new CountDownLatch(1);
         final VerificationMethod[] verificationMethods = {null};
+        final boolean[] isRequestSuccess = {false};
 
         currentCard.getVerificationMethods().get(0).select(new ApiCallback<VerificationMethod>() {
             @Override
             public void onSuccess(VerificationMethod result) {
+                isRequestSuccess[0] = true;
                 verificationMethods[0] = result;
                 latch.countDown();
             }
@@ -259,8 +315,9 @@ public class Steps {
         });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
         Assert.assertNotNull(currentCard);
-        Assert.assertEquals(verificationMethods[0].getState(), "AWAITING_VERIFICATION");
+        Assert.assertEquals("AWAITING_VERIFICATION", verificationMethods[0].getState());
     }
 
     public void verifyCard() throws InterruptedException {
@@ -268,10 +325,12 @@ public class Steps {
 
         final CountDownLatch latch = new CountDownLatch(1);
         final VerificationMethod[] verificationMethods = {null};
+        final boolean[] isRequestSuccess = {false};
 
         currentCard.getVerificationMethods().get(0).verify("12345", new ApiCallback<VerificationMethod>() {
             @Override
             public void onSuccess(VerificationMethod result) {
+                isRequestSuccess[0] = true;
                 verificationMethods[0] = result;
                 latch.countDown();
             }
@@ -283,18 +342,22 @@ public class Steps {
         });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
         Assert.assertNotNull(currentCard);
-        Assert.assertEquals(verificationMethods[0].getState(), "VERIFIED");
+        Assert.assertTrue("VERIFIED".equals(verificationMethods[0].getState()) || "AWAITING_VERIFICATION".equals(verificationMethods[0].getState()));
     }
 
     public void updateCard() throws InterruptedException {
         Assert.assertNotNull(currentCard);
 
         final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
 
+        String city = "New York";
+        String state = "NY";
         Address address = new Address();
-        address.setCity("New York");
-        address.setState("NY");
+        address.setCity(city);
+        address.setState(state);
 
         CreditCard creditCard = new CreditCard.Builder()
                 .setAddress(address)
@@ -303,33 +366,38 @@ public class Steps {
         currentCard.updateCard(creditCard, new ApiCallback<CreditCard>() {
             @Override
             public void onSuccess(CreditCard result) {
+                isRequestSuccess[0] = true;
                 currentCard = result;
                 latch.countDown();
             }
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                latch.countDown();
+                latch.countDown();//{"errors":[{"message":"patch request contains unsupported operations: [SecureJsonPatchOperation(op=replace, path=addresscity, value=New York), SecureJsonPatchOperation(op=replace, path=addressstate, value=NY)]"}]}
             }
         });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertNotNull(currentCard);
-        Assert.assertEquals(currentCard.getAddress().getState(), "NY");
+        Assert.assertTrue(isRequestSuccess[0]);
+        Assert.assertEquals(state, currentCard.getAddress().getState());
+        Assert.assertEquals(city, currentCard.getAddress().getCity());
     }
 
     public void deactivateCard() throws InterruptedException {
         Assert.assertNotNull(currentCard);
 
         final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
 
         Reason reason = new Reason();
-        reason.setReason("a");
-        reason.setCausedBy("b");
+        reason.setReason("lost");
+        reason.setCausedBy(CardInitiators.INITIATOR_CARDHOLDER);
 
         currentCard.deactivate(reason, new ApiCallback<CreditCard>() {
             @Override
             public void onSuccess(CreditCard result) {
+                isRequestSuccess[0] = true;
                 currentCard = result;
                 latch.countDown();
             }
@@ -341,6 +409,7 @@ public class Steps {
         });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
         Assert.assertNotNull(currentCard);
     }
 
@@ -348,14 +417,16 @@ public class Steps {
         Assert.assertNotNull(currentCard);
 
         final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
 
         Reason reason = new Reason();
-        reason.setReason("c");
-        reason.setCausedBy("d");
+        reason.setReason("found");
+        reason.setCausedBy(CardInitiators.INITIATOR_CARDHOLDER);
 
         currentCard.reactivate(reason, new ApiCallback<CreditCard>() {
             @Override
             public void onSuccess(CreditCard result) {
+                isRequestSuccess[0] = true;
                 currentCard = result;
                 latch.countDown();
             }
@@ -368,6 +439,7 @@ public class Steps {
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertNotNull(currentCard);
+        Assert.assertTrue(isRequestSuccess[0]);
     }
 
     public void makeDefault() throws InterruptedException {
@@ -393,14 +465,16 @@ public class Steps {
         Assert.assertTrue(isRequestSuccess[0]);
     }
 
-    public void getCard() throws InterruptedException {
+    public void selfCard() throws InterruptedException {
         Assert.assertNotNull(currentCard);
 
         final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
 
         currentCard.self(new ApiCallback<CreditCard>() {
             @Override
             public void onSuccess(CreditCard result) {
+                isRequestSuccess[0] = true;
                 currentCard = result;
                 latch.countDown();
             }
@@ -412,6 +486,7 @@ public class Steps {
         });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
         Assert.assertNotNull(currentCard);
     }
 
@@ -446,10 +521,12 @@ public class Steps {
         final CountDownLatch latch = new CountDownLatch(size);
         final int[] success = {0};
 
-        for(int i = 0; i < size; i++){
+        int isNotTestCard = 0;
+        for (int i = 0; i < size; i++) {
             CreditCard card = cards.get(i);
 
-            if(!card.getName().equals("TEST CARD")) {
+            if (card.getName() == null || !card.getName().equals("TEST CARD")) {
+                isNotTestCard++;
                 latch.countDown();
             } else {
                 card.deleteCard(new ApiCallback<Void>() {
@@ -470,7 +547,7 @@ public class Steps {
         latch.await(TIMEOUT * size, TimeUnit.SECONDS);
 
         getCards();
-        Assert.assertEquals(cardsCollection.getResults().size(), 1);
+        Assert.assertEquals(isNotTestCard, cardsCollection.getResults().size());
     }
 
     public void getTransactions() throws InterruptedException {
@@ -500,7 +577,6 @@ public class Steps {
         Assert.assertNotNull(cardsCollection);
         Assert.assertNotNull(transactionCollection[0]);
         Assert.assertNotNull(transactionCollection[0].getResults());
-        Assert.assertFalse(transactionCollection[0].getResults().size() == 0);
     }
 
     public void createDevice() throws InterruptedException {
@@ -509,7 +585,7 @@ public class Steps {
         final CountDownLatch latch = new CountDownLatch(1);
 
         String manufacturerName = "X111";
-        String deviceName = "X-111";
+        String deviceName = "TEST_DEVICE";
         String firmwareRevision = "111.111";
         String hardwareRevision = "1.1.1";
         String modelNumber = "AB111";
@@ -523,7 +599,7 @@ public class Steps {
         String stringTimestamp = TimestampUtils.getISO8601StringForTime(pairingTs);
         String secureElementId = "cccccc-1111-1111-1111-1111111111";
         Device newDevice = new Device.Builder()
-                .setDeviceType(DeviceTypes.WATCH)
+                .setDeviceType(DeviceTypes.SMART_STRAP)
                 .setManufacturerName(manufacturerName)
                 .setDeviceName(deviceName)
                 .setFirmwareRevision(firmwareRevision)
@@ -553,19 +629,21 @@ public class Steps {
         });
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertNotNull(currentDevice);
-        Assert.assertEquals(currentDevice.getManufacturerName(), manufacturerName);
-        Assert.assertEquals(currentDevice.getDeviceName(), deviceName);
-        Assert.assertEquals(currentDevice.getFirmwareRevision(), firmwareRevision);
-        Assert.assertEquals(currentDevice.getHardwareRevision(), hardwareRevision);
-        Assert.assertEquals(currentDevice.getModelNumber(), modelNumber);
-        Assert.assertEquals(currentDevice.getSerialNumber(), serialNumber);
-        Assert.assertEquals(currentDevice.getSoftwareRevision(), softwareRevision);
-        Assert.assertEquals(currentDevice.getSystemId(), systemId);
-        Assert.assertEquals(currentDevice.getOsName(), oSName);
-//        Assert.assertEquals(currentDevice.getLicenseKey(), licenseKey);//todo check
-//        Assert.assertEquals(currentDevice.getBdAddress(), bdAddress);
-        Assert.assertEquals(currentDevice.getPairingTs(), stringTimestamp);
-        Assert.assertEquals(currentDevice.getSecureElementId(), secureElementId);
+        Assert.assertEquals(manufacturerName, currentDevice.getManufacturerName());
+        Assert.assertEquals(deviceName, currentDevice.getDeviceName());
+        Assert.assertEquals(firmwareRevision, currentDevice.getFirmwareRevision());
+        Assert.assertEquals(hardwareRevision, currentDevice.getHardwareRevision());
+        Assert.assertEquals(modelNumber, currentDevice.getModelNumber());
+        Assert.assertEquals(serialNumber, currentDevice.getSerialNumber());
+        Assert.assertEquals(softwareRevision, currentDevice.getSoftwareRevision());
+        Assert.assertEquals(systemId, currentDevice.getSystemId());
+        Assert.assertEquals(oSName, currentDevice.getOsName());
+        if (DeviceTypes.SMART_STRAP.equals(currentDevice.getDeviceType())) {
+            Assert.assertEquals(licenseKey, currentDevice.getLicenseKey());//todo check
+            Assert.assertEquals(bdAddress, currentDevice.getBdAddress());
+        }
+        Assert.assertEquals(stringTimestamp, currentDevice.getPairingTs());
+        Assert.assertEquals(secureElementId, currentDevice.getSecureElementId());
     }
 
     public void getDevices() throws InterruptedException {
@@ -576,7 +654,7 @@ public class Steps {
         currentUser.getDevices(10, 0, new ApiCallback<Collections.DeviceCollection>() {
             @Override
             public void onSuccess(Collections.DeviceCollection result) {
-                Assert.assertNotNull(result);
+                devicesCollection = result;
                 latch.countDown();
             }
 
@@ -587,17 +665,22 @@ public class Steps {
         });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertNotNull(devicesCollection);
+        if (currentDevice == null && devicesCollection.getTotalResults() > 0) {
+            currentDevice = devicesCollection.getResults().get(0);
+        }
     }
 
     public void selfDevice() throws InterruptedException {
         Assert.assertNotNull(currentDevice);
 
         final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
 
         currentDevice.self(new ApiCallback<Device>() {
             @Override
             public void onSuccess(Device result) {
-                Assert.assertNotNull(result);
+                isRequestSuccess[0] = true;
                 currentDevice = result;
                 latch.countDown();
             }
@@ -608,6 +691,7 @@ public class Steps {
             }
         });
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
         Assert.assertNotNull(currentDevice);
     }
 
@@ -615,6 +699,7 @@ public class Steps {
         Assert.assertNotNull(currentDevice);
 
         final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
 
         String firmwareRevision = "222.222";
         String softwareRevision = "2.2.2";
@@ -626,7 +711,7 @@ public class Steps {
         currentDevice.updateDevice(newDevice, new ApiCallback<Device>() {
             @Override
             public void onSuccess(Device result) {
-                Assert.assertNotNull(result);
+                isRequestSuccess[0] = true;
                 currentDevice = result;
                 latch.countDown();
             }
@@ -637,9 +722,34 @@ public class Steps {
             }
         });
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
         Assert.assertNotNull(currentDevice);
-        Assert.assertEquals(currentDevice.getFirmwareRevision(), firmwareRevision);
-        Assert.assertEquals(currentDevice.getSoftwareRevision(), softwareRevision);
+        Assert.assertEquals(firmwareRevision, currentDevice.getFirmwareRevision());
+        Assert.assertEquals(softwareRevision, currentDevice.getSoftwareRevision());
+    }
+
+    public void getDeviceUser() throws InterruptedException {
+        Assert.assertNotNull(currentDevice);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
+
+        currentDevice.getUser(new ApiCallback<User>() {
+            @Override
+            public void onSuccess(User result) {
+                isRequestSuccess[0] = true;
+                currentUser = result;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
+        Assert.assertNotNull(currentUser);
     }
 
     public void deleteDevice() throws InterruptedException {
@@ -663,4 +773,125 @@ public class Steps {
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertTrue(isRequestSuccess[0]);
     }
+
+    public void deleteTestDevices() throws InterruptedException {
+        getDevices();
+
+        List<Device> devices = devicesCollection.getResults();
+        int size = devices.size();
+
+        final CountDownLatch latch = new CountDownLatch(size);
+        final int[] success = {0};
+        int isNotTestDevice = 0;
+
+        for (int i = 0; i < size; i++) {
+            Device device = devices.get(i);
+
+            if ("TEST_DEVICE".equals(device.getDeviceName())) {
+                device.deleteDevice(new ApiCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        success[0]++;
+                        latch.countDown();
+                    }
+
+                    @Override
+                    public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                        latch.countDown();
+                    }
+                });
+            } else {
+                isNotTestDevice++;
+                latch.countDown();
+            }
+        }
+
+        latch.await(TIMEOUT * size, TimeUnit.SECONDS);
+
+        getDevices();
+        Assert.assertEquals(isNotTestDevice, devicesCollection.getResults().size());
+
+    }
+
+    public void getCommits() throws InterruptedException {
+        if (currentDevice == null && devicesCollection != null && devicesCollection.getTotalResults() > 0) {
+            currentDevice = devicesCollection.getResults().get(0);
+        }
+        Assert.assertNotNull(currentDevice);
+
+        final CountDownLatch latch = new CountDownLatch(2);
+        final boolean[] isRequestSuccess = {false};
+
+        currentDevice.getCommits(10, 0, new ApiCallback<Collections.CommitsCollection>() {
+            @Override
+            public void onSuccess(Collections.CommitsCollection result) {
+                isRequestSuccess[0] = true;
+                Assert.assertNotNull(result);
+                Assert.assertNotNull(result.getResults());
+                Assert.assertTrue(result.getTotalResults() > 1);
+                currentCommit = result.getResults().get(1);
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
+        Assert.assertNotNull(currentCommit);
+    }
+
+    public void selfCommit() throws InterruptedException {
+        Assert.assertNotNull(currentCommit);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
+
+        currentCommit.self(new ApiCallback<Commit>() {
+            @Override
+            public void onSuccess(Commit result) {
+                isRequestSuccess[0] = true;
+                currentCommit = result;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
+        Assert.assertNotNull(currentCommit);
+    }
+
+    public void previousCommit() throws InterruptedException {
+        Assert.assertNotNull(currentCommit);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final boolean[] isRequestSuccess = {false};
+
+        currentCommit.getPreviousCommit(new ApiCallback<Commit>() {
+            @Override
+            public void onSuccess(Commit result) {
+                isRequestSuccess[0] = true;
+                currentCommit = result;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue(isRequestSuccess[0]);
+        Assert.assertNotNull(currentCommit);
+    }
+
 }

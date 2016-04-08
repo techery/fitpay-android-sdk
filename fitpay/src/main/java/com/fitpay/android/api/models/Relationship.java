@@ -8,7 +8,7 @@ import com.fitpay.android.api.models.card.CreditCardRef;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.device.DeviceRef;
 
-public final class Relationship extends BaseModel {
+public final class Relationship extends BaseModel{
 
     private static final String CARD = "card";
     private static final String DEVICE = "device";

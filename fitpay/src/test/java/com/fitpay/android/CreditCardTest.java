@@ -12,7 +12,7 @@ public class CreditCardTest {
     private static Steps steps = null;
 
     @BeforeClass
-    public static void init(){
+    public static void init() {
         steps = new Steps();
     }
 
@@ -39,19 +39,19 @@ public class CreditCardTest {
     @Test
     public void test05_acceptCard() throws InterruptedException {
         steps.acceptTerms();
-        steps.getCard();
+        steps.selfCard();
     }
 
     @Test
     public void test06_selectCard() throws InterruptedException {
         steps.selectCard();
-        steps.getCard();
+        steps.selfCard();
     }
 
     @Test
     public void test07_verifyCard() throws InterruptedException {
         steps.verifyCard();
-        steps.getCard();
+        steps.selfCard();
     }
 
     @Test
@@ -75,6 +75,12 @@ public class CreditCardTest {
     }
 
     @Test
+    public void test12_declineTerms() throws InterruptedException {
+        steps.createCard();
+        steps.declineTerms();
+    }
+
+    @Test
     public void test12_deleteTestCards() throws InterruptedException {
         steps.deleteTestCards();
     }
@@ -82,6 +88,7 @@ public class CreditCardTest {
     @AfterClass
     public static void tearDown() throws Exception {
         steps.destroy();
+        steps = null;
     }
-}
 
+}

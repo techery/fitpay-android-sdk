@@ -7,14 +7,14 @@ import com.fitpay.android.api.models.BaseModel;
  */
 abstract class VerificationMethodModel extends BaseModel {
 
-    private String verificationId;
-    private String state;
-    private String methodType;
-    private String value;
-    private String verificationResult;
-    private long createdTsEpoch;
-    private long lastModifiedTsEpoch;
-    private long verifiedTsEpoch;
+    protected String verificationId;
+    protected String state;
+    protected String methodType;
+    protected String value;
+    protected String verificationResult;
+    protected long createdTsEpoch;
+    protected long lastModifiedTsEpoch;
+    protected long verifiedTsEpoch;
 
     public String getVerificationId() {
         return verificationId;
@@ -47,4 +47,5 @@ abstract class VerificationMethodModel extends BaseModel {
     public long getVerifiedTsEpoch() {
         return verifiedTsEpoch;
     }
+
 }

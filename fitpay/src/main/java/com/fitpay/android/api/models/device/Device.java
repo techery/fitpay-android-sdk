@@ -1,27 +1,44 @@
 package com.fitpay.android.api.models.device;
 
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
+import com.fitpay.android.api.enums.ResultCode;
+import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.card.CreditCardRef;
 import com.fitpay.android.api.models.collection.Collections;
+import com.fitpay.android.api.models.collection.ResultCollectionModel;
+import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.utils.TimestampUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class Device extends DeviceModel {
+public final class Device extends DeviceModel implements Parcelable {
 
     private static final String COMMITS = "commits";
+    private static final String USER = "user";
 
     private List<CreditCardRef> cardRelationships;
 
     public List<CreditCardRef> getCardRelationships() {
         return cardRelationships;
+    }
+
+    /**
+     * Get current user
+     *
+     * @param callback   result callback
+     */
+    public void getUser(@NonNull ApiCallback<User> callback){
+        makeGetCall(USER, null, User.class, callback);
     }
 
     /**
@@ -43,17 +60,84 @@ public final class Device extends DeviceModel {
     }
 
     /**
-     * Retrieves a collection of all events that should be committed to this device.
+     * Retrieves a collection of events that should be committed to this device.
+     *
+     * @param limit        Max number of events per page, default: 10
+     * @param offset       Start index position for list of entities returned
+     * @param lastCommitId last commit id
+     * @param callback     result callback
+     */
+    public void getCommits(int limit, int offset, String lastCommitId, final ApiCallback<Collections.CommitsCollection> callback) {
+        Map<String, Object> queryMap = new HashMap<>();
+        queryMap.put("limit", limit);
+        queryMap.put("offset", offset);
+        if(lastCommitId != null){
+            queryMap.put("commitsAfter", lastCommitId);
+        }
+        makeGetCall(COMMITS, queryMap, Collections.CommitsCollection.class, callback);
+    }
+
+    /**
+     * Retrieves a collection of events that should be committed to this device.
      *
      * @param limit        Max number of events per page, default: 10
      * @param offset       Start index position for list of entities returned
      * @param callback     result callback
      */
     public void getCommits(int limit, int offset, final ApiCallback<Collections.CommitsCollection> callback) {
-        Map<String, Object> queryMap = new HashMap<>();
-        queryMap.put("limit", limit);
-        queryMap.put("offset", offset);
-        makeGetCall(COMMITS, queryMap, Collections.CommitsCollection.class, callback);
+        this.getCommits(limit, offset, null, callback);
+    }
+
+    /**
+     * Retrieves a collection of events that should be committed to this device.
+     * Limit: 10
+     * Offset: 0
+     *
+     * @param callback     result callback
+     */
+    public void getCommits(final ApiCallback<Collections.CommitsCollection> callback) {
+        this.getCommits(10, 0, null, callback);
+    }
+
+    /**
+     * Retrieves a collection of events that should be committed to this device.
+     * Limit: 10
+     * Offset: 0
+     *
+     * @param lastCommitId last commit id
+     * @param callback     result callback
+     */
+    public void getCommits(String lastCommitId, final ApiCallback<Collections.CommitsCollection> callback) {
+        this.getCommits(10, 0, lastCommitId, callback);
+    }
+
+    /**
+     * Retrieves all events that should be committed to this device.
+     * Limit: 10
+     * Offset: 0
+     *
+     * @param lastCommitId last commit id
+     * @param callback     result callback
+     */
+    public void getAllCommits(String lastCommitId, final ApiCallback<Collections.CommitsCollection> callback) {
+        final Collections.CommitsCollection allCommits = new Collections.CommitsCollection();
+        getCommits(lastCommitId, new ApiCallback<Collections.CommitsCollection>() {
+            @Override
+            public void onSuccess(Collections.CommitsCollection result) {
+                allCommits.addCollection(result.getResults());
+
+                if(result.hasNext()){
+                    getCommits(result.getLimit(), result.getOffset(), this);
+                } else {
+                    callback.onSuccess(allCommits);
+                }
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                callback.onFailure(errorCode, errorMessage);
+            }
+        });
     }
 
     public static final class Builder{
@@ -246,4 +330,62 @@ public final class Device extends DeviceModel {
             return this;
         }
     }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(this.deviceIdentifier);
+        dest.writeString(this.serialNumber);
+        dest.writeString(this.modelNumber);
+        dest.writeString(this.hardwareRevision);
+        dest.writeString(this.firmwareRevision);
+        dest.writeString(this.softwareRevision);
+        dest.writeValue(this.createdTsEpoch);
+        dest.writeString(this.osName);
+        dest.writeString(this.systemId);
+        dest.writeString(this.licenseKey);
+        dest.writeString(this.bdAddress);
+        dest.writeString(this.pairingTs);
+        dest.writeString(this.hostDeviceId);
+        dest.writeList(this.cardRelationships);
+        dest.writeParcelable(this.links, flags);
+    }
+
+    public Device() {
+    }
+
+    protected Device(Parcel in) {
+        this.deviceIdentifier = in.readString();
+        this.serialNumber = in.readString();
+        this.modelNumber = in.readString();
+        this.hardwareRevision = in.readString();
+        this.firmwareRevision = in.readString();
+        this.softwareRevision = in.readString();
+        this.createdTsEpoch = (Long) in.readValue(Long.class.getClassLoader());
+        this.osName = in.readString();
+        this.systemId = in.readString();
+        this.licenseKey = in.readString();
+        this.bdAddress = in.readString();
+        this.pairingTs = in.readString();
+        this.hostDeviceId = in.readString();
+        this.cardRelationships = new ArrayList<>();
+        in.readList(this.cardRelationships, CreditCardRef.class.getClassLoader());
+        this.links = in.readParcelable(Links.class.getClassLoader());
+    }
+
+    public static final Parcelable.Creator<Device> CREATOR = new Parcelable.Creator<Device>() {
+        @Override
+        public Device createFromParcel(Parcel source) {
+            return new Device(source);
+        }
+
+        @Override
+        public Device[] newArray(int size) {
+            return new Device[size];
+        }
+    };
 }

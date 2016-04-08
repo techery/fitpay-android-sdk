@@ -2,6 +2,7 @@ package com.fitpay.android.api.models.collection;
 
 import com.fitpay.android.api.models.BaseModel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,5 +29,13 @@ public class ResultCollectionModel<T> extends BaseModel {
 
     public List<T> getResults() {
         return results;
+    }
+
+    public void addCollection(List<T> collection){
+        if(results == null){
+            results = new ArrayList<>();
+        }
+
+        results.addAll(collection);
     }
 }

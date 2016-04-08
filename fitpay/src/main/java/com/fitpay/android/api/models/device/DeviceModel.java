@@ -61,10 +61,9 @@ abstract class DeviceModel extends PaymentDevice {
     protected String pairingTs;
 
 
-
     protected String hostDeviceId;
 
-    protected DeviceModel(){
+    protected DeviceModel() {
     }
 
     public String getDeviceIdentifier() {

@@ -5,7 +5,7 @@ import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 
-class ResultCollection<T> extends ResultCollectionModel<T>{
+class ResultCollection<T> extends ResultCollectionModel<T> {
     private static final String FIRST = "first";
     private static final String LAST = "last";
     private static final String NEXT = "next";
@@ -25,5 +25,13 @@ class ResultCollection<T> extends ResultCollectionModel<T>{
 
     public void getPrev(@NonNull ApiCallback<? extends ResultCollection<T>> callback) {
         makeGetCall(PREV, null, this.getClass(), callback);
+    }
+
+    public boolean hasNext(){
+        return hasLink(NEXT);
+    }
+
+    public boolean hasPrev(){
+        return hasLink(PREV);
     }
 }

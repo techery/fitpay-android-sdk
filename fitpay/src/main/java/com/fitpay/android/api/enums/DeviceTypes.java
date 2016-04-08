@@ -8,7 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Created by Vlad on 01.03.2016.
  */
-public class DeviceTypes {
+public final class DeviceTypes {
     public static final String ACTIVITY_TRACKER = "ACTIVITY_TRACKER";
     public static final String MOCK = "MOCK";
     public static final String SMART_STRAP = "SMART_STRAP";
