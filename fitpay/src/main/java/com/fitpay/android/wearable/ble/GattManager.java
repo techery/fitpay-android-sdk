@@ -10,8 +10,6 @@ import android.content.Context;
 import android.os.AsyncTask;
 
 import com.fitpay.android.utils.RxBus;
-import com.fitpay.android.wearable.ble.operations.GattConnectOperation;
-import com.fitpay.android.wearable.callbacks.ConnectionListener;
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
 import com.fitpay.android.wearable.ble.interfaces.CharacteristicReader;
 import com.fitpay.android.wearable.ble.message.ApduResultMessage;
@@ -21,9 +19,10 @@ import com.fitpay.android.wearable.ble.message.ContinuationControlEndMessage;
 import com.fitpay.android.wearable.ble.message.ContinuationControlMessage;
 import com.fitpay.android.wearable.ble.message.ContinuationControlMessageFactory;
 import com.fitpay.android.wearable.ble.message.ContinuationPacketMessage;
-import com.fitpay.android.wearable.ble.message.NotificationMessage;
+import com.fitpay.android.wearable.ble.message.TransactionMessage;
 import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
 import com.fitpay.android.wearable.ble.operations.GattApduBaseOperation;
+import com.fitpay.android.wearable.ble.operations.GattConnectOperation;
 import com.fitpay.android.wearable.ble.operations.GattDescriptorReadOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
@@ -31,14 +30,17 @@ import com.fitpay.android.wearable.ble.utils.ContinuationPayload;
 import com.fitpay.android.wearable.ble.utils.Crc32;
 import com.fitpay.android.wearable.ble.utils.Hex;
 import com.fitpay.android.wearable.ble.utils.OperationConcurrentQueue;
-import com.fitpay.android.wearable.enums.States;
+import com.fitpay.android.wearable.constants.States;
 import com.fitpay.android.wearable.interfaces.ISecureMessage;
+import com.fitpay.android.wearable.interfaces.IWearable;
 import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
 import java.util.UUID;
 
-public final class GattManager {
+final class GattManager {
+
+    private IWearable mWearable;
 
     private Context mContext;
     private BluetoothGatt mGatt;
@@ -52,13 +54,11 @@ public final class GattManager {
 
     private AsyncTask<Void, Void, Void> mCurrentOperationTimeout;
 
-    private ConnectionListener mConnectionCallback;
-
-    public GattManager(Context context, BluetoothDevice device, ConnectionListener callback) {
+    public GattManager(IWearable wearable, Context context, BluetoothDevice device) {
+        mWearable = wearable;
         mContext = context;
         mDevice = device;
         mQueue = new OperationConcurrentQueue();
-        mConnectionCallback = callback;
     }
 
     public void reconnect(){
@@ -68,7 +68,7 @@ public final class GattManager {
     public synchronized void disconnect(){
         mQueue.clear();
 
-        mConnectionCallback.onConnectionStateChanged(States.DISCONNECTING);
+        mWearable.setState(States.DISCONNECTING);
 
         if(mGatt != null){
             mGatt.disconnect();
@@ -128,7 +128,7 @@ public final class GattManager {
         if(mGatt != null) {
             execute(mGatt, operation);
         } else {
-            mConnectionCallback.onConnectionStateChanged(States.CONNECTING);
+            mWearable.setState(States.CONNECTING);
 
             mDevice.connectGatt(mContext, false, new BluetoothGattCallback() {
                 @Override
@@ -137,7 +137,7 @@ public final class GattManager {
 
                     switch (newState){
                         case BluetoothProfile.STATE_CONNECTED:
-                            mConnectionCallback.onConnectionStateChanged(States.CONNECTED);
+                            mWearable.setState(States.CONNECTED);
 
                             Logger.i("Gatt connected to device " + mDevice.getAddress());
 
@@ -146,7 +146,7 @@ public final class GattManager {
                             break;
 
                         case BluetoothProfile.STATE_DISCONNECTED:
-                            mConnectionCallback.onConnectionStateChanged(States.DISCONNECTED);
+                            mWearable.setState(States.DISCONNECTED);
 
                             Logger.i("Disconnected from gatt server " + mDevice.getAddress() + ", newState: " + newState);
 
@@ -163,11 +163,11 @@ public final class GattManager {
                             break;
 
                         case BluetoothProfile.STATE_CONNECTING:
-                            mConnectionCallback.onConnectionStateChanged(States.CONNECTING);
+                            mWearable.setState(States.CONNECTING);
                             break;
 
                         case BluetoothProfile.STATE_DISCONNECTING:
-                            mConnectionCallback.onConnectionStateChanged(States.DISCONNECTING);
+                            mWearable.setState(States.DISCONNECTING);
                             break;
                     }
                 }
@@ -213,7 +213,7 @@ public final class GattManager {
                         ISecureMessage securityStateMessage = new SecurityStateMessage().withData(value);
                         RxBus.getInstance().post(securityStateMessage);
                     } else if(PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION.equals(uuid)){
-                        NotificationMessage notificationMessage = new NotificationMessage().withData(value);
+                        TransactionMessage notificationMessage = new TransactionMessage().withData(value);
                         RxBus.getInstance().post(notificationMessage);
                     } else if(PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(uuid)){
                         ApduResultMessage apduResultMessage = new ApduResultMessage().withMessage(value);

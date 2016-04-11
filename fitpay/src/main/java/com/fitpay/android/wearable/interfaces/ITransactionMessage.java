@@ -5,7 +5,7 @@ import java.util.Date;
 /**
  * abstract interface for Transaction object
  */
-public interface INotificationMessage {
+public interface ITransactionMessage {
     Date getDate();
     byte[] getData();
     byte[] getType();

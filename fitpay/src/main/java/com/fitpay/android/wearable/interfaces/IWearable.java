@@ -1,8 +1,9 @@
 package com.fitpay.android.wearable.interfaces;
 
 import com.fitpay.android.api.models.apdu.ApduPackage;
-import com.fitpay.android.api.models.device.Commit;
-import com.fitpay.android.wearable.enums.States;
+import com.fitpay.android.wearable.enums.Connection;
+import com.fitpay.android.wearable.enums.NFC;
+import com.fitpay.android.wearable.enums.SecureElement;
 
 /**
  * abstract interface of wearable payment device
@@ -15,11 +16,10 @@ public interface IWearable {
     String getMacAddress();
     void getDeviceInfo();
     void getNFCState();
-    void setNFCState(@States.NFC byte state);
+    void setNFCState(@NFC.Action byte state);
     void sendApduPackage(ApduPackage apduPackage);
     void sendTransactionData(byte[] data);
-    void setSecureElementState(@States.SecureElement byte state);
-    @States.Wearable
-    int getState();
-    void setState(@States.Wearable int state);
+    void setSecureElementState(@SecureElement.Action byte state);
+    @Connection.State int getState();
+    void setState(@Connection.State int state);
 }

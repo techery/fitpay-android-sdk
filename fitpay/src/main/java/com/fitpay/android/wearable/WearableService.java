@@ -12,10 +12,11 @@ import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.wearable.callbacks.SyncListener;
-import com.fitpay.android.wearable.enums.States;
-import com.fitpay.android.wearable.enums.SyncEvent;
+import com.fitpay.android.wearable.constants.States;
+import com.fitpay.android.wearable.enums.Sync;
 import com.fitpay.android.wearable.interfaces.IWearable;
 import com.fitpay.android.wearable.utils.ApduPair;
 import com.orhanobut.logger.Logger;
@@ -35,7 +36,9 @@ public final class WearableService extends Service {
     private IWearable mWearable;
 
     private String mLastCommitId;
-    private @SyncEvent.State Integer mSyncEventState;
+    private
+    @Sync.State
+    Integer mSyncEventState;
 
     private Map<ApduPackage, Commit> mSyncMap = new HashMap<>();
 
@@ -68,7 +71,10 @@ public final class WearableService extends Service {
 
         if (mWearable != null) {
             mWearable.close();
+            mWearable = null;
         }
+
+        NotificationManager.getInstance().removeListener(mSyncListener);
     }
 
     /**
@@ -133,23 +139,23 @@ public final class WearableService extends Service {
             return;
         }
 
-        if(mSyncEventState != null &&
-                (mSyncEventState == SyncEvent.STARTED || mSyncEventState == SyncEvent.IN_PROGRESS)){
+        if (mSyncEventState != null &&
+                (mSyncEventState == States.STARTED || mSyncEventState == States.IN_PROGRESS)) {
             Logger.w("Sync already in progress. Try again later");
             return;
         }
 
-        NotificationManager.getInstance().addSyncListener(mSyncListener);
+        NotificationManager.getInstance().addListener(mSyncListener);
 
         mLastCommitId = Prefs.with(this).getString(KEY_COMMIT_ID, null);
 
-        RxBus.getInstance().post(new SyncEvent(SyncEvent.STARTED));
+        RxBus.getInstance().post(new Sync(States.STARTED));
 
         device.getAllCommits(mLastCommitId, new ApiCallback<Collections.CommitsCollection>() {
             @Override
             public void onSuccess(Collections.CommitsCollection result) {
 
-                RxBus.getInstance().post(new SyncEvent(SyncEvent.IN_PROGRESS));
+                RxBus.getInstance().post(new Sync(States.IN_PROGRESS));
 
                 for (Commit commit : result.getResults()) {
                     Object payload = commit.getPayload();
@@ -171,23 +177,25 @@ public final class WearableService extends Service {
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
                 Logger.e(errorCode + " " + errorMessage);
 
-                RxBus.getInstance().post(new SyncEvent(SyncEvent.FAILED));
+                RxBus.getInstance().post(new Sync(States.FAILED));
             }
         });
     }
 
     private void checkSyncForComplete() {
         if (mSyncMap.size() == 0) {
-            NotificationManager.getInstance().removeSyncListener(mSyncListener);
-
-            RxBus.getInstance().post(new SyncEvent(SyncEvent.COMPLETED));
+            RxBus.getInstance().post(new Sync(States.COMPLETED));
         }
     }
 
     private SyncListener mSyncListener = new SyncListener() {
         @Override
-        public void onSyncStateChanged(@SyncEvent.State int state) {
+        public void onSyncStateChanged(@Sync.State int state) {
             mSyncEventState = state;
+
+            if (mSyncEventState == States.COMPLETED || mSyncEventState == States.FAILED) {
+                NotificationManager.getInstance().removeListener(mSyncListener);
+            }
         }
 
         @Override
@@ -196,7 +204,7 @@ public final class WearableService extends Service {
 
         @Override
         public void onApduPackageResultReceived(ApduPair pair) {
-            if (mSyncMap.containsKey(pair.first)){
+            if (mSyncMap.containsKey(pair.first)) {
 
                 Commit commit = mSyncMap.get(pair.first);
                 mSyncMap.remove(pair.first);

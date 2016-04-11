@@ -8,7 +8,6 @@ import android.content.Context;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
-import com.fitpay.android.wearable.callbacks.ConnectionListener;
 import com.fitpay.android.wearable.ble.callbacks.GattCharacteristicReadCallback;
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
 import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
@@ -19,7 +18,9 @@ import com.fitpay.android.wearable.ble.operations.GattConnectOperation;
 import com.fitpay.android.wearable.ble.operations.GattDeviceCharacteristicsOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
-import com.fitpay.android.wearable.enums.States;
+import com.fitpay.android.wearable.constants.States;
+import com.fitpay.android.wearable.enums.NFC;
+import com.fitpay.android.wearable.enums.SecureElement;
 import com.fitpay.android.wearable.model.Wearable;
 import com.orhanobut.logger.Logger;
 
@@ -71,7 +72,7 @@ public final class BluetoothWearable extends Wearable {
             return;
         }
 
-        mGattManager = new GattManager(mContext, device, this);
+        mGattManager = new GattManager(this, mContext, device);
         mGattManager.queue(new GattConnectOperation());
 
     }
@@ -126,7 +127,7 @@ public final class BluetoothWearable extends Wearable {
     }
 
     @Override
-    public void setNFCState(@States.NFC byte state) {
+    public void setNFCState(@NFC.Action byte state) {
         GattOperation setNFCOperation = new GattCharacteristicWriteOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_SECURITY_WRITE,
@@ -152,7 +153,7 @@ public final class BluetoothWearable extends Wearable {
     }
 
     @Override
-    public void setSecureElementState(@States.SecureElement byte state) {
+    public void setSecureElementState(@SecureElement.Action byte state) {
         GattOperation resetOperation = new GattCharacteristicWriteOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_DEVICE_RESET,

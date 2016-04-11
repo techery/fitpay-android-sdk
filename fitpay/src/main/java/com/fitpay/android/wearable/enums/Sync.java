@@ -2,32 +2,29 @@ package com.fitpay.android.wearable.enums;
 
 import android.support.annotation.IntDef;
 
+import com.fitpay.android.wearable.constants.States;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Created by Vlad on 06.04.2016.
+ * Describes data sync state
  */
-public final class SyncEvent {
-
-    public static final int STARTED = 0;
-    public static final int IN_PROGRESS = 1;
-    public static final int COMPLETED = 2;
-    public static final int FAILED = 3;
+public final class Sync {
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({STARTED, IN_PROGRESS, COMPLETED, FAILED})
+    @IntDef({States.STARTED, States.IN_PROGRESS, States.COMPLETED, States.FAILED})
     public @interface State {
     }
 
     @State
     private int state;
 
-    public SyncEvent(@State int state) {
+    public Sync(@State int state) {
         this.state = state;
     }
 
-    @SyncEvent.State
+    @Sync.State
     public int getState() {
         return state;
     }

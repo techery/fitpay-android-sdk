@@ -1,9 +1,4 @@
-package com.fitpay.android.wearable.enums;
-
-import android.support.annotation.IntDef;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+package com.fitpay.android.wearable.constants;
 
 /**
  * Created by Vlad on 04.04.2016.
@@ -23,18 +18,8 @@ public final class States {
     public static final int DISCONNECTING = 3;
     public static final int INITIALIZED = 4;
 
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({ENABLE, DISABLE, DONT_CHANGE})
-    public @interface NFC {
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({POWER_OFF, POWER_ON, RESET})
-    public @interface SecureElement {
-    }
-
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({DISCONNECTED, CONNECTING, CONNECTED, DISCONNECTING, INITIALIZED})
-    public @interface Wearable {
-    }
+    public static final int STARTED = 0;
+    public static final int IN_PROGRESS = 1;
+    public static final int COMPLETED = 2;
+    public static final int FAILED = 3;
 }
