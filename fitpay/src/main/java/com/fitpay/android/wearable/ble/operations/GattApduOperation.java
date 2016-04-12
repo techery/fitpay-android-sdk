@@ -6,16 +6,16 @@ import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.models.apdu.ApduCommand;
 import com.fitpay.android.api.models.apdu.ApduCommandResponse;
 import com.fitpay.android.api.models.apdu.ApduPackage;
-import com.fitpay.android.api.models.apdu.ApduPackageResponse;
+import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.wearable.ble.utils.OperationQueue;
 import com.fitpay.android.wearable.constants.ApduConstants;
+import com.fitpay.android.wearable.constants.States;
+import com.fitpay.android.wearable.enums.Sync;
 import com.fitpay.android.wearable.interfaces.IApduMessage;
-import com.fitpay.android.wearable.utils.ApduPair;
 import com.orhanobut.logger.Logger;
 
-import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,18 +25,18 @@ import rx.functions.Action1;
 
 public class GattApduOperation extends GattOperation {
 
-    private ApduPackage mPackage;
-    private ApduPackageResponse mResult;
+    private ApduExecutionResult mResult;
 
     private Subscription mApduSubscription;
     private Map<Integer, String> mSequencesMap;
 
+    private long validUntil;
     private long mStartTime;
 
     public GattApduOperation(ApduPackage apduPackage) {
 
-        this.mPackage = apduPackage;
-        this.mResult = new ApduPackageResponse(apduPackage.getPackageId());
+        mResult = new ApduExecutionResult(apduPackage.getPackageId());
+        validUntil = TimestampUtils.getDateForISO8601String(apduPackage.getValidUntil()).getTime();
 
         mSequencesMap = new HashMap<>();
         mNestedQueue = new OperationQueue();
@@ -53,6 +53,9 @@ public class GattApduOperation extends GattOperation {
                         int sId = apduMessage.getSequenceId();
 
                         if (mSequencesMap.containsKey(sId)) {
+
+                            RxBus.getInstance().post(new Sync(States.INC_PROGRESS));
+
                             ApduCommandResponse result = new ApduCommandResponse(mSequencesMap.get(sId), apduMessage);
                             mResult.addResponse(result);
 
@@ -89,17 +92,25 @@ public class GattApduOperation extends GattOperation {
         long endTime = System.currentTimeMillis();
         int duration = (int) ((endTime - mStartTime) / 1000);
 
-        @ResponseState.ApduState String state = ResponseState.PROCESSED;
+        @ResponseState.ApduState String state;
 
         if (mSequencesMap.size() != 0){
+            mSequencesMap.clear();
             state = ResponseState.ERROR;
-        } else if (TimestampUtils.getDateForISO8601String(mPackage.getValidUntil()).getTime() < endTime) {
+        } else if (validUntil < endTime) {
             state = ResponseState.EXPIRED;
         } else {
+            state = ResponseState.PROCESSED;
+
+            resultsLoop:
             for (ApduCommandResponse response : mResult.getResponses()) {
-                if(!Arrays.equals(ApduConstants.SUCCESS, response.getResponseCode())){
-                    state = ResponseState.FAILED;
-                    break;
+                int size = ApduConstants.SUCCESS_RESULTS.length;
+
+                for(int i = 0; i < size; i++){
+                    if(!Arrays.equals(ApduConstants.SUCCESS_RESULTS[i], response.getResponseCode())){
+                        state = ResponseState.FAILED;
+                        break resultsLoop;
+                    }
                 }
             }
         }
@@ -108,7 +119,7 @@ public class GattApduOperation extends GattOperation {
         mResult.setExecutedTsEpoch(endTime);
         mResult.setState(state);
 
-        RxBus.getInstance().post(new ApduPair(mPackage, mResult));
+        RxBus.getInstance().post(mResult);
 
         mSequencesMap.clear();
         mNestedQueue.clear();

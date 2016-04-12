@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * Created by Vlad on 01.04.2016.
  */
-public final class ApduPackageResponse {
+public final class ApduExecutionResult {
 
     private String packageId;
     @ResponseState.ApduState
@@ -17,7 +17,7 @@ public final class ApduPackageResponse {
     private int executedDuration;
     private List<ApduCommandResponse> apduResponses;
 
-    public ApduPackageResponse(String packageId){
+    public ApduExecutionResult(String packageId){
         this.packageId = packageId;
         apduResponses = new ArrayList<>();
     }

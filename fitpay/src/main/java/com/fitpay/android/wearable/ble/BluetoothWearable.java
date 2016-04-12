@@ -106,23 +106,18 @@ public final class BluetoothWearable extends Wearable {
     }
 
     @Override
-    public void getDeviceInfo() {
+    public void readDeviceInfo() {
         GattOperationBundle bundle = new GattOperationBundle();
         bundle.addOperation(new GattDeviceCharacteristicsOperation(mAddress));
         mGattManager.queue(bundle);
     }
 
     @Override
-    public void getNFCState() {
+    public void readNFCState() {
         GattOperation getNFCOperation = new GattCharacteristicReadOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE,
-                new GattCharacteristicReadCallback() {
-                    @Override
-                    public void call(byte[] data) {
-                        RxBus.getInstance().post(new SecurityStateMessage().withData(data));
-                    }
-                });
+                data -> RxBus.getInstance().post(new SecurityStateMessage().withData(data)));
         mGattManager.queue(getNFCOperation);
     }
 
@@ -137,13 +132,13 @@ public final class BluetoothWearable extends Wearable {
     }
 
     @Override
-    public void sendApduPackage(ApduPackage apduPackage) {
+    public void executeApduPackage(ApduPackage apduPackage) {
         GattOperation sendApduOperation = new GattApduOperation(apduPackage);
         mGattManager.queue(sendApduOperation);
     }
 
     @Override
-    public void sendTransactionData(byte[] data) {
+    public void sendNotification(byte[] data) {
         GattOperation setTransactionOperation = new GattCharacteristicWriteOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION,

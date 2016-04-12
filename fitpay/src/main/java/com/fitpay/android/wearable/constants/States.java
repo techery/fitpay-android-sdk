@@ -19,7 +19,9 @@ public final class States {
     public static final int INITIALIZED = 4;
 
     public static final int STARTED = 0;
-    public static final int IN_PROGRESS = 1;
-    public static final int COMPLETED = 2;
-    public static final int FAILED = 3;
+    public static final int COMPLETED = 1;
+    public static final int FAILED = 2;
+    public static final int IN_PROGRESS = 3;
+    public static final int INC_PROGRESS = 4;
+
 }

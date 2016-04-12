@@ -3,9 +3,9 @@ package com.fitpay.android.wearable.interfaces;
 import java.util.Date;
 
 /**
- * abstract interface for Transaction object
+ * abstract interface for Notification object
  */
-public interface ITransactionMessage {
+public interface INotificationMessage {
     Date getDate();
     byte[] getData();
     byte[] getType();

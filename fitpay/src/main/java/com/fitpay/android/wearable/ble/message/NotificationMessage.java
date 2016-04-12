@@ -1,13 +1,13 @@
 package com.fitpay.android.wearable.ble.message;
 
-import com.fitpay.android.wearable.interfaces.ITransactionMessage;
+import com.fitpay.android.wearable.interfaces.INotificationMessage;
 
 import java.util.Date;
 
 /**
  * Created by tgs on 3/4/16.
  */
-public class TransactionMessage extends BleMessage implements ITransactionMessage {
+public class NotificationMessage extends BleMessage implements INotificationMessage {
 
     private Date date;
     private byte[] type;
@@ -15,17 +15,17 @@ public class TransactionMessage extends BleMessage implements ITransactionMessag
 
     private final static int TYPE_LENGTH = 2;
 
-    public TransactionMessage() {
+    public NotificationMessage() {
         this.date = new Date();
     }
 
 
-    public TransactionMessage withDate(Date date) {
+    public NotificationMessage withDate(Date date) {
         this.date = date;
         return this;
     }
 
-    public TransactionMessage withType(byte[] type) {
+    public NotificationMessage withType(byte[] type) {
         if (null == type) {
             this.type = null;
             return this;
@@ -48,7 +48,7 @@ public class TransactionMessage extends BleMessage implements ITransactionMessag
         return this;
     }
 
-    public TransactionMessage withData(byte[] data) {
+    public NotificationMessage withData(byte[] data) {
         if (data != null && data.length > MAX_MESSAGE_LENGTH - MessageBuilder.DATE_TIME_MESSAGE_LENGTH - TYPE_LENGTH) {
             throw new IllegalArgumentException("data is too long.  Max length is: " + (MessageBuilder.DATE_TIME_MESSAGE_LENGTH - TYPE_LENGTH));
         }

@@ -3,7 +3,7 @@ package com.fitpay.android.api.models.device;
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
-import com.fitpay.android.api.models.apdu.ApduPackageResponse;
+import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 
 public final class Commit extends CommitModel {
     public static final String PREVIOUS = "previous";
@@ -21,10 +21,10 @@ public final class Commit extends CommitModel {
     /**
      * Endpoint to confirm APDU execution.
      *
-     * @param apduPackageResponse package confirmation data:(packageId, state, executedTs, executedDuration, apduResponses:(commandId, commandId, responseData))
+     * @param apduExecutionResult package confirmation data:(packageId, state, executedTs, executedDuration, apduResponses:(commandId, commandId, responseData))
      * @param callback   result callback
      */
-    public void confirm(@NonNull ApduPackageResponse apduPackageResponse, @NonNull ApiCallback<Void> callback) {
-        makePostCall(APDU_RESPONSE, apduPackageResponse, Void.class, callback);
+    public void confirm(@NonNull ApduExecutionResult apduExecutionResult, @NonNull ApiCallback<Void> callback) {
+        makePostCall(APDU_RESPONSE, apduExecutionResult, Void.class, callback);
     }
 }

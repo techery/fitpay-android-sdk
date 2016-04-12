@@ -14,11 +14,11 @@ public interface IWearable {
     void reconnect();
     void close();
     String getMacAddress();
-    void getDeviceInfo();
-    void getNFCState();
+    void readDeviceInfo();
+    void readNFCState();
     void setNFCState(@NFC.Action byte state);
-    void sendApduPackage(ApduPackage apduPackage);
-    void sendTransactionData(byte[] data);
+    void executeApduPackage(ApduPackage apduPackage);
+    void sendNotification(byte[] data);
     void setSecureElementState(@SecureElement.Action byte state);
     @Connection.State int getState();
     void setState(@Connection.State int state);

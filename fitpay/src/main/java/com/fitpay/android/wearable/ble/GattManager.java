@@ -19,7 +19,7 @@ import com.fitpay.android.wearable.ble.message.ContinuationControlEndMessage;
 import com.fitpay.android.wearable.ble.message.ContinuationControlMessage;
 import com.fitpay.android.wearable.ble.message.ContinuationControlMessageFactory;
 import com.fitpay.android.wearable.ble.message.ContinuationPacketMessage;
-import com.fitpay.android.wearable.ble.message.TransactionMessage;
+import com.fitpay.android.wearable.ble.message.NotificationMessage;
 import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
 import com.fitpay.android.wearable.ble.operations.GattApduBaseOperation;
 import com.fitpay.android.wearable.ble.operations.GattConnectOperation;
@@ -213,7 +213,7 @@ final class GattManager {
                         ISecureMessage securityStateMessage = new SecurityStateMessage().withData(value);
                         RxBus.getInstance().post(securityStateMessage);
                     } else if(PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION.equals(uuid)){
-                        TransactionMessage notificationMessage = new TransactionMessage().withData(value);
+                        NotificationMessage notificationMessage = new NotificationMessage().withData(value);
                         RxBus.getInstance().post(notificationMessage);
                     } else if(PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(uuid)){
                         ApduResultMessage apduResultMessage = new ApduResultMessage().withMessage(value);

@@ -6,7 +6,7 @@ import com.fitpay.android.wearable.enums.Connection;
 /**
  * Created by Vlad on 05.04.2016.
  */
-public abstract class ConnectionListener extends Listener implements IConnectionListener {
+public abstract class ConnectionListener extends Listener implements IListeners.ConnectionListener {
     public ConnectionListener() {
         super();
         mCommands.put(Connection.class, data -> {

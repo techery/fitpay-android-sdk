@@ -15,16 +15,4 @@ public class SecureElement {
     @IntDef({States.POWER_OFF, States.POWER_ON, States.RESET})
     public @interface Action {
     }
-
-    @Action
-    private byte action;
-
-    public SecureElement(@Action byte action) {
-        this.action = action;
-    }
-
-    @Action
-    public byte getAction() {
-        return action;
-    }
 }

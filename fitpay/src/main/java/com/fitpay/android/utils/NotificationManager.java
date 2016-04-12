@@ -55,6 +55,11 @@ public final class NotificationManager {
         }
     }
 
+    /**
+     * Add current listener. !!! Don't forget to remove it
+     *
+     * @param listener listener
+     */
     public void addListener(Listener listener) {
         if (!mListeners.contains(listener)) {
             mListeners.add(listener);
@@ -75,6 +80,11 @@ public final class NotificationManager {
         }
     }
 
+    /**
+     * Remove current listener
+     *
+     * @param listener listener
+     */
     public void removeListener(Listener listener) {
 
         if (mListeners.contains(listener)) {

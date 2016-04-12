@@ -16,16 +16,4 @@ public class NFC {
     @IntDef({States.ENABLE, States.DISABLE, States.DONT_CHANGE})
     public @interface Action {
     }
-
-    @Action
-    private byte action;
-
-    public NFC(@Action byte action) {
-        this.action = action;
-    }
-
-    @Action
-    public byte getAction() {
-        return action;
-    }
 }
