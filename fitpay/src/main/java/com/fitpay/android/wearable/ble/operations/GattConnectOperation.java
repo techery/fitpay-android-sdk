@@ -9,49 +9,47 @@ public class GattConnectOperation extends GattOperation {
 
     public GattConnectOperation() {
 
-        mNestedQueue = new OperationQueue();
-
         GattOperation nfcIndication = new GattSetIndicationOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE,
                 PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
         );
-        mNestedQueue.add(nfcIndication);
+        addNestedOperation(nfcIndication);
 
         GattOperation adpuResultIndication = new GattSetIndicationOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT,
                 PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
         );
-        mNestedQueue.add(adpuResultIndication);
+        addNestedOperation(adpuResultIndication);
 
         GattOperation continuationControlIndication = new GattSetIndicationOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL,
                 PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
         );
-        mNestedQueue.add(continuationControlIndication);
+        addNestedOperation(continuationControlIndication);
 
         GattOperation continuationPacketIndication = new GattSetIndicationOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET,
                 PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
         );
-        mNestedQueue.add(continuationPacketIndication);
+        addNestedOperation(continuationPacketIndication);
 
         GattOperation transactionIndication = new GattSetIndicationOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION,
                 PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
         );
-        mNestedQueue.add(transactionIndication);
+        addNestedOperation(transactionIndication);
 
         GattOperation applicationControlIndication = new GattSetIndicationOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL,
                 PaymentServiceConstants.CLIENT_CHARACTERISTIC_CONFIG
         );
-        mNestedQueue.add(applicationControlIndication);
+        addNestedOperation(applicationControlIndication);
     }
 
     @Override
@@ -60,7 +58,7 @@ public class GattConnectOperation extends GattOperation {
     }
 
     @Override
-    public boolean canRunNextOperation(){
+    public boolean canRunNextOperation() {
         return true;
     }
 }

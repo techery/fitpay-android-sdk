@@ -10,8 +10,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Describes action with NFC
  */
-public class NFC {
-
+public final class NFC {
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({States.ENABLE, States.DISABLE, States.DONT_CHANGE})
     public @interface Action {

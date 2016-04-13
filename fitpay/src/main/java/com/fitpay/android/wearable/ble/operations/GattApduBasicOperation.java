@@ -23,7 +23,7 @@ public class GattApduBasicOperation extends GattApduBaseOperation {
                 PaymentServiceConstants.CHARACTERISTIC_APDU_CONTROL,
                 apduControlWriteMessage.getMessage());
 
-        mNestedQueue.add(apduControlWrite);
+        addNestedOperation(apduControlWrite);
     }
 
     @Override

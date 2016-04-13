@@ -18,13 +18,23 @@ public final class Sync {
     }
 
     private @State int state;
+    private int value;
 
     public Sync(@State int state) {
         this.state = state;
     }
 
+    public Sync(@State int state, int value) {
+        this.state = state;
+        this.value = value;
+    }
+
     @Sync.State
     public int getState() {
         return state;
+    }
+
+    public int getValue(){
+        return value;
     }
 }

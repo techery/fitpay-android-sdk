@@ -10,7 +10,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Describes action with SecureElement
  */
-public class SecureElement {
+public final class SecureElement {
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({States.POWER_OFF, States.POWER_ON, States.RESET})
     public @interface Action {

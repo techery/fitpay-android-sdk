@@ -12,23 +12,23 @@ import com.fitpay.android.wearable.enums.Sync;
 public class IListeners {
 
     public interface ApduListener {
-        void onApduPackageResultReceived(ApduExecutionResult result);
-        void onApduPackageErrorReceived(ApduExecutionResult result);
+        void onApduPackageResultReceived(final ApduExecutionResult result);
+        void onApduPackageErrorReceived(final ApduExecutionResult result);
     }
 
     public interface ConnectionListener {
-        void onDeviceStateChanged(@Connection.State int state);
+        void onDeviceStateChanged(final @Connection.State int state);
     }
 
     public interface SyncListener {
-        void onSyncStateChanged(Sync syncEvent);
-        void onNonApduCommit(Commit commit);
+        void onSyncStateChanged(final Sync syncEvent);
+        void onNonApduCommit(final Commit commit);
     }
 
     public interface WearableListener extends ConnectionListener {
-        void onDeviceInfoReceived(Device device);
-        void onNFCStateReceived(boolean isEnabled, byte errorCode);
-        void onNotificationReceived(byte[] data);
-        void onApplicationControlReceived(byte[] data);
+        void onDeviceInfoReceived(final Device device);
+        void onNFCStateReceived(final boolean isEnabled, final byte errorCode);
+        void onNotificationReceived(final byte[] data);
+        void onApplicationControlReceived(final byte[] data);
     }
 }

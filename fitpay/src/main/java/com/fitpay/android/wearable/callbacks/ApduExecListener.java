@@ -8,19 +8,19 @@ import com.fitpay.android.wearable.interfaces.IApduMessage;
 /**
  * Created by Vlad on 07.04.2016.
  */
-public abstract class ApduListener extends Listener implements IListeners.ApduListener {
-    public ApduListener() {
+public abstract class ApduExecListener extends Listener implements IListeners.ApduListener {
+    public ApduExecListener() {
         super();
-        mCommands.put(IApduMessage.class, data -> {
+        mCommands.put(ApduExecutionResult.class, data -> {
             ApduExecutionResult result = (ApduExecutionResult) data;
 
-            switch (result.getState()) {
-                case ResponseState.PROCESSED:
-                    onApduPackageResultReceived(result);
+            switch (result.getState()){
+                case ResponseState.ERROR:
+                    onApduPackageErrorReceived(result);
                     break;
 
                 default:
-                    onApduPackageErrorReceived(result);
+                    onApduPackageResultReceived(result);
                     break;
             }
         });

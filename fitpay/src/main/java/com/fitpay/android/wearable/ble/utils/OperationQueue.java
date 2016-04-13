@@ -1,17 +1,17 @@
 package com.fitpay.android.wearable.ble.utils;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-
 import com.fitpay.android.wearable.ble.operations.GattOperation;
+
+import java.util.Iterator;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by Vlad on 26.03.2016.
  */
-public class OperationQueue extends LinkedList<GattOperation> {
+public class OperationQueue extends ConcurrentLinkedQueue<GattOperation> {
 
     public GattOperation getFirst() {
-        GattOperation operation;
+        GattOperation operation = null;
 
         Iterator iter = this.iterator();
         if (iter.hasNext()) {
@@ -25,6 +25,6 @@ public class OperationQueue extends LinkedList<GattOperation> {
             return bundle.getFirst();
         }
 
-        return null;
+        return operation;
     }
 }

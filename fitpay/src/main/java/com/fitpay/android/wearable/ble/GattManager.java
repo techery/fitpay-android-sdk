@@ -22,6 +22,7 @@ import com.fitpay.android.wearable.ble.message.ContinuationPacketMessage;
 import com.fitpay.android.wearable.ble.message.NotificationMessage;
 import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
 import com.fitpay.android.wearable.ble.operations.GattApduBaseOperation;
+import com.fitpay.android.wearable.ble.operations.GattApduOperation;
 import com.fitpay.android.wearable.ble.operations.GattConnectOperation;
 import com.fitpay.android.wearable.ble.operations.GattDescriptorReadOperation;
 import com.fitpay.android.wearable.ble.operations.GattOperation;
@@ -29,8 +30,9 @@ import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
 import com.fitpay.android.wearable.ble.utils.ContinuationPayload;
 import com.fitpay.android.wearable.ble.utils.Crc32;
 import com.fitpay.android.wearable.ble.utils.Hex;
-import com.fitpay.android.wearable.ble.utils.OperationConcurrentQueue;
+import com.fitpay.android.wearable.ble.utils.OperationQueue;
 import com.fitpay.android.wearable.constants.States;
+import com.fitpay.android.wearable.enums.ApduExecutionError;
 import com.fitpay.android.wearable.interfaces.ISecureMessage;
 import com.fitpay.android.wearable.interfaces.IWearable;
 import com.orhanobut.logger.Logger;
@@ -46,7 +48,7 @@ final class GattManager {
     private BluetoothGatt mGatt;
     private BluetoothDevice mDevice;
 
-    private OperationConcurrentQueue mQueue;
+    private OperationQueue mQueue;
     private GattOperation mCurrentOperation = null;
 
     private ContinuationPayload mContinuationPayload = null;
@@ -58,7 +60,7 @@ final class GattManager {
         mWearable = wearable;
         mContext = context;
         mDevice = device;
-        mQueue = new OperationConcurrentQueue();
+        mQueue = new OperationQueue();
     }
 
     public void reconnect(){
@@ -66,6 +68,12 @@ final class GattManager {
     }
 
     public synchronized void disconnect(){
+        if(mCurrentOperationTimeout != null) {
+            mCurrentOperationTimeout.cancel(true);
+        }
+
+        setCurrentOperation(null);
+
         mQueue.clear();
 
         mWearable.setState(States.DISCONNECTING);
@@ -86,12 +94,7 @@ final class GattManager {
 
     public synchronized void cancelCurrentOperationBundle() {
         Logger.v("Cancelling current operation. Queue size before: " + mQueue.size());
-        if(mCurrentOperation != null) {
-            mQueue.remove(mCurrentOperation);
-        }
-        Logger.v("Queue size after: " + mQueue.size());
-
-        driveNext();
+        processError(ApduExecutionError.ON_TIMEOUT);
     }
 
     public synchronized void queue(GattOperation gattOperation) {
@@ -116,7 +119,6 @@ final class GattManager {
         }
 
         final GattOperation operation = mQueue.getFirst();
-        Logger.v("Driving Gatt queue, size will now become: " + mQueue.size());
         setCurrentOperation(operation);
 
         resetTimer(operation.getTimeoutMs());
@@ -220,11 +222,11 @@ final class GattManager {
 
                         if(mLastApduSequenceId == apduResultMessage.getSequenceId()) {
                             RxBus.getInstance().post(apduResultMessage);
+                            driveNext();
                         } else {
                             Logger.e("Wrong sequenceID. lastSequenceID:" + mLastApduSequenceId + " currentID:" + apduResultMessage.getSequenceId());
+                            processError(ApduExecutionError.WRONG_SEQUENCE);
                         }
-
-                        driveNext();
                     } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL.equals(uuid)){
                             Logger.d("continuation control write received [" + Hex.bytesToHexString(value) + "], length [" + value.length + "]");
                             ContinuationControlMessage continuationControlMessage = ContinuationControlMessageFactory.withMessage(value);
@@ -241,6 +243,7 @@ final class GattManager {
                                 Logger.d("continuation start control received, ready to receive continuation data");
                             } else if (continuationControlMessage instanceof ContinuationControlEndMessage) {
                                 Logger.d("continuation control end received.  process update to characteristic: " + mContinuationPayload.getTargetUuid());
+
                                 UUID targetUuid = mContinuationPayload.getTargetUuid();
                                 byte[] payloadValue = null;
                                 try {
@@ -248,19 +251,20 @@ final class GattManager {
                                     mContinuationPayload = null;
                                     Logger.d("complete continuation data [" + Hex.bytesToHexString(payloadValue) + "]");
                                 } catch (IOException e) {
-                                    mContinuationPayload = null;
                                     Logger.e("error parsing continuation data", e);
-
-                                    driveNext();
+                                    processError(ApduExecutionError.CONTINUATION_ERROR);
+                                    return;
                                 }
 
                                 long checkSumValue = Crc32.getCRC32Checksum(payloadValue);
                                 long expectedChecksumValue = ((ContinuationControlEndMessage) continuationControlMessage).getChecksum();
+
                                 if (checkSumValue != expectedChecksumValue) {
                                     Logger.e("Checksums not equal.  input data checksum: " + checkSumValue
                                             + ", expected value as provided on continuation end: " + expectedChecksumValue);
 
-                                    driveNext();
+                                    processError(ApduExecutionError.WRONG_CHECKSUM);
+                                    return;
                                 }
 
                                 if (PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(targetUuid)) {
@@ -272,6 +276,7 @@ final class GattManager {
                                     driveNext();
                                 } else {
                                     Logger.w("Code does not handle continuation for characteristic: " + targetUuid);
+                                    processError(ApduExecutionError.CONTINUATION_ERROR);
                                 }
                         }
                     } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET.equals(uuid)){
@@ -282,16 +287,15 @@ final class GattManager {
 
                         if (mContinuationPayload == null) {
                             Logger.e("invalid continuation, no start received on control characteristic");
-
-                            driveNext();
+                            processError(ApduExecutionError.CONTINUATION_ERROR);
+                            return;
                         }
 
                         try {
                             mContinuationPayload.processPacket(continuationPacketMessage);
                         } catch (Exception e) {
                             Logger.e("exception handling continuation packet", e);
-
-                            driveNext();
+                            processError(ApduExecutionError.CONTINUATION_ERROR);
                         }
 
                     } else if(PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL.equals(uuid)){
@@ -341,6 +345,22 @@ final class GattManager {
     public void queue(GattOperationBundle bundle) {
         for(GattOperation operation : bundle.getOperations()) {
             queue(operation);
+        }
+    }
+
+    private void processError(@ApduExecutionError.Reason int reason){
+
+        GattOperation parent = null;
+
+        if(mCurrentOperation != null) {
+            parent = GattOperation.getRoot(mCurrentOperation);
+            mQueue.remove(parent);
+        }
+
+        if(parent != null && parent instanceof GattApduOperation){
+            RxBus.getInstance().post(new ApduExecutionError(reason));
+        } else {
+            driveNext();
         }
     }
 

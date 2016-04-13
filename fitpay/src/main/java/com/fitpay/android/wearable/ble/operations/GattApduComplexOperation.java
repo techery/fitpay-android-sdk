@@ -26,7 +26,7 @@ public class GattApduComplexOperation extends GattApduBaseOperation {
                 PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL,
                 beingMsg.getMessage());
 
-        mNestedQueue.add(continuationStartWrite);
+        addNestedOperation(continuationStartWrite);
 
         /*packets*/
         int currentPos = 0;
@@ -54,7 +54,7 @@ public class GattApduComplexOperation extends GattApduBaseOperation {
                     PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET,
                     packetMessage.getMessage());
 
-            mNestedQueue.add(packetWrite);
+            addNestedOperation(packetWrite);
 
             currentPos += len;
             sortOrder++;
@@ -69,7 +69,7 @@ public class GattApduComplexOperation extends GattApduBaseOperation {
                 PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL,
                 endMsg.getMessage());
 
-        mNestedQueue.add(continuationEndWrite);
+        addNestedOperation(continuationEndWrite);
     }
 
     @Override

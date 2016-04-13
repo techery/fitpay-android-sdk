@@ -29,67 +29,31 @@ public class GattDeviceCharacteristicsOperation extends GattOperation {
 
         mAddress = macAddress;
 
-        mNestedQueue = new OperationQueue();
+        addNestedOperation(createOperation(DeviceInformationConstants.CHARACTERISTIC_MANUFACTURER_NAME_STRING,
+                data -> manufacturerName = Hex.bytesToHexString(data)));
 
-        mNestedQueue.add(createOperation(DeviceInformationConstants.CHARACTERISTIC_MANUFACTURER_NAME_STRING,
-                new GattCharacteristicReadCallback() {
-                    @Override
-                    public void call(byte[] data) {
-                        manufacturerName = Hex.bytesToHexString(data);
-                    }
-                }
-        ));
-        mNestedQueue.add(createOperation(DeviceInformationConstants.CHARACTERISTIC_MODEL_NUMBER_STRING,
-                new GattCharacteristicReadCallback() {
-                    @Override
-                    public void call(byte[] data) {
-                        modelNumber = Hex.bytesToHexString(data);
-                    }
-                }));
-        mNestedQueue.add(createOperation(DeviceInformationConstants.CHARACTERISTIC_SERIAL_NUMBER_STRING,
-                new GattCharacteristicReadCallback() {
-                    @Override
-                    public void call(byte[] data) {
-                        serialNumber = Hex.bytesToHexString(data);
-                    }
-                }));
-        mNestedQueue.add(createOperation(DeviceInformationConstants.CHARACTERISTIC_FIRMWARE_REVISION_STRING,
-                new GattCharacteristicReadCallback() {
-                    @Override
-                    public void call(byte[] data) {
-                        firmwareRevision = Hex.bytesToHexString(data);
-                    }
-                }));
-        mNestedQueue.add(createOperation(DeviceInformationConstants.CHARACTERISTIC_SOFTWARE_REVISION_STRING,
-                new GattCharacteristicReadCallback() {
-                    @Override
-                    public void call(byte[] data) {
-                        softwareRevision = Hex.bytesToHexString(data);
-                    }
-                }));
-        mNestedQueue.add(createOperation(DeviceInformationConstants.CHARACTERISTIC_HARDWARE_REVISION_STRING,
-                new GattCharacteristicReadCallback() {
-                    @Override
-                    public void call(byte[] data) {
-                        hardwareRevision = Hex.bytesToHexString(data);
-                    }
-                }));
-        mNestedQueue.add(createOperation(DeviceInformationConstants.CHARACTERISTIC_SYSTEM_ID,
-                new GattCharacteristicReadCallback() {
-                    @Override
-                    public void call(byte[] data) {
-                        systemId = Hex.bytesToHexString(data);
-                    }
-                }));
-        mNestedQueue.add(new GattCharacteristicReadOperation(
+        addNestedOperation(createOperation(DeviceInformationConstants.CHARACTERISTIC_MODEL_NUMBER_STRING,
+                data -> modelNumber = Hex.bytesToHexString(data)));
+
+        addNestedOperation(createOperation(DeviceInformationConstants.CHARACTERISTIC_SERIAL_NUMBER_STRING,
+                data -> serialNumber = Hex.bytesToHexString(data)));
+
+        addNestedOperation(createOperation(DeviceInformationConstants.CHARACTERISTIC_FIRMWARE_REVISION_STRING,
+                data -> firmwareRevision = Hex.bytesToHexString(data)));
+
+        addNestedOperation(createOperation(DeviceInformationConstants.CHARACTERISTIC_SOFTWARE_REVISION_STRING,
+                data -> softwareRevision = Hex.bytesToHexString(data)));
+
+        addNestedOperation(createOperation(DeviceInformationConstants.CHARACTERISTIC_HARDWARE_REVISION_STRING,
+                data -> hardwareRevision = Hex.bytesToHexString(data)));
+
+        addNestedOperation(createOperation(DeviceInformationConstants.CHARACTERISTIC_SYSTEM_ID,
+                data -> systemId = Hex.bytesToHexString(data)));
+
+        addNestedOperation(new GattCharacteristicReadOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_SECURE_ELEMENT_ID,
-                new GattCharacteristicReadCallback() {
-                    @Override
-                    public void call(byte[] data) {
-                        secureElementId = Hex.bytesToHexString(data);
-                    }
-                }));
+                data -> secureElementId = Hex.bytesToHexString(data)));
     }
 
     @Override
