@@ -7,9 +7,9 @@ import com.fitpay.android.wearable.enums.Connection;
 import com.fitpay.android.wearable.enums.Sync;
 
 /**
- * Created by Vlad on 12.04.2016.
+ * Collection of wearable callbacks
  */
-public class IListeners {
+public final class IListeners {
 
     public interface ApduListener {
         void onApduPackageResultReceived(final ApduExecutionResult result);

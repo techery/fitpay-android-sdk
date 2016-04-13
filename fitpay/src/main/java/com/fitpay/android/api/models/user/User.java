@@ -14,6 +14,9 @@ import com.fitpay.android.utils.TimestampUtils;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * User
+ */
 public final class User extends UserModel implements Parcelable {
 
     private static final String GET_DEVICES = "devices";

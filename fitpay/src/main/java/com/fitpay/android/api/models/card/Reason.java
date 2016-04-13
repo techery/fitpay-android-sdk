@@ -6,6 +6,9 @@ import android.os.Parcelable;
 
 import com.fitpay.android.api.enums.CardInitiators;
 
+/**
+ * Credit card block/unblock reason
+ */
 public final class Reason implements Parcelable {
 
     @CardInitiators.Initiator

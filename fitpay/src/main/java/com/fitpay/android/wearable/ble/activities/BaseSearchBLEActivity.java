@@ -20,8 +20,8 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.fitpay.android.R;
-import com.fitpay.android.wearable.ble.constants.DeviceInformationConstants;
 import com.fitpay.android.wearable.ble.callbacks.DeviceSearchListener;
+import com.fitpay.android.wearable.ble.constants.DeviceInformationConstants;
 
 import java.util.ArrayList;
 import java.util.List;

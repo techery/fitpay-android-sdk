@@ -3,7 +3,6 @@ package com.fitpay.android.wearable.ble.operations;
 import android.bluetooth.BluetoothGatt;
 
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
-import com.fitpay.android.wearable.ble.utils.OperationQueue;
 
 public class GattConnectOperation extends GattOperation {
 

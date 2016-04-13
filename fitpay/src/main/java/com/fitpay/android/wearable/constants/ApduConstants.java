@@ -1,7 +1,7 @@
 package com.fitpay.android.wearable.constants;
 
 /**
- * Created by Vlad on 07.04.2016.
+ * Apdu constants
  */
 public final class ApduConstants {
     public final static byte[] NORMAL_PROCESSING = new byte[]{(byte) 0x90, (byte) 0x00};

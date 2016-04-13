@@ -3,6 +3,9 @@ package com.fitpay.android.api.models.card;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+/**
+ * Address
+ */
 public final class Address implements Parcelable {
 
     /**

@@ -1,11 +1,11 @@
 package com.fitpay.android.utils;
 
-import com.fitpay.android.api.models.apdu.ApduCommandResponse;
+import com.fitpay.android.api.models.Links;
+import com.fitpay.android.api.models.Payload;
+import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.device.Device;
-import com.fitpay.android.api.models.Links;
-import com.fitpay.android.api.models.Payload;
 import com.fitpay.android.wearable.ble.utils.Hex;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -117,8 +117,8 @@ final class ModelAdapter {
         }
     }
 
-    public static final class AdpuCommandResponseSerializer implements JsonSerializer<ApduCommandResponse> {
-        public JsonElement serialize(ApduCommandResponse data, Type typeOfSrc, JsonSerializationContext context) {
+    public static final class AdpuCommandResponseSerializer implements JsonSerializer<ApduCommandResult> {
+        public JsonElement serialize(ApduCommandResult data, Type typeOfSrc, JsonSerializationContext context) {
 
             JsonObject jo = new JsonObject();
             jo.addProperty("commandId", data.getCommandId());

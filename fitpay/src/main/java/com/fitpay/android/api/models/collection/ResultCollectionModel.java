@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by Vlad on 14.03.2016.
+ * Generic result collection model
+ *
+ * @param <T> type of result
  */
 public class ResultCollectionModel<T> extends BaseModel {
 

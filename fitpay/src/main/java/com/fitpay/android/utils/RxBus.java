@@ -2,7 +2,6 @@ package com.fitpay.android.utils;
 
 import com.orhanobut.logger.Logger;
 
-import rx.Observable;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;

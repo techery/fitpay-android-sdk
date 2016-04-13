@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by Vlad on 01.04.2016.
+ * Apdu package execution result
  */
 public final class ApduExecutionResult {
 
@@ -15,7 +15,7 @@ public final class ApduExecutionResult {
     private String state;
     private long executedTsEpoch;
     private int executedDuration;
-    private List<ApduCommandResponse> apduResponses;
+    private List<ApduCommandResult> apduResponses;
 
     public ApduExecutionResult(String packageId){
         this.packageId = packageId;
@@ -51,11 +51,11 @@ public final class ApduExecutionResult {
         this.executedDuration = executedDuration;
     }
 
-    public List<ApduCommandResponse> getResponses() {
+    public List<ApduCommandResult> getResponses() {
         return apduResponses;
     }
 
-    public void addResponse(ApduCommandResponse response){
+    public void addResponse(ApduCommandResult response){
         apduResponses.add(response);
     }
 }

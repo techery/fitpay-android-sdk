@@ -1,7 +1,5 @@
 package com.fitpay.android.utils;
 
-import android.util.Log;
-
 import com.google.gson.annotations.SerializedName;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTParser;

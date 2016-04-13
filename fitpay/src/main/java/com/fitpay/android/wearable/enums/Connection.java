@@ -8,7 +8,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Describes the current state of the payment device connection
+ * Wearable connection states enum
  */
 public final class Connection {
 

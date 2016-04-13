@@ -13,7 +13,7 @@ import java.util.Map;
  */
 public final class LoginIdentity {
 
-    Map<String, String> data;
+    private final Map<String, String> data;
 
     private LoginIdentity(){
         data = new HashMap<>();
@@ -30,7 +30,7 @@ public final class LoginIdentity {
         private String redirectUri = null;
 
         /**
-         * Creates a Builder instance that can be used to build {@link Map<String,String>} with various configuration
+         * Creates a Builder instance that can be used to build {@link Map<>} with various configuration
          * settings. Builder follows the builder pattern, and it is typically used by first
          * invoking various configuration methods to set desired options, and finally calling
          * {@link #create()}.
@@ -63,13 +63,12 @@ public final class LoginIdentity {
                 throw new ValidationException("RedirectUri can't be null");
             }
 
-            final String data = new StringBuilder()
-                    .append("{\"username\":\"")
-                    .append(username)
-                    .append("\",\"password\":\"")
-                    .append(password)
-                    .append("\"}")
-                    .toString();
+            final String data =
+                    "{\"username\":\"" +
+                    username +
+                    "\",\"password\":\"" +
+                    password +
+                    "\"}";
 
             loginIdentity.data.put("credentials", data);
             loginIdentity.data.put("response_type", "token");

@@ -4,7 +4,6 @@ import com.fitpay.android.wearable.ble.utils.Conversions;
 import com.fitpay.android.wearable.ble.utils.Hex;
 import com.fitpay.android.wearable.interfaces.IApduMessage;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 
 /**

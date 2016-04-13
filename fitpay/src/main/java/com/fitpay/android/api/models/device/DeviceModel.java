@@ -1,7 +1,7 @@
 package com.fitpay.android.api.models.device;
 
 /**
- * Created by Vlad on 14.03.2016.
+ * Device model
  */
 abstract class DeviceModel extends PaymentDevice {
 

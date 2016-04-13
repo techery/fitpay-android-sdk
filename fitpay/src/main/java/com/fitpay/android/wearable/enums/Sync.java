@@ -8,7 +8,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Describes data sync state
+ * Data sync states enum
  */
 public final class Sync {
 

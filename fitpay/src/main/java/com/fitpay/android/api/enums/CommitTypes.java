@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Created by Vlad on 01.03.2016.
+ * Commit types enum
  */
 public final class CommitTypes {
     public static final String CREDITCARD_CREATED = "CREDITCARD_CREATED";

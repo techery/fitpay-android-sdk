@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Created by Vlad on 13.04.2016.
+ * Apdu execution errors enum
  */
 public class ApduExecutionError {
 

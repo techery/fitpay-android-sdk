@@ -5,18 +5,18 @@ import com.fitpay.android.api.models.BaseModel;
 import com.fitpay.android.api.models.Payload;
 import com.google.gson.annotations.SerializedName;
 
-/***
- * Created by Vlad on 16.03.2016.
+/**
+ * Commit model
  */
-public class CommitModel extends BaseModel {
+abstract class CommitModel extends BaseModel {
 
-    protected String commitId;
-    protected String previousCommitId;
+    private String commitId;
+    private String previousCommitId;
     @CommitTypes.Type
-    protected String commitType;
-    protected Long createdTs;
+    private String commitType;
+    private Long createdTs;
     @SerializedName("encryptedData")
-    protected Payload payload;
+    private Payload payload;
 
     @CommitTypes.Type
     public String getCommitType() {

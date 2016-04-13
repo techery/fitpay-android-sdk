@@ -8,7 +8,6 @@ import com.fitpay.android.wearable.ble.callbacks.GattCharacteristicReadCallback;
 import com.fitpay.android.wearable.ble.constants.DeviceInformationConstants;
 import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
 import com.fitpay.android.wearable.ble.utils.Hex;
-import com.fitpay.android.wearable.ble.utils.OperationQueue;
 
 import java.util.UUID;
 

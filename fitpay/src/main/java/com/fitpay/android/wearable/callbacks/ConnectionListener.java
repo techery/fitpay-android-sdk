@@ -4,7 +4,7 @@ import com.fitpay.android.utils.Listener;
 import com.fitpay.android.wearable.enums.Connection;
 
 /**
- * Created by Vlad on 05.04.2016.
+ * Connection callback
  */
 public abstract class ConnectionListener extends Listener implements IListeners.ConnectionListener {
     public ConnectionListener() {

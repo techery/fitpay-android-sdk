@@ -3,7 +3,6 @@ package com.fitpay.android.api.models;
 
 import android.support.annotation.NonNull;
 
-import com.fitpay.android.FitPay;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.utils.ApiManager;
@@ -14,8 +13,8 @@ import com.google.gson.annotations.SerializedName;
 import java.lang.reflect.Type;
 import java.util.Map;
 
-/***
- * Created by Vlad on 18.02.2016.
+/**
+ * Base model of API objects
  */
 public class BaseModel {
 
@@ -25,7 +24,7 @@ public class BaseModel {
     @SerializedName("_links")
     protected Links links;
 
-    public BaseModel() {
+    protected BaseModel() {
     }
 
     public void self(@NonNull ApiCallback callback) {

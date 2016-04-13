@@ -8,7 +8,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Describes action with NFC
+ * NFC actions enum
  */
 public final class NFC {
     @Retention(RetentionPolicy.SOURCE)

@@ -4,7 +4,7 @@ import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.api.models.BaseModel;
 
 /**
- * Created by Vlad on 09.03.2016.
+ * Payment device
  */
 public class PaymentDevice extends BaseModel {
 
@@ -29,7 +29,7 @@ public class PaymentDevice extends BaseModel {
      */
     protected SecureElement secureElement;
 
-    protected PaymentDevice(){
+    protected PaymentDevice() {
     }
 
     @DeviceTypes.Type
@@ -49,10 +49,13 @@ public class PaymentDevice extends BaseModel {
         return secureElement != null ? secureElement.secureElementId : null;
     }
 
-    static class SecureElement{
-        String secureElementId;
+    /**
+     * Secure element
+     */
+    static class SecureElement {
+        final String secureElementId;
 
-        protected SecureElement(String secureElementId){
+        SecureElement(String secureElementId) {
             this.secureElementId = secureElementId;
         }
     }

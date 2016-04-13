@@ -6,7 +6,7 @@ import com.fitpay.android.wearable.interfaces.INotificationMessage;
 import com.fitpay.android.wearable.interfaces.ISecureMessage;
 
 /**
- * Created by Vlad on 05.04.2016.
+ * Wearable callbacks
  */
 public abstract class WearableListener extends ConnectionListener implements IListeners.WearableListener {
     public WearableListener() {

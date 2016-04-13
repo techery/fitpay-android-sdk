@@ -1,7 +1,7 @@
 package com.fitpay.android.wearable.constants;
 
 /**
- * Created by Vlad on 04.04.2016.
+ * Wearable states
  */
 public final class States {
     public static final byte DISABLE = (byte) 0x00;

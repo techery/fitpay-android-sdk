@@ -5,15 +5,15 @@ import com.fitpay.android.wearable.interfaces.IApduMessage;
 import java.util.Arrays;
 
 /**
- * Created by Vlad on 01.04.2016.
+ * Single apdu command execution result
  */
-public class ApduCommandResponse {
+public class ApduCommandResult {
 
     private String commandId;
     private byte[] responseCode;
     private byte[] responseData;
 
-    public ApduCommandResponse(String commandId, IApduMessage message) {
+    public ApduCommandResult(String commandId, IApduMessage message) {
         this.commandId = commandId;
 
         byte[] data = message.getData();

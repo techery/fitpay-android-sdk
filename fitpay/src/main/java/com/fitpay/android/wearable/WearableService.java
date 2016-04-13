@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
-import android.util.Pair;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResponseState;
@@ -22,7 +21,6 @@ import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.wearable.callbacks.IListeners;
 import com.fitpay.android.wearable.constants.States;
 import com.fitpay.android.wearable.enums.Sync;
-import com.fitpay.android.wearable.interfaces.IApduMessage;
 import com.fitpay.android.wearable.interfaces.IWearable;
 import com.orhanobut.logger.Logger;
 
@@ -190,6 +188,9 @@ public final class WearableService extends Service {
         });
     }
 
+    /**
+     * process next commit
+     */
     private void processNextCommit(){
         if(mCommits != null && mCommits.size() > 0){
             Commit commit = mCommits.get(0);
@@ -218,6 +219,10 @@ public final class WearableService extends Service {
         }
     }
 
+    /**
+     * Send apdu execution result to the server
+     * @param result apdu execution result
+     */
     private void sendApduExecutionResult(ApduExecutionResult result){
         if(mCommits != null && mCommits.size() > 0){
             Commit commit = mCommits.remove(0);
@@ -240,6 +245,9 @@ public final class WearableService extends Service {
         }
     }
 
+    /**
+     * Apdu and Sync callbacks
+     */
     private class CustomListener extends Listener implements IListeners.ApduListener, IListeners.SyncListener{
 
         private CustomListener(){

@@ -5,8 +5,11 @@ import android.support.annotation.NonNull;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 
+/**
+ * Commit
+ */
 public final class Commit extends CommitModel {
-    public static final String PREVIOUS = "previous";
+    private static final String PREVIOUS = "previous";
     private static final String APDU_RESPONSE = "apduResponse";
 
     /**

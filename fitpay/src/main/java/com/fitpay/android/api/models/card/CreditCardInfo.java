@@ -4,7 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 /***
- * Created by Vlad on 11.03.2016.
+ * Credit card info
  */
 public final class CreditCardInfo implements Parcelable {
 

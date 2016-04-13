@@ -6,7 +6,6 @@ import java.util.UUID;
  * Created by ssteveli on 1/25/16.
  */
 public class PaymentServiceConstants {
-
     public static final UUID SERVICE_UUID = UUID.fromString("d7cc1dc2-3603-4e71-bce6-e3b1551633e0");
 
     public static final UUID CLIENT_CHARACTERISTIC_CONFIG = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
@@ -26,6 +25,4 @@ public class PaymentServiceConstants {
 
     public static final UUID CHARACTERISTIC_DEVICE_RESET = UUID.fromString("50b50f72-d10a-444b-945d-d574bd67ec91");
     public static final UUID CHARACTERISTIC_APPLICATION_CONTROL = UUID.fromString("6fea71ab-14ca-4921-b166-e8742e349975");
-
-
 }

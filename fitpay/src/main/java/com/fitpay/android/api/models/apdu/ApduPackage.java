@@ -5,9 +5,9 @@ import android.support.annotation.NonNull;
 import com.fitpay.android.api.callbacks.ApiCallback;
 
 /**
- * Created by Vlad on 01.04.2016.
+ * Apdu package
  */
-public class ApduPackage extends ApduPackageModel {
+public final class ApduPackage extends ApduPackageModel {
     private static final String APDU_RESPONSE = "apduResponse";
 
     /**

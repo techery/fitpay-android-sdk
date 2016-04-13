@@ -4,14 +4,13 @@ import android.bluetooth.BluetoothGatt;
 
 import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.models.apdu.ApduCommand;
-import com.fitpay.android.api.models.apdu.ApduCommandResponse;
+import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
-import com.fitpay.android.wearable.ble.utils.OperationQueue;
 import com.fitpay.android.wearable.constants.ApduConstants;
 import com.fitpay.android.wearable.constants.States;
 import com.fitpay.android.wearable.enums.ApduExecutionError;
@@ -85,7 +84,7 @@ public class GattApduOperation extends GattOperation {
             state = ResponseState.PROCESSED;
 
             resultsLoop:
-            for (ApduCommandResponse response : mResult.getResponses()) {
+            for (ApduCommandResult response : mResult.getResponses()) {
                 int size = ApduConstants.SUCCESS_RESULTS.length;
 
                 for (int i = 0; i < size; i++) {
@@ -125,7 +124,7 @@ public class GattApduOperation extends GattOperation {
 
                     RxBus.getInstance().post(new Sync(States.INC_PROGRESS));
 
-                    ApduCommandResponse result = new ApduCommandResponse(mSequencesMap.get(sId), apduMessage);
+                    ApduCommandResult result = new ApduCommandResult(mSequencesMap.get(sId), apduMessage);
                     mResult.addResponse(result);
 
                     mSequencesMap.remove(sId);

@@ -3,8 +3,8 @@ package com.fitpay.android.api.models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-/***
- * Created by Vlad on 19.02.2016.
+/**
+ * Asset reference
  */
 public class AssetReference extends BaseModel implements Parcelable {
     private String mimeType;

@@ -3,7 +3,7 @@ package com.fitpay.android.api.models.apdu;
 import com.fitpay.android.wearable.ble.utils.Hex;
 
 /**
- * Created by Vlad on 01.04.2016.
+ * Apdu command
  */
 public final class ApduCommand {
 

@@ -3,13 +3,12 @@ package com.fitpay.android.wearable.callbacks;
 import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.utils.Listener;
-import com.fitpay.android.wearable.interfaces.IApduMessage;
 
 /**
- * Created by Vlad on 07.04.2016.
+ * Apdu callback
  */
-public abstract class ApduExecListener extends Listener implements IListeners.ApduListener {
-    public ApduExecListener() {
+public abstract class ApduExecutionListener extends Listener implements IListeners.ApduListener {
+    public ApduExecutionListener() {
         super();
         mCommands.put(ApduExecutionResult.class, data -> {
             ApduExecutionResult result = (ApduExecutionResult) data;
