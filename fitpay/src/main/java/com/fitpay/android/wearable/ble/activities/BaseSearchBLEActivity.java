@@ -20,17 +20,14 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.fitpay.android.R;
-import com.fitpay.android.wearable.ble.callbacks.DeviceSearchListener;
-import com.fitpay.android.wearable.ble.constants.DeviceInformationConstants;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Activity to select available BLE device
  */
-public abstract class BaseSearchBLEActivity extends AppCompatActivity implements DeviceSearchListener {
+public abstract class BaseSearchBLEActivity extends AppCompatActivity {
 
     private static final int REQUEST_ENABLE_BT = 1;
     // Stops scanning after 10 seconds.
@@ -52,6 +49,12 @@ public abstract class BaseSearchBLEActivity extends AppCompatActivity implements
     private boolean scanning = false;
 
     public abstract void initViews();
+
+    public abstract void onNewDevice(BluetoothDevice device);
+
+    public abstract void onSearchBegin();
+
+    public abstract void onSearchEnd();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -179,7 +182,7 @@ public abstract class BaseSearchBLEActivity extends AppCompatActivity implements
                 }
             }, SCAN_PERIOD);
 
-            mBluetoothAdapter.startLeScan(new UUID[]{DeviceInformationConstants.SERVICE_UUID}, mLeScanCallback);
+            mBluetoothAdapter.startLeScan(null, mLeScanCallback);
 
         } else {
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
@@ -189,12 +192,12 @@ public abstract class BaseSearchBLEActivity extends AppCompatActivity implements
     protected void scanLeDevice(final boolean enable) {
 
         if (enable) {
-            if(!scanning) {
+            if (!scanning) {
                 scanning = true;
                 onSearchBegin();
             }
         } else {
-            if(scanning) {
+            if (scanning) {
                 scanning = false;
                 onSearchEnd();
             }

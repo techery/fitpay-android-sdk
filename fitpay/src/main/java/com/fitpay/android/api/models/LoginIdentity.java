@@ -63,12 +63,13 @@ public final class LoginIdentity {
                 throw new ValidationException("RedirectUri can't be null");
             }
 
-            final String data =
-                    "{\"username\":\"" +
-                    username +
-                    "\",\"password\":\"" +
-                    password +
-                    "\"}";
+            final String data = new StringBuilder()
+                    .append("{\"username\":\"")
+                    .append(username)
+                    .append("\",\"password\":\"")
+                    .append(password)
+                    .append("\"}")
+                    .toString();
 
             loginIdentity.data.put("credentials", data);
             loginIdentity.data.put("response_type", "token");

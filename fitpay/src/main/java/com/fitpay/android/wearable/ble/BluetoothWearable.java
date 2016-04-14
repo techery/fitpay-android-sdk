@@ -8,15 +8,6 @@ import android.content.Context;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
-import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
-import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
-import com.fitpay.android.wearable.ble.operations.GattApduOperation;
-import com.fitpay.android.wearable.ble.operations.GattCharacteristicReadOperation;
-import com.fitpay.android.wearable.ble.operations.GattCharacteristicWriteOperation;
-import com.fitpay.android.wearable.ble.operations.GattConnectOperation;
-import com.fitpay.android.wearable.ble.operations.GattDeviceCharacteristicsOperation;
-import com.fitpay.android.wearable.ble.operations.GattOperation;
-import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
 import com.fitpay.android.wearable.constants.States;
 import com.fitpay.android.wearable.enums.NFC;
 import com.fitpay.android.wearable.enums.SecureElement;
@@ -24,7 +15,7 @@ import com.fitpay.android.wearable.model.Wearable;
 import com.orhanobut.logger.Logger;
 
 /**
- * Manage data exchange with device via Bluetooth
+ * BLE implementation
  */
 public final class BluetoothWearable extends Wearable {
 
@@ -72,7 +63,7 @@ public final class BluetoothWearable extends Wearable {
         }
 
         mGattManager = new GattManager(this, mContext, device);
-        mGattManager.queue(new GattConnectOperation());
+        mGattManager.queue(new GattSubscribeOperation());
 
     }
 
@@ -106,9 +97,8 @@ public final class BluetoothWearable extends Wearable {
 
     @Override
     public void readDeviceInfo() {
-        GattOperationBundle bundle = new GattOperationBundle();
-        bundle.addOperation(new GattDeviceCharacteristicsOperation(mAddress));
-        mGattManager.queue(bundle);
+        GattOperation readDeviceInfoOperation = new GattDeviceCharacteristicsOperation(mAddress);
+        mGattManager.queue(readDeviceInfoOperation);
     }
 
     @Override

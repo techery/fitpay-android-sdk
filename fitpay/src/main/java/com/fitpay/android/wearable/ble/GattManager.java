@@ -10,36 +10,24 @@ import android.content.Context;
 import android.os.AsyncTask;
 
 import com.fitpay.android.utils.RxBus;
-import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
-import com.fitpay.android.wearable.ble.interfaces.CharacteristicReader;
-import com.fitpay.android.wearable.ble.message.ApduResultMessage;
-import com.fitpay.android.wearable.ble.message.ApplicationControlMessage;
-import com.fitpay.android.wearable.ble.message.ContinuationControlBeginMessage;
-import com.fitpay.android.wearable.ble.message.ContinuationControlEndMessage;
-import com.fitpay.android.wearable.ble.message.ContinuationControlMessage;
-import com.fitpay.android.wearable.ble.message.ContinuationControlMessageFactory;
-import com.fitpay.android.wearable.ble.message.ContinuationPacketMessage;
-import com.fitpay.android.wearable.ble.message.NotificationMessage;
-import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
-import com.fitpay.android.wearable.ble.operations.GattApduBaseOperation;
-import com.fitpay.android.wearable.ble.operations.GattApduOperation;
-import com.fitpay.android.wearable.ble.operations.GattConnectOperation;
-import com.fitpay.android.wearable.ble.operations.GattDescriptorReadOperation;
-import com.fitpay.android.wearable.ble.operations.GattOperation;
-import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
-import com.fitpay.android.wearable.ble.utils.ContinuationPayload;
-import com.fitpay.android.wearable.ble.utils.Crc32;
-import com.fitpay.android.wearable.ble.utils.Hex;
-import com.fitpay.android.wearable.ble.utils.OperationQueue;
 import com.fitpay.android.wearable.constants.States;
 import com.fitpay.android.wearable.enums.ApduExecutionError;
 import com.fitpay.android.wearable.interfaces.ISecureMessage;
 import com.fitpay.android.wearable.interfaces.IWearable;
+import com.fitpay.android.wearable.utils.Crc32;
+import com.fitpay.android.wearable.utils.Hex;
 import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
 import java.util.UUID;
 
+import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
+
+/**
+ * Manager that works with Bluetooth GATT Profile.
+ **/
 final class GattManager {
 
     private IWearable mWearable;
@@ -63,12 +51,12 @@ final class GattManager {
         mQueue = new OperationQueue();
     }
 
-    public void reconnect(){
-        queue(new GattConnectOperation());
+    public void reconnect() {
+        queue(new GattSubscribeOperation());
     }
 
-    public synchronized void disconnect(){
-        if(mCurrentOperationTimeout != null) {
+    public synchronized void disconnect() {
+        if (mCurrentOperationTimeout != null) {
             mCurrentOperationTimeout.cancel(true);
         }
 
@@ -78,41 +66,41 @@ final class GattManager {
 
         mWearable.setState(States.DISCONNECTING);
 
-        if(mGatt != null){
+        if (mGatt != null) {
             mGatt.disconnect();
         }
     }
 
-    public synchronized void close(){
+    public synchronized void close() {
         mQueue.clear();
 
-        if(mGatt != null){
+        if (mGatt != null) {
             mGatt.close();
             mGatt = null;
         }
     }
 
     public synchronized void cancelCurrentOperationBundle() {
-        Logger.v("Cancelling current operation. Queue size before: " + mQueue.size());
+        Logger.w("Cancelling current operation. Queue size before: " + mQueue.size());
         processError(ApduExecutionError.ON_TIMEOUT);
     }
 
     public synchronized void queue(GattOperation gattOperation) {
         mQueue.add(gattOperation);
-        Logger.v("Queueing Gatt operation, size will now become: " + mQueue.size());
+        Logger.i("Queueing Gatt operation, size will now become: " + mQueue.size());
         drive();
     }
 
     private synchronized void drive() {
-        if(mCurrentOperation != null) {
+        if (mCurrentOperation != null) {
             Logger.e("tried to drive, but currentOperation was not null, " + mCurrentOperation);
             return;
         }
 
-        if( mQueue.size() == 0) {
-            Logger.v("Queue empty, drive loop stopped.");
+        if (mQueue.size() == 0) {
+            Logger.i("Queue empty, drive loop stopped.");
             mCurrentOperation = null;
-            if(mCurrentOperationTimeout != null) {
+            if (mCurrentOperationTimeout != null) {
                 mCurrentOperationTimeout.cancel(true);
             }
             return;
@@ -123,11 +111,11 @@ final class GattManager {
 
         resetTimer(operation.getTimeoutMs());
 
-        if(operation instanceof GattApduBaseOperation){
+        if (operation instanceof GattApduBaseOperation) {
             mLastApduSequenceId = ((GattApduBaseOperation) operation).getSequenceId();
         }
 
-        if(mGatt != null) {
+        if (mGatt != null) {
             execute(mGatt, operation);
         } else {
             mWearable.setState(States.CONNECTING);
@@ -137,7 +125,7 @@ final class GattManager {
                 public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                     super.onConnectionStateChange(gatt, status, newState);
 
-                    switch (newState){
+                    switch (newState) {
                         case BluetoothProfile.STATE_CONNECTED:
                             mWearable.setState(States.CONNECTED);
 
@@ -155,7 +143,7 @@ final class GattManager {
                             setCurrentOperation(null);
 
                             //Fix: Android Issue 97501:	BLE reconnect issue
-                            if(mGatt != null) {
+                            if (mGatt != null) {
                                 close();
                             } else {
                                 mQueue.clear();
@@ -186,8 +174,8 @@ final class GattManager {
                 public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
                     super.onCharacteristicRead(gatt, characteristic, status);
 
-                    if(mCurrentOperation instanceof CharacteristicReader){
-                        ((CharacteristicReader)mCurrentOperation).onRead(characteristic);
+                    if (mCurrentOperation instanceof DataReader) {
+                        ((DataReader) mCurrentOperation).onRead(characteristic.getValue());
                     }
 
                     driveNext();
@@ -211,75 +199,81 @@ final class GattManager {
 
                     Logger.d("Characteristic changed: " + uuid);
 
-                    if(PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE.equals(uuid)){
+                    if (PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE.equals(uuid)) {
                         ISecureMessage securityStateMessage = new SecurityStateMessage().withData(value);
                         RxBus.getInstance().post(securityStateMessage);
-                    } else if(PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION.equals(uuid)){
+                    } else if (PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION.equals(uuid)) {
                         NotificationMessage notificationMessage = new NotificationMessage().withData(value);
                         RxBus.getInstance().post(notificationMessage);
-                    } else if(PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(uuid)){
+                    } else if (PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(uuid)) {
                         ApduResultMessage apduResultMessage = new ApduResultMessage().withMessage(value);
 
-                        if(mLastApduSequenceId == apduResultMessage.getSequenceId()) {
-                            RxBus.getInstance().post(apduResultMessage);
-                            driveNext();
+                        if (mLastApduSequenceId == apduResultMessage.getSequenceId()) {
+
+                            postMessage(apduResultMessage);
+
+//                            RxBus.getInstance().post(apduResultMessage);
+//                            driveNext();
                         } else {
                             Logger.e("Wrong sequenceID. lastSequenceID:" + mLastApduSequenceId + " currentID:" + apduResultMessage.getSequenceId());
                             processError(ApduExecutionError.WRONG_SEQUENCE);
                         }
-                    } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL.equals(uuid)){
-                            Logger.d("continuation control write received [" + Hex.bytesToHexString(value) + "], length [" + value.length + "]");
-                            ContinuationControlMessage continuationControlMessage = ContinuationControlMessageFactory.withMessage(value);
-                            Logger.d("continuation control message: " + continuationControlMessage);
+                    } else if (PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL.equals(uuid)) {
+                        Logger.d("continuation control write received [" + Hex.bytesToHexString(value) + "], length [" + value.length + "]");
+                        ContinuationControlMessage continuationControlMessage = ContinuationControlMessageFactory.withMessage(value);
+                        Logger.d("continuation control message: " + continuationControlMessage);
 
-                            // start continuation packet
-                            if (continuationControlMessage instanceof ContinuationControlBeginMessage) {
-                                if (mContinuationPayload != null) {
-                                    Logger.d("continuation was previously started, resetting to blank");
-                                }
+                        // start continuation packet
+                        if (continuationControlMessage instanceof ContinuationControlBeginMessage) {
+                            if (mContinuationPayload != null) {
+                                Logger.d("continuation was previously started, resetting to blank");
+                            }
 
-                                mContinuationPayload = new ContinuationPayload(((ContinuationControlBeginMessage) continuationControlMessage).getUuid());
+                            mContinuationPayload = new ContinuationPayload(((ContinuationControlBeginMessage) continuationControlMessage).getUuid());
 
-                                Logger.d("continuation start control received, ready to receive continuation data");
-                            } else if (continuationControlMessage instanceof ContinuationControlEndMessage) {
-                                Logger.d("continuation control end received.  process update to characteristic: " + mContinuationPayload.getTargetUuid());
+                            Logger.d("continuation start control received, ready to receive continuation data");
+                        } else if (continuationControlMessage instanceof ContinuationControlEndMessage) {
+                            Logger.d("continuation control end received.  process update to characteristic: " + mContinuationPayload.getTargetUuid());
 
-                                UUID targetUuid = mContinuationPayload.getTargetUuid();
-                                byte[] payloadValue = null;
-                                try {
-                                    payloadValue = mContinuationPayload.getValue();
-                                    mContinuationPayload = null;
-                                    Logger.d("complete continuation data [" + Hex.bytesToHexString(payloadValue) + "]");
-                                } catch (IOException e) {
-                                    Logger.e("error parsing continuation data", e);
-                                    processError(ApduExecutionError.CONTINUATION_ERROR);
-                                    return;
-                                }
+                            UUID targetUuid = mContinuationPayload.getTargetUuid();
+                            byte[] payloadValue = null;
+                            try {
+                                payloadValue = mContinuationPayload.getValue();
+                                mContinuationPayload = null;
+                                Logger.d("complete continuation data [" + Hex.bytesToHexString(payloadValue) + "]");
+                            } catch (IOException e) {
+                                Logger.e("error parsing continuation data", e);
+                                processError(ApduExecutionError.CONTINUATION_ERROR);
+                                return;
+                            }
 
-                                long checkSumValue = Crc32.getCRC32Checksum(payloadValue);
-                                long expectedChecksumValue = ((ContinuationControlEndMessage) continuationControlMessage).getChecksum();
+                            long checkSumValue = Crc32.getCRC32Checksum(payloadValue);
+                            long expectedChecksumValue = ((ContinuationControlEndMessage) continuationControlMessage).getChecksum();
 
-                                if (checkSumValue != expectedChecksumValue) {
-                                    Logger.e("Checksums not equal.  input data checksum: " + checkSumValue
-                                            + ", expected value as provided on continuation end: " + expectedChecksumValue);
+                            if (checkSumValue != expectedChecksumValue) {
+                                Logger.e("Checksums not equal.  input data checksum: " + checkSumValue
+                                        + ", expected value as provided on continuation end: " + expectedChecksumValue);
 
-                                    processError(ApduExecutionError.WRONG_CHECKSUM);
-                                    return;
-                                }
+                                processError(ApduExecutionError.WRONG_CHECKSUM);
+                                return;
+                            }
 
-                                if (PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(targetUuid)) {
-                                    Logger.d("continuation is for APDU Result");
+                            if (PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(targetUuid)) {
+                                Logger.d("continuation is for APDU Result");
 
-                                    ApduResultMessage apduResultMessage = new ApduResultMessage().withMessage(payloadValue);
-                                    RxBus.getInstance().post(apduResultMessage);
+                                ApduResultMessage apduResultMessage = new ApduResultMessage().withMessage(payloadValue);
+//                                RxBus.getInstance().post(apduResultMessage);
+//
+//                                driveNext();
 
-                                    driveNext();
-                                } else {
-                                    Logger.w("Code does not handle continuation for characteristic: " + targetUuid);
-                                    processError(ApduExecutionError.CONTINUATION_ERROR);
-                                }
+                                postMessage(apduResultMessage);
+
+                            } else {
+                                Logger.w("Code does not handle continuation for characteristic: " + targetUuid);
+                                processError(ApduExecutionError.CONTINUATION_ERROR);
+                            }
                         }
-                    } else if(PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET.equals(uuid)){
+                    } else if (PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET.equals(uuid)) {
 
                         Logger.d("continuation data packet received [" + Hex.bytesToHexString(value) + "]");
                         ContinuationPacketMessage continuationPacketMessage = new ContinuationPacketMessage().withMessage(value);
@@ -298,7 +292,7 @@ final class GattManager {
                             processError(ApduExecutionError.CONTINUATION_ERROR);
                         }
 
-                    } else if(PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL.equals(uuid)){
+                    } else if (PaymentServiceConstants.CHARACTERISTIC_APPLICATION_CONTROL.equals(uuid)) {
                         ApplicationControlMessage applicationControlMessage = new ApplicationControlMessage()
                                 .withData(value);
                         RxBus.getInstance().post(applicationControlMessage);
@@ -308,7 +302,11 @@ final class GattManager {
                 @Override
                 public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
                     super.onDescriptorRead(gatt, descriptor, status);
-                    ((GattDescriptorReadOperation) mCurrentOperation).onRead(descriptor);
+
+                    if (mCurrentOperation instanceof DataReader) {
+                        ((GattDescriptorReadOperation) mCurrentOperation).onRead(descriptor.getValue());
+                    }
+
                     driveNext();
                 }
 
@@ -321,19 +319,19 @@ final class GattManager {
         }
     }
 
-    private void driveNext(){
+    private void driveNext() {
         setCurrentOperation(null);
         drive();
     }
 
     private void execute(BluetoothGatt gatt, GattOperation operation) {
-        if(operation != mCurrentOperation) {
+        if (operation != mCurrentOperation) {
             return;
         }
 
         operation.execute(gatt);
 
-        if(operation.canRunNextOperation()){
+        if (operation.canRunNextOperation()) {
             driveNext();
         }
     }
@@ -342,46 +340,40 @@ final class GattManager {
         mCurrentOperation = currentOperation;
     }
 
-    public void queue(GattOperationBundle bundle) {
-        for(GattOperation operation : bundle.getOperations()) {
-            queue(operation);
-        }
-    }
-
-    private void processError(@ApduExecutionError.Reason int reason){
+    private void processError(@ApduExecutionError.Reason int reason) {
 
         GattOperation parent = null;
 
-        if(mCurrentOperation != null) {
+        if (mCurrentOperation != null) {
             parent = GattOperation.getRoot(mCurrentOperation);
             mQueue.remove(parent);
         }
 
-        if(parent != null && parent instanceof GattApduOperation){
+        if (parent != null && parent instanceof GattApduOperation) {
             RxBus.getInstance().post(new ApduExecutionError(reason));
         } else {
             driveNext();
         }
     }
 
-    private void resetTimer(final long timeout){
-        if(mCurrentOperationTimeout != null) {
+    private void resetTimer(final long timeout) {
+        if (mCurrentOperationTimeout != null) {
             mCurrentOperationTimeout.cancel(true);
         }
         mCurrentOperationTimeout = new AsyncTask<Void, Void, Void>() {
             @Override
             protected synchronized Void doInBackground(Void... voids) {
                 try {
-                    Logger.v("Starting to do a background timeout");
+                    Logger.i("Starting to do a background timeout");
                     wait(timeout);
                 } catch (InterruptedException e) {
-                    Logger.v("was interrupted out of the timeout");
+                    Logger.i("was interrupted out of the timeout");
                 }
-                if(isCancelled()) {
-                    Logger.v("The timeout was cancelled, so we do nothing.");
+                if (isCancelled()) {
+                    Logger.i("The timeout was cancelled, so we do nothing.");
                     return null;
                 }
-                Logger.v("Timeout ran to completion, time to cancel the entire operation bundle. Abort, abort!");
+                Logger.i("Timeout ran to completion, time to cancel the entire operation bundle. Abort, abort!");
                 cancelCurrentOperationBundle();
                 return null;
             }
@@ -392,5 +384,20 @@ final class GattManager {
                 notify();
             }
         }.execute();
+    }
+
+    private void postMessage(final ApduResultMessage message) {
+        RxBus.getInstance().post(message);
+
+        Observable.create(
+                subscriber -> {
+                    subscriber.onNext(null);
+                    subscriber.onCompleted();
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(o -> {}, throwable -> {}, () -> {
+                    driveNext();
+                });
     }
 }
