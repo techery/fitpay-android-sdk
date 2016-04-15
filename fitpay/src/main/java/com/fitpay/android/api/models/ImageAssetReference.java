@@ -3,8 +3,8 @@ package com.fitpay.android.api.models;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-/***
- * Created by Vlad on 19.02.2016.
+/**
+ * Image asset reference
  */
 public final class ImageAssetReference extends AssetReference implements Parcelable {
     private int width;

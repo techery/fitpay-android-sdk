@@ -11,8 +11,7 @@ import java.util.Map;
  */
 public final class Links implements Parcelable {
 
-
-    private Map<String, String> links;
+    private final Map<String, String> links;
 
     public Links() {
         links = new HashMap<>();

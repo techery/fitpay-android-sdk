@@ -9,6 +9,9 @@ import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.models.Links;
 import com.google.gson.JsonObject;
 
+/**
+ * Card verification method
+ */
 public final class VerificationMethod extends VerificationMethodModel implements Parcelable{
     private static final String SELECT = "select";
     private static final String VERIFY = "verify";

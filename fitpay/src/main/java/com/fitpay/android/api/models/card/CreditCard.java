@@ -18,6 +18,9 @@ import java.util.IllegalFormatException;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Credit card info
+ */
 public final class CreditCard extends CreditCardModel implements Parcelable {
 
     private static final String ACCEPT_TERMS = "acceptTerms";

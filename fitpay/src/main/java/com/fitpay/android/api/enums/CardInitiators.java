@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Created by Vlad on 11.03.2016.
+ * Card initiators enum
  */
 public final class CardInitiators {
     public static final String INITIATOR_CARDHOLDER = "CARDHOLDER";

@@ -1,6 +1,8 @@
 package com.fitpay.android.api.models;
 
-
+/**
+ * Transaction
+ */
 public final class Transaction extends BaseModel {
 
     private String transactionId;

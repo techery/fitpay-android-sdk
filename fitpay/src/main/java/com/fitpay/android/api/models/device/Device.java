@@ -12,7 +12,6 @@ import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.card.CreditCardRef;
 import com.fitpay.android.api.models.collection.Collections;
-import com.fitpay.android.api.models.collection.ResultCollectionModel;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.utils.TimestampUtils;
 
@@ -21,6 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Payment Device Information
+ */
 public final class Device extends DeviceModel implements Parcelable {
 
     private static final String COMMITS = "commits";

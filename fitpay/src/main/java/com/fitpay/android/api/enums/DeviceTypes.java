@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Created by Vlad on 01.03.2016.
+ * Device types enum
  */
 public final class DeviceTypes {
     public static final String ACTIVITY_TRACKER = "ACTIVITY_TRACKER";

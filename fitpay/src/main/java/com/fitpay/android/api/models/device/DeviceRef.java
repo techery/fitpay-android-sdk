@@ -8,9 +8,6 @@ import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.card.CreditCard;
-import com.fitpay.android.api.models.card.CreditCardRef;
-
-import java.util.ArrayList;
 
 /**
  * Device relationship object

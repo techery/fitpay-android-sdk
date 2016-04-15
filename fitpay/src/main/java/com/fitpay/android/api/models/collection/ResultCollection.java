@@ -5,6 +5,11 @@ import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 
+/**
+ * Generic result collection
+ *
+ * @param <T> type of result
+ */
 class ResultCollection<T> extends ResultCollectionModel<T> {
     private static final String FIRST = "first";
     private static final String LAST = "last";
@@ -27,11 +32,11 @@ class ResultCollection<T> extends ResultCollectionModel<T> {
         makeGetCall(PREV, null, this.getClass(), callback);
     }
 
-    public boolean hasNext(){
+    public boolean hasNext() {
         return hasLink(NEXT);
     }
 
-    public boolean hasPrev(){
+    public boolean hasPrev() {
         return hasLink(PREV);
     }
 }

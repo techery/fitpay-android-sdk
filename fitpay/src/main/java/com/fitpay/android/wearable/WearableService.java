@@ -7,21 +7,24 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.enums.ResultCode;
+import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.utils.Listener;
+import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
-import com.fitpay.android.wearable.callbacks.SyncListener;
-import com.fitpay.android.wearable.enums.States;
-import com.fitpay.android.wearable.enums.SyncEvent;
+import com.fitpay.android.utils.TimestampUtils;
+import com.fitpay.android.wearable.callbacks.IListeners;
+import com.fitpay.android.wearable.constants.States;
+import com.fitpay.android.wearable.enums.Sync;
 import com.fitpay.android.wearable.interfaces.IWearable;
-import com.fitpay.android.wearable.utils.ApduPair;
 import com.orhanobut.logger.Logger;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 import me.alexrs.prefs.lib.Prefs;
 
@@ -31,13 +34,19 @@ import me.alexrs.prefs.lib.Prefs;
 public final class WearableService extends Service {
 
     private static final String KEY_COMMIT_ID = "commitId";
+    private static final int MAX_REPEATS = 3;
 
     private IWearable mWearable;
 
     private String mLastCommitId;
-    private @SyncEvent.State Integer mSyncEventState;
 
-    private Map<ApduPackage, Commit> mSyncMap = new HashMap<>();
+    private ErrorPair mErrorRepeats;
+
+    private @Sync.State Integer mSyncEventState;
+
+    private List<Commit> mCommits;
+
+    private CustomListener mSyncListener = new CustomListener();
 
     private final IBinder mBinder = new LocalBinder();
 
@@ -68,7 +77,10 @@ public final class WearableService extends Service {
 
         if (mWearable != null) {
             mWearable.close();
+            mWearable = null;
         }
+
+        NotificationManager.getInstance().removeListener(mSyncListener);
     }
 
     /**
@@ -133,89 +145,173 @@ public final class WearableService extends Service {
             return;
         }
 
-        if(mSyncEventState != null &&
-                (mSyncEventState == SyncEvent.STARTED || mSyncEventState == SyncEvent.IN_PROGRESS)){
+        if (mSyncEventState != null &&
+                (mSyncEventState == States.STARTED || mSyncEventState == States.IN_PROGRESS)) {
             Logger.w("Sync already in progress. Try again later");
             return;
         }
 
-        NotificationManager.getInstance().addSyncListener(mSyncListener);
+        mErrorRepeats = null;
+
+        NotificationManager.getInstance().addListener(mSyncListener);
 
         mLastCommitId = Prefs.with(this).getString(KEY_COMMIT_ID, null);
 
-        RxBus.getInstance().post(new SyncEvent(SyncEvent.STARTED));
+        RxBus.getInstance().post(new Sync(States.STARTED));
 
         device.getAllCommits(mLastCommitId, new ApiCallback<Collections.CommitsCollection>() {
             @Override
             public void onSuccess(Collections.CommitsCollection result) {
 
-                RxBus.getInstance().post(new SyncEvent(SyncEvent.IN_PROGRESS));
+                mCommits = result.getResults();
 
-                for (Commit commit : result.getResults()) {
+                int commandsCount = 0;
+                for(Commit commit : mCommits){
                     Object payload = commit.getPayload();
-
                     if (payload instanceof ApduPackage) {
                         ApduPackage pkg = (ApduPackage) payload;
-                        mSyncMap.put(pkg, commit);
-
-                        mWearable.sendApduPackage(pkg);
-                    } else {
-                        RxBus.getInstance().post(commit);
+                        commandsCount += pkg.getApduCommands().size();
                     }
                 }
 
-                checkSyncForComplete();
+                RxBus.getInstance().post(new Sync(States.IN_PROGRESS, commandsCount));
+
+                processNextCommit();
             }
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
                 Logger.e(errorCode + " " + errorMessage);
 
-                RxBus.getInstance().post(new SyncEvent(SyncEvent.FAILED));
+                RxBus.getInstance().post(new Sync(States.FAILED));
             }
         });
     }
 
-    private void checkSyncForComplete() {
-        if (mSyncMap.size() == 0) {
-            NotificationManager.getInstance().removeSyncListener(mSyncListener);
+    /**
+     * process next commit
+     */
+    private void processNextCommit(){
+        if(mCommits != null && mCommits.size() > 0){
+            Commit commit = mCommits.get(0);
+            Object payload = commit.getPayload();
+            if (payload instanceof ApduPackage) {
+                ApduPackage pkg = (ApduPackage) payload;
 
-            RxBus.getInstance().post(new SyncEvent(SyncEvent.COMPLETED));
+                long validUntil = TimestampUtils.getDateForISO8601String(pkg.getValidUntil()).getTime();
+                long currentTime = System.currentTimeMillis();
+
+                if(validUntil > currentTime){
+                    mWearable.executeApduPackage(pkg);
+                } else {
+                    ApduExecutionResult result = new ApduExecutionResult(pkg.getPackageId());
+                    result.setExecutedDuration(0);
+                    result.setExecutedTsEpoch(currentTime);
+                    result.setState(ResponseState.EXPIRED);
+
+                    RxBus.getInstance().post(result);
+                }
+            } else {
+                RxBus.getInstance().post(commit);
+            }
+        } else {
+            RxBus.getInstance().post(new Sync(States.COMPLETED));
         }
     }
 
-    private SyncListener mSyncListener = new SyncListener() {
+    /**
+     * Send apdu execution result to the server
+     * @param result apdu execution result
+     */
+    private void sendApduExecutionResult(ApduExecutionResult result){
+        if(mCommits != null && mCommits.size() > 0){
+            Commit commit = mCommits.remove(0);
+
+            commit.confirm(result, new ApiCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {
+                    mLastCommitId = commit.getCommitId();
+
+                    Prefs.with(WearableService.this).save(KEY_COMMIT_ID, mLastCommitId);
+                }
+
+                @Override
+                public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                    Logger.e(errorCode + " " + errorMessage);
+
+                    RxBus.getInstance().post(new Sync(States.FAILED));
+                }
+            });
+        }
+    }
+
+    /**
+     * Apdu and Sync callbacks
+     */
+    private class CustomListener extends Listener implements IListeners.ApduListener, IListeners.SyncListener{
+
+        private CustomListener(){
+            super();
+            mCommands.put(ApduExecutionResult.class, data -> {
+                ApduExecutionResult result = (ApduExecutionResult) data;
+
+                switch (result.getState()){
+                    case ResponseState.ERROR:
+                        onApduPackageErrorReceived(result);
+                        break;
+
+                    default:
+                        onApduPackageResultReceived(result);
+                        break;
+                }
+            });
+            mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
+        }
+
         @Override
-        public void onSyncStateChanged(@SyncEvent.State int state) {
-            mSyncEventState = state;
+        public void onApduPackageResultReceived(ApduExecutionResult result) {
+            sendApduExecutionResult(result);
+            processNextCommit();
+        }
+
+        @Override
+        public void onApduPackageErrorReceived(ApduExecutionResult result) {
+
+            final String id = result.getPackageId();
+
+            if(mErrorRepeats == null || !mErrorRepeats.first.equals(id)){
+                mErrorRepeats = new ErrorPair(id, 0);
+            }
+
+            if(++mErrorRepeats.second == MAX_REPEATS){
+                sendApduExecutionResult(result);
+            } else {
+                processNextCommit();
+            }
+        }
+
+        @Override
+        public void onSyncStateChanged(Sync syncEvent) {
+            mSyncEventState = syncEvent.getState();
+
+            if (mSyncEventState == States.COMPLETED || mSyncEventState == States.FAILED) {
+                NotificationManager.getInstance().removeListener(mSyncListener);
+            }
         }
 
         @Override
         public void onNonApduCommit(Commit commit) {
+
         }
+    }
 
-        @Override
-        public void onApduPackageResultReceived(ApduPair pair) {
-            if (mSyncMap.containsKey(pair.first)){
+    private class ErrorPair{
+        String first;
+        int second;
 
-                Commit commit = mSyncMap.get(pair.first);
-                mSyncMap.remove(pair.first);
-
-                commit.confirm(pair.second, new ApiCallback<Void>() {
-                    @Override
-                    public void onSuccess(Void result) {
-                        mLastCommitId = pair.first.getSeId();
-                        Prefs.with(WearableService.this).save(KEY_COMMIT_ID, mLastCommitId);
-                    }
-
-                    @Override
-                    public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                        Logger.e(errorMessage);
-                    }
-                });
-            }
-
-            checkSyncForComplete();
+        ErrorPair(String first, int second){
+            this.first = first;
+            this.second = second;
         }
-    };
+    }
 }

@@ -3,8 +3,8 @@ package com.fitpay.android.api.models.user;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-/***
- * Created by Vlad on 11.03.2016.
+/**
+ * User info
  */
 public final class UserInfo implements Parcelable {
 

@@ -4,8 +4,8 @@ import com.fitpay.android.api.enums.CommitTypes;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.card.CreditCard;
 
-/***
- * Created by Vlad on 01.03.2016.
+/**
+ * Payload
  */
 public final class Payload{
     private CreditCard creditCard;
@@ -20,7 +20,7 @@ public final class Payload{
     }
 
     public Object getData(@CommitTypes.Type String type) {
-        Object dataToReturn = null;
+        Object dataToReturn;
 
         switch (type) {
             case CommitTypes.APDU_PACKAGE:

@@ -6,7 +6,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Created by Vlad on 04.04.2016.
+ * Response states enum
  */
 public final class ResponseState {
 

@@ -8,23 +8,14 @@ import android.content.Context;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
-import com.fitpay.android.wearable.callbacks.ConnectionListener;
-import com.fitpay.android.wearable.ble.callbacks.GattCharacteristicReadCallback;
-import com.fitpay.android.wearable.ble.constants.PaymentServiceConstants;
-import com.fitpay.android.wearable.ble.message.SecurityStateMessage;
-import com.fitpay.android.wearable.ble.operations.GattApduOperation;
-import com.fitpay.android.wearable.ble.operations.GattCharacteristicReadOperation;
-import com.fitpay.android.wearable.ble.operations.GattCharacteristicWriteOperation;
-import com.fitpay.android.wearable.ble.operations.GattConnectOperation;
-import com.fitpay.android.wearable.ble.operations.GattDeviceCharacteristicsOperation;
-import com.fitpay.android.wearable.ble.operations.GattOperation;
-import com.fitpay.android.wearable.ble.operations.GattOperationBundle;
-import com.fitpay.android.wearable.enums.States;
+import com.fitpay.android.wearable.constants.States;
+import com.fitpay.android.wearable.enums.NFC;
+import com.fitpay.android.wearable.enums.SecureElement;
 import com.fitpay.android.wearable.model.Wearable;
 import com.orhanobut.logger.Logger;
 
 /**
- * Manage data exchange with device via Bluetooth
+ * BLE implementation
  */
 public final class BluetoothWearable extends Wearable {
 
@@ -71,8 +62,8 @@ public final class BluetoothWearable extends Wearable {
             return;
         }
 
-        mGattManager = new GattManager(mContext, device, this);
-        mGattManager.queue(new GattConnectOperation());
+        mGattManager = new GattManager(this, mContext, device);
+        mGattManager.queue(new GattSubscribeOperation());
 
     }
 
@@ -105,28 +96,22 @@ public final class BluetoothWearable extends Wearable {
     }
 
     @Override
-    public void getDeviceInfo() {
-        GattOperationBundle bundle = new GattOperationBundle();
-        bundle.addOperation(new GattDeviceCharacteristicsOperation(mAddress));
-        mGattManager.queue(bundle);
+    public void readDeviceInfo() {
+        GattOperation readDeviceInfoOperation = new GattDeviceCharacteristicsOperation(mAddress);
+        mGattManager.queue(readDeviceInfoOperation);
     }
 
     @Override
-    public void getNFCState() {
+    public void readNFCState() {
         GattOperation getNFCOperation = new GattCharacteristicReadOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE,
-                new GattCharacteristicReadCallback() {
-                    @Override
-                    public void call(byte[] data) {
-                        RxBus.getInstance().post(new SecurityStateMessage().withData(data));
-                    }
-                });
+                data -> RxBus.getInstance().post(new SecurityStateMessage().withData(data)));
         mGattManager.queue(getNFCOperation);
     }
 
     @Override
-    public void setNFCState(@States.NFC byte state) {
+    public void setNFCState(@NFC.Action byte state) {
         GattOperation setNFCOperation = new GattCharacteristicWriteOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_SECURITY_WRITE,
@@ -136,13 +121,13 @@ public final class BluetoothWearable extends Wearable {
     }
 
     @Override
-    public void sendApduPackage(ApduPackage apduPackage) {
+    public void executeApduPackage(ApduPackage apduPackage) {
         GattOperation sendApduOperation = new GattApduOperation(apduPackage);
         mGattManager.queue(sendApduOperation);
     }
 
     @Override
-    public void sendTransactionData(byte[] data) {
+    public void sendNotification(byte[] data) {
         GattOperation setTransactionOperation = new GattCharacteristicWriteOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION,
@@ -152,7 +137,7 @@ public final class BluetoothWearable extends Wearable {
     }
 
     @Override
-    public void setSecureElementState(@States.SecureElement byte state) {
+    public void setSecureElementState(@SecureElement.Action byte state) {
         GattOperation resetOperation = new GattCharacteristicWriteOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_DEVICE_RESET,
