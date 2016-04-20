@@ -13,8 +13,8 @@ public final class Constants {
 
     public static final String FIT_PAY_TAG = "FitPay";
 
-    static final String BASE_URL = "https://gi-de.pagare.me/";
-    static final String API_URL = BASE_URL + "api/";
+    static final String API_URL_PREFIX = "api/";
+
     static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     static final String DATE_FORMAT_ISO8601 = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
     static final String DATE_FORMAT_SIMPLE = "yyyy-MM-dd";
