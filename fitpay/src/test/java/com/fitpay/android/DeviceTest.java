@@ -1,5 +1,7 @@
 package com.fitpay.android;
 
+import com.fitpay.android.utils.ApiManager;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -14,6 +16,7 @@ public class DeviceTest {
     @BeforeClass
     public static void init() {
         steps = new Steps();
+        ApiManager.init(TestConstants.BASE_URL);
     }
 
     @Test

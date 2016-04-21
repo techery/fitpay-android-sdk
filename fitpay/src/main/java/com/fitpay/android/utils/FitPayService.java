@@ -10,8 +10,7 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-/**
- */
+
 final class FitPayService {
 
     private static final String HEADER_AUTHORIZATION = "Authorization";
@@ -21,7 +20,7 @@ final class FitPayService {
     private FitPayClient mAPIClient;
     private OAuthToken mAuthToken;
 
-    public FitPayService() {
+    public FitPayService(String apiBaseUrl) {
 
         Interceptor interceptor = new Interceptor() {
             @Override
@@ -59,12 +58,18 @@ final class FitPayService {
         clientBuilder.addInterceptor(interceptor);
         clientBuilder.addInterceptor(logging);
 
-        mAPIClient = new Retrofit.Builder()
-                .baseUrl(Constants.API_URL)
+        mAPIClient = constructClient(apiBaseUrl, clientBuilder.build());
+
+    }
+
+    private FitPayClient constructClient(String apiBaseUrl, OkHttpClient okHttpClient) {
+        FitPayClient client = new Retrofit.Builder()
+                .baseUrl(apiBaseUrl)
                 .addConverterFactory(GsonConverterFactory.create(Constants.getGson()))
-                .client(clientBuilder.build())
+                .client(okHttpClient)
                 .build()
                 .create(FitPayClient.class);
+        return client;
     }
 
     public FitPayClient getClient() {

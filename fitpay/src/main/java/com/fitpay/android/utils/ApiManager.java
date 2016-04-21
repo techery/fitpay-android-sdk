@@ -19,18 +19,22 @@ import retrofit2.Call;
 /*
  * API manager
  */
-public class ApiManager extends Unit{
+public class ApiManager {
 
     private static ApiManager sInstance;
+    private static String apiBaseUrl;
     private FitPayService apiService;
 
     private ApiManager() {
-        apiService = new FitPayService();
+        apiService = new FitPayService(apiBaseUrl);
     }
 
     public static ApiManager getInstance() {
         if (sInstance == null) {
             synchronized (ApiManager.class) {
+                if (null == apiBaseUrl) {
+                    throw new IllegalStateException("The ApiManager must be initialized prior to use");
+                }
                 if (sInstance == null) {
                     sInstance = new ApiManager();
                 }
@@ -38,6 +42,10 @@ public class ApiManager extends Unit{
         }
 
         return sInstance;
+    }
+
+    public static void init(String theApiBaseUrl) {
+        apiBaseUrl = theApiBaseUrl;
     }
 
     FitPayClient getClient() {

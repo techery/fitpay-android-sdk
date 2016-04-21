@@ -1,8 +1,11 @@
 package com.fitpay.android;
 
+import com.fitpay.android.utils.ApiManager;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
@@ -14,6 +17,7 @@ public class CreditCardTest {
     @BeforeClass
     public static void init() {
         steps = new Steps();
+        ApiManager.init(TestConstants.BASE_URL);
     }
 
     @Test
@@ -55,6 +59,7 @@ public class CreditCardTest {
     }
 
     @Test
+    @Ignore
     public void test08_updateCard() throws InterruptedException {
         steps.updateCard();
     }
