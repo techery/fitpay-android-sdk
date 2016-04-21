@@ -145,7 +145,7 @@ public final class RTMSession extends Unit {
         String deviceJson = new Gson().toJson(device, PaymentDevice.class);
 
         String url = new StringBuilder()
-                .append(Constants.BASE_URL)
+       //         .append(Constants.BASE_URL)
                 .append("/login?deviceData=")
                 .append(StringUtils.base64UrlEncode(deviceJson))
                 .toString();

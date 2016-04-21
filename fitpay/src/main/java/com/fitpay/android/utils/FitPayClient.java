@@ -26,7 +26,8 @@ interface FitPayClient {
      * Login user and get auth token
      */
     @FormUrlEncoded
-    @POST(Constants.BASE_URL + "oauth/authorize")
+    @POST("oauth/authorize")
+    //@POST(Constants.BASE_URL + "oauth/authorize")
     Call<OAuthToken> loginUser(@FieldMap Map<String, String> options);
 
     /**
@@ -35,7 +36,7 @@ interface FitPayClient {
      *
      * @param userId user id
      */
-    @GET("users/{userId}")
+    @GET(Constants.API_URL_PREFIX + "users/{userId}")
     Call<User> getUser(@Path("userId") String userId);
 
     /**
@@ -55,7 +56,7 @@ interface FitPayClient {
      *
      * @param clientPublicKey client public key
      */
-    @POST("config/encryptionKeys")
+    @POST(Constants.API_URL_PREFIX + "config/encryptionKeys")
     Call<ECCKeyPair> createEncryptionKey(@Body ECCKeyPair clientPublicKey);
 
     /**
@@ -63,7 +64,7 @@ interface FitPayClient {
      *
      * @param keyId key id
      */
-    @GET("config/encryptionKeys/{keyId}")
+    @GET(Constants.API_URL_PREFIX + "config/encryptionKeys/{keyId}")
     Call<ECCKeyPair> getEncryptionKey(@Query("keyId") String keyId);
 
     /**
@@ -71,7 +72,7 @@ interface FitPayClient {
      *
      * @param keyId key id
      */
-    @DELETE("config/encryptionKeys/{keyId}")
+    @DELETE(Constants.API_URL_PREFIX + "config/encryptionKeys/{keyId}")
     Call<Void> deleteEncryptionKey(@Query("keyId") String keyId);
 
     /**

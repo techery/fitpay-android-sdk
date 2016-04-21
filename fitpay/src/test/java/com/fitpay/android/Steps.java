@@ -31,6 +31,8 @@ public class Steps {
     private final int TIMEOUT = 10;
 
     private User currentUser;
+    private int currentErrorCode;
+    private String currentErrorMessage;
     private Collections.CreditCardCollection cardsCollection;
     private Collections.DeviceCollection devicesCollection;
     private CreditCard currentCard;
@@ -86,11 +88,14 @@ public class Steps {
             @Override
             public void onSuccess(User result) {
                 currentUser = result;
+                resetErrorFields();
                 latch.countDown();
             }
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                currentErrorCode = errorCode;
+                currentErrorMessage = errorMessage;
                 latch.countDown();
             }
         });
@@ -98,6 +103,11 @@ public class Steps {
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertNotNull(currentUser);
         Assert.assertNotNull(currentUser.getUsername());
+    }
+
+    private void resetErrorFields() {
+        currentErrorCode = -1;
+        currentErrorMessage = null;
     }
 
     public void selfUser() throws InterruptedException {
