@@ -27,7 +27,7 @@ import java.util.Set;
 /**
  * Created by Vlad on 12.02.2016.
  */
-public final class RTMSession extends Unit {
+public final class RTMSession {
 
     private static final String WV = "wv";
     private static final String FPCTRL = "fpctrl";

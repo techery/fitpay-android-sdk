@@ -19,7 +19,7 @@ import retrofit2.Call;
 /*
  * API manager
  */
-public class ApiManager extends Unit{
+public class ApiManager {
 
     private static ApiManager sInstance;
     private static String apiBaseUrl;
