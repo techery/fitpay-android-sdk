@@ -63,10 +63,10 @@ public class UserTest2 extends TestActions {
         this.user = getUser();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        UserProvidingCallback callback = new UserProvidingCallback(latch);
+        ResultProvidingCallback<User> callback = new ResultProvidingCallback<>(latch);
         user.self(callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
-        User user2 = callback.getUser();
+        User user2 = callback.getResult();
 
         assertEquals("user id", user.getId(), user2.getId());
         assertEquals("email", user.getEmail(), user2.getEmail());
@@ -79,10 +79,10 @@ public class UserTest2 extends TestActions {
         this.user = getUser();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        CreditCardCollectionProvidingCallback callback = new CreditCardCollectionProvidingCallback(latch);
+        ResultProvidingCallback<Collections.CreditCardCollection> callback = new ResultProvidingCallback<>(latch);
         user.getCreditCards(10, 0, callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Collections.CreditCardCollection creditCards = callback.getCreditCards();
+        Collections.CreditCardCollection creditCards = callback.getResult();
 
         assertNotNull("credit card collection", creditCards);
         assertEquals("number of cards a new user has", 0, creditCards.getTotalResults());
@@ -93,11 +93,7 @@ public class UserTest2 extends TestActions {
     public void testNewUserCanGetDevices() throws Exception {
         this.user = getUser();
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        DeviceCollectionProvidingCallback callback = new DeviceCollectionProvidingCallback(latch);
-        user.getDevices(10, 0, callback);
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Collections.DeviceCollection collection = callback.getDevices();
+        Collections.DeviceCollection collection = getDevices(user);
 
         assertNotNull("device collection", collection);
         assertEquals("number of devices a new user has", 0, collection.getTotalResults());

@@ -4,8 +4,11 @@ import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.LoginIdentity;
+import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.card.Address;
 import com.fitpay.android.api.models.card.CreditCard;
+import com.fitpay.android.api.models.card.Reason;
+import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
@@ -51,12 +54,12 @@ public class TestActions {
     protected User getUser() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
 
-        UserProvidingCallback callback = new UserProvidingCallback(latch);
+        ResultProvidingCallback<User> callback = new ResultProvidingCallback<>(latch);
 
         ApiManager.getInstance().getUser(callback);
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
-        User user = callback.getUser();
+        User user = callback.getResult();
         Assert.assertNotNull(user);
         return user;
     }
@@ -165,7 +168,7 @@ public class TestActions {
         String stringTimestamp = TimestampUtils.getISO8601StringForTime(pairingTs);
         String secureElementId = "cccccc-1111-1111-1111-1111111111";
         Device newDevice = new Device.Builder()
-                .setDeviceType(DeviceTypes.SMART_STRAP)
+                .setDeviceType(DeviceTypes.ACTIVITY_TRACKER)
                 .setManufacturerName(manufacturerName)
                 .setDeviceName(deviceName)
                 .setFirmwareRevision(firmwareRevision)
@@ -235,30 +238,143 @@ public class TestActions {
 
     protected Device createDevice(User user, Device device) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
-        DeviceProvidingCallback callback = new DeviceProvidingCallback(latch);
+        ResultProvidingCallback<Device> callback = new ResultProvidingCallback<>(latch);
         user.createDevice(device, callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Device createdDevice = callback.getDevice();
-        return createdDevice;
+        return callback.getResult();
+    }
+
+    protected CreditCard createCreditCard(User user, CreditCard creditCard)  throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<CreditCard> callback = new ResultProvidingCallback<>(latch);
+        user.createCreditCard(creditCard, callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
+    }
+
+    protected CreditCard getCreditCard(CreditCard creditCard)  throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<CreditCard> callback = new ResultProvidingCallback<>(latch);
+        creditCard.self(callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
     }
 
 
-    public class UserProvidingCallback implements ApiCallback<User> {
+    protected Collections.CreditCardCollection getCreditCards(User user) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<Collections.CreditCardCollection> callback = new ResultProvidingCallback<>(latch);
+        user.getCreditCards(10, 0 , callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
+    }
 
-        private User user;
+    protected CreditCard acceptTerms(CreditCard creditCard) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<CreditCard> callback = new ResultProvidingCallback<>(latch);
+        creditCard.acceptTerms(callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
+    }
+
+    protected CreditCard declineTerms(CreditCard creditCard) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<CreditCard> callback = new ResultProvidingCallback<>(latch);
+        creditCard.declineTerms(callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
+    }
+
+    protected CreditCard deactivateCard(CreditCard creditCard, Reason reason) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<CreditCard> callback = new ResultProvidingCallback<>(latch);
+        creditCard.deactivate(reason, callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
+    }
+
+    protected CreditCard reactivateCard(CreditCard creditCard, Reason reason) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<CreditCard> callback = new ResultProvidingCallback<>(latch);
+        creditCard.reactivate(reason, callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
+    }
+
+
+    protected void makeDefaultCard(CreditCard creditCard) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        creditCard.makeDefault(getSuccessDeterminingCallback(latch));
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+    }
+
+
+    protected void deleteCard(CreditCard creditCard) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ApiCallback<Void> callback = getSuccessDeterminingCallback(latch);
+        creditCard.deleteCard(callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+    }
+
+    protected VerificationMethod selectVerificationMethod(VerificationMethod method) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<VerificationMethod> callback = new ResultProvidingCallback<>(latch);
+        method.select(callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
+    }
+
+    protected VerificationMethod verifyVerificationMethod(VerificationMethod method, String verificationCode) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<VerificationMethod> callback = new ResultProvidingCallback<>(latch);
+        method.verify(verificationCode, callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
+    }
+
+    protected Collections.TransactionCollection getCardTransactions(CreditCard card) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<Collections.TransactionCollection> callback = new ResultProvidingCallback<>(latch);
+        card.getTransactions(10, 0 , callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
+    }
+
+    protected Transaction getTransaction(Transaction transaction)  throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<Transaction> callback = new ResultProvidingCallback<>(latch);
+        transaction.self(callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
+    }
+
+
+    protected Collections.DeviceCollection getDevices(User user) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<Collections.DeviceCollection> callback = new ResultProvidingCallback<>(latch);
+        user.getDevices(10, 0 , callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
+    }
+
+
+
+    public class ResultProvidingCallback<T> implements ApiCallback<T> {
+
+        private T result;
         private int errorCode = -1;
         private String errorMessage;
         private CountDownLatch latch;
 
-        public UserProvidingCallback() {}
+        public ResultProvidingCallback() {}
 
-        public UserProvidingCallback(CountDownLatch latch) {
+        public ResultProvidingCallback(CountDownLatch latch) {
             this.latch = latch;
         }
 
         @Override
-        public void onSuccess(User result) {
-            this.user = result;
+        public void onSuccess(T result) {
+            this.result = result;
             if (null != latch) {
                 latch.countDown();
             }
@@ -281,183 +397,8 @@ public class TestActions {
             return errorMessage;
         }
 
-        public User getUser() {
-            return user;
-        }
-    }
-
-    public class CreditCardProvidingCallback implements ApiCallback<CreditCard> {
-
-        private CreditCard creditCard;
-        private int errorCode = -1;
-        private String errorMessage;
-        private CountDownLatch latch;
-
-        public CreditCardProvidingCallback() {}
-
-        public CreditCardProvidingCallback(CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        @Override
-        public void onSuccess(CreditCard result) {
-            this.creditCard = result;
-            if (null != latch) {
-                latch.countDown();
-            }
-        }
-
-        @Override
-        public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-            this.errorCode = errorCode;
-            this.errorMessage = errorMessage;
-            if (null != latch) {
-                latch.countDown();
-            }
-        }
-
-        public int getErrorCode() {
-            return errorCode;
-        }
-
-        public String getErrorMessage() {
-            return errorMessage;
-        }
-
-        public CreditCard getCreditCard() {
-            return creditCard;
-        }
-    }
-
-
-    public class CreditCardCollectionProvidingCallback implements ApiCallback<Collections.CreditCardCollection> {
-
-        private Collections.CreditCardCollection creditCards;
-        private int errorCode = -1;
-        private String errorMessage;
-        private CountDownLatch latch;
-
-        public CreditCardCollectionProvidingCallback() {}
-
-        public CreditCardCollectionProvidingCallback(CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        @Override
-        public void onSuccess(Collections.CreditCardCollection result) {
-            this.creditCards = result;
-            if (null != latch) {
-                latch.countDown();
-            }
-        }
-
-        @Override
-        public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-            this.errorCode = errorCode;
-            this.errorMessage = errorMessage;
-            if (null != latch) {
-                latch.countDown();
-            }
-        }
-
-        public int getErrorCode() {
-            return errorCode;
-        }
-
-        public String getErrorMessage() {
-            return errorMessage;
-        }
-
-        public Collections.CreditCardCollection getCreditCards() {
-            return creditCards;
-        }
-    }
-
-    public class DeviceProvidingCallback implements ApiCallback<Device> {
-
-        private Device device;
-        private int errorCode = -1;
-        private String errorMessage;
-        private CountDownLatch latch;
-
-        public DeviceProvidingCallback() {}
-
-        public DeviceProvidingCallback(CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        @Override
-        public void onSuccess(Device result) {
-            this.device = result;
-            if (null != latch) {
-                latch.countDown();
-            }
-        }
-
-        @Override
-        public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-            this.errorCode = errorCode;
-            this.errorMessage = errorMessage;
-            if (null != latch) {
-                latch.countDown();
-            }
-        }
-
-        public int getErrorCode() {
-            return errorCode;
-        }
-
-        public String getErrorMessage() {
-            return errorMessage;
-        }
-
-        public Device getDevice() {
-            return device;
-        }
-    }
-
-
-
-    public class DeviceCollectionProvidingCallback implements ApiCallback<Collections.DeviceCollection> {
-
-        private Collections.DeviceCollection devices;
-        private int errorCode = -1;
-        private String errorMessage;
-        private CountDownLatch latch;
-
-        public DeviceCollectionProvidingCallback() {}
-
-        public DeviceCollectionProvidingCallback(CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        @Override
-        public void onSuccess(Collections.DeviceCollection result) {
-            this.devices = result;
-            if (null != latch) {
-                latch.countDown();
-            }
-        }
-
-        @Override
-        public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-            this.errorCode = errorCode;
-            this.errorMessage = errorMessage;
-            if (null != latch) {
-                latch.countDown();
-            }
-        }
-
-        public int getErrorCode() {
-            return errorCode;
-        }
-
-        public String getErrorMessage() {
-            return errorMessage;
-        }
-
-        public Collections.DeviceCollection getDevices() {
-            return devices;
+        public T getResult() {
+            return this.result;
         }
     }
 

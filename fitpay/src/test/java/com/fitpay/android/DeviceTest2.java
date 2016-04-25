@@ -50,11 +50,7 @@ public class DeviceTest2 extends TestActions {
     public void testCanAddDevice() throws Exception {
         Device device = getTestDevice();
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        DeviceProvidingCallback callback = new DeviceProvidingCallback(latch);
-        user.createDevice(device, callback);
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Device createdDevice = callback.getDevice();
+       Device createdDevice = createDevice(user, device);
 
         assertNotNull("device", createdDevice);
         assertNotNull("device id", createdDevice.getDeviceIdentifier());
@@ -68,10 +64,10 @@ public class DeviceTest2 extends TestActions {
         Device device = getPoorlyDefinedDevice();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        DeviceProvidingCallback callback = new DeviceProvidingCallback(latch);
+        ResultProvidingCallback<Device> callback = new ResultProvidingCallback<>(latch);
         user.createDevice(device, callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Device createdDevice = callback.getDevice();
+        Device createdDevice = callback.getResult();
 
         assertNull("created device", createdDevice);
         assertEquals("error code", 400, callback.getErrorCode());
@@ -82,10 +78,10 @@ public class DeviceTest2 extends TestActions {
         Device device = getPoorlyDeviceTestSmartStrapDevice();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        DeviceProvidingCallback callback = new DeviceProvidingCallback(latch);
+        ResultProvidingCallback<Device> callback = new ResultProvidingCallback<>(latch);
         user.createDevice(device, callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Device createdDevice = callback.getDevice();
+        Device createdDevice = callback.getResult();
 
         assertNull("created device", createdDevice);
         assertEquals("error code", 400, callback.getErrorCode());
@@ -95,19 +91,15 @@ public class DeviceTest2 extends TestActions {
     public void testCanGetDevice() throws Exception {
         Device device = getTestDevice();
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        DeviceProvidingCallback callback = new DeviceProvidingCallback(latch);
-        user.createDevice(device, callback);
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Device createdDevice = callback.getDevice();
+        Device createdDevice = createDevice(user, device);
 
         assertNotNull("device", createdDevice);
 
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        DeviceProvidingCallback callback2 = new DeviceProvidingCallback(latch2);
-        createdDevice.self(callback2);
-        latch2.await(TIMEOUT, TimeUnit.SECONDS);
-        Device retrievedDevice = callback2.getDevice();
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<Device> callback = new ResultProvidingCallback<>(latch);
+        createdDevice.self(callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Device retrievedDevice = callback.getResult();
 
         assertNotNull("retrieved device", retrievedDevice);
         assertEquals("device id", createdDevice.getDeviceIdentifier(), retrievedDevice.getDeviceIdentifier());
@@ -118,19 +110,10 @@ public class DeviceTest2 extends TestActions {
     public void testCanDevicesWhenOnlyOneInCollection() throws Exception {
         Device device = getTestDevice();
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        DeviceProvidingCallback callback = new DeviceProvidingCallback(latch);
-        user.createDevice(device, callback);
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Device createdDevice = callback.getDevice();
-
+        Device createdDevice = createDevice(user, device);
         assertNotNull("device", createdDevice);
 
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        DeviceCollectionProvidingCallback callback2 = new DeviceCollectionProvidingCallback(latch2);
-        user.getDevices(10, 0 , callback2);
-        latch2.await(TIMEOUT, TimeUnit.SECONDS);
-        Collections.DeviceCollection devices = callback2.getDevices();
+        Collections.DeviceCollection devices = getDevices(user);
 
         assertNotNull("retrieved devices", devices);
         assertEquals("number of devices", 1, devices.getTotalResults());
@@ -145,19 +128,10 @@ public class DeviceTest2 extends TestActions {
     public void testCanGetDeviceFromCollection() throws Exception {
         Device device = getTestDevice();
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        DeviceProvidingCallback callback = new DeviceProvidingCallback(latch);
-        user.createDevice(device, callback);
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Device createdDevice = callback.getDevice();
-
+        Device createdDevice = createDevice(user, device);
         assertNotNull("device", createdDevice);
 
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        DeviceCollectionProvidingCallback callback2 = new DeviceCollectionProvidingCallback(latch2);
-        user.getDevices(10, 0 , callback2);
-        latch2.await(TIMEOUT, TimeUnit.SECONDS);
-        Collections.DeviceCollection devices = callback2.getDevices();
+        Collections.DeviceCollection devices = getDevices(user);
 
         assertNotNull("retrieved devices", devices);
         assertEquals("number of devices", 1, devices.getTotalResults());
@@ -166,15 +140,13 @@ public class DeviceTest2 extends TestActions {
         assertNotNull("first device", firstDevice);
 
         final CountDownLatch latch4 = new CountDownLatch(1);
-        DeviceProvidingCallback callback4 = new DeviceProvidingCallback(latch2);
+        ResultProvidingCallback<Device> callback4 = new ResultProvidingCallback<>(latch4);
         createdDevice.self(callback4);
         latch4.await(TIMEOUT, TimeUnit.SECONDS);
-        Device retrievedDevice = callback4.getDevice();
+        Device retrievedDevice = callback4.getResult();
 
         assertNotNull("retrieved device", retrievedDevice);
         assertEquals("device id", firstDevice.getDeviceIdentifier(), retrievedDevice.getDeviceIdentifier());
-
-
     }
 
 
@@ -182,28 +154,13 @@ public class DeviceTest2 extends TestActions {
     public void testCanDevicesWhenTwoInCollection() throws Exception {
         Device device = getTestDevice();
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        DeviceProvidingCallback callback = new DeviceProvidingCallback(latch);
-        user.createDevice(device, callback);
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Device createdDevice = callback.getDevice();
-
+        Device createdDevice = createDevice(user, device);
         assertNotNull("device", createdDevice);
 
-        final CountDownLatch latch3 = new CountDownLatch(1);
-        DeviceProvidingCallback callback3 = new DeviceProvidingCallback(latch3);
-        user.createDevice(device, callback3);
-        latch3.await(TIMEOUT, TimeUnit.SECONDS);
-        Device anotherCreatedDevice = callback3.getDevice();
-
+        Device anotherCreatedDevice = createDevice(user, device);
         assertNotNull("device", anotherCreatedDevice);
 
-
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        DeviceCollectionProvidingCallback callback2 = new DeviceCollectionProvidingCallback(latch2);
-        user.getDevices(10, 0 , callback2);
-        latch2.await(TIMEOUT, TimeUnit.SECONDS);
-        Collections.DeviceCollection devices = callback2.getDevices();
+        Collections.DeviceCollection devices = getDevices(user);
 
         assertNotNull("retrieved devices", devices);
         assertEquals("number of devices", 2, devices.getTotalResults());
@@ -222,27 +179,13 @@ public class DeviceTest2 extends TestActions {
     public void testCanDeleteDeviceFromCollection() throws Exception {
         Device device = getTestDevice();
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        DeviceProvidingCallback callback = new DeviceProvidingCallback(latch);
-        user.createDevice(device, callback);
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Device createdDevice = callback.getDevice();
-
+        Device createdDevice = createDevice(user, device);
         assertNotNull("device", createdDevice);
 
-        final CountDownLatch latch3 = new CountDownLatch(1);
-        DeviceProvidingCallback callback3 = new DeviceProvidingCallback(latch3);
-        user.createDevice(device, callback3);
-        latch3.await(TIMEOUT, TimeUnit.SECONDS);
-        Device anotherCreatedDevice = callback3.getDevice();
-
+        Device anotherCreatedDevice = createDevice(user, device);
         assertNotNull("device", anotherCreatedDevice);
 
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        DeviceCollectionProvidingCallback callback2 = new DeviceCollectionProvidingCallback(latch2);
-        user.getDevices(10, 0 , callback2);
-        latch2.await(TIMEOUT, TimeUnit.SECONDS);
-        Collections.DeviceCollection devices = callback2.getDevices();
+        Collections.DeviceCollection devices = getDevices(user);
 
         assertNotNull("retrieved devices", devices);
         assertEquals("number of devices", 2, devices.getTotalResults());
@@ -252,11 +195,7 @@ public class DeviceTest2 extends TestActions {
         createdDevice.deleteDevice(callback4);
         latch4.await(TIMEOUT, TimeUnit.SECONDS);
 
-        final CountDownLatch latch5 = new CountDownLatch(1);
-        DeviceCollectionProvidingCallback callback5 = new DeviceCollectionProvidingCallback(latch5);
-        user.getDevices(10, 0 , callback5);
-        latch5.await(TIMEOUT, TimeUnit.SECONDS);
-        devices = callback5.getDevices();
+        devices = getDevices(user);
 
         assertNotNull("retrieved devices", devices);
         assertEquals("number of devices after delete of 1", 1, devices.getTotalResults());
