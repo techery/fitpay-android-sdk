@@ -81,7 +81,7 @@ public class Steps {
         Assert.assertTrue(isRequestSuccess[0]);
     }
 
-    public void getUser() throws InterruptedException {
+    public User getUser() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
 
         ApiManager.getInstance().getUser(new ApiCallback<User>() {
@@ -103,6 +103,7 @@ public class Steps {
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertNotNull(currentUser);
         Assert.assertNotNull(currentUser.getUsername());
+        return currentUser;
     }
 
     private void resetErrorFields() {
@@ -110,7 +111,7 @@ public class Steps {
         currentErrorMessage = null;
     }
 
-    public void selfUser() throws InterruptedException {
+    public User selfUser() throws InterruptedException {
         Assert.assertNotNull(currentUser);
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -119,6 +120,7 @@ public class Steps {
         currentUser.self(new ApiCallback<User>() {
             @Override
             public void onSuccess(User result) {
+                resetErrorFields();
                 isRequestSuccess[0] = true;
                 currentUser = result;
                 latch.countDown();
@@ -126,6 +128,8 @@ public class Steps {
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                currentErrorCode = errorCode;
+                currentErrorMessage = errorMessage;
                 latch.countDown();
             }
         });
@@ -134,6 +138,7 @@ public class Steps {
         Assert.assertTrue(isRequestSuccess[0]);
         Assert.assertNotNull(currentUser);
         Assert.assertNotNull(currentUser.getUsername());
+        return currentUser;
     }
 
     public void updateUser() throws InterruptedException {

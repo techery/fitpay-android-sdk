@@ -36,7 +36,7 @@ public class UserTest {
     }
 
     @Test
-    @Ignore
+    @Ignore  //TODO this test does not work since anonymous user is not valid.  There is an open ticket in Jira
     public void test04_updateUser() throws InterruptedException {
         steps.updateUser();
     }
