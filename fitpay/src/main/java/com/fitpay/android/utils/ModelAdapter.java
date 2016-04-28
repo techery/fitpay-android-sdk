@@ -27,6 +27,8 @@ import java.util.Set;
 final class ModelAdapter {
 
     public static final class DataSerializer<T> implements JsonSerializer<T>, JsonDeserializer<T> {
+
+        @Override
         public JsonElement serialize(T data, Type typeOfSrc, JsonSerializationContext context) {
 
             final String encryptedString = StringUtils.getEncryptedString(KeysManager.KEY_API, new GsonBuilder().create().toJson(data));

@@ -2,6 +2,7 @@ package com.fitpay.android;
 
 import android.media.Image;
 
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.enums.CardInitiators;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.card.CreditCard;

@@ -1,7 +1,9 @@
 package com.fitpay.android;
 
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.user.User;
+import com.fitpay.android.api.models.user.UserCreateRequest;
 
 import org.junit.After;
 import org.junit.Before;
@@ -24,6 +26,10 @@ public class UserTest2 extends TestActions {
     public void setup() throws Exception {
         userName = getRandomLengthString(5, 10) + "@" + getRandomLengthString(5, 10) + "." + getRandomLengthString(4, 10);
         pin = getRandomLengthNumber(4, 4);
+
+        UserCreateRequest user = getNewTestUser(userName, pin);
+        User createdUser = createUser(user);
+        assertNotNull("user should have been created", createdUser);
 
         loginIdentity = getTestLoginIdentity(userName, pin);
         doLogin(loginIdentity);

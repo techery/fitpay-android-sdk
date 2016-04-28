@@ -1,6 +1,7 @@
 package com.fitpay.android;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.LoginIdentity;
@@ -12,6 +13,7 @@ import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
+import com.fitpay.android.api.models.user.UserCreateRequest;
 import com.fitpay.android.utils.ApiManager;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
@@ -19,6 +21,8 @@ import com.fitpay.android.utils.ValidationException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +32,7 @@ import static junit.framework.Assert.fail;
 
 public class TestActions {
 
-    protected final int TIMEOUT = 10;
+    protected final int TIMEOUT = 60;  // seconds for callback timeout  //TODO reset to 10 before commit
 
     protected Random random = new Random();
 
@@ -38,11 +42,29 @@ public class TestActions {
 
     @BeforeClass
     public static void init() {
-        ApiManager.init(TestConstants.BASE_URL);
+        Map<String, String> props = new HashMap<>();
+        props.put(ApiManager.PROPERTY_API_BASE_URL, TestConstants.BASE_URL);
+        if (TestConstants.BASE_AUTH_URL != "") {
+            props.put(ApiManager.PROPERTY_AUTH_BASE_URL, TestConstants.BASE_AUTH_URL);
+        }
+        if (TestConstants.CLIENT_ID != "") {
+            props.put(ApiManager.PROPERTY_CLIENT_ID, TestConstants.CLIENT_ID);
+        }
+        if (TestConstants.CLIENT_SECRET != "") {
+            props.put(ApiManager.PROPERTY_CLIENT_SECRET, TestConstants.CLIENT_SECRET);
+        }
+        ApiManager.init(props);
+    }
+
+    protected User createUser(UserCreateRequest user) throws Exception{
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<User> callback = new ResultProvidingCallback<>(latch);
+        ApiManager.getInstance().createUser(user, callback);
+        boolean completed = latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
     }
 
     protected void doLogin(LoginIdentity loginIdentity) throws Exception{
-
         final CountDownLatch latch = new CountDownLatch(1);
         ApiManager.getInstance().loginUser(loginIdentity, getSuccessDeterminingCallback(latch));
         boolean completed = latch.await(TIMEOUT, TimeUnit.SECONDS);
@@ -73,6 +95,16 @@ public class TestActions {
                     .setRedirectUri(TestConstants.BASE_URL)
                     .create();
         return loginIdentity;
+
+    }
+
+    protected UserCreateRequest getNewTestUser(String userName, String pin) throws ValidationException {
+
+        UserCreateRequest user = new UserCreateRequest.Builder()
+                .email(userName)
+                .pin(pin)
+                .build();
+        return user;
 
     }
 
@@ -358,48 +390,5 @@ public class TestActions {
     }
 
 
-
-    public class ResultProvidingCallback<T> implements ApiCallback<T> {
-
-        private T result;
-        private int errorCode = -1;
-        private String errorMessage;
-        private CountDownLatch latch;
-
-        public ResultProvidingCallback() {}
-
-        public ResultProvidingCallback(CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        @Override
-        public void onSuccess(T result) {
-            this.result = result;
-            if (null != latch) {
-                latch.countDown();
-            }
-        }
-
-        @Override
-        public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-            this.errorCode = errorCode;
-            this.errorMessage = errorMessage;
-            if (null != latch) {
-                latch.countDown();
-            }
-        }
-
-        public int getErrorCode() {
-            return errorCode;
-        }
-
-        public String getErrorMessage() {
-            return errorMessage;
-        }
-
-        public T getResult() {
-            return this.result;
-        }
-    }
 
 }

@@ -44,6 +44,7 @@ final class CallbackWrapper<T> implements Callback<T> {
 
     @Override
     public void onFailure(Call<T> call, Throwable t) {
+        t.printStackTrace();   //TODO remove
         if(mCallback != null){
             mCallback.onFailure(ResultCode.REQUEST_FAILED, t.getMessage());
         }

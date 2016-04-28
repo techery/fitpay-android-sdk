@@ -7,11 +7,13 @@ import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.LoginIdentity;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.user.User;
+import com.fitpay.android.api.models.user.UserCreateRequest;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.Map;
 
 import retrofit2.Call;
@@ -21,12 +23,29 @@ import retrofit2.Call;
  */
 public class ApiManager {
 
+    public static final String PROPERTY_API_BASE_URL = "apiBaseUrl";
+    public static final String PROPERTY_AUTH_BASE_URL = "authBaseUrl";
+    public static final String PROPERTY_CLIENT_ID = "clientId";
+    public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
+    public static final String PROPERTY_TIMEOUT = "timeout";
+
     private static ApiManager sInstance;
     private static String apiBaseUrl;
+    private static String authBaseUrl;
+    private static Map<String, String> authProps = new HashMap<>();
+    private static long timeout = 10;
+
     private FitPayService apiService;
+    private UserService userService;
+    private AuthService authService;
 
     private ApiManager() {
         apiService = new FitPayService(apiBaseUrl);
+        userService = new UserService(apiBaseUrl);
+        if (null == authBaseUrl) {
+            authBaseUrl = apiBaseUrl;
+        }
+        authService = new AuthService(authBaseUrl, authProps);
     }
 
     public static ApiManager getInstance() {
@@ -48,8 +67,45 @@ public class ApiManager {
         apiBaseUrl = theApiBaseUrl;
     }
 
+
+    public static void init(Map<String, String> props) {
+        for (String name: props.keySet()) {
+            switch (name) {
+                case PROPERTY_API_BASE_URL:
+                    apiBaseUrl = props.get(name);
+                    break;
+                case PROPERTY_AUTH_BASE_URL:
+                    authBaseUrl = props.get(name);
+                    break;
+                case PROPERTY_CLIENT_ID:
+                    authProps.put(name, props.get(name));
+                    break;
+                case PROPERTY_CLIENT_SECRET:
+                    authProps.put(name, props.get(name));
+                    break;
+                case PROPERTY_TIMEOUT:
+                    try {
+                        timeout = Long.parseLong(props.get(name));
+                    } catch (NumberFormatException ex) {
+                        // best attempt - should warn
+                    }
+                    break;
+                default:
+                    // should warn
+            }
+        }
+    }
+
     FitPayClient getClient() {
         return apiService.getClient();
+    }
+
+    AuthClient getAuthClient() {
+        return authService.getClient();
+    }
+
+    UserClient getUserClient() {
+        return userService.getClient();
     }
 
     private boolean isAuthorized(@NonNull ApiCallback callback) {
@@ -71,6 +127,27 @@ public class ApiManager {
     }
 
     /**
+     * User Creation
+     *
+     * @param user user to create
+     * @param callback result callback
+     */
+    public void createUser(UserCreateRequest user, final ApiCallback<User> callback) {
+
+        Runnable onSuccess = new Runnable() {
+            @Override
+            public void run() {
+                System.out.println("making user create call");
+                Call<User> createUserCall = getUserClient().createUser(user);
+                createUserCall.enqueue(new CallbackWrapper<>(callback));
+            }
+        };
+
+        checkKeyAndMakeCall(onSuccess, callback);
+
+    }
+
+    /**
      * User Login
      *
      * @param identity data for login
@@ -78,9 +155,13 @@ public class ApiManager {
      */
     public void loginUser(LoginIdentity identity, final ApiCallback<Void> callback) {
 
-        CallbackWrapper<OAuthToken> getTokenCallback = new CallbackWrapper<>(new ApiCallback<OAuthToken>() {
+        CallbackWrapper<OAuthToken> updateTokenCallback = new CallbackWrapper<>(new ApiCallback<OAuthToken>() {
             @Override
             public void onSuccess(OAuthToken result) {
+                if (null == result || result.getUserId() == null) {
+                    callback.onFailure(ResultCode.UNAUTHORIZED, "user login was not successful");
+                    return;
+                }
                 apiService.updateToken(result);
                 callback.onSuccess(null);
             }
@@ -93,8 +174,8 @@ public class ApiManager {
             }
         });
 
-        Call<OAuthToken> getTokenCall = getClient().loginUser(identity.getData());
-        getTokenCall.enqueue(getTokenCallback);
+        Call<OAuthToken> getTokenCall = getAuthClient().loginUser(identity.getData());
+        getTokenCall.enqueue(updateTokenCallback);
     }
 
     /**

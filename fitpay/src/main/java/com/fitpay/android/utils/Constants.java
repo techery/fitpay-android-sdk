@@ -4,6 +4,7 @@ import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.Payload;
 import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.card.CreditCardInfo;
+import com.fitpay.android.api.models.user.UserAuthInfo;
 import com.fitpay.android.api.models.user.UserInfo;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -33,6 +34,7 @@ public final class Constants {
                     .registerTypeAdapter(CreditCardInfo.class, new ModelAdapter.DataSerializer<>())
                     .registerTypeAdapter(Payload.class, new ModelAdapter.PayloadDeserializer())
                     .registerTypeAdapter(ApduCommandResult.class, new ModelAdapter.AdpuCommandResponseSerializer())
+                    .registerTypeAdapter(UserAuthInfo.class, new ModelAdapter.DataSerializer<>())
                     .create();
         }
         return gson;

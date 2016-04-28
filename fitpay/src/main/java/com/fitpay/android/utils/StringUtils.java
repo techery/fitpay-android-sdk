@@ -32,6 +32,10 @@ public final class StringUtils {
 
         ECCKeyPair keyPair = KeysManager.getInstance().getPairForType(type);
 
+        if (null == keyPair) {
+            throw new IllegalStateException("No key pair available for type (type = " + type + ")");
+        }
+
         JWEHeader.Builder jweHeaderBuilder = new JWEHeader.Builder(alg, enc)
                 .contentType("application/json")
                 .keyID(keyPair.getKeyId());
