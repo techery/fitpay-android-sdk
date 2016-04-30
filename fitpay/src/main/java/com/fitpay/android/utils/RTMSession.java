@@ -4,6 +4,7 @@ import android.support.annotation.NonNull;
 import android.webkit.WebView;
 
 import com.fitpay.android.api.models.device.PaymentDevice;
+import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.fitpay.android.rtm.callbacks.RTMListener;
 import com.fitpay.android.rtm.enums.ErrorCodes;
 import com.google.gson.Gson;

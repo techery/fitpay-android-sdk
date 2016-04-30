@@ -1,4 +1,8 @@
-package com.fitpay.android.utils;
+package com.fitpay.android.api.services;
+
+import com.fitpay.android.api.models.security.OAuthToken;
+import com.fitpay.android.utils.Constants;
+import com.fitpay.android.utils.KeysManager;
 
 import java.io.IOException;
 
@@ -11,7 +15,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 
-final class FitPayService {
+final public class FitPayService {
 
     private static final String HEADER_AUTHORIZATION = "Authorization";
     private static final String AUTHORIZATION_BEARER = "Bearer";
@@ -57,6 +61,8 @@ final class FitPayService {
         OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
         clientBuilder.addInterceptor(interceptor);
         clientBuilder.addInterceptor(logging);
+        //add timeout modification here if needed - should be configurable
+        //clientBuilder.readTimeout(<a value from config>, TimeUnit.SECONDS);
 
         mAPIClient = constructClient(apiBaseUrl, clientBuilder.build());
 

@@ -4,7 +4,7 @@ import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.api.enums.CardInitiators;
 import com.fitpay.android.api.enums.ResultCode;
-import com.fitpay.android.api.models.LoginIdentity;
+import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.card.Address;
 import com.fitpay.android.api.models.card.CreditCard;
@@ -14,7 +14,8 @@ import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
-import com.fitpay.android.utils.ApiManager;
+import com.fitpay.android.api.models.user.UserCreateRequest;
+import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 
@@ -24,11 +25,16 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static junit.framework.Assert.assertEquals;
+
 /***
  * Created by Vlad on 16.03.2016.
  */
 public class Steps {
     private final int TIMEOUT = 10;
+
+    private String userName;
+    private String password;
 
     private User currentUser;
     private int currentErrorCode;
@@ -39,11 +45,49 @@ public class Steps {
     private Device currentDevice;
     private Commit currentCommit;
 
+    protected Steps() {
+        userName = TestUtils.getRandomLengthString(5, 10) + "@"
+                + TestUtils.getRandomLengthString(5, 10) + "." + TestUtils.getRandomLengthString(4, 10);
+        password = TestUtils.getRandomLengthNumber(4, 4);
+    }
+
     public void destroy() {
         currentUser = null;
         cardsCollection = null;
         currentDevice = null;
         currentCommit = null;
+    }
+
+
+    public User createUser() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        UserCreateRequest ucr = new UserCreateRequest.Builder()
+                .email(userName)
+                .pin(password)
+                .build();
+
+        ApiManager.getInstance().createUser(ucr, new ApiCallback<User>() {
+            @Override
+            public void onSuccess(User result) {
+                currentUser = result;
+                resetErrorFields();
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                currentErrorCode = errorCode;
+                currentErrorMessage = errorMessage;
+                latch.countDown();
+            }
+        });
+
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertNotNull(currentUser);
+        Assert.assertNotNull(currentUser.getUsername());
+        return currentUser;
+
     }
 
     public void login() throws InterruptedException {
@@ -54,11 +98,9 @@ public class Steps {
 
         try {
             loginIdentity = new LoginIdentity.Builder()
-                    .setUsername("test@test.test")
-                    .setPassword("1221")
-                    .setClientId("pagare")
-                    .setRedirectUri("https://demo.pagare.me")
-                    .create();
+                    .setUsername(userName)
+                    .setPassword(password)
+                    .build();
         } catch (ValidationException ignored) {
         }
 
@@ -181,6 +223,12 @@ public class Steps {
     }
 
     public void createCard() throws InterruptedException {
+        String pan = "9999545454545454";
+        createCard(pan);
+    }
+
+    public void createCard(String pan) throws InterruptedException {
+
         Assert.assertNotNull(currentUser);
 
         final CountDownLatch latch = new CountDownLatch(1);
@@ -194,7 +242,6 @@ public class Steps {
         String countryCode = "US";
         String street1 = "1035 Pearl St";
         String cvv = "133";
-        String pan = "5454545454545454";
 
         Address address = new Address();
         address.setCity(city);
@@ -462,6 +509,7 @@ public class Steps {
 
         final CountDownLatch latch = new CountDownLatch(1);
         final boolean[] isRequestSuccess = {false};
+        final String[] theError = {""};
 
         currentCard.makeDefault(new ApiCallback<Void>() {
             @Override
@@ -472,12 +520,13 @@ public class Steps {
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                theError[0] = "code: " + errorCode + ", message: " + errorMessage;
                 latch.countDown();
             }
         });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Assert.assertTrue(isRequestSuccess[0]);
+        Assert.assertTrue("make default was not successful.  reason: " + theError[0], isRequestSuccess[0]);
     }
 
     public void selfCard() throws InterruptedException {
@@ -614,7 +663,7 @@ public class Steps {
         String stringTimestamp = TimestampUtils.getISO8601StringForTime(pairingTs);
         String secureElementId = "cccccc-1111-1111-1111-1111111111";
         Device newDevice = new Device.Builder()
-                .setDeviceType(DeviceTypes.SMART_STRAP)
+                .setDeviceType(DeviceTypes.ACTIVITY_TRACKER)
                 .setManufacturerName(manufacturerName)
                 .setDeviceName(deviceName)
                 .setFirmwareRevision(firmwareRevision)
@@ -629,7 +678,8 @@ public class Steps {
                 .setPairingTs(pairingTs)
                 .setSecureElementId(secureElementId)
                 .create();
-
+        final String[] errors = { "" };
+        final int[] errorCodes = {-1};
         currentUser.createDevice(newDevice, new ApiCallback<Device>() {
             @Override
             public void onSuccess(Device result) {
@@ -639,10 +689,13 @@ public class Steps {
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                errors[0] = errorMessage;
+                errorCodes[0] = errorCode;
                 latch.countDown();
             }
         });
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        assertEquals("create device had an error.  (Message: " + errors[0] + ")", -1, errorCodes[0]);
         Assert.assertNotNull(currentDevice);
         Assert.assertEquals(manufacturerName, currentDevice.getManufacturerName());
         Assert.assertEquals(deviceName, currentDevice.getDeviceName());
@@ -680,7 +733,7 @@ public class Steps {
         });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Assert.assertNotNull(devicesCollection);
+        Assert.assertNotNull("Device collection should not be null", devicesCollection);
         if (currentDevice == null && devicesCollection.getTotalResults() > 0) {
             currentDevice = devicesCollection.getResults().get(0);
         }
@@ -841,10 +894,10 @@ public class Steps {
             @Override
             public void onSuccess(Collections.CommitsCollection result) {
                 isRequestSuccess[0] = true;
-                Assert.assertNotNull(result);
-                Assert.assertNotNull(result.getResults());
-                Assert.assertTrue(result.getTotalResults() > 1);
-                currentCommit = result.getResults().get(1);
+                Assert.assertNotNull("commit collection should not be null", result);
+                Assert.assertNotNull("commits collection results should not be null", result.getResults());
+                Assert.assertTrue("Device should have at least one commit (card was added)", result.getTotalResults() > 0);
+                currentCommit = result.getResults().get(0);
                 latch.countDown();
             }
 

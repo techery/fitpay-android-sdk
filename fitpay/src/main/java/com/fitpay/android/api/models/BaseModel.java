@@ -5,7 +5,7 @@ import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
-import com.fitpay.android.utils.ApiManager;
+import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.utils.StringUtils;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;

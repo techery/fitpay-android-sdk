@@ -1,5 +1,6 @@
 package com.fitpay.android.utils;
 
+import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWEAlgorithm;

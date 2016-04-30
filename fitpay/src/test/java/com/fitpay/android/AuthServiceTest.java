@@ -6,14 +6,15 @@ import com.fitpay.android.api.models.user.UserCreateRequest;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
 
 /**
  * Created by tgs on 4/27/16.
  */
-public class UserServiceTest extends TestActions {
+public class AuthServiceTest extends TestActions {
 
     @Test
-    public void canCreateUser() throws Exception {
+    public void canCreateUserAndGetToken() throws Exception {
         userName = TestUtils.getRandomLengthString(5, 10) + "@"
                 + TestUtils.getRandomLengthString(5, 10) + "." + TestUtils.getRandomLengthString(4, 10);
         pin = TestUtils.getRandomLengthNumber(4, 4);
@@ -21,6 +22,10 @@ public class UserServiceTest extends TestActions {
         UserCreateRequest user = getNewTestUser(userName, pin);
         User createdUser = createUser(user);
         assertNotNull("user should have been created", createdUser);
+
+        loginIdentity = getTestLoginIdentity(userName, pin);
+        boolean success = doLogin(loginIdentity);
+        assertTrue("user auth not successful", success);
 
     }
 }

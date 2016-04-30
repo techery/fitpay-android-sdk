@@ -1,4 +1,6 @@
-package com.fitpay.android.utils;
+package com.fitpay.android.api.services;
+
+import com.fitpay.android.utils.Constants;
 
 import java.io.IOException;
 import java.util.Map;
@@ -12,12 +14,12 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 
-final class AuthService {
+final public class AuthService {
 
     private AuthClient mAuthClient;
     private Map<String, String> props;
 
-    public AuthService(String authBaseUrl, Map<String, String> props) {
+    public AuthService(String baseUrl) {
 
         Interceptor interceptor = new Interceptor() {
             @Override
@@ -26,19 +28,8 @@ final class AuthService {
                 Request.Builder builder = chain.request().newBuilder()
                         .header("Accept", "application/json")
                         .header("Content-Type", "application/json");
-
-                System.out.println("path: " + chain.request().url().encodedPath());
-                if (chain.request().url().encodedPath().contains("oauth/token")) {
-                    System.out.println("need to add basic auth header");
-                    String clientId = props.get(ApiManager.PROPERTY_CLIENT_ID);
-                    String clientSecret = props.get(ApiManager.PROPERTY_CLIENT_SECRET);
-                    if (null != clientId && null != clientSecret) {
-                        String credential = okhttp3.Credentials.basic(clientId, clientSecret);
-                        builder.header("Authorization", credential);
-                    }
-                }
-
                 return chain.proceed(builder.build());
+
             }
         };
 
@@ -50,7 +41,7 @@ final class AuthService {
         clientBuilder.addInterceptor(interceptor);
         clientBuilder.addInterceptor(logging);
 
-        mAuthClient = constructClient(authBaseUrl, clientBuilder.build());
+        mAuthClient = constructClient(baseUrl, clientBuilder.build());
 
     }
 

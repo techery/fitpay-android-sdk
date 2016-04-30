@@ -1,4 +1,8 @@
-package com.fitpay.android.utils;
+package com.fitpay.android.api.services;
+
+import com.fitpay.android.api.models.security.OAuthToken;
+import com.fitpay.android.utils.Constants;
+import com.fitpay.android.utils.KeysManager;
 
 import java.io.IOException;
 
@@ -11,10 +15,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 
-final class UserService {
+final public class UserService {
 
-    private static final String HEADER_AUTHORIZATION = "Authorization";
-    private static final String AUTHORIZATION_BEARER = "Bearer";
     private static final String FP_KEY_ID = "fp-key-id";
 
     private OAuthToken authToken;
@@ -35,19 +37,6 @@ final class UserService {
                 if (keyId != null) {
                     builder.header(FP_KEY_ID, keyId);
                 }
-
-                System.out.println("path: " + chain.request().url().encodedPath());
-//
-//                if (authToken != null) {
-//
-//                    final String value = new StringBuilder()
-//                            .append(AUTHORIZATION_BEARER)
-//                            .append(" ")
-//                            .append(authToken.getAccessToken())
-//                            .toString();
-//
-//                    builder.header(HEADER_AUTHORIZATION, value);
-//                }
 
                 return chain.proceed(builder.build());
             }

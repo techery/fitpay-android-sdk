@@ -1,5 +1,6 @@
-package com.fitpay.android.api.callbacks;
+package com.fitpay.android.callback;
 
+import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 
 import java.util.concurrent.CountDownLatch;

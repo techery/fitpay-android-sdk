@@ -1,8 +1,7 @@
-package com.fitpay.android.utils;
+package com.fitpay.android.api.callbacks;
 
 import android.support.annotation.NonNull;
 
-import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 
 import java.io.IOException;
@@ -14,7 +13,7 @@ import retrofit2.Response;
 /**
  * Wrapper around Retrofit callback
  */
-final class CallbackWrapper<T> implements Callback<T> {
+final public class CallbackWrapper<T> implements Callback<T> {
 
     private ApiCallback<T> mCallback;
 
@@ -44,7 +43,7 @@ final class CallbackWrapper<T> implements Callback<T> {
 
     @Override
     public void onFailure(Call<T> call, Throwable t) {
-        t.printStackTrace();   //TODO remove
+        t.printStackTrace();   //TODO remove a little later - helpful in development
         if(mCallback != null){
             mCallback.onFailure(ResultCode.REQUEST_FAILED, t.getMessage());
         }

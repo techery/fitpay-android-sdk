@@ -1,6 +1,6 @@
 package com.fitpay.android;
 
-import com.fitpay.android.utils.ApiManager;
+import com.fitpay.android.api.ApiManager;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -16,7 +16,12 @@ public class CommitTest {
     @BeforeClass
     public static void init() {
         steps = new Steps();
-        ApiManager.init(TestConstants.BASE_URL);
+        ApiManager.init(TestConstants.getConfig());
+    }
+
+    @Test
+    public void test00_createUser() throws InterruptedException {
+        steps.createUser();
     }
 
     @Test
@@ -30,10 +35,19 @@ public class CommitTest {
     }
 
     @Test
-    public void test03_getDevices() throws InterruptedException {
+    public void test030_addDevice() throws InterruptedException {
+        steps.createDevice();
+    }
+
+    @Test
+    public void test031_getDevices() throws InterruptedException {
         steps.getDevices();
     }
 
+    @Test
+    public void test032_addCard() throws InterruptedException {
+        steps.createCard();
+    }
     @Test
     public void test04_getCommits() throws InterruptedException {
         steps.getCommits();

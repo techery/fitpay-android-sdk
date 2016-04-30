@@ -1,13 +1,25 @@
-package com.fitpay.android.utils;
+package com.fitpay.android.api;
 
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.enums.ResultCode;
-import com.fitpay.android.api.models.LoginIdentity;
 import com.fitpay.android.api.models.Relationship;
+import com.fitpay.android.api.models.security.OAuthToken;
+import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
+import com.fitpay.android.api.services.AuthClient;
+import com.fitpay.android.api.services.AuthService;
+import com.fitpay.android.api.services.FitPayClient;
+import com.fitpay.android.api.services.FitPayService;
+import com.fitpay.android.api.services.UserClient;
+import com.fitpay.android.api.services.UserService;
+import com.fitpay.android.utils.Constants;
+import com.fitpay.android.utils.KeysManager;
+import com.fitpay.android.utils.ObjectConverter;
+import com.fitpay.android.utils.StringUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -26,32 +38,32 @@ public class ApiManager {
     public static final String PROPERTY_API_BASE_URL = "apiBaseUrl";
     public static final String PROPERTY_AUTH_BASE_URL = "authBaseUrl";
     public static final String PROPERTY_CLIENT_ID = "clientId";
-    public static final String PROPERTY_CLIENT_SECRET = "clientSecret";
     public static final String PROPERTY_TIMEOUT = "timeout";
+    public static final String PROPERTY_REDIRECT_URI = "redirectUri";
+
+    private static Map<String, String> config = new HashMap<>();
+
+    static {
+        config.put(PROPERTY_TIMEOUT, "10");
+    }
 
     private static ApiManager sInstance;
-    private static String apiBaseUrl;
-    private static String authBaseUrl;
-    private static Map<String, String> authProps = new HashMap<>();
-    private static long timeout = 10;
 
     private FitPayService apiService;
     private UserService userService;
     private AuthService authService;
 
     private ApiManager() {
-        apiService = new FitPayService(apiBaseUrl);
-        userService = new UserService(apiBaseUrl);
-        if (null == authBaseUrl) {
-            authBaseUrl = apiBaseUrl;
+        if (null == getBaseUrl()) {
+            throw new IllegalStateException("The ApiManager must be initialized prior to use.  API base url required");
         }
-        authService = new AuthService(authBaseUrl, authProps);
+        apiService = new FitPayService(getBaseUrl());
     }
 
     public static ApiManager getInstance() {
         if (sInstance == null) {
             synchronized (ApiManager.class) {
-                if (null == apiBaseUrl) {
+                if (null == config) {
                     throw new IllegalStateException("The ApiManager must be initialized prior to use");
                 }
                 if (sInstance == null) {
@@ -63,49 +75,63 @@ public class ApiManager {
         return sInstance;
     }
 
-    public static void init(String theApiBaseUrl) {
-        apiBaseUrl = theApiBaseUrl;
-    }
-
-
     public static void init(Map<String, String> props) {
-        for (String name: props.keySet()) {
-            switch (name) {
-                case PROPERTY_API_BASE_URL:
-                    apiBaseUrl = props.get(name);
-                    break;
-                case PROPERTY_AUTH_BASE_URL:
-                    authBaseUrl = props.get(name);
-                    break;
-                case PROPERTY_CLIENT_ID:
-                    authProps.put(name, props.get(name));
-                    break;
-                case PROPERTY_CLIENT_SECRET:
-                    authProps.put(name, props.get(name));
-                    break;
-                case PROPERTY_TIMEOUT:
-                    try {
-                        timeout = Long.parseLong(props.get(name));
-                    } catch (NumberFormatException ex) {
-                        // best attempt - should warn
-                    }
-                    break;
-                default:
-                    // should warn
-            }
-        }
+        config.putAll(props);
     }
 
-    FitPayClient getClient() {
+    public FitPayClient getClient() {
         return apiService.getClient();
     }
 
-    AuthClient getAuthClient() {
+    public AuthClient getAuthClient() {
+        if (null == authService) {
+            synchronized (this) {
+                String baseUrl = config.get(ApiManager.PROPERTY_AUTH_BASE_URL);
+                if (null == baseUrl) {
+                    baseUrl = config.get(ApiManager.PROPERTY_API_BASE_URL);
+                }
+                if (null == baseUrl) {
+                    throw new IllegalArgumentException("The configuration must contain one of the following two properties: "
+                            + ApiManager.PROPERTY_AUTH_BASE_URL + " or " + ApiManager.PROPERTY_API_BASE_URL);
+                }
+                if (null == config.get(ApiManager.PROPERTY_CLIENT_ID)) {
+                    throw new IllegalArgumentException("The configuration must contain the following property: "
+                            +  ApiManager.PROPERTY_CLIENT_ID);
+                }
+                if (null == config.get(ApiManager.PROPERTY_REDIRECT_URI)) {
+                    throw new IllegalArgumentException("The configuration must contain the following property: "
+                            +  ApiManager.PROPERTY_REDIRECT_URI);
+                }
+                authService = new AuthService(baseUrl);
+            }
+        }
         return authService.getClient();
     }
 
-    UserClient getUserClient() {
+    public UserClient getUserClient() {
+        if (null == userService) {
+            synchronized (this) {
+                if (null == getBaseUrl()) {
+                    throw new IllegalStateException("The ApiManager must be initialized prior to use.  API base url required");
+                }
+                userService = new UserService(getBaseUrl());
+            }
+        }
         return userService.getClient();
+    }
+
+    private String getBaseUrl() {
+        if (null == config) {
+            return null;
+        }
+        return config.get(PROPERTY_API_BASE_URL);
+    }
+
+    private String getAuthBaseUrl() {
+        if (null == config) {
+            return null;
+        }
+        return config.get(PROPERTY_AUTH_BASE_URL);
     }
 
     private boolean isAuthorized(@NonNull ApiCallback callback) {
@@ -137,7 +163,6 @@ public class ApiManager {
         Runnable onSuccess = new Runnable() {
             @Override
             public void run() {
-                System.out.println("making user create call");
                 Call<User> createUserCall = getUserClient().createUser(user);
                 createUserCall.enqueue(new CallbackWrapper<>(callback));
             }
@@ -173,9 +198,24 @@ public class ApiManager {
                 }
             }
         });
-
-        Call<OAuthToken> getTokenCall = getAuthClient().loginUser(identity.getData());
+        Map<String, String> allParams = new HashMap<>();
+        allParams.put("credentials", getCredentialsString(identity));
+        allParams.put("response_type", "token");
+        allParams.put("client_id", config.get(ApiManager.PROPERTY_CLIENT_ID));
+        allParams.put("redirect_uri", config.get(ApiManager.PROPERTY_REDIRECT_URI));
+        Call<OAuthToken> getTokenCall = getAuthClient().loginUser(allParams);
         getTokenCall.enqueue(updateTokenCallback);
+    }
+
+    protected String getCredentialsString(LoginIdentity identity) {
+
+        return new StringBuilder()
+                .append("{\"username\":\"")
+                .append(identity.getUsername())
+                .append("\",\"password\":\"")
+                .append(identity.getPassword())
+                .append("\"}")
+                .toString();
     }
 
     /**

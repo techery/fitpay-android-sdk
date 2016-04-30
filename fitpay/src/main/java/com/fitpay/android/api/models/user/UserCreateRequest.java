@@ -10,7 +10,7 @@ public class UserCreateRequest {
     /**
      * JSON Web Encrypted compact serialization of the user's information from
      *
-     * @see UserData
+     * @see UserAuthInfo
      */
     @SerializedName("encryptedData")
     protected UserAuthInfo userInfo;

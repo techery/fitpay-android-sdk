@@ -4,6 +4,7 @@ import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.Payload;
 import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.card.CreditCardInfo;
+import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.fitpay.android.api.models.user.UserAuthInfo;
 import com.fitpay.android.api.models.user.UserInfo;
 import com.google.gson.Gson;
@@ -14,8 +15,6 @@ public final class Constants {
 
     public static final String FIT_PAY_TAG = "FitPay";
 
-    static final String API_URL_PREFIX = "api/";
-
     static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     static final String DATE_FORMAT_ISO8601 = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
     static final String DATE_FORMAT_SIMPLE = "yyyy-MM-dd";
@@ -24,7 +23,7 @@ public final class Constants {
 
     static Gson gson;
 
-    static Gson getGson() {
+    public static Gson getGson() {
         if (gson == null){
             gson = new GsonBuilder()
                     .setDateFormat(Constants.DATE_FORMAT)

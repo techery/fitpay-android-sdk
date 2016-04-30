@@ -2,7 +2,6 @@ package com.fitpay.android;
 
 import android.media.Image;
 
-import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.enums.CardInitiators;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.card.CreditCard;
@@ -11,6 +10,7 @@ import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
+import com.fitpay.android.callback.ResultProvidingCallback;
 
 import org.junit.After;
 import org.junit.Before;
@@ -36,8 +36,9 @@ public class CreditCardTest2 extends TestActions {
 
     @Before
     public void setup() throws Exception {
-        userName = getRandomLengthString(5, 10) + "@" + getRandomLengthString(5, 10) + "." + getRandomLengthString(4, 10);
-        pin = getRandomLengthNumber(4, 4);
+        userName = TestUtils.getRandomLengthString(5, 10)
+                + "@" + TestUtils.getRandomLengthString(5, 10) + "." + TestUtils.getRandomLengthString(4, 10);
+        pin = TestUtils.getRandomLengthNumber(4, 4);
 
         loginIdentity = getTestLoginIdentity(userName, pin);
         doLogin(loginIdentity);
@@ -51,7 +52,8 @@ public class CreditCardTest2 extends TestActions {
     public void deleteUser() throws Exception {
         if (null != this.user) {
             final CountDownLatch latch = new CountDownLatch(1);
-            this.user.deleteUser(getSuccessDeterminingCallback(latch));
+            ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
+            this.user.deleteUser(callback);
             latch.await(TIMEOUT, TimeUnit.SECONDS);
         }
     }
