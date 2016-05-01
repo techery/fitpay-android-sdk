@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Created by Vlad on 11.03.2016.
  */
-final class ObjectConverter {
+final public class ObjectConverter {
 
     public static <T> Map<String, Object> convertToSimpleMap(T object) {
         Gson gson = new Gson();

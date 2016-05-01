@@ -1,7 +1,8 @@
-package com.fitpay.android.utils;
+package com.fitpay.android.api.services;
 
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.user.User;
+import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.google.gson.JsonElement;
 
 import java.util.Map;
@@ -9,8 +10,6 @@ import java.util.Map;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
-import retrofit2.http.FieldMap;
-import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
@@ -20,15 +19,7 @@ import retrofit2.http.Query;
 import retrofit2.http.QueryMap;
 import retrofit2.http.Url;
 
-interface FitPayClient {
-
-    /**
-     * Login user and get auth token
-     */
-    @FormUrlEncoded
-    @POST("oauth/authorize")
-    //@POST(Constants.BASE_URL + "oauth/authorize")
-    Call<OAuthToken> loginUser(@FieldMap Map<String, String> options);
+public interface FitPayClient {
 
     /**
      * Retrieves the details of an existing user.
@@ -36,7 +27,7 @@ interface FitPayClient {
      *
      * @param userId user id
      */
-    @GET(Constants.API_URL_PREFIX + "users/{userId}")
+    @GET("users/{userId}")
     Call<User> getUser(@Path("userId") String userId);
 
     /**
@@ -56,7 +47,7 @@ interface FitPayClient {
      *
      * @param clientPublicKey client public key
      */
-    @POST(Constants.API_URL_PREFIX + "config/encryptionKeys")
+    @POST("config/encryptionKeys")
     Call<ECCKeyPair> createEncryptionKey(@Body ECCKeyPair clientPublicKey);
 
     /**
@@ -64,7 +55,7 @@ interface FitPayClient {
      *
      * @param keyId key id
      */
-    @GET(Constants.API_URL_PREFIX + "config/encryptionKeys/{keyId}")
+    @GET("config/encryptionKeys/{keyId}")
     Call<ECCKeyPair> getEncryptionKey(@Query("keyId") String keyId);
 
     /**
@@ -72,7 +63,7 @@ interface FitPayClient {
      *
      * @param keyId key id
      */
-    @DELETE(Constants.API_URL_PREFIX + "config/encryptionKeys/{keyId}")
+    @DELETE("config/encryptionKeys/{keyId}")
     Call<Void> deleteEncryptionKey(@Query("keyId") String keyId);
 
     /**

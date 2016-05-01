@@ -1,11 +1,10 @@
-package com.fitpay.android.api.models;
+package com.fitpay.android.api.models.user;
 
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.utils.StringUtils;
 import com.fitpay.android.utils.ValidationException;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -13,21 +12,20 @@ import java.util.Map;
  */
 public final class LoginIdentity {
 
-    private final Map<String, String> data;
+    private String username;
+    private String password;
 
-    private LoginIdentity(){
-        data = new HashMap<>();
+    public String getPassword() {
+        return password;
     }
 
-    public Map<String, String> getData(){
-        return data;
+    public String getUsername() {
+        return username;
     }
 
     public static class Builder {
         private String username = null;
         private String password = null;
-        private String clientId = null;
-        private String redirectUri = null;
 
         /**
          * Creates a Builder instance that can be used to build {@link Map<>} with various configuration
@@ -44,7 +42,7 @@ public final class LoginIdentity {
          *
          * @return an instance of {@link LoginIdentity} configured with the options currently set in this builder
          */
-        public LoginIdentity create() throws ValidationException{
+        public LoginIdentity build() throws ValidationException{
             LoginIdentity loginIdentity = new LoginIdentity();
 
             if(StringUtils.isEmpty(username)){
@@ -55,26 +53,8 @@ public final class LoginIdentity {
                 throw new ValidationException("Password can't be null");
             }
 
-            if(StringUtils.isEmpty(clientId)){
-                throw new ValidationException("ClientId can't be null");
-            }
-
-            if(StringUtils.isEmpty(redirectUri)){
-                throw new ValidationException("RedirectUri can't be null");
-            }
-
-            final String data = new StringBuilder()
-                    .append("{\"username\":\"")
-                    .append(username)
-                    .append("\",\"password\":\"")
-                    .append(password)
-                    .append("\"}")
-                    .toString();
-
-            loginIdentity.data.put("credentials", data);
-            loginIdentity.data.put("response_type", "token");
-            loginIdentity.data.put("client_id", clientId);
-            loginIdentity.data.put("redirect_uri", redirectUri);
+            loginIdentity.username = username;
+            loginIdentity.password = password;
 
             return loginIdentity;
         }
@@ -96,26 +76,6 @@ public final class LoginIdentity {
          */
         public Builder setPassword(@NonNull String password) {
             this.password = password;
-            return this;
-        }
-
-        /**
-         * Set clientId
-         * @param clientId client id
-         * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
-         */
-        public Builder setClientId(@NonNull String clientId) {
-            this.clientId = clientId;
-            return this;
-        }
-
-        /**
-         * Set redirect uri
-         * @param redirectUri redirect uri
-         * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
-         */
-        public Builder setRedirectUri(@NonNull String redirectUri) {
-            this.redirectUri = redirectUri;
             return this;
         }
     }

@@ -3,8 +3,11 @@ package com.fitpay.android.utils;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 
+import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.enums.ResultCode;
+import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 
 import org.bouncycastle.util.encoders.Hex;
@@ -35,10 +38,11 @@ import retrofit2.Call;
 /**
  * KeysManager is designed to create and manage @ECCKeyPair object.
  */
-final class KeysManager {
-    static final int KEY_API = 0;
-    static final int KEY_WV = KEY_API + 1;
-    static final int KEY_FPCTRL = KEY_WV + 1;
+final public class KeysManager {
+
+    public static final int KEY_API = 0;
+    public static final int KEY_WV = KEY_API + 1;
+    public static final int KEY_FPCTRL = KEY_WV + 1;
 
     private static final String ALGORITHM = "ECDH";
     private static final String EC_CURVE = "secp256r1";

@@ -1,6 +1,6 @@
 package com.fitpay.android;
 
-import com.fitpay.android.utils.ApiManager;
+import com.fitpay.android.api.ApiManager;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -17,7 +17,12 @@ public class CreditCardTest {
     @BeforeClass
     public static void init() {
         steps = new Steps();
-        ApiManager.init(TestConstants.BASE_URL);
+        ApiManager.init(TestConstants.getConfig());
+    }
+
+    @Test
+    public void test00_createUser() throws InterruptedException {
+        steps.createUser();
     }
 
     @Test
@@ -31,8 +36,8 @@ public class CreditCardTest {
     }
 
     @Test
-    public void test03_getTransactions() throws InterruptedException {
-        steps.getTransactions();
+    public void test03_addDevice() throws InterruptedException {
+        steps.createDevice();
     }
 
     @Test
@@ -74,19 +79,52 @@ public class CreditCardTest {
         steps.reactivateCard();
     }
 
+
     @Test
-    public void test11_makeDefault() throws InterruptedException {
+    public void test111_createCard() throws InterruptedException {
+        steps.createCard("9999545454545455");
+    }
+
+
+    @Test
+    public void test112_acceptCard() throws InterruptedException {
+        steps.acceptTerms();
+        steps.selfCard();
+    }
+
+
+    @Test
+    public void test113_selectCard() throws InterruptedException {
+        steps.selectCard();
+        steps.selfCard();
+    }
+
+    @Test
+    public void test114_verifyCard() throws InterruptedException {
+        steps.verifyCard();
+        steps.selfCard();
+    }
+
+
+    @Test
+    public void test116_makeDefault() throws InterruptedException {
         steps.makeDefault();
     }
 
     @Test
     public void test12_declineTerms() throws InterruptedException {
-        steps.createCard();
+        steps.createCard("9999545454545456");
         steps.declineTerms();
     }
 
+
     @Test
-    public void test12_deleteTestCards() throws InterruptedException {
+    public void test13_getTransactions() throws InterruptedException {
+        steps.getTransactions();
+    }
+
+    @Test
+    public void test99_deleteTestCards() throws InterruptedException {
         steps.deleteTestCards();
     }
 

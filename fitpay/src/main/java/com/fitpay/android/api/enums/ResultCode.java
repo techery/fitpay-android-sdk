@@ -19,6 +19,8 @@ public final class ResultCode {
     public static final int SERVER_ERROR_2 = 503;
     public static final int SERVER_ERROR_3 = 504;
 
+    public static final int TIMEOUT = 600;
+
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({
             OK,
@@ -29,7 +31,8 @@ public final class ResultCode {
             SERVER_ERROR_0,
             SERVER_ERROR_1,
             SERVER_ERROR_2,
-            SERVER_ERROR_3
+            SERVER_ERROR_3,
+            TIMEOUT
     })
     public @interface Code{}
 }

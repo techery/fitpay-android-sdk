@@ -1,4 +1,4 @@
-package com.fitpay.android.utils;
+package com.fitpay.android.api.models.security;
 
 import java.util.Date;
 
@@ -7,7 +7,7 @@ import javax.crypto.SecretKey;
 /**
  * Created by Vlad on 17.02.2016.
  */
-class ECCKeyPair {
+public class ECCKeyPair {
 
     private String keyId;
     private Date createdTs;

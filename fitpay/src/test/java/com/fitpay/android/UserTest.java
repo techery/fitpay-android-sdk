@@ -1,6 +1,6 @@
 package com.fitpay.android;
 
-import com.fitpay.android.utils.ApiManager;
+import com.fitpay.android.api.ApiManager;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -16,8 +16,13 @@ public class UserTest {
 
     @BeforeClass
     public static void init() {
-        ApiManager.init(TestConstants.BASE_URL);
+        ApiManager.init(TestConstants.getConfig());
         steps = new Steps();
+    }
+
+    @Test
+    public void test00_createUser() throws InterruptedException {
+        steps.createUser();
     }
 
     @Test

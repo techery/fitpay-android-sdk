@@ -31,7 +31,11 @@ public final class Links implements Parcelable {
 
     public String getReadableKeys() {
         if (links.keySet().size() > 0) {
-            return "self, " + links.keySet().toString();
+            String availableLinks = links.keySet().toString();
+            if (!availableLinks.contains("self")) {
+                availableLinks = "self, " + availableLinks;
+            }
+            return availableLinks;
         }
 
         return "self";

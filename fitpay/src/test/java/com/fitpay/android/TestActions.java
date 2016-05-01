@@ -1,9 +1,7 @@
 package com.fitpay.android;
 
-import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
-import com.fitpay.android.api.enums.ResultCode;
-import com.fitpay.android.api.models.LoginIdentity;
+import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.card.Address;
 import com.fitpay.android.api.models.card.CreditCard;
@@ -12,7 +10,9 @@ import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
-import com.fitpay.android.utils.ApiManager;
+import com.fitpay.android.api.models.user.UserCreateRequest;
+import com.fitpay.android.callback.ResultProvidingCallback;
+import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 
@@ -23,8 +23,8 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
 
 public class TestActions {
 
@@ -38,15 +38,25 @@ public class TestActions {
 
     @BeforeClass
     public static void init() {
-        ApiManager.init(TestConstants.BASE_URL);
+        ApiManager.init(TestConstants.getConfig());
     }
 
-    protected void doLogin(LoginIdentity loginIdentity) throws Exception{
-
+    protected User createUser(UserCreateRequest user) throws Exception{
         final CountDownLatch latch = new CountDownLatch(1);
-        ApiManager.getInstance().loginUser(loginIdentity, getSuccessDeterminingCallback(latch));
+        ResultProvidingCallback<User> callback = new ResultProvidingCallback<>(latch);
+        ApiManager.getInstance().createUser(user, callback);
+        boolean completed = latch.await(TIMEOUT, TimeUnit.SECONDS);
+        return callback.getResult();
+    }
+
+    protected boolean doLogin(LoginIdentity loginIdentity) throws Exception{
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
+        ApiManager.getInstance().loginUser(loginIdentity, callback);
         boolean completed = latch.await(TIMEOUT, TimeUnit.SECONDS);
         assertTrue("login did not complete successfully", completed);
+        assertEquals("login error code. (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
+        return completed;
     }
 
 
@@ -69,58 +79,19 @@ public class TestActions {
         LoginIdentity loginIdentity = new LoginIdentity.Builder()
                     .setUsername(userName)
                     .setPassword(pin)
-                    .setClientId(TestConstants.CLIENT_ID)
-                    .setRedirectUri(TestConstants.BASE_URL)
-                    .create();
+                    .build();
         return loginIdentity;
 
     }
 
-    protected ApiCallback<Void> getSuccessDeterminingCallback(final CountDownLatch latch) {
+    protected UserCreateRequest getNewTestUser(String userName, String pin) throws ValidationException {
 
-        ApiCallback<Void> callback = new ApiCallback<Void>() {
+        UserCreateRequest user = new UserCreateRequest.Builder()
+                .email(userName)
+                .pin(pin)
+                .build();
+        return user;
 
-            @Override
-            public void onSuccess(Void result) {
-               if (null != latch) {
-                    latch.countDown();
-               }
-            }
-
-            @Override
-            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                fail();
-            }
-        };
-        return callback;
-    }
-
-    protected String getRandomLengthString(int minLength, int maxLength) {
-        String chars = "abcdefghijklmnopqrstuvwxyz";
-        int length = minLength;
-        if (maxLength > minLength) {
-            length = minLength + random.nextInt(maxLength - minLength);
-        }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            int pos = random.nextInt(chars.length());
-            sb.append(chars.substring(pos, pos+ 1));
-        }
-        return sb.toString();
-    }
-
-    protected String getRandomLengthNumber(int minLength, int maxLength) {
-        String chars = "0123456789";
-        int length = minLength;
-        if (maxLength > minLength) {
-            length = minLength + random.nextInt(maxLength - minLength);
-        }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            int pos = random.nextInt(chars.length());
-            sb.append(chars.substring(pos, pos+ 1));
-        }
-        return sb.toString();
     }
 
     protected CreditCard getTestCreditCard(String pan) {
@@ -257,6 +228,7 @@ public class TestActions {
         ResultProvidingCallback<CreditCard> callback = new ResultProvidingCallback<>(latch);
         creditCard.self(callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        assertEquals("get credit card had error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return callback.getResult();
     }
 
@@ -266,6 +238,7 @@ public class TestActions {
         ResultProvidingCallback<Collections.CreditCardCollection> callback = new ResultProvidingCallback<>(latch);
         user.getCreditCards(10, 0 , callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        assertEquals("get credit cards had error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return callback.getResult();
     }
 
@@ -304,16 +277,19 @@ public class TestActions {
 
     protected void makeDefaultCard(CreditCard creditCard) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
-        creditCard.makeDefault(getSuccessDeterminingCallback(latch));
+        ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
+        creditCard.makeDefault(callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        assertEquals("make default error code", -1, callback.getErrorCode());
     }
 
 
     protected void deleteCard(CreditCard creditCard) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
-        ApiCallback<Void> callback = getSuccessDeterminingCallback(latch);
+        ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
         creditCard.deleteCard(callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        assertEquals("delete error code", -1, callback.getErrorCode());
     }
 
     protected VerificationMethod selectVerificationMethod(VerificationMethod method) throws Exception {
@@ -337,6 +313,7 @@ public class TestActions {
         ResultProvidingCallback<Collections.TransactionCollection> callback = new ResultProvidingCallback<>(latch);
         card.getTransactions(10, 0 , callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        assertEquals("get device transactions error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return callback.getResult();
     }
 
@@ -345,6 +322,7 @@ public class TestActions {
         ResultProvidingCallback<Transaction> callback = new ResultProvidingCallback<>(latch);
         transaction.self(callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        assertEquals("get device transaction error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return callback.getResult();
     }
 
@@ -354,52 +332,10 @@ public class TestActions {
         ResultProvidingCallback<Collections.DeviceCollection> callback = new ResultProvidingCallback<>(latch);
         user.getDevices(10, 0 , callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        assertEquals("get devices error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return callback.getResult();
     }
 
 
-
-    public class ResultProvidingCallback<T> implements ApiCallback<T> {
-
-        private T result;
-        private int errorCode = -1;
-        private String errorMessage;
-        private CountDownLatch latch;
-
-        public ResultProvidingCallback() {}
-
-        public ResultProvidingCallback(CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        @Override
-        public void onSuccess(T result) {
-            this.result = result;
-            if (null != latch) {
-                latch.countDown();
-            }
-        }
-
-        @Override
-        public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-            this.errorCode = errorCode;
-            this.errorMessage = errorMessage;
-            if (null != latch) {
-                latch.countDown();
-            }
-        }
-
-        public int getErrorCode() {
-            return errorCode;
-        }
-
-        public String getErrorMessage() {
-            return errorMessage;
-        }
-
-        public T getResult() {
-            return this.result;
-        }
-    }
 
 }

@@ -46,7 +46,10 @@ abstract class CreditCardModel extends BaseModel {
     }
 
     public boolean isDefault() {
-        return defaultX;
+        if (null == defaultX) {
+            return false;
+        }
+        return defaultX.booleanValue();
     }
 
     public long getCreatedTsEpoch() {

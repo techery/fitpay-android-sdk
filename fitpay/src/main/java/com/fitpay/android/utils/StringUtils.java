@@ -1,5 +1,6 @@
 package com.fitpay.android.utils;
 
+import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWEAlgorithm;
@@ -31,6 +32,10 @@ public final class StringUtils {
         EncryptionMethod enc = EncryptionMethod.A256GCM;
 
         ECCKeyPair keyPair = KeysManager.getInstance().getPairForType(type);
+
+        if (null == keyPair) {
+            throw new IllegalStateException("No key pair available for type (type = " + type + ")");
+        }
 
         JWEHeader.Builder jweHeaderBuilder = new JWEHeader.Builder(alg, enc)
                 .contentType("application/json")

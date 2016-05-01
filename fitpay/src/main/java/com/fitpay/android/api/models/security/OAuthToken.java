@@ -1,5 +1,7 @@
-package com.fitpay.android.utils;
+package com.fitpay.android.api.models.security;
 
+import com.fitpay.android.utils.Constants;
+import com.fitpay.android.utils.StringUtils;
 import com.google.gson.annotations.SerializedName;
 import com.nimbusds.jwt.JWT;
 import com.nimbusds.jwt.JWTParser;
@@ -11,7 +13,7 @@ import java.text.ParseException;
 /**
  * OAuth token.
  */
-final class OAuthToken {
+final public class OAuthToken {
     @SerializedName("token_type")
     private String tokenType;
     @SerializedName("access_token")

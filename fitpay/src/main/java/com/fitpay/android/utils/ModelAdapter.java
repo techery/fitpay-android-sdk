@@ -6,6 +6,7 @@ import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.fitpay.android.wearable.utils.Hex;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -27,6 +28,8 @@ import java.util.Set;
 final class ModelAdapter {
 
     public static final class DataSerializer<T> implements JsonSerializer<T>, JsonDeserializer<T> {
+
+        @Override
         public JsonElement serialize(T data, Type typeOfSrc, JsonSerializationContext context) {
 
             final String encryptedString = StringUtils.getEncryptedString(KeysManager.KEY_API, new GsonBuilder().create().toJson(data));

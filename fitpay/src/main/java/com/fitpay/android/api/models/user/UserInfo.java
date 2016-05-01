@@ -6,7 +6,7 @@ import android.os.Parcelable;
 /**
  * User info
  */
-public final class UserInfo implements Parcelable {
+public class UserInfo implements Parcelable {
 
     /**
      * description : The user's username
