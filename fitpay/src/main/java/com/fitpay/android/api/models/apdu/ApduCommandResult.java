@@ -1,6 +1,6 @@
 package com.fitpay.android.api.models.apdu;
 
-import com.fitpay.android.wearable.interfaces.IApduMessage;
+import com.fitpay.android.paymentdevice.interfaces.IApduMessage;
 
 import java.util.Arrays;
 

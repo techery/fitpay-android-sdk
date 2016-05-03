@@ -4,10 +4,9 @@ import com.fitpay.android.utils.Command;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
-import com.fitpay.android.wearable.callbacks.ConnectionListener;
-import com.fitpay.android.wearable.constants.States;
-import com.fitpay.android.wearable.enums.Connection;
-import com.orhanobut.logger.Logger;
+import com.fitpay.android.paymentdevice.callbacks.ConnectionListener;
+import com.fitpay.android.paymentdevice.constants.States;
+import com.fitpay.android.paymentdevice.enums.Connection;
 
 import org.junit.AfterClass;
 import org.junit.Assert;
