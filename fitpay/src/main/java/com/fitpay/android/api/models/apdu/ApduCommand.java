@@ -1,6 +1,6 @@
 package com.fitpay.android.api.models.apdu;
 
-import com.fitpay.android.wearable.utils.Hex;
+import com.fitpay.android.utils.Hex;
 
 /**
  * Apdu command
