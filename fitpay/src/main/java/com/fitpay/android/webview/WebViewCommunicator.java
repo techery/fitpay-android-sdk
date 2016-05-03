@@ -4,23 +4,26 @@ import android.webkit.JavascriptInterface;
 
 import java.util.Map;
 
-/**
- * Created by Ross Gabay on 3/31/2016.
- */
+
 public interface WebViewCommunicator {
-    @JavascriptInterface
-    Map<String, Object> loginEventHandler(oauthData oauthData); //oauthData contains OAuth2 credentials of the End User
 
+    /**
+     *  this method is called by the WV to initiate the sync sequence in the SDK
+     */
     @JavascriptInterface
-    Map<String, Object> syncEventHandler();
+    String sync();
 
+    /**
+     *  this method is called by the WV to provide 'session data' (deviceID, userID, OAuth token) to the SDK
+     */
     @JavascriptInterface
-    Map<String, Object> pingEventHandler();
+    String sendUserData(String data);
 
+    //
+    /**
+     *  this method is called by the WV onLoad() to retrieve JSON object with host device and wearable data
+     */
     @JavascriptInterface
-    Map<String, Object> updateSeEventHandler();
+    String retrieveConfigJson();
 
-    public class oauthData {
-        protected String bearerToken;
-    }
 }
