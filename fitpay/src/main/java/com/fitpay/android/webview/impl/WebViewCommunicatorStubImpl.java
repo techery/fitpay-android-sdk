@@ -1,5 +1,7 @@
 package com.fitpay.android.webview.impl;
 
+import android.webkit.JavascriptInterface;
+
 import com.fitpay.android.webview.WebViewCommunicator;
 
 import com.google.gson.Gson;
@@ -15,6 +17,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator{
     final Gson gson = new Gson();
 
     @Override
+    @JavascriptInterface
     public String sync() {
         AckResponseModel stubResponse = new AckResponseModel();
         stubResponse.setStatus(USER_DATA_STUB_RESPONSE);
@@ -23,6 +26,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator{
     }
 
     @Override
+    @JavascriptInterface
     public String sendUserData(String data) {
         AckResponseModel stubResponse = new AckResponseModel();
         stubResponse.setStatus(SYNC_STUB_RESPONSE);
@@ -32,6 +36,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator{
 
     //not used by the first iteration of the webview
     @Override
+    @JavascriptInterface
     public String retrieveConfigJson() {
         throw new UnsupportedOperationException("method not supported in this iteration");
     }
