@@ -30,7 +30,7 @@ public final class TestConstants {
     static Map<String, String> getConfig() {
         Map<String, String> env = System.getenv();
 
-        String currentEnv = System.getProperty("environment", "dev");
+        String currentEnv = System.getProperty("environment", "demo");
 
         Map<String, String>  config = new HashMap<>();
         switch (currentEnv) {
