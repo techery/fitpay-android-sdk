@@ -1,6 +1,44 @@
 apply plugin: 'com.android.library'
 apply plugin: 'me.tatarka.retrolambda'
 
+apply plugin: 'maven'
+
+group = "com.fitpay"
+archivesBaseName = "android_sdk"
+version = "0.0.1"
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: 'file://' + new File(System.getProperty('user.home'),'LocalRepository').absolutePath) { }
+
+            snapshotRepository(url: 'file://' + new File(System.getProperty('user.home'),'LocalRepository/snapshots').absolutePath) { }
+
+            pom.project {
+                name 'android_sdk'
+                packaging 'aar'
+                description 'Android SDK'
+                url 'http://private-git-url'
+
+                licenses {
+                    license {
+                        name 'The Apache Software License, Version 2.0'
+                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id '123'
+                        name 'yourName'
+                        email 'your@email.com'
+                    }
+                }
+            }
+        }
+    }
+}
+
 android {
     compileSdkVersion 23
     buildToolsVersion "23.0.3"
