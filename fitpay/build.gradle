@@ -1,12 +1,56 @@
 apply plugin: 'com.android.library'
+apply plugin: 'me.tatarka.retrolambda'
+
+apply plugin: 'maven'
+
+group = "com.fitpay"
+archivesBaseName = "android_sdk"
+version = "0.0.1"
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: 'file://' + new File(System.getProperty('user.home'),'LocalRepository').absolutePath) { }
+
+            snapshotRepository(url: 'file://' + new File(System.getProperty('user.home'),'LocalRepository/snapshots').absolutePath) { }
+
+            pom.project {
+                name 'android_sdk'
+                packaging 'aar'
+                description 'Android SDK'
+                url 'http://private-git-url'
+
+                licenses {
+                    license {
+                        name 'MIT License'
+                        url 'https://github.com/fitpay/fitpay-android-sdk/blob/develop/LICENSE'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id '123'
+                        name 'yourName'
+                        email 'your@email.com'
+                    }
+                }
+            }
+        }
+    }
+}
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    buildToolsVersion "23.0.3"
 
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 23
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     lintOptions{
@@ -25,21 +69,31 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile 'com.android.support:support-annotations:23.1.1'
+    compile 'com.android.support:support-annotations:23.3.0'
+    compile 'com.android.support:appcompat-v7:23.3.0'
 
     compile 'com.squareup.retrofit2:retrofit:2.0.0-beta4'
     compile 'com.squareup.retrofit2:converter-gson:2.0.0-beta4'
     compile 'com.squareup.okhttp3:logging-interceptor:3.1.2'
 
-    //compile 'commons-codec:commons-codec:1.10'
     compile 'org.bouncycastle:bcprov-jdk15on:1.54'
     compile 'com.nimbusds:nimbus-jose-jwt:4.12'
 
     compile 'com.pusher:pusher-java-client:1.0.2'
 
-    //compile 'io.reactivex:rxjava:1.1.1'
+    compile 'com.github.orhanobut:logger:1.12'
+
+    compile 'io.reactivex:rxjava:1.1.2'
+    compile 'io.reactivex:rxandroid:1.1.0'
+
+    compile 'me.alexrs:prefs:1.1.0'
 
     testCompile 'org.mockito:mockito-core:1.10.19'
-    testCompile "org.robolectric:robolectric:3.0"
     testCompile 'junit:junit:4.12'
+
+    testCompile ('org.robolectric:robolectric:3.0') {
+        exclude module: 'junit'
+        exclude group: 'org.bouncycastle'
+    }
+
 }

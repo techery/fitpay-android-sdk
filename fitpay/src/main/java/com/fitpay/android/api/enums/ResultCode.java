@@ -2,7 +2,13 @@ package com.fitpay.android.api.enums;
 
 import android.support.annotation.IntDef;
 
-public class ResultCode {
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+/**
+ * API Result codes enum
+ */
+public final class ResultCode {
     public static final int OK = 200;
     public static final int BAD_REQUEST = 400;
     public static final int UNAUTHORIZED = 401;
@@ -13,6 +19,9 @@ public class ResultCode {
     public static final int SERVER_ERROR_2 = 503;
     public static final int SERVER_ERROR_3 = 504;
 
+    public static final int TIMEOUT = 600;
+
+    @Retention(RetentionPolicy.SOURCE)
     @IntDef({
             OK,
             BAD_REQUEST,
@@ -22,7 +31,8 @@ public class ResultCode {
             SERVER_ERROR_0,
             SERVER_ERROR_1,
             SERVER_ERROR_2,
-            SERVER_ERROR_3
+            SERVER_ERROR_3,
+            TIMEOUT
     })
     public @interface Code{}
 }

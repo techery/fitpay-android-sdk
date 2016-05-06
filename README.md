@@ -1,4 +1,47 @@
-# FitPay Android SDK
-[![Build Status](https://travis-ci.com/fitpay/fitpay-android.svg?token=fkRqgp9ZXCymFu5Lx6RD)](https://travis-ci.com/fitpay/fitpay-android)
+# FitPay Android SDK - README.md
 
-FitPay Android SDK Coming Soon....
+## Building the app
+
+### Building using Android Studio
+```
+mkdir fitpay  
+cd fitpay
+git clone git@github.com:fitpay/fitpay-android-sdk.git  
+cd fitpay-android-sdk
+studio.sh (or double click your android studio)
+Open an existing Android Studio project
+/home/yourname/fitpay/fitpay-android-sdk
+Click on Project (topleft), select Java, test, UserTest - right click and select "Run UserTest"
+```
+
+
+
+Fit-Pay also utilizes a continuous integration system (travis) to build and test. Current Develop Branch Status: [![Build Status](https://travis-ci.org/fitpay/fitpay-android-sdk.svg?branch=develop)](https://travis-ci.org/fitpay/fitpay-android-sdk)
+
+### Building from the commandline
+Ensure you have the Android SDK installed on your machine. http://developer.android.com/sdk/index.html  
+  
+Gradle also automagically runs the tests when you build.  
+
+```
+export ANDROID_HOME=/home/myname/Android/Sdk
+cd ~
+mkdir fitpay  
+cd fitpay
+git clone git@github.com:fitpay/fitpay-android-sdk.git  
+cd fitpay-android-sdk  
+./gradlew clean build  
+```
+
+### Problems with the tests?
+Some versions of Java come with an encryption distribution that may not be up to modern standards. If you experience problems with SSL connections, please download the [Java Cryptography Extension](http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html).
+## Contributing to the SDK
+We welcome contributions to the SDK. For your first few contributions please fork the repo, make your changes and submit a pull request. Internally we branch off of develop, test, and PR-review the branch before merging to develop (moderately stable). Releases to Master happen less frequently, undergo more testing, and can be considered stable. For more information, please read:  [http://nvie.com/posts/a-successful-git-branching-model/](http://nvie.com/posts/a-successful-git-branching-model/)
+
+
+## License
+This code is licensed under the MIT license. More information can be found in the [LICENSE](LICENSE) file contained in this repository.
+
+## Questions? Comments? Concerns?
+Please contact the team via a github issue, OR, feel free to email us: sdk@fit-pay.com
+
