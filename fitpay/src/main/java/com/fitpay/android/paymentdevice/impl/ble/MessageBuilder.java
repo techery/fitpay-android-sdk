@@ -1,7 +1,5 @@
 package com.fitpay.android.paymentdevice.impl.ble;
 
-import android.util.Log;
-
 import com.fitpay.android.utils.Hex;
 
 import java.util.Calendar;
@@ -24,7 +22,6 @@ class MessageBuilder {
 
         byte[] msg = new byte[DATE_TIME_MESSAGE_LENGTH];
         int pos = 0;
-        Log.d("blop", "year: " + cal.get(Calendar.YEAR));
         byte[] snippet = getIntAsByteArray(cal.get(Calendar.YEAR), 2);
         // reverse byte order - year is little endian
         for (int i = 0; i < snippet.length; i++) {

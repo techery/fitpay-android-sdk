@@ -1,8 +1,9 @@
 package com.fitpay.android.utils;
 
+import android.util.Log;
+
 import com.orhanobut.logger.Logger;
 
-import rx.Scheduler;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
@@ -41,7 +42,8 @@ public class RxBus {
                 );
     }
 
-    public void post(Object object){
+    public void post(Object object) {
+        Log.d("RxBus", "post event: " + object);
         mBus.onNext(object);
     }
 }
