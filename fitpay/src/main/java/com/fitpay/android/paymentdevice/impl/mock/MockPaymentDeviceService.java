@@ -1,11 +1,13 @@
 package com.fitpay.android.paymentdevice.impl.mock;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentdevice.constants.States;
+import com.fitpay.android.paymentdevice.enums.Connection;
 import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
 import com.fitpay.android.paymentdevice.model.PaymentDeviceService;
@@ -13,15 +15,26 @@ import com.fitpay.android.utils.RxBus;
 
 import java.util.Random;
 
+import rx.Observable;
+import rx.Observer;
+import rx.Subscription;
+import rx.functions.Func1;
+import rx.schedulers.Schedulers;
+
 /**
  * Created by tgs on 5/3/16.
  */
 public class MockPaymentDeviceService extends PaymentDeviceService {
 
+    private final String TAG = MockPaymentDeviceService.class.getSimpleName();
+
     private Device device;
     private final Random random = new Random();
     private final int delay = 3000;
     private boolean deviceInfoRead = false;
+
+    Subscription connectionSubscription;
+    Subscription deviceReadSubscription;
 
     public MockPaymentDeviceService(Context context, String address) {
         super(context, address);
@@ -55,25 +68,96 @@ public class MockPaymentDeviceService extends PaymentDeviceService {
 
     @Override
     public void close() {
-
+        Log.d(TAG, "close not implemented");
     }
 
     @Override
     public void connect() {
-        Thread thread = new Thread() {
-            public void run() {
-                delay();
-                setState(States.CONNECTING);
-                delay();
-                setState(States.CONNECTED);
-            }
-        };
-        thread.start();
+
+        Log.d(TAG, "payment device connect requested.   current state: " + getState());
+
+        if (getState() == States.CONNECTED) {
+            return;
+        }
+
+        connectionSubscription = getAsyncSimulatingObservable()
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.newThread())
+                .subscribe(getConnectionObserver(States.CONNECTING));
     }
 
-    protected void delay() {
+    private Observable<Boolean> getAsyncSimulatingObservable() {
+        return Observable.just(true).map(new Func1<Boolean, Boolean>() {
+            @Override
+            public Boolean call(Boolean aBoolean) {
+                delay(delay);
+                return aBoolean;
+            }
+        });
+    }
+
+    private Observer<Boolean> getConnectionObserver(@Connection.State int targetState) {
+
+        return new Observer<Boolean>() {
+
+            private final int newState = targetState;
+
+            @Override
+            public void onCompleted() {
+                Log.d(TAG, "connection changed state.  new state: " + newState);
+                setState(newState);
+                if (newState == States.CONNECTING) {
+                    connectionSubscription = getAsyncSimulatingObservable()//
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(Schedulers.newThread())
+                            .subscribe(getConnectionObserver(States.CONNECTED));
+                } else if (newState == States.DISCONNECTING) {
+                    connectionSubscription = getAsyncSimulatingObservable()//
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(Schedulers.newThread())
+                            .subscribe(getConnectionObserver(States.DISCONNECTED));
+                }
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.d(TAG, "connection observer error: " + e.getMessage());
+            }
+
+            @Override
+            public void onNext(Boolean bool) {
+                Log.d(TAG, "connection observer onNext: " + bool);
+            }
+        };
+    }
+
+
+    private Observer<Boolean> getDeviceInfoObserver(final Device deviceInfo) {
+
+        return new Observer<Boolean>() {
+
+            @Override
+            public void onCompleted() {
+                Log.d(TAG, "device info has been read.  device: " + deviceInfo);
+                RxBus.getInstance().post(device);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.d(TAG, "deviceInfo observer error: " + e.getMessage());
+            }
+
+            @Override
+            public void onNext(Boolean bool) {
+                Log.d(TAG, "deviceInfo observer onNext: " + bool);
+            }
+        };
+    }
+
+    protected void delay(long delayInterval) {
+
         try {
-            Thread.sleep(random.nextInt(delay));
+            Thread.sleep(random.nextInt((int)delayInterval));
         } catch (InterruptedException e) {
             // carry on
         }
@@ -81,24 +165,23 @@ public class MockPaymentDeviceService extends PaymentDeviceService {
 
     @Override
     public void disconnect() {
+        Log.d(TAG, "payment device disconnect requested.  current state: " + getState());
 
-    }
-
-    @Override
-    public void reconnect() {
-
+        connectionSubscription = getAsyncSimulatingObservable()
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.newThread())
+                .subscribe(getConnectionObserver(States.DISCONNECTING));
     }
 
     @Override
     public void readDeviceInfo() {
-        deviceInfoRead = true;
-        Thread thread = new Thread() {
-            public void run() {
-                delay();
-            }
-        };
-        thread.start();
-        RxBus.getInstance().post(device);
+
+        Log.d(TAG, "payment device readDeviceInfo requested");
+
+        deviceReadSubscription = getAsyncSimulatingObservable()
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.newThread())
+                .subscribe(getDeviceInfoObserver(device));
     }
 
     @Override
@@ -124,13 +207,5 @@ public class MockPaymentDeviceService extends PaymentDeviceService {
     @Override
     public void setSecureElementState(@SecureElement.Action byte state) {
 
-    }
-
-    //TODO replace this with callback provides value
-    public Device getDevice() {
-        if (deviceInfoRead) {
-            return device;
-        }
-        return null;
     }
 }

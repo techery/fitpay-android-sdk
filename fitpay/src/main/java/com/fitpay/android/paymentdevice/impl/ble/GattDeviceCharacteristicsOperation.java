@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothGatt;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.Hex;
+import com.fitpay.android.utils.StringUtils;
 
 import java.util.UUID;
 
@@ -59,14 +60,14 @@ class GattDeviceCharacteristicsOperation extends GattOperation {
     public void execute(BluetoothGatt gatt) {
         Device device = new Device.Builder()
                 .setBdAddress(mAddress)
-                .setModelNumber(modelNumber)
-                .setManufacturerName(manufacturerName)
-                .setSerialNumber(serialNumber)
-                .setSystemId(systemId)
-                .setSecureElementId(secureElementId)
-                .setFirmwareRevision(firmwareRevision)
-                .setSoftwareRevision(softwareRevision)
-                .setHardwareRevision(hardwareRevision)
+                .setModelNumber(StringUtils.convertHexStringToAscii(modelNumber))
+                .setManufacturerName(StringUtils.convertHexStringToAscii(manufacturerName))
+                .setSerialNumber(StringUtils.convertHexStringToAscii(serialNumber))
+                .setSystemId(StringUtils.convertHexStringToAscii(systemId))
+                .setSecureElementId(StringUtils.convertHexStringToAscii(secureElementId))
+                .setFirmwareRevision(StringUtils.convertHexStringToAscii(firmwareRevision))
+                .setSoftwareRevision(StringUtils.convertHexStringToAscii(softwareRevision))
+                .setHardwareRevision(StringUtils.convertHexStringToAscii(hardwareRevision))
                 .create();
 
         RxBus.getInstance().post(device);

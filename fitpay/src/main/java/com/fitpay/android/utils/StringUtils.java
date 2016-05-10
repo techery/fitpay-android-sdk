@@ -106,4 +106,16 @@ public final class StringUtils {
     public static boolean isEmpty(String str) {
         return str == null || str.length() == 0;
     }
+
+    public static String convertHexStringToAscii(String hex) {
+        if (null == hex) {
+            return null;
+        }
+        StringBuilder output = new StringBuilder();
+        for (int i = 0; i < hex.length(); i+=2) {
+            String str = hex.substring(i, i+2);
+            output.append((char)Integer.parseInt(str, 16));
+        }
+        return output.toString();
+    }
 }

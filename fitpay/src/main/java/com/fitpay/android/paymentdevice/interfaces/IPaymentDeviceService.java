@@ -20,6 +20,8 @@ public interface IPaymentDeviceService {
     void executeApduPackage(ApduPackage apduPackage);
     void sendNotification(byte[] data);
     void setSecureElementState(@SecureElement.Action byte state);
+
+    //TODO review - should this have a getState method?
     @Connection.State int getState();
     void setState(@Connection.State int state);
 }

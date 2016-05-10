@@ -13,7 +13,7 @@ import java.lang.annotation.RetentionPolicy;
 public final class Connection {
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({States.DISCONNECTED, States.CONNECTING, States.CONNECTED, States.DISCONNECTING, States.INITIALIZED})
+    @IntDef({States.NEW, States.DISCONNECTED, States.CONNECTING, States.CONNECTED, States.DISCONNECTING, States.INITIALIZED})
     public @interface State {
     }
 

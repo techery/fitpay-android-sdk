@@ -14,14 +14,14 @@ import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
-import com.fitpay.android.utils.Listener;
-import com.fitpay.android.utils.NotificationManager;
-import com.fitpay.android.utils.RxBus;
-import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceService;
+import com.fitpay.android.utils.Listener;
+import com.fitpay.android.utils.NotificationManager;
+import com.fitpay.android.utils.RxBus;
+import com.fitpay.android.utils.TimestampUtils;
 import com.orhanobut.logger.Logger;
 
 import java.util.List;
@@ -99,7 +99,11 @@ public final class DeviceService extends Service {
      */
     public void pairWithDevice(@NonNull IPaymentDeviceService paymentDeviceService) {
 
-        if (mPaymentDeviceService != null && !mPaymentDeviceService.getMacAddress().equals(paymentDeviceService.getMacAddress()) && mPaymentDeviceService.getState() == States.CONNECTED) {
+        // check to see if device has changed, if so close the existing connection
+        if (mPaymentDeviceService != null
+                && ((mPaymentDeviceService.getMacAddress() == null && paymentDeviceService.getMacAddress() != null)
+                    || null != mPaymentDeviceService.getMacAddress() && !mPaymentDeviceService.getMacAddress().equals(paymentDeviceService.getMacAddress()))
+                && mPaymentDeviceService.getState() == States.CONNECTED) {
             mPaymentDeviceService.disconnect();
             mPaymentDeviceService.close();
             mPaymentDeviceService = null;
@@ -117,7 +121,8 @@ public final class DeviceService extends Service {
                 break;
 
             default:
-                Logger.e("Can't connect to device");
+                //TODO - why not let device decide if it can connect from this state?
+                Logger.e("Can't connect to device.  Current device state does not support the connect operation.  State: " + mPaymentDeviceService.getState());
                 break;
         }
     }
