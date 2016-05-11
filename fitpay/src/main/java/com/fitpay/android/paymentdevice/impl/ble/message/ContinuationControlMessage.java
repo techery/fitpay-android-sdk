@@ -1,9 +1,9 @@
-package com.fitpay.android.paymentdevice.impl.ble;
+package com.fitpay.android.paymentdevice.impl.ble.message;
 
 /**
  * Created by tgs on 3/23/16.
  */
-abstract class ContinuationControlMessage extends BleMessage {
+public abstract class ContinuationControlMessage extends BleMessage {
 
     protected boolean isBeginning;
 

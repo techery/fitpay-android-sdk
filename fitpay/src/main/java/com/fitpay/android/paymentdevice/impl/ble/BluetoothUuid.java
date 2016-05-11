@@ -9,7 +9,7 @@ import java.util.UUID;
 /**
  * Created by ssteveli on 1/26/16.
  */
-class BluetoothUuid {
+public class BluetoothUuid {
     public static final ParcelUuid BASE_UUID =
             ParcelUuid.fromString("00000000-0000-1000-8000-00805F9B34FB");
 

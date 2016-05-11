@@ -1,11 +1,11 @@
-package com.fitpay.android.paymentdevice.impl.ble;
+package com.fitpay.android.paymentdevice.impl.ble.message;
 
 import com.fitpay.android.paymentdevice.interfaces.ISecureMessage;
 
 /**
  * Created by tgs on 3/4/16.
  */
-class SecurityStateMessage extends BleMessage implements ISecureMessage {
+public class SecurityStateMessage extends BleMessage implements ISecureMessage {
 
     private boolean nfcEnabled;
     private byte nfcErrorCode = 0x00;

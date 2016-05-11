@@ -1,4 +1,4 @@
-package com.fitpay.android.paymentdevice.impl.ble;
+package com.fitpay.android.paymentdevice.impl.ble.message;
 
 import com.fitpay.android.paymentdevice.interfaces.INotificationMessage;
 
@@ -7,7 +7,7 @@ import java.util.Date;
 /**
  * Created by tgs on 3/4/16.
  */
-class NotificationMessage extends BleMessage implements INotificationMessage {
+public class NotificationMessage extends BleMessage implements INotificationMessage {
 
     private Date date;
     private byte[] type;

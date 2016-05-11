@@ -2,7 +2,6 @@ package com.fitpay.android.utils;
 
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.Payload;
-import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.card.CreditCardInfo;
 import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.fitpay.android.api.models.user.UserAuthInfo;
@@ -32,7 +31,7 @@ public final class Constants {
                     .registerTypeAdapter(UserInfo.class, new ModelAdapter.DataSerializer<>())
                     .registerTypeAdapter(CreditCardInfo.class, new ModelAdapter.DataSerializer<>())
                     .registerTypeAdapter(Payload.class, new ModelAdapter.PayloadDeserializer())
-                    .registerTypeAdapter(ApduCommandResult.class, new ModelAdapter.AdpuCommandResponseSerializer())
+            //        .registerTypeAdapter(ApduCommandResultBytes.class, new ModelAdapter.AdpuCommandResponseSerializer())
                     .registerTypeAdapter(UserAuthInfo.class, new ModelAdapter.DataSerializer<>())
                     .create();
         }

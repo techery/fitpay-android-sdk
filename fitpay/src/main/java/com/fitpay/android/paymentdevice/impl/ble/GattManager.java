@@ -9,6 +9,15 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.AsyncTask;
 
+import com.fitpay.android.paymentdevice.impl.ble.message.ApduResultMessage;
+import com.fitpay.android.paymentdevice.impl.ble.message.ApplicationControlMessage;
+import com.fitpay.android.paymentdevice.impl.ble.message.ContinuationControlBeginMessage;
+import com.fitpay.android.paymentdevice.impl.ble.message.ContinuationControlEndMessage;
+import com.fitpay.android.paymentdevice.impl.ble.message.ContinuationControlMessage;
+import com.fitpay.android.paymentdevice.impl.ble.message.ContinuationControlMessageFactory;
+import com.fitpay.android.paymentdevice.impl.ble.message.ContinuationPacketMessage;
+import com.fitpay.android.paymentdevice.impl.ble.message.NotificationMessage;
+import com.fitpay.android.paymentdevice.impl.ble.message.SecurityStateMessage;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.ApduExecutionError;

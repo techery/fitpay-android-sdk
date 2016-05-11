@@ -1,4 +1,4 @@
-package com.fitpay.android.paymentdevice.impl.ble;
+package com.fitpay.android.paymentdevice.impl.ble.message;
 
 import com.fitpay.android.paymentdevice.utils.Crc32;
 import com.fitpay.android.utils.Hex;
@@ -6,7 +6,7 @@ import com.fitpay.android.utils.Hex;
 /**
  * Created by tgs on 3/4/16.
  */
-class ContinuationControlEndMessage extends ContinuationControlMessage {
+public class ContinuationControlEndMessage extends ContinuationControlMessage {
 
     private long checksum;
     private byte[] payload;

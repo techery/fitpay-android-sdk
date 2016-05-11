@@ -1,4 +1,4 @@
-package com.fitpay.android.paymentdevice.impl.ble;
+package com.fitpay.android.paymentdevice.impl.ble.message;
 
 import com.fitpay.android.paymentdevice.interfaces.IApduMessage;
 import com.fitpay.android.utils.Hex;
@@ -8,7 +8,7 @@ import java.util.Arrays;
 /**
  * Created by tgs on 3/4/16.
  */
-class ApduResultMessage extends BleMessage implements IApduMessage {
+public class ApduResultMessage extends BleMessage implements IApduMessage {
 
     private byte result;
     private byte[] sequenceId;
