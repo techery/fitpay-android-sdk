@@ -31,7 +31,6 @@ public final class Constants {
                     .registerTypeAdapter(UserInfo.class, new ModelAdapter.DataSerializer<>())
                     .registerTypeAdapter(CreditCardInfo.class, new ModelAdapter.DataSerializer<>())
                     .registerTypeAdapter(Payload.class, new ModelAdapter.PayloadDeserializer())
-            //        .registerTypeAdapter(ApduCommandResultBytes.class, new ModelAdapter.AdpuCommandResponseSerializer())
                     .registerTypeAdapter(UserAuthInfo.class, new ModelAdapter.DataSerializer<>())
                     .create();
         }

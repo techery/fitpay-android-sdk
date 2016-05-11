@@ -118,15 +118,4 @@ final class ModelAdapter {
         }
     }
 
-//    public static final class AdpuCommandResponseSerializer implements JsonSerializer<ApduCommandResultBytes> {
-//        public JsonElement serialize(ApduCommandResultBytes data, Type typeOfSrc, JsonSerializationContext context) {
-//
-//            JsonObject jo = new JsonObject();
-//            jo.addProperty("commandId", data.getCommandId());
-//            jo.addProperty("responseCode", Hex.bytesToHexString(data.getResponseCode()));
-//            jo.addProperty("responseData", Hex.bytesToHexString(data.getResponseData()));
-//            return jo;
-//        }
-//    }
-
 }

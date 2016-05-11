@@ -122,8 +122,6 @@ class GattApduOperation extends GattOperation {
                     String responseCode = Hex.bytesToHexString(Arrays.copyOfRange(apduData, apduData.length - 2, apduData.length));
                     String responseData = Hex.bytesToHexString(apduData);
 
-                    //ApduCommandResultBytes result = new ApduCommandResultBytes(mSequencesMap.get(sId), apduMessage);
-
                     ApduCommandResult result = new ApduCommandResult.Builder()
                             .setCommandId(mSequencesMap.get(sId))
                             .setResponseCode(responseCode)
