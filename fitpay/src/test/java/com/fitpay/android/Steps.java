@@ -198,7 +198,7 @@ public class Steps {
                 .setLastName(lastName)
                 .setBirthDate(currentTimestamp)
                 .setTermsVersion(termsVersion)
-                .create();
+                .build();
 
         currentUser.updateUser(patchingUser, new ApiCallback<User>() {
             @Override
@@ -256,7 +256,7 @@ public class Steps {
                 .setExpDate(expYear, expMonth)
                 .setAddress(address)
                 .setName(cardName)
-                .create();
+                .build();
 
         currentUser.createCreditCard(creditCard, new ApiCallback<CreditCard>() {
             @Override
@@ -423,7 +423,7 @@ public class Steps {
 
         CreditCard creditCard = new CreditCard.Builder()
                 .setAddress(address)
-                .create();
+                .build();
 
         currentCard.updateCard(creditCard, new ApiCallback<CreditCard>() {
             @Override
@@ -677,7 +677,7 @@ public class Steps {
                 .setBdAddress(bdAddress)
                 .setPairingTs(pairingTs)
                 .setSecureElementId(secureElementId)
-                .create();
+                .build();
         final String[] errors = { "" };
         final int[] errorCodes = {-1};
         currentUser.createDevice(newDevice, new ApiCallback<Device>() {
@@ -695,7 +695,7 @@ public class Steps {
             }
         });
         latch.await(TIMEOUT, TimeUnit.SECONDS);
-        assertEquals("create device had an error.  (Message: " + errors[0] + ")", -1, errorCodes[0]);
+        assertEquals("build device had an error.  (Message: " + errors[0] + ")", -1, errorCodes[0]);
         Assert.assertNotNull(currentDevice);
         Assert.assertEquals(manufacturerName, currentDevice.getManufacturerName());
         Assert.assertEquals(deviceName, currentDevice.getDeviceName());
@@ -774,7 +774,7 @@ public class Steps {
         Device newDevice = new Device.Builder()
                 .setFirmwareRevision(firmwareRevision)
                 .setSoftwareRevision(softwareRevision)
-                .create();
+                .build();
 
         currentDevice.updateDevice(newDevice, new ApiCallback<Device>() {
             @Override

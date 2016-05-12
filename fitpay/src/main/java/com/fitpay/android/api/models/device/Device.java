@@ -163,7 +163,7 @@ public final class Device extends DeviceModel implements Parcelable {
          * Creates a Builder instance that can be used to build Gson with various configuration
          * settings. Builder follows the builder pattern, and it is typically used by first
          * invoking various configuration methods to set desired options, and finally calling
-         * {@link #create()}.
+         * {@link #build()}.
          */
         public Builder(){
         }
@@ -174,7 +174,7 @@ public final class Device extends DeviceModel implements Parcelable {
          *
          * @return an instance of {@link CreditCard} configured with the options currently set in this builder
          */
-        public Device create(){
+        public Device build(){
             Device device = new Device();
             device.deviceType = deviceType;
             device.manufacturerName = manufacturerName;

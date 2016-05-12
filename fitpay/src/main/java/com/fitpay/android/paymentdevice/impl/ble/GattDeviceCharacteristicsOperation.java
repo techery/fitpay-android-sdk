@@ -68,7 +68,7 @@ class GattDeviceCharacteristicsOperation extends GattOperation {
                 .setFirmwareRevision(StringUtils.convertHexStringToAscii(firmwareRevision))
                 .setSoftwareRevision(StringUtils.convertHexStringToAscii(softwareRevision))
                 .setHardwareRevision(StringUtils.convertHexStringToAscii(hardwareRevision))
-                .create();
+                .build();
 
         RxBus.getInstance().post(device);
     }

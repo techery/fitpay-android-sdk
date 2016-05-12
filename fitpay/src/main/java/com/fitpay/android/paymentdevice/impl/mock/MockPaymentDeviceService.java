@@ -50,20 +50,20 @@ public class MockPaymentDeviceService extends PaymentDeviceService {
 
     protected void loadDefaultDevice() {
         device = new Device.Builder()
-            .setDeviceType(DeviceTypes.WATCH)
-            .setManufacturerName("Fitpay")
+                .setDeviceType(DeviceTypes.WATCH)
+                .setManufacturerName("Fitpay")
                 .setDeviceName("PSPS")
-        .setSerialNumber("074DCC022E14")
-        .setModelNumber("FB404")
-        .setHardwareRevision("1.0.0.0")
-        .setFirmwareRevision("1030.6408.1309.0001")
-        .setSoftwareRevision("2.0.242009.6")
-        .setSystemId("0x123456FFFE9ABCDE")
-        .setOSName("ANDROID")
-        .setLicenseKey("6b413f37-90a9-47ed-962d-80e6a3528036")
-        .setBdAddress("977214bf-d038-4077-bdf8-226b17d5958d")
-        .setSecureElementId("8615b2c7-74c5-43e5-b224-38882060161b")
-                .create();
+                .setSerialNumber("074DCC022E14")
+                .setModelNumber("FB404")
+                .setHardwareRevision("1.0.0.0")
+                .setFirmwareRevision("1030.6408.1309.0001")
+                .setSoftwareRevision("2.0.242009.6")
+                .setSystemId("0x123456FFFE9ABCDE")
+                .setOSName("ANDROID")
+                .setLicenseKey("6b413f37-90a9-47ed-962d-80e6a3528036")
+                .setBdAddress("977214bf-d038-4077-bdf8-226b17d5958d")
+                .setSecureElementId("8615b2c7-74c5-43e5-b224-38882060161b")
+                .build();
     }
 
     @Override

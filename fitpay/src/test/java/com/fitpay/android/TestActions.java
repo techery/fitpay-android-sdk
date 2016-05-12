@@ -118,7 +118,7 @@ public class TestActions {
                 .setExpDate(expYear, expMonth)
                 .setAddress(address)
                 .setName(cardName)
-                .create();
+                .build();
         return creditCard;
     }
 
@@ -153,7 +153,7 @@ public class TestActions {
                 .setBdAddress(bdAddress)
                 .setPairingTs(pairingTs)
                 .setSecureElementId(secureElementId)
-                .create();
+                .build();
 
         return newDevice;
 
@@ -176,7 +176,7 @@ public class TestActions {
         String secureElementId = "cccccc-1111-1111-1111-1111111111";
         Device newDevice = new Device.Builder()
                 .setDeviceName(deviceName)
-                .create();
+                .build();
 
         return newDevice;
 
@@ -201,7 +201,7 @@ public class TestActions {
         Device newDevice = new Device.Builder()
                 .setDeviceType(DeviceTypes.SMART_STRAP)
                 .setDeviceName(deviceName)
-                .create();
+                .build();
 
         return newDevice;
 

@@ -79,7 +79,7 @@ public class UserTest2 extends TestActions {
         assertEquals("user id", user.getId(), user2.getId());
         assertEquals("email", user.getEmail(), user2.getEmail());
         assertEquals("user name", user.getUsername(), user2.getUsername());
-        assertEquals("create ts", user.getCreatedTsEpoch(), user2.getCreatedTsEpoch());
+        assertEquals("build ts", user.getCreatedTsEpoch(), user2.getCreatedTsEpoch());
     }
 
     @Test
