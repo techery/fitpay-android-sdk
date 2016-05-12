@@ -79,6 +79,10 @@ public class ApiManager {
         config.putAll(props);
     }
 
+    public void setAuthToken(OAuthToken token) {
+        apiService.updateToken(token);
+    }
+
     public FitPayClient getClient() {
         return apiService.getClient();
     }
