@@ -1,11 +1,11 @@
-package com.fitpay.android.paymentdevice.impl.ble;
+package com.fitpay.android.paymentdevice.impl.ble.message;
 
 import com.fitpay.android.utils.Hex;
 
 /**
  * Created by tgs on 3/4/16.
  */
-class ContinuationPacketMessage extends BleMessage {
+public class ContinuationPacketMessage extends BleMessage {
 
     private int sortOrder;
     private byte[] data;

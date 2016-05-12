@@ -27,6 +27,8 @@ import java.util.List;
 /**
  * Activity to select available BLE device
  */
+
+//TODO should this be removed?   see if used in sample client
 public abstract class BaseSearchBLEActivity extends AppCompatActivity {
 
     private static final int REQUEST_ENABLE_BT = 1;

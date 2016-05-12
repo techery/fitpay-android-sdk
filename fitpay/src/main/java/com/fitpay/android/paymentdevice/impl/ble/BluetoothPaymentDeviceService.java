@@ -10,6 +10,7 @@ import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
+import com.fitpay.android.paymentdevice.impl.ble.message.SecurityStateMessage;
 import com.fitpay.android.paymentdevice.model.PaymentDeviceService;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;

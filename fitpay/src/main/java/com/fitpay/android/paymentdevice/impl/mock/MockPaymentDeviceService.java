@@ -4,6 +4,9 @@ import android.content.Context;
 import android.util.Log;
 
 import com.fitpay.android.api.enums.DeviceTypes;
+import com.fitpay.android.api.models.apdu.ApduCommand;
+import com.fitpay.android.api.models.apdu.ApduCommandResult;
+import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentdevice.constants.States;
@@ -12,6 +15,7 @@ import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
 import com.fitpay.android.paymentdevice.model.PaymentDeviceService;
 import com.fitpay.android.utils.RxBus;
+import com.google.gson.Gson;
 
 import java.util.Random;
 
@@ -35,6 +39,9 @@ public class MockPaymentDeviceService extends PaymentDeviceService {
 
     Subscription connectionSubscription;
     Subscription deviceReadSubscription;
+    Subscription apduSubscription;
+
+    private ApduExecutionResult apduExecutionResult;
 
     public MockPaymentDeviceService(Context context, String address) {
         super(context, address);
@@ -197,7 +204,63 @@ public class MockPaymentDeviceService extends PaymentDeviceService {
     @Override
     public void executeApduPackage(ApduPackage apduPackage) {
 
+        ApduExecutionResult apduExecutionResult = new ApduExecutionResult(apduPackage.getPackageId());
+        apduExecutionResult.setExecutedTsEpoch(System.currentTimeMillis());
+
+        apduSubscription = getAsyncSimulatingObservable()
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.newThread())
+                .subscribe(getApduObserver(apduPackage, apduExecutionResult, 0));
+
     }
+
+    private Observer<Boolean> getApduObserver(final ApduPackage apduPackage, final ApduExecutionResult apduExecutionResult, int apduCommandNumber) {
+
+        return new Observer<Boolean>() {
+
+            @Override
+            public void onCompleted() {
+                Log.d(TAG, "Get response for apduCommand: " + apduCommandNumber);
+                ApduCommand apduCommand = apduPackage.getApduCommands().get(apduCommandNumber);
+                ApduCommandResult apduCommandResult = getMockResultForApduCommand(apduCommand);
+                apduExecutionResult.addResponse(apduCommandResult);
+
+                if (apduCommandNumber + 1 < apduPackage.getApduCommands().size()) {
+                    apduSubscription = getAsyncSimulatingObservable()
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(Schedulers.newThread())
+                            .subscribe(getApduObserver(apduPackage, apduExecutionResult, apduCommandNumber + 1));
+
+                } else {
+                    apduExecutionResult.deriveState();
+                    int duration = (int) ((System.currentTimeMillis() - apduExecutionResult.getExecutedTsEpoch()) / 1000);
+                    apduExecutionResult.setExecutedDuration(duration);
+                    Log.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
+                    RxBus.getInstance().post(apduExecutionResult);
+                }
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.d(TAG, "apdu observer error: " + e.getMessage());
+            }
+
+            @Override
+            public void onNext(Boolean bool) {
+                Log.d(TAG, "apdu observer onNext: " + bool);
+            }
+        };
+    }
+
+    private ApduCommandResult getMockResultForApduCommand(ApduCommand apduCommand) {
+        ApduCommandResult result = new ApduCommandResult.Builder()
+            .setCommandId(apduCommand.getCommandId())
+                .setResponseData("9000")
+                .setResponseCode("9000")
+                .build();
+        return result;
+    }
+
 
     @Override
     public void sendNotification(byte[] data) {

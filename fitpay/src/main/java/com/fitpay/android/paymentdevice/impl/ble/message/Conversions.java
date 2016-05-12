@@ -1,4 +1,4 @@
-package com.fitpay.android.paymentdevice.impl.ble;
+package com.fitpay.android.paymentdevice.impl.ble.message;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -6,7 +6,7 @@ import java.nio.ByteOrder;
 /**
  * Created by tgs on 3/23/16.
  */
-class Conversions {
+public class Conversions {
 
     private Conversions() {
         //private - static methods only
