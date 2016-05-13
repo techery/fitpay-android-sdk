@@ -3,6 +3,7 @@ package com.fitpay.android.paymentdevice.impl.ble;
 import android.bluetooth.BluetoothGatt;
 
 import com.fitpay.android.api.models.apdu.ApduCommand;
+import com.fitpay.android.paymentdevice.impl.ble.message.ApduControlWriteMessage;
 
 /**
  * Apdu operation for commands with size < 17 bytes

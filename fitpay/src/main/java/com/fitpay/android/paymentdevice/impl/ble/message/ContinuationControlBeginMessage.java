@@ -1,7 +1,8 @@
-package com.fitpay.android.paymentdevice.impl.ble;
+package com.fitpay.android.paymentdevice.impl.ble.message;
 
 import android.os.ParcelUuid;
 
+import com.fitpay.android.paymentdevice.impl.ble.BluetoothUuid;
 import com.fitpay.android.utils.Hex;
 
 import java.util.UUID;
@@ -9,7 +10,7 @@ import java.util.UUID;
 /**
  * Created by tgs on 3/4/16.
  */
-class ContinuationControlBeginMessage extends ContinuationControlMessage {
+public class ContinuationControlBeginMessage extends ContinuationControlMessage {
 
     private UUID uuid;
 

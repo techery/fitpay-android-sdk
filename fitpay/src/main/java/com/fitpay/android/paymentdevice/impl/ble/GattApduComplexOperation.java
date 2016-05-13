@@ -3,6 +3,9 @@ package com.fitpay.android.paymentdevice.impl.ble;
 import android.bluetooth.BluetoothGatt;
 
 import com.fitpay.android.api.models.apdu.ApduCommand;
+import com.fitpay.android.paymentdevice.impl.ble.message.ContinuationControlBeginMessage;
+import com.fitpay.android.paymentdevice.impl.ble.message.ContinuationControlEndMessage;
+import com.fitpay.android.paymentdevice.impl.ble.message.ContinuationPacketMessage;
 import com.fitpay.android.utils.Hex;
 
 /**
