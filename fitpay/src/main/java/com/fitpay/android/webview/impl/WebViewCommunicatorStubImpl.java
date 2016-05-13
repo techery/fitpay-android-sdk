@@ -4,7 +4,6 @@ import android.webkit.JavascriptInterface;
 
 import com.fitpay.android.webview.WebViewCommunicator;
 import  com.fitpay.android.webview.callback.OnTaskCompleted;
-import com.fitpay.android.webview.model.User;
 
 import com.google.gson.Gson;
 import android.app.Activity;
