@@ -4,6 +4,7 @@ import android.webkit.JavascriptInterface;
 
 import com.fitpay.android.webview.WebViewCommunicator;
 import  com.fitpay.android.webview.callback.OnTaskCompleted;
+import com.fitpay.android.webview.model.User;
 
 import com.google.gson.Gson;
 import android.app.Activity;
@@ -23,6 +24,10 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
         this.callback = callback;
     }
 
+    public WebViewCommunicatorStubImpl(Activity ctx) {
+        this.activity = ctx;
+    }
+
     private static String USER_DATA_STUB_RESPONSE = "OK";
     private static String SYNC_STUB_RESPONSE = "OK";
 
@@ -34,7 +39,13 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
         AckResponseModel stubResponse = new AckResponseModel();
         stubResponse.setStatus(USER_DATA_STUB_RESPONSE);
 
-        callback.onTaskCompleted(SYNC_STUB_RESPONSE);
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        if(callback!=null) callback.onTaskCompleted(SYNC_STUB_RESPONSE);
         return gson.toJson(stubResponse);
     }
 
@@ -44,6 +55,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
         AckResponseModel stubResponse = new AckResponseModel();
         stubResponse.setStatus(SYNC_STUB_RESPONSE);
 
+        System.out.println(data);
         return gson.toJson(stubResponse);
     }
 
