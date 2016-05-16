@@ -21,14 +21,24 @@ import com.orhanobut.logger.Logger;
  */
 public final class BluetoothPaymentDeviceService extends PaymentDeviceService {
 
-    private final String TAG = BluetoothPaymentDeviceService.class.getSimpleName();
+    private final static String TAG = BluetoothPaymentDeviceService.class.getSimpleName();
+
+    public final static String EXTRA_BLUETOOTH_ADDRESS = "BLUETOOTH_ADDRESS";
 
     private BluetoothAdapter mBluetoothAdapter;
     private GattManager mGattManager;
 
+    public BluetoothPaymentDeviceService(Context context) {
+        super(context);
+        initBluetooth();
+    }
+
     public BluetoothPaymentDeviceService(Context context, String deviceAddress) {
         super(context, deviceAddress);
-      //  Logger.d(TAG, "create bt device");
+        initBluetooth();
+    }
+
+    protected void initBluetooth() {
 
         BluetoothManager mBluetoothManager = (BluetoothManager) mContext.getSystemService(Context.BLUETOOTH_SERVICE);
 
@@ -43,7 +53,9 @@ public final class BluetoothPaymentDeviceService extends PaymentDeviceService {
             return;
         }
 
-        setState(States.INITIALIZED);
+        if (null != mAddress) {
+            setState(States.INITIALIZED);
+        }
     }
 
     /**

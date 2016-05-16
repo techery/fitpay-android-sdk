@@ -5,6 +5,8 @@ import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentdevice.enums.Connection;
 import com.fitpay.android.paymentdevice.enums.Sync;
+import com.fitpay.android.paymentdevice.events.CommitFailed;
+import com.fitpay.android.paymentdevice.events.CommitSuccess;
 
 /**
  * Collection of payment device callbacks
@@ -23,6 +25,8 @@ public final class IListeners {
     public interface SyncListener {
         void onSyncStateChanged(final Sync syncEvent);
         void onNonApduCommit(final Commit commit);
+        void onCommitSuccess(final CommitSuccess commitSuccess);
+        void onCommitFailed(final CommitFailed commitFailed);
     }
 
     public interface PaymentDeviceListener extends ConnectionListener {

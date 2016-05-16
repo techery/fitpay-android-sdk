@@ -133,7 +133,7 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
     }
 
     public boolean canDelete() {
-        return state != "DELETED";
+        return state != "DELETED" && hasLink(SELF);
     }
 
     /**
@@ -148,7 +148,7 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
     }
 
     public boolean canUpdateCard() {
-        return state != "DELETED";
+        return state != "DELETED" && hasLink(SELF);
     }
 
 

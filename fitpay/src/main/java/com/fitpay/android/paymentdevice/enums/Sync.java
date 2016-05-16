@@ -37,4 +37,15 @@ public final class Sync {
     public int getValue(){
         return value;
     }
+
+    public String toString() {
+        return new StringBuilder()
+                .append("Sync(")
+                .append("state=")
+                .append(state)
+                .append(", value=")
+                .append(value)
+                .append(")")
+                .toString();
+    }
 }

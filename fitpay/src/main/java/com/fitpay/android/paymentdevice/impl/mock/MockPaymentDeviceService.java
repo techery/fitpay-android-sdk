@@ -1,22 +1,29 @@
 package com.fitpay.android.paymentdevice.impl.mock;
 
-import android.content.Context;
 import android.util.Log;
 
+import com.fitpay.android.api.enums.CommitTypes;
 import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.api.models.apdu.ApduCommand;
 import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
+import com.fitpay.android.api.models.card.CreditCard;
+import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.paymentdevice.CommitHandler;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Connection;
 import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
+import com.fitpay.android.paymentdevice.events.CommitFailed;
+import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.model.PaymentDeviceService;
 import com.fitpay.android.utils.RxBus;
 import com.google.gson.Gson;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import rx.Observable;
@@ -28,14 +35,20 @@ import rx.schedulers.Schedulers;
 /**
  * Created by tgs on 5/3/16.
  */
-public class MockPaymentDeviceService extends PaymentDeviceService {
+public class MockPaymentDeviceService extends PaymentDeviceService  {
 
     private final String TAG = MockPaymentDeviceService.class.getSimpleName();
 
     private Device device;
     private final Random random = new Random();
     private final int delay = 3000;
-    private boolean deviceInfoRead = false;
+
+    /*
+     * credit cards is a mock of a payment device that has local storage and / or display
+     * For simplicity the whole card is stored typically the information transaferred and stored
+     * would be much less.  In the case of Pebble Pagare, it is masked card number and card art.
+     */
+    private Map<String, CreditCard> creditCards;
 
     Subscription connectionSubscription;
     Subscription deviceReadSubscription;
@@ -43,17 +56,21 @@ public class MockPaymentDeviceService extends PaymentDeviceService {
 
     private ApduExecutionResult apduExecutionResult;
 
-    public MockPaymentDeviceService(Context context, String address) {
-        super(context, address);
-        loadDefaultDevice();
+    public MockPaymentDeviceService() {
         state = States.INITIALIZED;
-    }
+        loadDefaultDevice();
+        MockWalletUpdateCommitHandler handler = new MockWalletUpdateCommitHandler();
 
-    public MockPaymentDeviceService(Context context, String address, Device device) {
-        this(context, address);
-        this.device = device;
-    }
+        // configure commit handlers
+        //TODO add handlers for create and delete card - they do not have creditcard bodies
+        addCommitHandler(CommitTypes.CREDITCARD_ACTIVATED, handler);
+        addCommitHandler(CommitTypes.CREDITCARD_DEACTIVATED, handler);
+        addCommitHandler(CommitTypes.RESET_DEFAULT_CREDITCARD, handler);
+        addCommitHandler(CommitTypes.SET_DEFAULT_CREDITCARD, handler);
 
+        //TODO see note above
+        //addCommitHandler(CommitTypes.CREDITCARD_DELETED, new MockWalletDeleteCommitHandler());
+    }
 
     protected void loadDefaultDevice() {
         device = new Device.Builder()
@@ -146,7 +163,11 @@ public class MockPaymentDeviceService extends PaymentDeviceService {
             @Override
             public void onCompleted() {
                 Log.d(TAG, "device info has been read.  device: " + deviceInfo);
-                RxBus.getInstance().post(device);
+                if (null != deviceInfo) {
+                    RxBus.getInstance().post(deviceInfo);
+                } else {
+                    Log.e(TAG, "read device info returned null. This is a application defect");
+                }
             }
 
             @Override
@@ -270,5 +291,103 @@ public class MockPaymentDeviceService extends PaymentDeviceService {
     @Override
     public void setSecureElementState(@SecureElement.Action byte state) {
 
+    }
+
+    public void updateCard(CreditCard card) {
+        if (null == creditCards) {
+            creditCards = new HashMap<>();
+        }
+        if (creditCards.containsKey(card.getCreditCardId())) {
+            Log.i(TAG, "Credit card updated in mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
+        } else {
+            Log.i(TAG, "Credit card added to mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
+        }
+        creditCards.put(card.getCreditCardId(), card);
+    }
+
+    private class MockWalletDeleteCommitHandler implements CommitHandler {
+
+        @Override
+        public void processCommit(Commit commit) {
+            Object payload = commit.getPayload();
+            if (!(payload instanceof CreditCard)) {
+                Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card.  Commit: " + commit);
+                RxBus.getInstance().post(new CommitFailed(commit.getCommitId()));
+                return;
+            }
+            // process with a delay to mock device response time
+            Subscription subscription = getAsyncSimulatingObservable()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.newThread())
+                    .subscribe(getWalletObserver(commit));
+        }
+
+        private Observer<Boolean> getWalletObserver(final Commit commit) {
+
+            return new Observer<Boolean>() {
+
+                @Override
+                public void onCompleted() {
+                    CreditCard card = (CreditCard) commit.getPayload();
+                    Log.d(TAG, "Mock wallet has been updated. Card removed" + card.getCreditCardId());
+                    creditCards.remove(commit.getCommitId());;
+                    // signal commit processing is complete
+                    RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    Log.d(TAG, "processCommit observer error: " + e.getMessage());
+                }
+
+                @Override
+                public void onNext(Boolean bool) {
+                    Log.d(TAG, "processCommit observer onNext: " + bool);
+                }
+            };
+        }
+    }
+
+    private class MockWalletUpdateCommitHandler implements CommitHandler {
+
+        @Override
+        public void processCommit(Commit commit) {
+            Object payload = commit.getPayload();
+            if (!(payload instanceof CreditCard)) {
+                Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card.  Commit: " + commit);
+                RxBus.getInstance().post(new CommitFailed(commit.getCommitId()));
+                return;
+            }
+            // process with a delay to mock device response time
+            Subscription subscription = getAsyncSimulatingObservable()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(Schedulers.newThread())
+                    .subscribe(getWalletObserver(commit));
+        }
+
+        private Observer<Boolean> getWalletObserver(final Commit commit) {
+
+            return new Observer<Boolean>() {
+
+                @Override
+                public void onCompleted() {
+                    CreditCard card = (CreditCard) commit.getPayload();
+                    Log.d(TAG, "Mock wallet has been updated. Card updated: " + card.getCreditCardId());
+                    updateCard(card);
+                    // signal commit processing is complete
+                    RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
+                }
+
+                @Override
+                public void onError(Throwable e) {
+                    Log.d(TAG, "processCommit observer error: " + e.getMessage());
+                }
+
+                @Override
+                public void onNext(Boolean bool) {
+                    Log.d(TAG, "processCommit observer onNext: " + bool);
+                }
+            };
+        }
     }
 }

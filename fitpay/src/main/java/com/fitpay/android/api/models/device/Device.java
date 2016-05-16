@@ -43,6 +43,10 @@ public final class Device extends DeviceModel implements Parcelable {
         makeGetCall(USER, null, User.class, callback);
     }
 
+    public boolean canGetUser() {
+        return hasLink(USER);
+    }
+
     /**
      * Update the details of an existing device.
      *
@@ -52,6 +56,11 @@ public final class Device extends DeviceModel implements Parcelable {
         makePatchCall(device, false, Device.class, callback);
     }
 
+    public boolean canUpdate() {
+        return hasLink(SELF);
+    }
+
+
     /**
      * Delete a single device.
      *
@@ -59,6 +68,10 @@ public final class Device extends DeviceModel implements Parcelable {
      */
     public void deleteDevice(@NonNull ApiCallback<Void> callback){
         makeDeleteCall(callback);
+    }
+
+    public boolean canDelete() {
+        return hasLink(SELF);
     }
 
     /**
@@ -78,6 +91,11 @@ public final class Device extends DeviceModel implements Parcelable {
         }
         makeGetCall(COMMITS, queryMap, Collections.CommitsCollection.class, callback);
     }
+
+    public boolean canGetCommits() {
+        return hasLink(COMMITS);
+    }
+
 
     /**
      * Retrieves a collection of events that should be committed to this device.
