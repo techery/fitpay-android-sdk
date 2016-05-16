@@ -140,4 +140,64 @@ public final class Address implements Parcelable {
             return new Address[size];
         }
     };
+
+    public static class Builder {
+
+        public Builder() {}
+
+        private String street1;
+        private String street2;
+        private String street3;
+        private String city;
+        private String state;
+        private String postalCode;
+        private String countryCode;
+
+        public Address build() {
+            Address address = new Address();
+            address.street1 = this.street1;
+            address.street2 = this.street2;
+            address.street3 = street3;
+            address.city = this.city;
+            address.state = this.state;
+            address.postalCode = postalCode;
+            address.countryCode = countryCode;
+            return address;
+        }
+
+        public Builder setCity(String city) {
+            this.city = city;
+            return this;
+        }
+
+        public Builder setCountryCode(String countryCode) {
+            this.countryCode = countryCode;
+            return this;
+        }
+
+        public Builder setPostalCode(String postalCode) {
+            this.postalCode = postalCode;
+            return this;
+        }
+
+        public Builder setState(String state) {
+            this.state = state;
+            return this;
+        }
+
+        public Builder setStreet1(String street1) {
+            this.street1 = street1;
+            return this;
+        }
+
+        public Builder setStreet2(String street2) {
+            this.street2 = street2;
+            return this;
+        }
+
+        public Builder setStreet3(String street3) {
+            this.street3 = street3;
+            return this;
+        }
+    }
 }

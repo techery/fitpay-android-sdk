@@ -159,7 +159,7 @@ public class ApiManager {
     /**
      * User Creation
      *
-     * @param user user to create
+     * @param user user to build
      * @param callback result callback
      */
     public void createUser(UserCreateRequest user, final ApiCallback<User> callback) {

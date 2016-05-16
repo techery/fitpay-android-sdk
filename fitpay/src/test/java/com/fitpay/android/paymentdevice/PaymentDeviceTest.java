@@ -49,7 +49,7 @@ public class PaymentDeviceTest {
         ShadowLog.stream = System.out;
 
         context = RuntimeEnvironment.application.getApplicationContext();
-        paymentDeviceService = new MockPaymentDeviceService(context, "mockAddress");
+        paymentDeviceService = new MockPaymentDeviceService();
         manager = NotificationManager.getInstance();
     }
 

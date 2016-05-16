@@ -48,6 +48,14 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
         makePostCall(ACCEPT_TERMS, null, CreditCard.class, callback);
     }
 
+    public boolean canAcceptTerms() {
+        return hasLink(ACCEPT_TERMS);
+    }
+
+    public boolean hasLink(String linkName) {
+        return null != links.getLink(linkName);
+    }
+
     /**
      * Indicate a user has declined the terms and conditions.
      * Once declined the credit card will be in a final state, no other actions may be taken.
@@ -58,6 +66,10 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
      */
     public void declineTerms(@NonNull ApiCallback<CreditCard> callback) {
         makePostCall(DECLINE_TERMS, null, CreditCard.class, callback);
+    }
+
+    public boolean canDeclineTerms() {
+        return hasLink(DECLINE_TERMS);
     }
 
     /**
@@ -71,6 +83,10 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
         makePostCall(REACTIVATE, reason, CreditCard.class, callback);
     }
 
+    public boolean canReactivate() {
+        return hasLink(REACTIVATE);
+    }
+
     /**
      * Transition the credit card into a deactivated state so that it may not be utilized for payment.
      * This link will only be available for qualified credit cards that are currently in an active state.
@@ -82,6 +98,11 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
         makePostCall(DEACTIVATE, reason, CreditCard.class, callback);
     }
 
+    public boolean canDeactivate() {
+        return hasLink(DEACTIVATE);
+    }
+
+
     /**
      * Mark the credit card as the default payment instrument.
      * If another card is currently marked as the default,
@@ -92,6 +113,11 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
     public void makeDefault(@NonNull ApiCallback<Void> callback) {
         makePostCall(MAKE_DEFAULT, null, Void.class, callback);
     }
+
+    public boolean canMakeDefault() {
+        return hasLink(MAKE_DEFAULT);
+    }
+
 
     /**
      * Delete a single credit card from a user's profile.
@@ -106,6 +132,10 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
         makeDeleteCall(callback);
     }
 
+    public boolean canDelete() {
+        return state != "DELETED" && hasLink(SELF);
+    }
+
     /**
      * Update the details of an existing credit card.
      *
@@ -116,6 +146,11 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
     public void updateCard(@NonNull CreditCard creditCard, @NonNull ApiCallback<CreditCard> callback) {
         makePatchCall(creditCard, true, CreditCard.class, callback);
     }
+
+    public boolean canUpdateCard() {
+        return state != "DELETED" && hasLink(SELF);
+    }
+
 
     /**
      * Get all transactions.
@@ -131,6 +166,12 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
         makeGetCall(TRANSACTIONS, queryMap, Collections.TransactionCollection.class, callback);
     }
 
+    public boolean canGetTransactions() {
+        return hasLink(TRANSACTIONS);
+    }
+
+
+
     public static final class Builder {
 
         private String name;
@@ -144,7 +185,7 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
          * Creates a Builder instance that can be used to build Gson with various configuration
          * settings. Builder follows the builder pattern, and it is typically used by first
          * invoking various configuration methods to set desired options, and finally calling
-         * {@link #create()}.
+         * {@link #build()}.
          */
         public Builder() {
         }
@@ -155,7 +196,7 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
          *
          * @return an instance of {@link CreditCard} configured with the options currently set in this builder
          */
-        public CreditCard create() {
+        public CreditCard build() {
             CreditCard card = new CreditCard();
             card.creditCardInfo.name = name;
             card.creditCardInfo.cvv = cvv;

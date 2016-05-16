@@ -11,7 +11,6 @@ import com.google.gson.annotations.SerializedName;
 abstract class CommitModel extends BaseModel {
 
     private String commitId;
-    private String previousCommitId;
     @CommitTypes.Type
     private String commitType;
     private Long createdTs;
@@ -31,11 +30,16 @@ abstract class CommitModel extends BaseModel {
         return commitId;
     }
 
-    public String getPreviousCommitId() {
-        return previousCommitId;
-    }
-
     public Object getPayload() {
         return payload.getData(commitType);
+    }
+
+    @Override
+    public String toString() {
+        return new StringBuilder().append("Commit(")
+            .append("commitType=").append(commitType)
+                .append(", id=").append(commitId)
+            .append(")")
+            .toString();
     }
 }
