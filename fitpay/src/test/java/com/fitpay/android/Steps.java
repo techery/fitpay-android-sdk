@@ -937,29 +937,4 @@ public class Steps {
         Assert.assertNotNull(currentCommit);
     }
 
-    public void previousCommit() throws InterruptedException {
-        Assert.assertNotNull(currentCommit);
-
-        final CountDownLatch latch = new CountDownLatch(1);
-        final boolean[] isRequestSuccess = {false};
-
-        currentCommit.getPreviousCommit(new ApiCallback<Commit>() {
-            @Override
-            public void onSuccess(Commit result) {
-                isRequestSuccess[0] = true;
-                currentCommit = result;
-                latch.countDown();
-            }
-
-            @Override
-            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                latch.countDown();
-            }
-        });
-
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Assert.assertTrue(isRequestSuccess[0]);
-        Assert.assertNotNull(currentCommit);
-    }
-
 }
