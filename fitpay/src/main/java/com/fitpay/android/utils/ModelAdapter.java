@@ -1,5 +1,7 @@
 package com.fitpay.android.utils;
 
+import android.util.Log;
+
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.Payload;
 import com.fitpay.android.api.models.apdu.ApduPackage;
@@ -24,6 +26,8 @@ import java.util.Set;
 /**
  */
 final class ModelAdapter {
+
+    private static final String TAG = ModelAdapter.class.getSimpleName();
 
     public static final class DataSerializer<T> implements JsonSerializer<T>, JsonDeserializer<T> {
 
@@ -65,13 +69,15 @@ final class ModelAdapter {
 
                     Payload payload = null;
                     Gson gson = new Gson();
-
-                    if(decryptedString.contains("cardType")){
+                    // Deserialize to desired object type based on unique key field in each object type
+                    if (decryptedString.contains("creditCardId")) {
                         CreditCard creditCard = gson.fromJson(decryptedString, CreditCard.class);
                         payload = new Payload(creditCard);
-                    } else {
+                    } else if (decryptedString.contains("packageId")) {
                         ApduPackage apduPackage = gson.fromJson(decryptedString, ApduPackage.class);
                         payload = new Payload(apduPackage);
+                    } else {
+                        Log.w(TAG, "commit payload type is not handled.  Application could be miss receiving important events");
                     }
 
                     return payload;

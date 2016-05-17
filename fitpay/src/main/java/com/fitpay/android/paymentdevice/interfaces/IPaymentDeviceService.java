@@ -1,16 +1,22 @@
 package com.fitpay.android.paymentdevice.interfaces;
 
+import android.content.Context;
+
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.paymentdevice.CommitHandler;
 import com.fitpay.android.paymentdevice.enums.Connection;
 import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
 
+import java.util.Properties;
+
 /**
  * abstract interface of wearable payment device
  */
 public interface IPaymentDeviceService extends CommitHandler {
 
+    void setContext(Context contexxt);
+    void init(Properties props);
     void connect();
     void disconnect();
     void reconnect();
