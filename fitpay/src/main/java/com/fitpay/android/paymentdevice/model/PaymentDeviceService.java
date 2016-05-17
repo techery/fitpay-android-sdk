@@ -18,6 +18,7 @@ import com.fitpay.android.utils.TimestampUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Base model for wearable payment device
@@ -44,6 +45,14 @@ public abstract class PaymentDeviceService implements IPaymentDeviceService {
     public PaymentDeviceService(Context context, String address) {
         this(context);
         mAddress = address;
+    }
+
+    public void init(Properties props) {
+        // null implementation - override concrete class as needed
+    }
+
+    public void setContext(Context context) {
+        this.mContext = context;
     }
 
     protected Map<String, CommitHandler> getDefaultCommitHandlers() {
@@ -131,6 +140,5 @@ public abstract class PaymentDeviceService implements IPaymentDeviceService {
                 Log.e(TAG, "ApduCommitHandler called for non-adpu commit.  THIS IS AN APPLICTION DEFECT " + commit);
             }
         }
-
     }
 }

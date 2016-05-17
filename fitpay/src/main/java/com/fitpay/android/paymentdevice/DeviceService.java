@@ -28,7 +28,12 @@ import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.orhanobut.logger.Logger;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.List;
+import java.util.Properties;
+
+import static java.lang.Class.forName;
 
 /**
  * Connection and synchronization service
@@ -124,12 +129,32 @@ public final class DeviceService extends Service {
                     }
                 }
                 if (null == mPaymentDeviceService) {
-                    //TODO implement dynamic class loading of impl assuming the paymentServiceType is a fully qualified class name
+
+                    try {
+                        Class paymentDeviceServiceClass =  forName(paymentServiceType);
+                        mPaymentDeviceService = (IPaymentDeviceService) paymentDeviceServiceClass.newInstance();
+                        mPaymentDeviceService.setContext(this);
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (InstantiationException e) {
+                        e.printStackTrace();
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
         if (null != mPaymentDeviceService && intent.hasExtra(EXTRA_PAYMENT_SERVICE_CONFIG)) {
-            //TODO implement setter via properties or some such mechansism
+            String configParams = intent.getExtras().getString(EXTRA_PAYMENT_SERVICE_CONFIG);
+            Properties props = null;
+            try {
+                props = convertCommaSeparatedList(configParams);
+            } catch (IOException e) {
+                Log.e(TAG, "unable to load properties.   Reason: " + e.getMessage());
+            }
+            if (null != props) {
+                mPaymentDeviceService.init(props);
+            }
         }
     }
 
@@ -171,6 +196,9 @@ public final class DeviceService extends Service {
     public void pairWithDevice() {
 
         switch (mPaymentDeviceService.getState()) {
+            case States.CONNECTED:
+                break;
+
             case States.INITIALIZED:
                 mPaymentDeviceService.connect();
                 break;
@@ -425,5 +453,12 @@ public final class DeviceService extends Service {
             this.first = first;
             this.second = second;
         }
+    }
+
+    private Properties convertCommaSeparatedList(String input) throws IOException {
+            String propertiesFormat = input.replaceAll(",", "\n");
+            Properties properties = new Properties();
+            properties.load(new StringReader(propertiesFormat));
+            return properties;
     }
 }

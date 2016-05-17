@@ -21,11 +21,6 @@ class GattSetNotificationOperation extends GattOperation {
     public void execute(BluetoothGatt gatt) {
         BluetoothGattCharacteristic characteristic = gatt.getService(mService).getCharacteristic(mCharacteristic);
         gatt.setCharacteristicNotification(characteristic, true);
-//        try {
-//            Thread.sleep(1000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
         BluetoothGattDescriptor descriptor = characteristic.getDescriptor(mDescriptor);
         descriptor.setValue(getConfigurationValue());
         gatt.writeDescriptor(descriptor);
