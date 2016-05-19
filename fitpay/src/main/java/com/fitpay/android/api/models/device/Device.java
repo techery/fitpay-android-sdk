@@ -147,7 +147,7 @@ public final class Device extends DeviceModel implements Parcelable {
                 allCommits.addCollection(result.getResults());
 
                 if(result.hasNext()){
-                    getCommits(result.getLimit(), result.getOffset(), this);
+                    result.getNext(this);
                 } else {
                     callback.onSuccess(allCommits);
                 }

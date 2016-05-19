@@ -49,19 +49,18 @@ public final class DeviceService extends Service {
     public final static String PAYMENT_SERVICE_TYPE_MOCK = "PAYMENT_SERVICE_TYPE_MOCK";
     public final static String PAYMENT_SERVICE_TYPE_FITPAY_BLE = "PAYMENT_SERVICE_TYPE_FITPAY_BLE";
 
-    private static final String KEY_COMMIT_ID = "commitId";
     private static final int MAX_REPEATS = 3;
 
     private IPaymentDeviceService mPaymentDeviceService;
     private String paymentServiceType;
-
-    private DevicePreferenceData deviceData;
+    private String configParams;
 
     private ErrorPair mErrorRepeats;
 
     private @Sync.State Integer mSyncEventState;
 
     private List<Commit> mCommits;
+    private Device device;
 
     private CustomListener mSyncListener = new CustomListener();
 
@@ -145,7 +144,7 @@ public final class DeviceService extends Service {
             }
         }
         if (null != mPaymentDeviceService && intent.hasExtra(EXTRA_PAYMENT_SERVICE_CONFIG)) {
-            String configParams = intent.getExtras().getString(EXTRA_PAYMENT_SERVICE_CONFIG);
+            configParams = intent.getExtras().getString(EXTRA_PAYMENT_SERVICE_CONFIG);
             Properties props = null;
             try {
                 props = convertCommaSeparatedList(configParams);
@@ -179,6 +178,7 @@ public final class DeviceService extends Service {
     public void pairWithDevice(@NonNull IPaymentDeviceService paymentDeviceService) {
 
         // check to see if device has changed, if so close the existing connection
+        //TODO should test on device config - more general than MacAddress which is BLE specific (or at least pertinent to Mac devices)
         if (mPaymentDeviceService != null
                 && ((mPaymentDeviceService.getMacAddress() == null && paymentDeviceService.getMacAddress() != null)
                     || null != mPaymentDeviceService.getMacAddress() && !mPaymentDeviceService.getMacAddress().equals(paymentDeviceService.getMacAddress()))
@@ -246,7 +246,8 @@ public final class DeviceService extends Service {
      */
     public void syncData(@NonNull Device device) {
 
-        Log.d(TAG, "stating device sync");
+        Log.d(TAG, "stating device sync.  device: " + device);
+        this.device = device;
 
         if (mPaymentDeviceService == null || mPaymentDeviceService.getState() != States.CONNECTED) {
             //throw new RuntimeException("You should pair with a payment device at first");
@@ -260,14 +261,15 @@ public final class DeviceService extends Service {
             return;
         }
 
-        deviceData = DevicePreferenceData.loadFromPreferences(this, device.getDeviceIdentifier());
-
         mErrorRepeats = null;
 
         NotificationManager.getInstance().addListener(mSyncListener);
 
         RxBus.getInstance().post(new Sync(States.STARTED));
 
+        DevicePreferenceData deviceData = DevicePreferenceData.loadFromPreferences(this, device.getDeviceIdentifier());
+
+        //TODO verify this is not being done on the main thread
         device.getAllCommits(deviceData.getLastCommitId(), new ApiCallback<Collections.CommitsCollection>() {
             @Override
             public void onSuccess(Collections.CommitsCollection result) {
@@ -275,15 +277,6 @@ public final class DeviceService extends Service {
                 Log.d(TAG, "processing commits.  count: " + result.getTotalResults());
 
                 mCommits = result.getResults();
-// TODO remove - retain for now - just post number of commits - might want to change this later
-//                int commandsCount = 0;
-//                for(Commit commit : mCommits){
-//                    Object payload = commit.getPayload();
-//                    if (payload instanceof ApduPackage) {
-//                        ApduPackage pkg = (ApduPackage) payload;
-//                        commandsCount += pkg.getApduCommands().size();
-//                    }
-//                }
 
                 RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
 
@@ -438,6 +431,7 @@ public final class DeviceService extends Service {
         @Override
         public void onCommitSuccess(CommitSuccess commitSuccess) {
             Log.d(TAG, "received commit success event.  moving last commit pointer to: " + commitSuccess.getCommitId());
+            DevicePreferenceData deviceData = DevicePreferenceData.loadFromPreferences(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSuccess.getCommitId());
             DevicePreferenceData.storePreferences(DeviceService.this, deviceData);
             Commit commit = mCommits.remove(0);
@@ -456,9 +450,27 @@ public final class DeviceService extends Service {
     }
 
     private Properties convertCommaSeparatedList(String input) throws IOException {
+        if (null == input) {
+            return null;
+        }
             String propertiesFormat = input.replaceAll(",", "\n");
             Properties properties = new Properties();
             properties.load(new StringReader(propertiesFormat));
             return properties;
     }
+
+    public String getConfigString() {
+        return configParams;
+    }
+
+    public Properties getConfig() {
+        Properties props = null;
+        try {
+            convertCommaSeparatedList(configParams);
+        } catch (IOException e) {
+            Log.e(TAG, "can not convert config to properties.  Reason: " + e.getMessage());
+        }
+        return props;
+    }
+
 }

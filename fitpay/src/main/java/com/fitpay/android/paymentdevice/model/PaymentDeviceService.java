@@ -102,6 +102,7 @@ public abstract class PaymentDeviceService implements IPaymentDeviceService {
 
     @Override
     public void processCommit(Commit commit) {
+        Log.d(TAG, "processing commit on Thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
         if (null == commitHandlers) {
             return;
         }

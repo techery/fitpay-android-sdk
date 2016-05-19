@@ -1,9 +1,10 @@
 package com.fitpay.android.utils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import rx.Subscription;
 
@@ -16,8 +17,8 @@ public final class NotificationManager {
 
     private List<Listener> mListeners;
 
-    private HashMap<Class, Subscription> mSubscriptions;
-    private HashMap<Class, List<Command>> mCommands;
+    private Map<Class, Subscription> mSubscriptions;
+    private Map<Class, List<Command>> mCommands;
 
     public static NotificationManager getInstance() {
         if (sInstance == null) {
@@ -32,9 +33,9 @@ public final class NotificationManager {
     }
 
     private NotificationManager() {
-        mListeners = new ArrayList<>();
-        mCommands = new HashMap<>();
-        mSubscriptions = new HashMap<>();
+        mListeners = Collections.synchronizedList(new ArrayList<>());
+        mCommands = new ConcurrentHashMap<>();
+        mSubscriptions = new ConcurrentHashMap<>();
     }
 
     private void subscribeTo(final Class clazz) {

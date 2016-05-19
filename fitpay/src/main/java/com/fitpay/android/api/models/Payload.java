@@ -2,16 +2,16 @@ package com.fitpay.android.api.models;
 
 import com.fitpay.android.api.enums.CommitTypes;
 import com.fitpay.android.api.models.apdu.ApduPackage;
-import com.fitpay.android.api.models.card.CreditCard;
+import com.fitpay.android.api.models.device.CreditCardCommit;
 
 /**
  * Payload
  */
 public final class Payload{
-    private CreditCard creditCard;
+    private CreditCardCommit creditCard;
     private ApduPackage apduPackage;
 
-    public Payload(CreditCard creditCard) {
+    public Payload(CreditCardCommit creditCard) {
         this.creditCard = creditCard;
     }
 
