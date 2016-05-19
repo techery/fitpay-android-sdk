@@ -11,13 +11,13 @@ public interface WebViewCommunicator {
      *  this method is called by the WV to initiate the sync sequence in the SDK
      */
     @JavascriptInterface
-    String sync();
+    String sync(String callBackId);
 
     /**
      *  this method is called by the WV to provide 'session data' (deviceID, userID, OAuth token) to the SDK
      */
     @JavascriptInterface
-    String sendUserData(String data);
+    String sendUserData(String callBAckId, String deviceId, String token, String userId);
 
     //
     /**
