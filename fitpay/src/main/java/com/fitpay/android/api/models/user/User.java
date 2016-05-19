@@ -99,6 +99,17 @@ public final class User extends UserModel implements Parcelable {
     }
 
     /**
+     * retrieve a specific user card
+     *
+     * @param cardId the Id of the device to be retrieved
+     * @param callback result callback
+     */
+    public void getCreditCard(String cardId, @NonNull ApiCallback<CreditCard> callback){
+        makeGetCall(GET_CARDS + "/" + cardId, null, CreditCard.class, callback);
+    }
+
+
+    /**
      * retrieve a pagable collection of devices in their profile.
      *
      * @param limit    Max number of devices per page, default: 10
@@ -111,6 +122,17 @@ public final class User extends UserModel implements Parcelable {
         queryMap.put("offset", offset);
         makeGetCall(GET_DEVICES, queryMap, Collections.DeviceCollection.class, callback);
     }
+
+    /**
+     * retrieve a specific user device
+     *
+     * @param deviceId the Id of the device to be retrieved
+     * @param callback result callback
+     */
+    public void getDevice(String deviceId, @NonNull ApiCallback<Device> callback){
+         makeGetCall(GET_DEVICES + "/" + deviceId, null, Device.class, callback);
+    }
+
 
     /**
      * Add a single credit card to a user's profile.

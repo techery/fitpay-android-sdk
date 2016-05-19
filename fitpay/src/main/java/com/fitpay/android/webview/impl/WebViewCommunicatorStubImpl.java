@@ -1,17 +1,31 @@
 package com.fitpay.android.webview.impl;
 
+import android.app.Activity;
 import android.util.Log;
 import android.webkit.JavascriptInterface;
-
-import com.fitpay.android.webview.WebViewCommunicator;
-import  com.fitpay.android.webview.callback.OnTaskCompleted;
-
-import com.google.gson.Gson;
-import android.app.Activity;
 import android.webkit.WebView;
+
+import com.fitpay.android.api.ApiManager;
+import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.enums.ResultCode;
+import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.security.OAuthToken;
+import com.fitpay.android.api.models.user.User;
+import com.fitpay.android.webview.WebViewCommunicator;
+import com.fitpay.android.webview.callback.OnTaskCompleted;
+import com.google.gson.Gson;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import rx.Observable;
+import rx.Observer;
+import rx.Subscription;
+import rx.functions.Func1;
+import rx.schedulers.Schedulers;
 
 
 /**
@@ -24,7 +38,10 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
 
     private final Activity activity;
     private OnTaskCompleted callback;
-    private  int wId;
+    private int wId;
+
+    private User user;
+    private Device device;
 
     public WebViewCommunicatorStubImpl(Activity ctx, int wId, OnTaskCompleted callback) {
         this.activity = ctx;
@@ -41,6 +58,17 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
     private static String SYNC_STUB_RESPONSE = "0";
 
     final Gson gson = new Gson();
+
+    //TODO update config mechanism - this SUCKS  - the SDK gets configured it does not provide config
+    protected Map<String, String> getConfig(){
+        Map<String, String> config = new HashMap<>();
+        config.put(ApiManager.PROPERTY_API_BASE_URL, "https://gi-de.pagare.me/api/");
+        config.put(ApiManager.PROPERTY_AUTH_BASE_URL, "https://gi-de.pagare.me");
+        config.put(ApiManager.PROPERTY_CLIENT_ID, "pagare");
+        config.put(ApiManager.PROPERTY_REDIRECT_URI, "https://demo.pagare.me");
+        config.put("paymentDeviceType", "MockDevice");
+        return config;
+    }
 
     @JavascriptInterface
     public void dispatchMessage(String message) throws JSONException{
@@ -113,28 +141,30 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
 
     @Override
     @JavascriptInterface
-    public String sendUserData(String callBackId, String deviceId, String token, String userId) {
+    public String sendUserData(String callbackId, String deviceId, String token, String userId) {
+
+        Log.d(TAG, "sendUserData received data: deviceId: " + deviceId +", token: " + token + ", userId: " + userId);
+
+        OAuthToken oAuthToken = new OAuthToken.Builder()
+                .accessToken(token)
+                .userId(userId)
+                .build();
+
+        ApiManager.init(getConfig());
+        ApiManager.getInstance().setAuthToken(oAuthToken);
+
+        // Get user and device asynchronously
+
+        Log.d(TAG, "doing asynchornous retrieval of user and device");
+        Subscription userSubscription = getUserObservable(deviceId, callbackId)
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.newThread())
+                .subscribe(getUserObserver(deviceId, callbackId));
+
+        // provide synchronous ack
+
         AckResponseModel stubResponse = new AckResponseModel();
         stubResponse.setStatus(USER_DATA_STUB_RESPONSE);
-
-        Log.d(TAG, "received data: deviceId: " + deviceId +", token: " + token + ", userId: " + userId);
-
-        Runnable t = new Runnable(){
-            @Override
-            public void run(){
-                try{
-                    //this is where the "underlying" SDK's sendUserData() is called
-                    Thread.sleep(5000);
-
-                    stubResponse.setStatus(USER_DATA_STUB_RESPONSE);
-                    sendMessageToJs(callBackId, "true",  gson.toJson(stubResponse));
-                    if(callback!=null) callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
-
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
 
         return gson.toJson(stubResponse);
     }
@@ -165,6 +195,108 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
             }
         });
     }
+
+
+    private Observable<Boolean> getUserObservable(final String deviceId, final String callbackId) {
+
+        return Observable.just(true).map(new Func1<Boolean, Boolean>() {
+            @Override
+            public Boolean call(Boolean aBoolean) {
+                Log.d(TAG, "get user");
+                ApiManager.getInstance().getUser(new ApiCallback<User>() {
+                    @Override
+                    public void onSuccess(User result) {
+                        WebViewCommunicatorStubImpl.this.user = result;
+                    }
+
+                    @Override
+                    public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                        //TODO handle failure
+                    }
+                });
+                return aBoolean;
+            }
+        });
+    }
+
+    private Observer<Boolean> getUserObserver(final String deviceId, final String callbackId) {
+
+        return new Observer<Boolean>() {
+
+            @Override
+            public void onCompleted() {
+                Subscription deviceSubscription = getDeviceObservable(deviceId)
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(Schedulers.newThread())
+                            .subscribe(getDeviceObserver(callbackId));
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.d(TAG, "connection observer error: " + e.getMessage());
+            }
+
+            @Override
+            public void onNext(Boolean bool) {
+                Log.d(TAG, "connection observer onNext: " + bool);
+            }
+        };
+    }
+
+    private Observable<Boolean> getDeviceObservable(final String deviceId) {
+
+        return Observable.just(true).map(new Func1<Boolean, Boolean>() {
+            @Override
+            public Boolean call(Boolean aBoolean) {
+                Log.d(TAG, "get device");
+                user.getDevice(deviceId, new ApiCallback<Device>() {
+                    @Override
+                    public void onSuccess(Device result) {
+                        WebViewCommunicatorStubImpl.this.device = result;
+                    }
+
+                    @Override
+                    public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                        //TODO handle failure
+                    }
+                });
+                return aBoolean;
+            }
+        });
+    }
+
+    private Observer<Boolean> getDeviceObserver(final String callBackId) {
+
+        return new Observer<Boolean>() {
+
+            @Override
+            public void onCompleted() {
+                Log.d(TAG, "get device completed");
+                AckResponseModel stubResponse = new AckResponseModel();
+                stubResponse.setStatus(USER_DATA_STUB_RESPONSE);
+                if (null != callBackId) {
+                    sendMessageToJs(callBackId, "true", gson.toJson(stubResponse));
+                }
+                if (null != callback){
+                    callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
+                }
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.d(TAG, "connection observer error: " + e.getMessage());
+            }
+
+            @Override
+            public void onNext(Boolean bool) {
+                Log.d(TAG, "connection observer onNext: " + bool);
+            }
+        };
+    }
+
+
+
+
 }
 
 
