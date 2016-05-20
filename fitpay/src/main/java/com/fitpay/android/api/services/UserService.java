@@ -15,7 +15,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 
-final public class UserService {
+final public class UserService extends BaseClient {
 
     private static final String FP_KEY_ID = "fp-key-id";
 
@@ -45,7 +45,9 @@ final public class UserService {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
-        OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+        //TODO remove unsafe once cert issues addressed
+        OkHttpClient.Builder clientBuilder = getUnsafeOkHttpClient();
+        //OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
         clientBuilder.addInterceptor(interceptor);
         clientBuilder.addInterceptor(logging);
 
