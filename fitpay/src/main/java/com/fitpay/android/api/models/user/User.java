@@ -105,7 +105,7 @@ public final class User extends UserModel implements Parcelable {
      * @param callback result callback
      */
     public void getCreditCard(String cardId, @NonNull ApiCallback<CreditCard> callback){
-        makeGetCall(GET_CARDS + "/" + cardId, null, CreditCard.class, callback);
+        makeGetCall(GET_CARDS, cardId, null, CreditCard.class, callback);
     }
 
 
@@ -130,7 +130,7 @@ public final class User extends UserModel implements Parcelable {
      * @param callback result callback
      */
     public void getDevice(String deviceId, @NonNull ApiCallback<Device> callback){
-         makeGetCall(GET_DEVICES + "/" + deviceId, null, Device.class, callback);
+         makeGetCall(GET_DEVICES, deviceId, null, Device.class, callback);
     }
 
 
