@@ -62,10 +62,10 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
     //TODO update config mechanism - this SUCKS  - the SDK gets configured it does not provide config
     protected Map<String, String> getConfig(){
         Map<String, String> config = new HashMap<>();
-        config.put(ApiManager.PROPERTY_API_BASE_URL, "https://gi-de.pagare.me/api/");
-        config.put(ApiManager.PROPERTY_AUTH_BASE_URL, "https://gi-de.pagare.me");
+        config.put(ApiManager.PROPERTY_API_BASE_URL, "https://api.qa.fitpay.ninja");
+        config.put(ApiManager.PROPERTY_AUTH_BASE_URL, "https://auth.qa.fitpay.ninja");
         config.put(ApiManager.PROPERTY_CLIENT_ID, "pagare");
-        config.put(ApiManager.PROPERTY_REDIRECT_URI, "https://demo.pagare.me");
+        config.put(ApiManager.PROPERTY_REDIRECT_URI, "https://auth.qa.fitpay.ninja");
         config.put("paymentDeviceType", "MockDevice");
         return config;
     }
@@ -111,7 +111,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
     @JavascriptInterface
     public String sync(String callBackId) {
         AckResponseModel stubResponse = new AckResponseModel();
-        stubResponse.setStatus(USER_DATA_STUB_RESPONSE);
+        stubResponse.setStatus(SYNC_STUB_RESPONSE);
 
         SyncResponseModel syncResponse = new SyncResponseModel();
 
@@ -156,10 +156,12 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
         // Get user and device asynchronously
 
         Log.d(TAG, "doing asynchornous retrieval of user and device");
-        Subscription userSubscription = getUserObservable(deviceId, callbackId)
+        getUserAndDevice(deviceId, callbackId);
+
+       /* Subscription userSubscription = getUserObservable(deviceId, callbackId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.newThread())
-                .subscribe(getUserObserver(deviceId, callbackId));
+                .subscribe(getUserObserver(deviceId, callbackId));*/
 
         // provide synchronous ack
 
@@ -211,7 +213,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
 
                     @Override
                     public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                        //TODO handle failure
+                        Log.d(TAG, "Hello Tim"); //TODO add handling here
                     }
                 });
                 return aBoolean;
@@ -295,7 +297,42 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
     }
 
 
+    private void getUserAndDevice(String deviceId, String callbackId) {
+        ApiManager.getInstance().getUser(new ApiCallback<User>() {
+            @Override
+            public void onSuccess(User result) {
+                WebViewCommunicatorStubImpl.this.user = result;
+                result.getDevice(deviceId, new ApiCallback<Device>() {
+                    @Override
+                    public void onSuccess(Device result) {
+                        WebViewCommunicatorStubImpl.this.device = result;
+                        AckResponseModel stubResponse = new AckResponseModel();
+                        stubResponse.setStatus(USER_DATA_STUB_RESPONSE);
+                        if (null != callbackId) {
+                            sendMessageToJs(callbackId, "true", gson.toJson(stubResponse));
+                        }
+                        if (null != callback){
+                            callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
+                        }
+                    }
 
+                    @Override
+                    public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                        Log.d(TAG, "getDevice failed");
+                        //TODO handle failure and report back to WVC
+                    }
+                });
+
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                Log.d(TAG, "getDevice failed");
+                //TODO handle failure and report back to WVC
+            }
+        });
+
+    }
 
 }
 
