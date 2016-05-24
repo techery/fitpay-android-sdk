@@ -17,8 +17,8 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import rx.Observable;
@@ -36,8 +36,8 @@ public class NotificationsTest {
     private static NotificationManager manager;
 
     private static List<Listener> listeners;
-    private static HashMap<Class, Subscription> subscriptions;
-    private static HashMap<Class, List<Command>> commands;
+    private static ConcurrentHashMap<Class, Subscription> subscriptions;
+    private static ConcurrentHashMap<Class, List<Command>> commands;
 
     private static
     @Connection.State
@@ -64,8 +64,8 @@ public class NotificationsTest {
         manager = NotificationManager.getInstance();
 
         listeners = (List<Listener>) getPrivateField(manager, "mListeners");
-        subscriptions = (HashMap<Class, Subscription>) getPrivateField(manager, "mSubscriptions");
-        commands = (HashMap<Class, List<Command>>) getPrivateField(manager, "mCommands");
+        subscriptions = (ConcurrentHashMap<Class, Subscription>) getPrivateField(manager, "mSubscriptions");
+        commands = (ConcurrentHashMap<Class, List<Command>>) getPrivateField(manager, "mCommands");
     }
 
     @Test
