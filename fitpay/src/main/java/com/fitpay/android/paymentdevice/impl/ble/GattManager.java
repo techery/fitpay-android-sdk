@@ -22,7 +22,7 @@ import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.ApduExecutionError;
 import com.fitpay.android.paymentdevice.interfaces.ISecureMessage;
-import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceService;
+import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.utils.Crc32;
 import com.fitpay.android.utils.Hex;
 import com.orhanobut.logger.Logger;
@@ -39,7 +39,7 @@ import rx.schedulers.Schedulers;
  **/
 final class GattManager {
 
-    private IPaymentDeviceService mPaymentDeviceService;
+    private IPaymentDeviceConnector paymentDeviceConnector;
 
     private Context mContext;
     private BluetoothGatt mGatt;
@@ -53,8 +53,8 @@ final class GattManager {
 
     private AsyncTask<Void, Void, Void> mCurrentOperationTimeout;
 
-    public GattManager(IPaymentDeviceService paymentDeviceService, Context context, BluetoothDevice device) {
-        mPaymentDeviceService = paymentDeviceService;
+    public GattManager(IPaymentDeviceConnector paymentDeviceConnector, Context context, BluetoothDevice device) {
+        this.paymentDeviceConnector = paymentDeviceConnector;
         mContext = context;
         mDevice = device;
         mQueue = new OperationQueue();
@@ -73,7 +73,7 @@ final class GattManager {
 
         mQueue.clear();
 
-        mPaymentDeviceService.setState(States.DISCONNECTING);
+        paymentDeviceConnector.setState(States.DISCONNECTING);
 
         if (mGatt != null) {
             mGatt.disconnect();
@@ -127,7 +127,7 @@ final class GattManager {
         if (mGatt != null) {
             execute(mGatt, operation);
         } else {
-            mPaymentDeviceService.setState(States.CONNECTING);
+            paymentDeviceConnector.setState(States.CONNECTING);
 
             mDevice.connectGatt(mContext, false, new BluetoothGattCallback() {
                 @Override
@@ -136,7 +136,7 @@ final class GattManager {
 
                     switch (newState) {
                         case BluetoothProfile.STATE_CONNECTED:
-                            mPaymentDeviceService.setState(States.CONNECTED);
+                            paymentDeviceConnector.setState(States.CONNECTED);
 
                             Logger.i("Gatt connected to device " + mDevice.getAddress());
 
@@ -145,7 +145,7 @@ final class GattManager {
                             break;
 
                         case BluetoothProfile.STATE_DISCONNECTED:
-                            mPaymentDeviceService.setState(States.DISCONNECTED);
+                            paymentDeviceConnector.setState(States.DISCONNECTED);
 
                             Logger.i("Disconnected from gatt server " + mDevice.getAddress() + ", newState: " + newState);
 
@@ -162,11 +162,11 @@ final class GattManager {
                             break;
 
                         case BluetoothProfile.STATE_CONNECTING:
-                            mPaymentDeviceService.setState(States.CONNECTING);
+                            paymentDeviceConnector.setState(States.CONNECTING);
                             break;
 
                         case BluetoothProfile.STATE_DISCONNECTING:
-                            mPaymentDeviceService.setState(States.DISCONNECTING);
+                            paymentDeviceConnector.setState(States.DISCONNECTING);
                             break;
                     }
                 }
