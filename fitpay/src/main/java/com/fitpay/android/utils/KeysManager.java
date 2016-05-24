@@ -10,7 +10,7 @@ import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 
-import org.bouncycastle.util.encoders.Hex;
+import org.spongycastle.util.encoders.Hex;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -58,7 +58,7 @@ final public class KeysManager {
     }
 
     static {
-        Security.addProvider(BouncyCastleProviderSingleton.getInstance());
+        Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
     }
 
     static KeysManager sInstance;

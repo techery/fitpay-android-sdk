@@ -74,15 +74,12 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile 'com.android.support:support-annotations:23.3.0'
-    compile 'com.android.support:appcompat-v7:23.3.0'
+    compile 'com.android.support:support-annotations:23.4.0'
+    compile 'com.android.support:appcompat-v7:23.4.0'
 
-    compile 'com.squareup.retrofit2:retrofit:2.0.0-beta4'
-    compile 'com.squareup.retrofit2:converter-gson:2.0.0-beta4'
+    compile 'com.squareup.retrofit2:retrofit:2.0.2'
+    compile 'com.squareup.retrofit2:converter-gson:2.0.2'
     compile 'com.squareup.okhttp3:logging-interceptor:3.1.2'
-
-    compile 'org.bouncycastle:bcprov-jdk15on:1.54'
-    compile 'com.nimbusds:nimbus-jose-jwt:4.12'
 
     compile 'com.pusher:pusher-java-client:1.0.2'
 
@@ -102,5 +99,7 @@ dependencies {
         exclude module: 'junit'
         exclude group: 'org.bouncycastle'
     }
+
+    compile 'com.github.skynet67:Nimbus-JOSE-JWT-Spongycastle:c4d9930688'
 
 }

@@ -89,6 +89,9 @@ public interface FitPayClient {
     Call<Object> removeWebhook(@Body String webhookURL);
 
     @GET
+    Call<JsonElement> get(@Url String url);
+
+    @GET
     Call<JsonElement> get(@Url String url, @QueryMap Map<String, Object> queryMap);
 
     @POST
@@ -97,8 +100,11 @@ public interface FitPayClient {
     @POST
     Call<JsonElement> post(@Url String url, @Body Object data);
 
-    @PUT
-    Call<JsonElement> put(@Url String url, @QueryMap Map<String, Object> queryMap);
+//    @PUT
+//    Call<JsonElement> put(@Url String url);
+//
+//    @PUT
+//    Call<JsonElement> put(@Url String url, @QueryMap Map<String, Object> queryMap);
 
     @PATCH
     Call<JsonElement> patch(@Url String url, @Body JsonElement data);
