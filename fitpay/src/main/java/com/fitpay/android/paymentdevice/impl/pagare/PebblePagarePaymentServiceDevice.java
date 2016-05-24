@@ -12,7 +12,7 @@ import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.CreditCardCommit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentdevice.CommitHandler;
-import com.fitpay.android.paymentdevice.callbacks.IListeners;
+import com.fitpay.android.paymentdevice.DeviceService;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
@@ -29,7 +29,9 @@ import com.getpebble.android.kit.Constants;
 import com.getpebble.android.kit.PebbleKit;
 import com.getpebble.android.kit.util.PebbleDictionary;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -50,28 +52,29 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
     private final static String TAG = PebblePagarePaymentServiceDevice.class.getSimpleName();
 
     public static final String EXTRA_PEBBLE_APP_UUID = "PEBBLE_APP_UUID";
+    public static final String WALLET_KEY = "wallet";
+
+    private static final int MESSAGE_ID_WALLET_UPDATE = 0x2000;
 
     private UUID pebbleAppUuid;
-
-    // container for device information as returned from read operation.   Will not contain contain links
-    private Device device;
 
     // for mock response delay
     private final int delay = 3000;
     private final Random random = new Random();
 
+    private String syncDeviceId;
     private Map<String, WalletEntry> wallet;
     private SyncCompleteListener syncCompleteListener;
 
 
     public PebblePagarePaymentServiceDevice() {
         state = States.INITIALIZED;
-        loadDefaultDevice();
 
         // configure commit handlers
         addCommitHandler(CommitTypes.CREDITCARD_CREATED, new WalletUpdateCommitHandler());
         addCommitHandler(CommitTypes.CREDITCARD_ACTIVATED, new WalletUpdateCommitHandler());
         addCommitHandler(CommitTypes.CREDITCARD_DEACTIVATED, new WalletUpdateCommitHandler());
+        addCommitHandler(CommitTypes.CREDITCARD_REACTIVATED, new WalletUpdateCommitHandler());
         addCommitHandler(CommitTypes.RESET_DEFAULT_CREDITCARD, new WalletUpdateCommitHandler());
         addCommitHandler(CommitTypes.SET_DEFAULT_CREDITCARD, new WalletUpdateCommitHandler());
         addCommitHandler(CommitTypes.CREDITCARD_DELETED, new WalletUpdateCommitHandler());
@@ -85,6 +88,17 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
             // - that is OK since can not connect without a valid value
             pebbleAppUuid = UUID.fromString(props.getProperty(EXTRA_PEBBLE_APP_UUID));
         }
+        if (null != props.getProperty(DeviceService.SYNC_PROPERTY_DEVICE_ID)) {
+            syncDeviceId = props.getProperty(DeviceService.SYNC_PROPERTY_DEVICE_ID);
+            DevicePreferenceData data = DevicePreferenceData.load(mContext, syncDeviceId);
+            String serializedWallet = data.getAdditionalValue(WALLET_KEY);
+            if (null != serializedWallet) {
+                Type type = new TypeToken<Map<String, WalletEntry>>(){}.getType();
+                wallet = new Gson().fromJson(serializedWallet, type);
+            } else {
+                wallet = new HashMap<>();
+            }
+        }
     }
 
     @Override
@@ -95,6 +109,9 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
 
     @Override
     public void connect() {
+        /*
+         * In the case of Pebble, connected really means connected to the device and the Pagare App open
+         */
         boolean isConnected = PebbleKit.isWatchConnected(mContext);
         if (isConnected) {
             setState(States.CONNECTED);
@@ -104,6 +121,45 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
         }
         PebbleKit.registerPebbleConnectedReceiver(this.mContext, connectionBroadcastReceiver);
         PebbleKit.registerPebbleDisconnectedReceiver(this.mContext, connectionBroadcastReceiver);
+
+        PebbleKit.registerReceivedAckHandler(mContext,
+                new PebbleKit.PebbleAckReceiver(pebbleAppUuid) {
+
+                    @Override
+                    public void receiveAck(Context context, int transactionId) {
+                        Log.d(TAG, "received pebble ack: " + transactionId);
+                        switch (transactionId) {
+                            case MESSAGE_ID_WALLET_UPDATE: {
+                                Log.d(TAG, "Wallet update message acknowledged");
+                                break;
+                            }
+                            default: {
+                                Log.d(TAG, "unhandled ACK for transaction: " + transactionId);
+                            }
+                        }
+                    }
+
+                });
+
+        PebbleKit.registerReceivedNackHandler(mContext,
+                new PebbleKit.PebbleNackReceiver(pebbleAppUuid) {
+
+                    @Override
+                    public void receiveNack(Context context, int transactionId) {
+                        Log.d(TAG, "received pebble nack: " + transactionId);
+                        switch (transactionId) {
+                            case MESSAGE_ID_WALLET_UPDATE: {
+                                Log.d(TAG, "Wallet update message nacked");
+                                break;
+                            }
+                            default: {
+                                Log.d(TAG, "unhandled NACK for transaction: " + transactionId);
+                            }
+                        }
+                    }
+
+                });
+
         syncCompleteListener = new SyncCompleteListener();
         NotificationManager.getInstance().addListener(syncCompleteListener);
 
@@ -111,7 +167,7 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
         syncWalletState();
     }
 
-    private BroadcastReceiver connectionBroadcastReceiver = new ConnectionBroadcastReceiver();
+    private BroadcastReceiver connectionBroadcastReceiver = new PebbleConnectionBroadcastReceiver();
 
     @Override
     public void disconnect() {
@@ -140,7 +196,7 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
         Subscription deviceReadSubscription = getAsyncSimulatingObservable()
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.newThread())
-                .subscribe(getDeviceInfoObserver(device));
+                .subscribe(getDeviceInfoObserver(getMockDevice()));
 
     }
 
@@ -172,6 +228,19 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
     public void setSecureElementState(@SecureElement.Action byte state) {
         throw new UnsupportedOperationException("method not supported in this iteration");
 
+    }
+
+    @Override
+    public void syncInit() {
+        super.syncInit();
+        PebbleKit.startAppOnPebble(mContext, pebbleAppUuid);
+    }
+
+    @Override
+    public void syncComplete() {
+        //TODO need to identify how DeviceService can invoke this without using syncCompleteListener
+        super.syncComplete();
+        NotificationManager.getInstance().removeListener(syncCompleteListener);
     }
 
     private Observable<PebbleDeviceInfo> getReadPebbleDeviceInfoObservable() {
@@ -217,8 +286,8 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
     }
 
     // Mock device info methods
-    protected void loadDefaultDevice() {
-        device = new Device.Builder()
+    protected Device getMockDevice() {
+        Device mockDevice = new Device.Builder()
                 .setDeviceType(DeviceTypes.WATCH)
                 .setManufacturerName("Fitpay")
                 .setDeviceName("Pagare Smart Strap")
@@ -233,6 +302,7 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
                 //.setBdAddress("977214bf-d038-4077-bdf8-226b17d5958d")
                 .setSecureElementId("8765b2c7-74c5-43e5-b224-39992060161b")
                 .build();
+        return mockDevice;
     }
 
     private Observable<Boolean> getAsyncSimulatingObservable() {
@@ -282,19 +352,6 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
         }
     }
 
-    private class ConnectionBroadcastReceiver extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Log.d(TAG, "Pebble connection state has changed.  Received intent:  " + intent);
-            String action = intent.getAction();
-            if (action.equalsIgnoreCase(Constants.INTENT_PEBBLE_CONNECTED)) {
-                setState(States.CONNECTED);
-            } else if (action.equalsIgnoreCase(Constants.INTENT_PEBBLE_DISCONNECTED)) {
-                setState(States.DISCONNECTED);
-            }
-        }
-    }
 
     private void rebuildWallet(String lastCommitId) {
         if (null == lastCommitId) {
@@ -307,9 +364,9 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
 
     private synchronized void updateWallet(CreditCardCommit card) {
         if (getWallet().containsKey(card.getCreditCardId())) {
-            Log.i(TAG, "Updating credit card in mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
+            Log.i(TAG, "Updating credit card in wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
         } else {
-            Log.i(TAG, "Adding credit card to mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
+            Log.i(TAG, "Adding credit card to wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
         }
         if (null == card.getPan()) {
             Log.w(TAG, "commit for credit card update does not contain pan: " + card.getCreditCardId());
@@ -349,7 +406,7 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
     }
 
     private void removeCardFromWallet(String creditCardId) {
-        Log.i(TAG, "Credit card updated in mock wallet.  remove card: : " + creditCardId);
+        Log.i(TAG, "Credit card updated in wallet.  remove card: : " + creditCardId);
         getWallet().remove(creditCardId);
     }
 
@@ -392,9 +449,10 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
             } else {
                 updateWallet((CreditCardCommit) payload);
             }
-            DevicePreferenceData data = DevicePreferenceData.loadFromPreferences(mContext, device.getDeviceIdentifier());
-            data.putAdditionalValue("wallet", new Gson().toJson(wallet));
-            DevicePreferenceData.storePreferences(mContext, data);
+            Log.d(TAG, "updating stored wallet");
+            DevicePreferenceData data = DevicePreferenceData.load(mContext, syncDeviceId);
+            data.putAdditionalValue(WALLET_KEY, new Gson().toJson(wallet));
+            DevicePreferenceData.store(mContext, data);
             RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
         }
     }
@@ -404,15 +462,22 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
     }
 
     private void sendWalletToPebble() {
-        Log.d(TAG, "sending wallet update to pebble app");
-        PebbleKit.startAppOnPebble(mContext, this.pebbleAppUuid);
         PebbleDictionary dict = getPebbleUpdateWalletMessage();
-        PebbleKit.sendDataToPebble(mContext, this.pebbleAppUuid, dict);
+        if (null == dict || dict.size() == 0) {
+            Log.d(TAG, "wallet is empty");
+            dict = getPebbleEmptyWalletMessage();
+        }
+        dict.addString(0x2FFF, "Wallet updates were successful");
+        Log.d(TAG, "sending wallet update to pebble app.  transactionId: " + MESSAGE_ID_WALLET_UPDATE + ", size: " + dict.size());
+        PebbleKit.sendDataToPebbleWithTransactionId(mContext, this.pebbleAppUuid, dict, MESSAGE_ID_WALLET_UPDATE);
     }
 
     private PebbleDictionary getPebbleUpdateWalletMessage() {
+        if (null == wallet || wallet.size() == 0) {
+            return null;
+        }
         PebbleDictionary dict = new PebbleDictionary();
-        int msgId = 0x2000;
+        int msgId = MESSAGE_ID_WALLET_UPDATE;
         for (WalletEntry entry: wallet.values()) {
             dict.addString(msgId + 0x00, entry.getPan().substring(entry.getPan().length() - 4));
             dict.addString(msgId + 0x01, "" + entry.getExpYear());
@@ -420,43 +485,50 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
             dict.addString(msgId + 0x03, entry.getCardType());
             dict.addInt32(msgId + 0x04, entry.isActive() ? 1 : 0);
             dict.addInt32(msgId + 0x05, entry.isDefault() ? 1 : 0);
-            dict.addString(msgId + 0x06, "");   //TODO implement passing mostRecentTouch
+            dict.addInt32(msgId + 0x06, entry.isMostRecentTouch() ? 1 : 0);
             msgId += 0x0010;
         }
         return dict;
     }
 
+    private PebbleDictionary getPebbleEmptyWalletMessage() {
+        PebbleDictionary dict = new PebbleDictionary();
+        dict.addString(8191, "");
+        return dict;
+    }
 
-    private class SyncCompleteListener extends Listener implements IListeners.SyncListener {
+
+    private class SyncCompleteListener extends Listener  {
 
         private SyncCompleteListener(){
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
         }
 
-        @Override
         public void onSyncStateChanged(Sync syncEvent) {
             Log.d(TAG, "received on sync state changed event: " + syncEvent);
             if (syncEvent.getState() == States.COMPLETED) {
                 sendWalletToPebble();
-                NotificationManager.getInstance().removeListener(this);
+                // At this point, we want to unregister this listener
+                // but a listener can not unregister itself without throwing a ConcurrentModificationException
             }
         }
+    }
+
+
+    private class PebbleConnectionBroadcastReceiver extends BroadcastReceiver {
 
         @Override
-        public void onCommitFailed(CommitFailed commitFailed) {
-            // do nothing
-        }
-
-        @Override
-        public void onNonApduCommit(Commit commit) {
-            // do nothing
-        }
-
-        @Override
-        public void onCommitSuccess(CommitSuccess commitSuccess) {
-            // do nothing
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "Pebble connection state has changed.  Received intent:  " + intent);
+            String action = intent.getAction();
+            if (action.equalsIgnoreCase(Constants.INTENT_PEBBLE_CONNECTED)) {
+                setState(States.CONNECTED);
+            } else if (action.equalsIgnoreCase(Constants.INTENT_PEBBLE_DISCONNECTED)) {
+                setState(States.DISCONNECTED);
+            }
         }
     }
+
 
 
 

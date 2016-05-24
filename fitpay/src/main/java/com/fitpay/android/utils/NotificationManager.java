@@ -1,5 +1,7 @@
 package com.fitpay.android.utils;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,6 +14,8 @@ import rx.Subscription;
  * Notification manager. Support any {@link Listener} object
  */
 public final class NotificationManager {
+
+    private final static String TAG= NotificationManager.class.getSimpleName();
 
     private static NotificationManager sInstance;
 
@@ -39,8 +43,10 @@ public final class NotificationManager {
     }
 
     private void subscribeTo(final Class clazz) {
+        Log.d(TAG, "subscribeTo class: " + clazz + " from thread: " + Thread.currentThread());
 
         if (!mSubscriptions.containsKey(clazz)) {
+            Log.d(TAG, "subscribeTo doing put of class:  " + clazz + " from thread: " + Thread.currentThread());
             mSubscriptions.put(clazz, RxBus.getInstance().register(clazz, commit -> {
                 for (Command command : mCommands.get(clazz)) {
                     command.execute(commit);
@@ -50,8 +56,11 @@ public final class NotificationManager {
     }
 
     private void unsubscribeFrom(Class clazz) {
+        Log.d(TAG, "unsubscribeFrom class: " + clazz + " called from thread: " + Thread.currentThread());
         if (mSubscriptions.containsKey(clazz)) {
             mSubscriptions.get(clazz).unsubscribe();
+            Log.d(TAG, "unsubscribeFrom removing class: " + clazz + " from thread: " + Thread.currentThread());
+
             mSubscriptions.remove(clazz);
         }
     }
@@ -62,21 +71,25 @@ public final class NotificationManager {
      * @param listener listener
      */
     public void addListener(Listener listener) {
-        if (!mListeners.contains(listener)) {
-            mListeners.add(listener);
+        Log.d(TAG, "addListener " + listener + " called from thread: " + Thread.currentThread());
+        synchronized (this) {
+            Log.d(TAG, "addListener executing");
+            if (!mListeners.contains(listener)) {
+                mListeners.add(listener);
 
-            Map<Class, Command> commands = listener.getCommands();
+                Map<Class, Command> commands = listener.getCommands();
 
-            for (Map.Entry<Class, Command> map : commands.entrySet()) {
-                Class clazz = map.getKey();
+                for (Map.Entry<Class, Command> map : commands.entrySet()) {
+                    Class clazz = map.getKey();
 
-                subscribeTo(clazz);
+                    subscribeTo(clazz);
 
-                if (!mCommands.containsKey(clazz)) {
-                    mCommands.put(clazz, new ArrayList<>());
+                    if (!mCommands.containsKey(clazz)) {
+                        mCommands.put(clazz, Collections.synchronizedList(new ArrayList<>()));
+                    }
+
+                    mCommands.get(clazz).add(map.getValue());
                 }
-
-                mCommands.get(clazz).add(map.getValue());
             }
         }
     }
@@ -87,19 +100,26 @@ public final class NotificationManager {
      * @param listener listener
      */
     public void removeListener(Listener listener) {
+        Log.d(TAG, "removeListener " + listener + " called from thread: " + Thread.currentThread());
+        synchronized (this) {
+            Log.d(TAG, "removeListener executing");
+            if (mListeners.contains(listener)) {
+                Map<Class, Command> commands = listener.getCommands();
+                for (Map.Entry<Class, Command> map : commands.entrySet()) {
+                    Class clazz = map.getKey();
+                    Log.d(TAG, "removeListener removing value " + map.getValue() + " from thread: " + Thread.currentThread());
 
-        if (mListeners.contains(listener)) {
-            Map<Class, Command> commands = listener.getCommands();
-            for (Map.Entry<Class, Command> map : commands.entrySet()) {
-                Class clazz = map.getKey();
-                mCommands.get(clazz).remove(map.getValue());
-                if (mCommands.get(clazz).size() == 0) {
-                    mCommands.remove(clazz);
-                    unsubscribeFrom(clazz);
+                    mCommands.get(clazz).remove(map.getValue());
+                    if (mCommands.get(clazz).size() == 0) {
+                        Log.d(TAG, "removeListener removing class: " + clazz + " from thread: " + Thread.currentThread());
+
+                        mCommands.remove(clazz);
+                        unsubscribeFrom(clazz);
+                    }
                 }
-            }
 
-            mListeners.remove(listener);
+                mListeners.remove(listener);
+            }
         }
     }
 }

@@ -8,8 +8,8 @@ import com.fitpay.android.api.models.apdu.ApduCommand;
 import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
-import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.device.Commit;
+import com.fitpay.android.api.models.device.CreditCardCommit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentdevice.CommitHandler;
 import com.fitpay.android.paymentdevice.constants.States;
@@ -48,7 +48,7 @@ public class MockPaymentDeviceService extends PaymentDeviceService  {
      * For simplicity the whole card is stored typically the information transaferred and stored
      * would be much less.  In the case of Pebble Pagare, it is masked card number and card art.
      */
-    private Map<String, CreditCard> creditCards;
+    private Map<String, CreditCardCommit> creditCards;
 
     Subscription connectionSubscription;
     Subscription deviceReadSubscription;
@@ -64,6 +64,7 @@ public class MockPaymentDeviceService extends PaymentDeviceService  {
         addCommitHandler(CommitTypes.CREDITCARD_CREATED, new MockWalletUpdateCommitHandler());
         addCommitHandler(CommitTypes.CREDITCARD_ACTIVATED, new MockWalletUpdateCommitHandler());
         addCommitHandler(CommitTypes.CREDITCARD_DEACTIVATED, new MockWalletUpdateCommitHandler());
+        addCommitHandler(CommitTypes.CREDITCARD_REACTIVATED, new MockWalletUpdateCommitHandler());
         addCommitHandler(CommitTypes.RESET_DEFAULT_CREDITCARD, new MockWalletUpdateCommitHandler());
         addCommitHandler(CommitTypes.SET_DEFAULT_CREDITCARD, new MockWalletUpdateCommitHandler());
 
@@ -291,7 +292,7 @@ public class MockPaymentDeviceService extends PaymentDeviceService  {
 
     }
 
-    public void updateWallet(CreditCard card) {
+    public void updateWallet(CreditCardCommit card) {
         if (getWallet().containsKey(card.getCreditCardId())) {
             Log.i(TAG, "Updating credit card in mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
         } else {
@@ -305,7 +306,7 @@ public class MockPaymentDeviceService extends PaymentDeviceService  {
         getWallet().remove(creditCardId);
     }
 
-    public Map<String, CreditCard> getWallet() {
+    public Map<String, CreditCardCommit> getWallet() {
         if (null == creditCards) {
             //TODO should initialize wallet from local storage and then apply incremental changes
             // if no copy in local storage then would need to initialize from beginning of life to lastCommitId to catchup
@@ -322,8 +323,8 @@ public class MockPaymentDeviceService extends PaymentDeviceService  {
         public void processCommit(Commit commit) {
             Object payload = commit.getPayload();
             Log.d(TAG, "commit payload: " + payload);
-            if (!(payload instanceof CreditCard)) {
-                Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card.  Commit: " + commit);
+            if (!(payload instanceof CreditCardCommit)) {
+                Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
                 RxBus.getInstance().post(new CommitFailed(commit.getCommitId()));
                 return;
             }
@@ -340,7 +341,7 @@ public class MockPaymentDeviceService extends PaymentDeviceService  {
 
                 @Override
                 public void onCompleted() {
-                    CreditCard card = (CreditCard) commit.getPayload();
+                    CreditCardCommit card = (CreditCardCommit) commit.getPayload();
                     Log.d(TAG, "Mock wallet has been updated. Card removed: " + card.getCreditCardId());
                     removeCardFromWallet(card.getCreditCardId());
                     // signal commit processing is complete
@@ -366,8 +367,8 @@ public class MockPaymentDeviceService extends PaymentDeviceService  {
         public void processCommit(Commit commit) {
             Object payload = commit.getPayload();
             Log.d(TAG, "commit payload: " + payload);
-            if (!(payload instanceof CreditCard)) {
-                Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card.  Commit: " + commit);
+            if (!(payload instanceof CreditCardCommit)) {
+                Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
                 RxBus.getInstance().post(new CommitFailed(commit.getCommitId()));
                 return;
             }
@@ -384,7 +385,7 @@ public class MockPaymentDeviceService extends PaymentDeviceService  {
 
                 @Override
                 public void onCompleted() {
-                    CreditCard card = (CreditCard) commit.getPayload();
+                    CreditCardCommit card = (CreditCardCommit) commit.getPayload();
                     Log.d(TAG, "Mock wallet has been updated. Card updated: " + card.getCreditCardId());
                     updateWallet(card);
                     // signal commit processing is complete

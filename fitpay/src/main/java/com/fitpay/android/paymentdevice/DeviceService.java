@@ -33,6 +33,12 @@ import java.io.StringReader;
 import java.util.List;
 import java.util.Properties;
 
+import rx.Observable;
+import rx.Observer;
+import rx.Subscription;
+import rx.functions.Func1;
+import rx.schedulers.Schedulers;
+
 import static java.lang.Class.forName;
 
 /**
@@ -48,6 +54,8 @@ public final class DeviceService extends Service {
     public final static String EXTRA_PAYMENT_SERVICE_CONFIG = "PAYMENT_SERVICE_CONFIG";
     public final static String PAYMENT_SERVICE_TYPE_MOCK = "PAYMENT_SERVICE_TYPE_MOCK";
     public final static String PAYMENT_SERVICE_TYPE_FITPAY_BLE = "PAYMENT_SERVICE_TYPE_FITPAY_BLE";
+
+    public final static String SYNC_PROPERTY_DEVICE_ID = "syncDeviceId";
 
     private static final int MAX_REPEATS = 3;
 
@@ -92,7 +100,9 @@ public final class DeviceService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         int value = super.onStartCommand(intent, flags, startId);
         Log.d(TAG, "onStartCommand.  intent: " + intent);
-        configure(intent);
+        if (null == intent) {
+            configure(intent);
+        }
 
         return value;
     }
@@ -242,24 +252,62 @@ public final class DeviceService extends Service {
     /**
      * Sync data between FitPay server and payment device
      *
+     * This is an asynchronous operation.
+     *
      * @param device device object with hypermedia data
      */
     public void syncData(@NonNull Device device) {
 
-        Log.d(TAG, "stating device sync.  device: " + device);
+        Log.d(TAG, "starting device sync.  device: " + device.getDeviceIdentifier());
+        Log.d(TAG, "sync initiated from thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
+
         this.device = device;
 
-        if (mPaymentDeviceService == null || mPaymentDeviceService.getState() != States.CONNECTED) {
+        if (mPaymentDeviceService == null) {
             //throw new RuntimeException("You should pair with a payment device at first");
-            Logger.e("You should pair with a payment device at first");
-            return;
+            Logger.e("No payment device connector configured");
+            throw new IllegalStateException("No payment device connector configured");
+        }
+
+        if (mPaymentDeviceService.getState() != States.CONNECTED) {
+            //throw new RuntimeException("You should pair with a payment device at first");
+            Logger.e("No payment device connection");
+            throw new IllegalStateException("No payment device connection");
         }
 
         if (mSyncEventState != null &&
                 (mSyncEventState == States.STARTED || mSyncEventState == States.IN_PROGRESS)) {
             Logger.w("Sync already in progress. Try again later");
-            return;
+            throw new IllegalStateException("Another sync is currently active.  Please try again later");
         }
+
+        Subscription syncSubscription = getSyncObservable()
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.newThread())
+                .subscribe(getSyncObserver());
+
+    }
+
+    private Observable<Boolean> getSyncObservable() {
+        return Observable.just(true).map(new Func1<Boolean, Boolean>() {
+            @Override
+            public Boolean call(Boolean aBoolean) {
+                syncDevice();
+                return aBoolean;
+            }
+        });
+    }
+
+
+    private void syncDevice() {
+
+        Log.d(TAG, "sync running on thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
+
+        // provide sync specific data to device connector
+        Properties syncProperties = new Properties();
+        syncProperties.put(SYNC_PROPERTY_DEVICE_ID, device.getDeviceIdentifier()) ;
+        mPaymentDeviceService.init(syncProperties);
+        mPaymentDeviceService.syncInit();
 
         mErrorRepeats = null;
 
@@ -267,7 +315,7 @@ public final class DeviceService extends Service {
 
         RxBus.getInstance().post(new Sync(States.STARTED));
 
-        DevicePreferenceData deviceData = DevicePreferenceData.loadFromPreferences(this, device.getDeviceIdentifier());
+        DevicePreferenceData deviceData = DevicePreferenceData.load(this, device.getDeviceIdentifier());
 
         //TODO verify this is not being done on the main thread
         device.getAllCommits(deviceData.getLastCommitId(), new ApiCallback<Collections.CommitsCollection>() {
@@ -291,6 +339,28 @@ public final class DeviceService extends Service {
             }
         });
     }
+
+    private Observer<Boolean> getSyncObserver() {
+
+        return new Observer<Boolean>() {
+
+            @Override
+            public void onCompleted() {
+                Log.d(TAG, "sync kickoff completed");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Log.d(TAG, "sync observer error: " + e.getMessage());
+            }
+
+            @Override
+            public void onNext(Boolean bool) {
+                Log.d(TAG, "sync observer onNext: " + bool);
+            }
+        };
+    }
+
 
     /**
      * process next commit
@@ -431,9 +501,9 @@ public final class DeviceService extends Service {
         @Override
         public void onCommitSuccess(CommitSuccess commitSuccess) {
             Log.d(TAG, "received commit success event.  moving last commit pointer to: " + commitSuccess.getCommitId());
-            DevicePreferenceData deviceData = DevicePreferenceData.loadFromPreferences(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
+            DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSuccess.getCommitId());
-            DevicePreferenceData.storePreferences(DeviceService.this, deviceData);
+            DevicePreferenceData.store(DeviceService.this, deviceData);
             Commit commit = mCommits.remove(0);
             processNextCommit();
         }

@@ -17,17 +17,24 @@ public interface IPaymentDeviceService extends CommitHandler {
 
     void setContext(Context contexxt);
     void init(Properties props);
+
     void connect();
     void disconnect();
     void reconnect();
     void close();
+
     String getMacAddress();
+
     void readDeviceInfo();
     void readNFCState();
     void setNFCState(@NFC.Action byte state);
     void executeApduPackage(ApduPackage apduPackage);
     void sendNotification(byte[] data);
     void setSecureElementState(@SecureElement.Action byte state);
+
+    void syncInit();
+    void syncComplete();
+
     void addCommitHandler(String commitType, CommitHandler handler);
     void removeCommitHandler(String commitType);
 

@@ -47,10 +47,12 @@ public abstract class PaymentDeviceService implements IPaymentDeviceService {
         mAddress = address;
     }
 
+    @Override
     public void init(Properties props) {
         // null implementation - override concrete class as needed
     }
 
+    @Override
     public void setContext(Context context) {
         this.mContext = context;
     }
@@ -114,6 +116,17 @@ public abstract class PaymentDeviceService implements IPaymentDeviceService {
             // still need to signal that processing of the commit has completed
             RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
         }
+    }
+
+
+    @Override
+    public void syncInit() {
+        // null implementation - override in implementation class as needed
+    }
+
+    @Override
+    public void syncComplete() {
+        // null implementation - override in implementation class as needed
     }
 
     private class ApduCommitHandler implements CommitHandler {

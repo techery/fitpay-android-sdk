@@ -5,7 +5,6 @@ import android.util.Log;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.Payload;
 import com.fitpay.android.api.models.apdu.ApduPackage;
-import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.device.CreditCardCommit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.security.ECCKeyPair;
@@ -65,9 +64,6 @@ final class ModelAdapter {
             if (!json.isJsonObject() && !StringUtils.isEmpty(json.getAsString())) {
 
                 final String decryptedString = StringUtils.getDecryptedString(KeysManager.KEY_API, json.getAsString());
-                //TODO log
-                // statement will make unit tests fail
-                Log.d(TAG, "Payload string: " + decryptedString);
                 if (!StringUtils.isEmpty(decryptedString)) {
 
                     Payload payload = null;

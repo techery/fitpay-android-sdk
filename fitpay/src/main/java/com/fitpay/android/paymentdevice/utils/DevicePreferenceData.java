@@ -24,7 +24,7 @@ public class DevicePreferenceData {
         additionalValues = new HashMap<>();
     }
 
-    public static DevicePreferenceData loadFromPreferences(Context context, String deviceId) {
+    public static DevicePreferenceData load(Context context, String deviceId) {
         SharedPreferences prefs = getPreferences(context, deviceId);
         Map<String, String> values = new HashMap<>();
         for (String key: prefs.getAll().keySet()) {
@@ -43,7 +43,7 @@ public class DevicePreferenceData {
         return data;
     }
 
-    public static void storePreferences(Context context, DevicePreferenceData data) {
+    public static void store(Context context, DevicePreferenceData data) {
         if (null == data.deviceId) {
             return;
         }
@@ -52,8 +52,10 @@ public class DevicePreferenceData {
         editor.putString("lastCommitId", data.lastCommitId);
         editor.putString("paymentDeviceServiceType", data.paymentDeviceServiceType);
         editor.putString("paymentDeviceConfig", data.paymentDeviceConfig);
-        for (String key: data.additionalValues.keySet()) {
-            editor.putString(key, data.additionalValues.get(key));
+        if (null != data.additionalValues) {
+            for (String key : data.additionalValues.keySet()) {
+                editor.putString(key, data.additionalValues.get(key));
+            }
         }
         boolean success = editor.commit();
     }
@@ -89,6 +91,11 @@ public class DevicePreferenceData {
     public void putAdditionalValue(String key, String value) {
         additionalValues.put(key, value);
     }
+
+    public String getAdditionalValue(String key) {
+        return additionalValues.get(key);
+    }
+
 
     public void removeAdditionalValue(String key) {
         additionalValues.remove(key);
