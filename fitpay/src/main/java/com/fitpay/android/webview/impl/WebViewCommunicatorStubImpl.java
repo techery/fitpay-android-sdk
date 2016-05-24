@@ -37,7 +37,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
 
     private final String TAG = WebViewCommunicatorStubImpl.class.getSimpleName();
 
-    private static String USER_DATA_STUB_RESPONSE = "OK";
+    private static String USER_DATA_STUB_RESPONSE = "0";
     private static String SYNC_STUB_RESPONSE = "0";
     private static final String RESPONSE_FAILURE = "1";
 
