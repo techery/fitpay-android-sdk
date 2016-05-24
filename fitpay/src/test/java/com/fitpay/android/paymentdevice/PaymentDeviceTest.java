@@ -7,8 +7,8 @@ import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentdevice.callbacks.PaymentDeviceListener;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Connection;
-import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceService;
-import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceService;
+import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
+import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.utils.NotificationManager;
 import com.orhanobut.logger.Logger;
 
@@ -31,7 +31,7 @@ public class PaymentDeviceTest {
 
     private final static String TAG = PaymentDeviceTest.class.getSimpleName();
 
-    protected IPaymentDeviceService paymentDeviceService;
+    protected IPaymentDeviceConnector paymentDeviceService;
     protected long delay = 10000;
 
     private NotificationManager manager;
@@ -49,7 +49,7 @@ public class PaymentDeviceTest {
         ShadowLog.stream = System.out;
 
         context = RuntimeEnvironment.application.getApplicationContext();
-        paymentDeviceService = new MockPaymentDeviceService();
+        paymentDeviceService = new MockPaymentDeviceConnector();
         manager = NotificationManager.getInstance();
     }
 
@@ -102,7 +102,7 @@ public class PaymentDeviceTest {
     @Ignore  // subscription is not correct - looks like events are not on main thread
     public void canReadDeviceInfo() {
         //TODO replace with async
-        if (paymentDeviceService instanceof MockPaymentDeviceService) {
+        if (paymentDeviceService instanceof MockPaymentDeviceConnector) {
 //            MockPaymentDeviceService mock = (MockPaymentDeviceService) paymentDeviceService;
 //            assertNull("device info should not be available", mock.getDevice());
 //            paymentDeviceService.readDeviceInfo();

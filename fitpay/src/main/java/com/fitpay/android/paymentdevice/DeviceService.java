@@ -19,9 +19,9 @@ import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
-import com.fitpay.android.paymentdevice.impl.ble.BluetoothPaymentDeviceService;
-import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceService;
-import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceService;
+import com.fitpay.android.paymentdevice.impl.ble.BluetoothPaymentDeviceConnector;
+import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
+import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.utils.DevicePreferenceData;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
@@ -59,8 +59,8 @@ public final class DeviceService extends Service {
 
     private static final int MAX_REPEATS = 3;
 
-    private IPaymentDeviceService mPaymentDeviceService;
-    private String paymentServiceType;
+    private IPaymentDeviceConnector paymentDeviceConnector;
+
     private String configParams;
 
     private ErrorPair mErrorRepeats;
@@ -111,9 +111,9 @@ public final class DeviceService extends Service {
     public void onDestroy() {
         super.onDestroy();
 
-        if (mPaymentDeviceService != null) {
-            mPaymentDeviceService.close();
-            mPaymentDeviceService = null;
+        if (paymentDeviceConnector != null) {
+            paymentDeviceConnector.close();
+            paymentDeviceConnector = null;
         }
 
         NotificationManager.getInstance().removeListener(mSyncListener);
@@ -121,28 +121,28 @@ public final class DeviceService extends Service {
 
     protected void configure(Intent intent) {
         if (null != intent.getExtras() && intent.hasExtra(EXTRA_PAYMENT_SERVICE_TYPE)) {
-            paymentServiceType = intent.getExtras().getString(EXTRA_PAYMENT_SERVICE_TYPE);
-            if (null != paymentServiceType) {
-                switch (paymentServiceType) {
+            String paymentDeviceConnectorType = intent.getExtras().getString(EXTRA_PAYMENT_SERVICE_TYPE);
+            if (null != paymentDeviceConnectorType) {
+                switch (paymentDeviceConnectorType) {
                     case PAYMENT_SERVICE_TYPE_MOCK: {
-                        mPaymentDeviceService = new MockPaymentDeviceService();
+                        paymentDeviceConnector = new MockPaymentDeviceConnector();
                         break;
                     }
                     case PAYMENT_SERVICE_TYPE_FITPAY_BLE: {
-                        String bluetoothAddress = intent.getExtras().getString(BluetoothPaymentDeviceService.EXTRA_BLUETOOTH_ADDRESS);
-                        mPaymentDeviceService = new BluetoothPaymentDeviceService(this, bluetoothAddress);
+                        String bluetoothAddress = intent.getExtras().getString(BluetoothPaymentDeviceConnector.EXTRA_BLUETOOTH_ADDRESS);
+                        paymentDeviceConnector = new BluetoothPaymentDeviceConnector(this, bluetoothAddress);
                         break;
                     }
                     default: {
-                        Log.d(TAG, "payment service type is not one of the known types.  type: " + paymentServiceType);
+                        Log.d(TAG, "payment service type is not one of the known types.  type: " + paymentDeviceConnectorType);
                     }
                 }
-                if (null == mPaymentDeviceService) {
+                if (null == paymentDeviceConnector) {
 
                     try {
-                        Class paymentDeviceServiceClass =  forName(paymentServiceType);
-                        mPaymentDeviceService = (IPaymentDeviceService) paymentDeviceServiceClass.newInstance();
-                        mPaymentDeviceService.setContext(this);
+                        Class paymentDeviceConnectorClass =  forName(paymentDeviceConnectorType);
+                        paymentDeviceConnector = (IPaymentDeviceConnector) paymentDeviceConnectorClass.newInstance();
+                        paymentDeviceConnector.setContext(this);
                     } catch (ClassNotFoundException e) {
                         e.printStackTrace();
                     } catch (InstantiationException e) {
@@ -153,7 +153,7 @@ public final class DeviceService extends Service {
                 }
             }
         }
-        if (null != mPaymentDeviceService && intent.hasExtra(EXTRA_PAYMENT_SERVICE_CONFIG)) {
+        if (null != paymentDeviceConnector && intent.hasExtra(EXTRA_PAYMENT_SERVICE_CONFIG)) {
             configParams = intent.getExtras().getString(EXTRA_PAYMENT_SERVICE_CONFIG);
             Properties props = null;
             try {
@@ -162,81 +162,82 @@ public final class DeviceService extends Service {
                 Log.e(TAG, "unable to load properties.   Reason: " + e.getMessage());
             }
             if (null != props) {
-                mPaymentDeviceService.init(props);
+                paymentDeviceConnector.init(props);
             }
         }
     }
 
-    public String getPaymentServiceType() {
-        return paymentServiceType;
-    }
+    //TODO remove
+//    public String getPaymentServiceType() {
+//        return paymentDeviceConnectorType;
+//    }
 
     /**
      * Get paired payment device
      *
      * @return interface of payment device
      */
-    public IPaymentDeviceService getPairedDevice() {
-        return mPaymentDeviceService;
+    public IPaymentDeviceConnector getPairedDevice() {
+        return paymentDeviceConnector;
     }
 
     /**
      * Pair with payment device
      *
-     * @param paymentDeviceService interface of payment device
+     * @param paymentDeviceConnector interface of payment device
      */
-    public void pairWithDevice(@NonNull IPaymentDeviceService paymentDeviceService) {
+    public void pairWithDevice(@NonNull IPaymentDeviceConnector paymentDeviceConnector) {
 
         // check to see if device has changed, if so close the existing connection
         //TODO should test on device config - more general than MacAddress which is BLE specific (or at least pertinent to Mac devices)
-        if (mPaymentDeviceService != null
-                && ((mPaymentDeviceService.getMacAddress() == null && paymentDeviceService.getMacAddress() != null)
-                    || null != mPaymentDeviceService.getMacAddress() && !mPaymentDeviceService.getMacAddress().equals(paymentDeviceService.getMacAddress()))
-                && mPaymentDeviceService.getState() == States.CONNECTED) {
-            mPaymentDeviceService.disconnect();
-            mPaymentDeviceService.close();
-            mPaymentDeviceService = null;
+        if (this.paymentDeviceConnector != null
+                && ((this.paymentDeviceConnector.getMacAddress() == null && paymentDeviceConnector.getMacAddress() != null)
+                    || null != this.paymentDeviceConnector.getMacAddress() && !this.paymentDeviceConnector.getMacAddress().equals(paymentDeviceConnector.getMacAddress()))
+                && this.paymentDeviceConnector.getState() == States.CONNECTED) {
+            this.paymentDeviceConnector.disconnect();
+            this.paymentDeviceConnector.close();
+            this.paymentDeviceConnector = null;
         }
 
-        mPaymentDeviceService = paymentDeviceService;
+        this.paymentDeviceConnector = paymentDeviceConnector;
 
         pairWithDevice();
     }
 
     public void pairWithDevice() {
 
-        switch (mPaymentDeviceService.getState()) {
+        switch (paymentDeviceConnector.getState()) {
             case States.CONNECTED:
                 break;
 
             case States.INITIALIZED:
-                mPaymentDeviceService.connect();
+                paymentDeviceConnector.connect();
                 break;
 
             case States.DISCONNECTED:
-                mPaymentDeviceService.reconnect();
+                paymentDeviceConnector.reconnect();
                 break;
 
             default:
                 //TODO - why not let device decide if it can connect from this state?
-                Logger.e("Can't connect to device.  Current device state does not support the connect operation.  State: " + mPaymentDeviceService.getState());
+                Logger.e("Can't connect to device.  Current device state does not support the connect operation.  State: " + paymentDeviceConnector.getState());
                 break;
         }
 
     }
 
     public void readDeviceInfo() {
-        if (null == mPaymentDeviceService) {
+        if (null == paymentDeviceConnector) {
             //TODO post an error
             Log.e(TAG, "payment device service is not defined.  Can not do operation: readDeviceInfo");
             return;
         }
-        if (States.CONNECTED != mPaymentDeviceService.getState()) {
+        if (States.CONNECTED != paymentDeviceConnector.getState()) {
             //TODO post an error
             Log.e(TAG, "payment device service is not connected.  Can not do operation: readDeviceInfo");
             return;
         }
-        mPaymentDeviceService.readDeviceInfo();
+        paymentDeviceConnector.readDeviceInfo();
     }
 
 
@@ -244,8 +245,8 @@ public final class DeviceService extends Service {
      * Disconnect from payment device
      */
     public void disconnect() {
-        if (mPaymentDeviceService != null && mPaymentDeviceService.getState() == States.CONNECTED) {
-            mPaymentDeviceService.disconnect();
+        if (paymentDeviceConnector != null && paymentDeviceConnector.getState() == States.CONNECTED) {
+            paymentDeviceConnector.disconnect();
         }
     }
 
@@ -263,13 +264,13 @@ public final class DeviceService extends Service {
 
         this.device = device;
 
-        if (mPaymentDeviceService == null) {
+        if (paymentDeviceConnector == null) {
             //throw new RuntimeException("You should pair with a payment device at first");
             Logger.e("No payment device connector configured");
             throw new IllegalStateException("No payment device connector configured");
         }
 
-        if (mPaymentDeviceService.getState() != States.CONNECTED) {
+        if (paymentDeviceConnector.getState() != States.CONNECTED) {
             //throw new RuntimeException("You should pair with a payment device at first");
             Logger.e("No payment device connection");
             throw new IllegalStateException("No payment device connection");
@@ -306,8 +307,8 @@ public final class DeviceService extends Service {
         // provide sync specific data to device connector
         Properties syncProperties = new Properties();
         syncProperties.put(SYNC_PROPERTY_DEVICE_ID, device.getDeviceIdentifier()) ;
-        mPaymentDeviceService.init(syncProperties);
-        mPaymentDeviceService.syncInit();
+        paymentDeviceConnector.init(syncProperties);
+        paymentDeviceConnector.syncInit();
 
         mErrorRepeats = null;
 
@@ -369,7 +370,7 @@ public final class DeviceService extends Service {
         if(mCommits != null && mCommits.size() > 0){
             Commit commit = mCommits.get(0);
             Log.d(TAG, "process commit: " + commit);
-            mPaymentDeviceService.processCommit(commit);
+            paymentDeviceConnector.processCommit(commit);
             // expose the commit out to others who may want to take action
             RxBus.getInstance().post(commit);
             // TODO remove dead code below - moved into handler
@@ -381,7 +382,7 @@ public final class DeviceService extends Service {
 //                long currentTime = System.currentTimeMillis();
 //
 //                if(validUntil > currentTime){
-//                    mPaymentDeviceService.executeApduPackage(pkg);
+//                    paymentDeviceConnector.executeApduPackage(pkg);
 //                } else {
 //                    ApduExecutionResult result = new ApduExecutionResult(pkg.getPackageId());
 //                    result.setExecutedDuration(0);

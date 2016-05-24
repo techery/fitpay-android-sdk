@@ -13,7 +13,7 @@ import java.util.Properties;
 /**
  * abstract interface of wearable payment device
  */
-public interface IPaymentDeviceService extends CommitHandler {
+public interface IPaymentDeviceConnector extends CommitHandler {
 
     void setContext(Context contexxt);
     void init(Properties props);

@@ -18,7 +18,7 @@ import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
-import com.fitpay.android.paymentdevice.model.PaymentDeviceService;
+import com.fitpay.android.paymentdevice.model.PaymentDeviceConnector;
 import com.fitpay.android.utils.RxBus;
 import com.google.gson.Gson;
 
@@ -35,9 +35,9 @@ import rx.schedulers.Schedulers;
 /**
  * Created by tgs on 5/3/16.
  */
-public class MockPaymentDeviceService extends PaymentDeviceService  {
+public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
-    private final String TAG = MockPaymentDeviceService.class.getSimpleName();
+    private final String TAG = MockPaymentDeviceConnector.class.getSimpleName();
 
     private Device device;
     private final Random random = new Random();
@@ -56,7 +56,7 @@ public class MockPaymentDeviceService extends PaymentDeviceService  {
 
     private ApduExecutionResult apduExecutionResult;
 
-    public MockPaymentDeviceService() {
+    public MockPaymentDeviceConnector() {
         state = States.INITIALIZED;
         loadDefaultDevice();
 
