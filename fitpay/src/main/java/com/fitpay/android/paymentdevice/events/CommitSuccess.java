@@ -14,4 +14,11 @@ public class CommitSuccess {
     public String getCommitId() {
         return commitId;
     }
+
+    @Override
+    public String toString() {
+        return "CommitSuccess{" +
+                "commitId='" + commitId + '\'' +
+                '}';
+    }
 }

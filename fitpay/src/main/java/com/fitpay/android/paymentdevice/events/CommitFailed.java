@@ -14,4 +14,11 @@ public class CommitFailed {
     public String getCommitId() {
         return commitId;
     }
+
+    @Override
+    public String toString() {
+        return "CommitFailed{" +
+                "commitId='" + commitId + '\'' +
+                '}';
+    }
 }

@@ -4,6 +4,9 @@ import android.util.Log;
 
 import com.orhanobut.logger.Logger;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
@@ -38,12 +41,19 @@ public class RxBus {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         onNext,
-                        throwable -> Logger.e(throwable.toString())
+                        throwable -> Logger.e(throwable.toString() + ", " + getStackTrace(throwable))
                 );
     }
 
     public void post(Object object) {
         Log.d("RxBus", "post event: " + object);
         mBus.onNext(object);
+    }
+
+    private String getStackTrace(Throwable t) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        t.printStackTrace(pw);
+        return sw.toString(); // stack trace as a string
     }
 }

@@ -36,10 +36,10 @@ abstract class CommitModel extends BaseModel {
 
     @Override
     public String toString() {
-        return new StringBuilder().append("Commit(")
-            .append("commitType=").append(commitType)
-                .append(", id=").append(commitId)
-            .append(")")
-            .toString();
+        return "CommitModel{" +
+                "commitId='" + commitId + '\'' +
+                ", commitType='" + commitType + '\'' +
+                ", createdTs=" + createdTs +
+                '}';
     }
 }

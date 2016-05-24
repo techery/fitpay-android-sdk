@@ -11,6 +11,7 @@ import java.lang.annotation.RetentionPolicy;
 public final class CommitTypes {
     public static final String CREDITCARD_CREATED = "CREDITCARD_CREATED";
     public static final String CREDITCARD_DEACTIVATED = "CREDITCARD_DEACTIVATED";
+    public static final String CREDITCARD_REACTIVATED = "CREDITCARD_REACTIVATED";
     public static final String CREDITCARD_ACTIVATED = "CREDITCARD_ACTIVATED";
     public static final String CREDITCARD_DELETED = "CREDITCARD_DELETED";
     public static final String RESET_DEFAULT_CREDITCARD = "RESET_DEFAULT_CREDITCARD";
@@ -22,6 +23,7 @@ public final class CommitTypes {
             CREDITCARD_CREATED,
             CREDITCARD_ACTIVATED,
             CREDITCARD_DEACTIVATED,
+            CREDITCARD_REACTIVATED,
             CREDITCARD_DELETED,
             RESET_DEFAULT_CREDITCARD,
             SET_DEFAULT_CREDITCARD,

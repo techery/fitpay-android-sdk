@@ -14,7 +14,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 
-final public class AuthService {
+final public class AuthService extends BaseClient {
 
     private AuthClient mAuthClient;
     private Map<String, String> props;
@@ -36,8 +36,9 @@ final public class AuthService {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
-        //        OkHttpClient.Builder clientBuilder = getUnsafeOkHttpClient();
-        OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+        //TODO remove unsafe once cert issues addressed
+        OkHttpClient.Builder clientBuilder = getUnsafeOkHttpClient();
+        //OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
         clientBuilder.addInterceptor(interceptor);
         clientBuilder.addInterceptor(logging);
 

@@ -35,8 +35,8 @@ public final class TestConstants {
         Map<String, String>  config = new HashMap<>();
         switch (currentEnv) {
             case "qa":
-                config.put(ApiManager.PROPERTY_API_BASE_URL, "http://api.qa.fitpay.ninja/");
-                config.put(ApiManager.PROPERTY_AUTH_BASE_URL, "http://auth.qa.fitpay.ninja");
+                config.put(ApiManager.PROPERTY_API_BASE_URL, "https://api.qa.fitpay.ninja/");
+                config.put(ApiManager.PROPERTY_AUTH_BASE_URL, "https://auth.qa.fitpay.ninja");
                 config.put(ApiManager.PROPERTY_CLIENT_ID, "fitpay");
                 config.put(ApiManager.PROPERTY_REDIRECT_URI, "https://api.qa.fitpay.ninja");
                 break;

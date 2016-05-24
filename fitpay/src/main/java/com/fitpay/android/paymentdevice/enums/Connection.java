@@ -28,4 +28,11 @@ public final class Connection {
     public int getState() {
         return state;
     }
+
+    @Override
+    public String toString() {
+        return "Connection{" +
+                "state=" + state +
+                '}';
+    }
 }

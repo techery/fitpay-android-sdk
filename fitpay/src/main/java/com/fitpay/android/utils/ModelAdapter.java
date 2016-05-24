@@ -5,7 +5,7 @@ import android.util.Log;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.Payload;
 import com.fitpay.android.api.models.apdu.ApduPackage;
-import com.fitpay.android.api.models.card.CreditCard;
+import com.fitpay.android.api.models.device.CreditCardCommit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.google.gson.Gson;
@@ -64,14 +64,13 @@ final class ModelAdapter {
             if (!json.isJsonObject() && !StringUtils.isEmpty(json.getAsString())) {
 
                 final String decryptedString = StringUtils.getDecryptedString(KeysManager.KEY_API, json.getAsString());
-
                 if (!StringUtils.isEmpty(decryptedString)) {
 
                     Payload payload = null;
                     Gson gson = new Gson();
                     // Deserialize to desired object type based on unique key field in each object type
                     if (decryptedString.contains("creditCardId")) {
-                        CreditCard creditCard = gson.fromJson(decryptedString, CreditCard.class);
+                        CreditCardCommit creditCard = gson.fromJson(decryptedString, CreditCardCommit.class);
                         payload = new Payload(creditCard);
                     } else if (decryptedString.contains("packageId")) {
                         ApduPackage apduPackage = gson.fromJson(decryptedString, ApduPackage.class);

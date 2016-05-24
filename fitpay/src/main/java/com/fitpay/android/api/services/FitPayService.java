@@ -15,7 +15,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 
-final public class FitPayService {
+final public class FitPayService extends BaseClient {
 
     private static final String HEADER_AUTHORIZATION = "Authorization";
     private static final String AUTHORIZATION_BEARER = "Bearer";
@@ -57,8 +57,9 @@ final public class FitPayService {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
-        //        OkHttpClient.Builder clientBuilder = getUnsafeOkHttpClient();
-        OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+        //TODO remove once QA cert is issued
+        OkHttpClient.Builder clientBuilder = getUnsafeOkHttpClient();
+        //OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
         clientBuilder.addInterceptor(interceptor);
         clientBuilder.addInterceptor(logging);
         //add timeout modification here if needed - should be configurable
@@ -94,45 +95,4 @@ final public class FitPayService {
         return mAuthToken != null;
     }
 
-    //TODO: remove after tests
-//    private static OkHttpClient.Builder getUnsafeOkHttpClient() {
-//        try {
-//            // Create a trust manager that does not validate certificate chains
-//            final TrustManager[] trustAllCerts = new TrustManager[] {
-//                    new X509TrustManager() {
-//                        @Override
-//                        public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {
-//                        }
-//
-//                        @Override
-//                        public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {
-//                        }
-//
-//                        @Override
-//                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-//                            return new java.security.cert.X509Certificate[]{};
-//                        }
-//                    }
-//            };
-//
-//            // Install the all-trusting trust manager
-//            final SSLContext sslContext = SSLContext.getInstance("SSL");
-//            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
-//            // Create an ssl socket factory with our all-trusting manager
-//            final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
-//
-//            OkHttpClient.Builder builder = new OkHttpClient.Builder();
-//            builder.sslSocketFactory(sslSocketFactory);
-//            builder.hostnameVerifier(new HostnameVerifier() {
-//                @Override
-//                public boolean verify(String hostname, SSLSession session) {
-//                    return true;
-//                }
-//            });
-//
-//            return builder;
-//        } catch (Exception e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
 }
