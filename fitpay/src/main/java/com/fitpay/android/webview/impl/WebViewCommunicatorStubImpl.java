@@ -23,6 +23,7 @@ import com.google.gson.Gson;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import retrofit2.http.HEAD;
 import rx.Observable;
 import rx.Observer;
 import rx.functions.Func1;
@@ -66,6 +67,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
     }
 
     final Gson gson = new Gson();
+
 
     @JavascriptInterface
     public void dispatchMessage(String message) throws JSONException{
