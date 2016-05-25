@@ -11,7 +11,7 @@ import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
 import com.fitpay.android.paymentdevice.impl.ble.message.SecurityStateMessage;
-import com.fitpay.android.paymentdevice.model.PaymentDeviceService;
+import com.fitpay.android.paymentdevice.model.PaymentDeviceConnector;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
 import com.orhanobut.logger.Logger;
@@ -19,21 +19,21 @@ import com.orhanobut.logger.Logger;
 /**
  * BLE implementation
  */
-public final class BluetoothPaymentDeviceService extends PaymentDeviceService {
+public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnector {
 
-    private final static String TAG = BluetoothPaymentDeviceService.class.getSimpleName();
+    private final static String TAG = BluetoothPaymentDeviceConnector.class.getSimpleName();
 
     public final static String EXTRA_BLUETOOTH_ADDRESS = "BLUETOOTH_ADDRESS";
 
     private BluetoothAdapter mBluetoothAdapter;
     private GattManager mGattManager;
 
-    public BluetoothPaymentDeviceService(Context context) {
+    public BluetoothPaymentDeviceConnector(Context context) {
         super(context);
         initBluetooth();
     }
 
-    public BluetoothPaymentDeviceService(Context context, String deviceAddress) {
+    public BluetoothPaymentDeviceConnector(Context context, String deviceAddress) {
         super(context, deviceAddress);
         initBluetooth();
     }

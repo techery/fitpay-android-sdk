@@ -20,7 +20,7 @@ import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.impl.pagare.model.WalletEntry;
-import com.fitpay.android.paymentdevice.model.PaymentDeviceService;
+import com.fitpay.android.paymentdevice.model.PaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.utils.DevicePreferenceData;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
@@ -47,9 +47,9 @@ import rx.schedulers.Schedulers;
 /**
  * Created by tgs on 5/16/16.
  */
-public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
+public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
 
-    private final static String TAG = PebblePagarePaymentServiceDevice.class.getSimpleName();
+    private final static String TAG = PebblePagarePaymentDeviceConnector.class.getSimpleName();
 
     public static final String EXTRA_PEBBLE_APP_UUID = "PEBBLE_APP_UUID";
     public static final String WALLET_KEY = "wallet";
@@ -67,7 +67,7 @@ public class PebblePagarePaymentServiceDevice extends PaymentDeviceService {
     private SyncCompleteListener syncCompleteListener;
 
 
-    public PebblePagarePaymentServiceDevice() {
+    public PebblePagarePaymentDeviceConnector() {
         state = States.INITIALIZED;
 
         // configure commit handlers

@@ -12,7 +12,7 @@ import com.fitpay.android.paymentdevice.CommitHandler;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Connection;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
-import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceService;
+import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
 
@@ -23,26 +23,26 @@ import java.util.Properties;
 /**
  * Base model for wearable payment device
  */
-public abstract class PaymentDeviceService implements IPaymentDeviceService {
+public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector {
 
-    private final static String TAG = PaymentDeviceService.class.getSimpleName();
+    private final static String TAG = PaymentDeviceConnector.class.getSimpleName();
 
     protected Context mContext;
     protected String mAddress;
     protected @Connection.State int state;
     protected Map<String, CommitHandler> commitHandlers;
 
-    public PaymentDeviceService() {
+    public PaymentDeviceConnector() {
         state = States.NEW;
         commitHandlers = new HashMap<>();
     }
 
-    public PaymentDeviceService(Context context) {
+    public PaymentDeviceConnector(Context context) {
         this();
         mContext = context;
     }
 
-    public PaymentDeviceService(Context context, String address) {
+    public PaymentDeviceConnector(Context context, String address) {
         this(context);
         mAddress = address;
     }
@@ -141,7 +141,7 @@ public abstract class PaymentDeviceService implements IPaymentDeviceService {
                 long currentTime = System.currentTimeMillis();
 
                 if(validUntil > currentTime){
-                    PaymentDeviceService.this.executeApduPackage(pkg);
+                    PaymentDeviceConnector.this.executeApduPackage(pkg);
                 } else {
                     ApduExecutionResult result = new ApduExecutionResult(pkg.getPackageId());
                     result.setExecutedDuration(0);
