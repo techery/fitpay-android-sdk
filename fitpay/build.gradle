@@ -90,14 +90,16 @@ dependencies {
     compile 'com.getpebble:pebblekit:3.1.0'
     compile 'org.json:json:20160212'
 
+    compile 'com.github.skynet67:Nimbus-JOSE-JWT-Spongycastle:c4d9930688'
+
     testCompile 'org.mockito:mockito-core:1.10.19'
     testCompile 'junit:junit:4.12'
+
+    testCompile 'org.bouncycastle:bcprov-jdk15on:1.54'
+    testCompile 'com.nimbusds:nimbus-jose-jwt:4.12'
 
     testCompile ('org.robolectric:robolectric:3.0') {
         exclude module: 'junit'
         exclude group: 'org.bouncycastle'
     }
-
-    compile 'com.github.skynet67:Nimbus-JOSE-JWT-Spongycastle:c4d9930688'
-
 }

@@ -58,7 +58,7 @@ final public class KeysManager {
     }
 
     static {
-        Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
+        Security.insertProviderAt(BouncyCastleProviderSingleton.getInstance(), 1);
     }
 
     static KeysManager sInstance;
@@ -127,7 +127,14 @@ final public class KeysManager {
             PrivateKey privateKey = getPrivateKey(Hex.decode(privateKeyStr));
             PublicKey publicKey = getPublicKey(Hex.decode(publicKeyStr));
 
-            KeyAgreement keyAgreement = KeyAgreement.getInstance(ALGORITHM, BouncyCastleProviderSingleton.getInstance());
+            KeyAgreement keyAgreement = null;
+            try {
+                keyAgreement = KeyAgreement.getInstance(ALGORITHM, BouncyCastleProviderSingleton.getInstance());
+            } catch (Exception e){
+                //hack for unit tests
+                keyAgreement = KeyAgreement.getInstance(ALGORITHM);
+            }
+
             keyAgreement.init(privateKey);
             keyAgreement.doPhase(publicKey, true);
 

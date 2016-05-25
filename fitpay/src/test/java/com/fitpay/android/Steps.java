@@ -19,8 +19,10 @@ import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 
+import java.security.Security;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +48,8 @@ public class Steps {
     private Commit currentCommit;
 
     protected Steps() {
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+
         userName = TestUtils.getRandomLengthString(5, 10) + "@"
                 + TestUtils.getRandomLengthString(5, 10) + "." + TestUtils.getRandomLengthString(4, 10);
         password = TestUtils.getRandomLengthNumber(4, 4);

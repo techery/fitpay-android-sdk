@@ -16,9 +16,11 @@ import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 
+import java.security.Security;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +40,7 @@ public class TestActions {
 
     @BeforeClass
     public static void init() {
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
         ApiManager.init(TestConstants.getConfig());
     }
 
