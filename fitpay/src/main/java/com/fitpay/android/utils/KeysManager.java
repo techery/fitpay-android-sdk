@@ -8,8 +8,8 @@ import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.security.ECCKeyPair;
-import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 
+import org.spongycastle.jce.provider.BouncyCastleProvider;
 import org.spongycastle.util.encoders.Hex;
 
 import java.lang.annotation.Retention;
@@ -57,8 +57,12 @@ final public class KeysManager {
     public @interface KeyType {
     }
 
+    private static BouncyCastleProvider provider;
     static {
-        Security.insertProviderAt(BouncyCastleProviderSingleton.getInstance(), 1);
+        try {
+            provider = new BouncyCastleProvider();
+            Security.insertProviderAt(provider, 1);
+        } catch (Exception e){}
     }
 
     static KeysManager sInstance;
@@ -79,7 +83,7 @@ final public class KeysManager {
 
     // Create the public and private keys
     private ECCKeyPair createECCKeyPair() throws Exception {
-        KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance(ALGORITHM, BouncyCastleProviderSingleton.getInstance());
+        KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance(ALGORITHM, provider);
         keyGenerator.initialize(new ECGenParameterSpec(EC_CURVE), new SecureRandom());
 
         KeyPair keyPair = keyGenerator.generateKeyPair();
@@ -97,13 +101,13 @@ final public class KeysManager {
 
     // methods for ASN.1 encoded keys
     private PrivateKey getPrivateKey(byte[] privateKey) throws Exception {
-        KeyFactory kf = KeyFactory.getInstance(ALGORITHM, BouncyCastleProviderSingleton.getInstance());
+        KeyFactory kf = KeyFactory.getInstance(ALGORITHM, provider);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKey);
         return kf.generatePrivate(keySpec);
     }
 
     private PublicKey getPublicKey(byte[] publicKey) throws Exception {
-        KeyFactory kf = KeyFactory.getInstance(ALGORITHM, BouncyCastleProviderSingleton.getInstance());
+        KeyFactory kf = KeyFactory.getInstance(ALGORITHM, provider);
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKey);
         return kf.generatePublic(keySpec);
     }
@@ -129,7 +133,7 @@ final public class KeysManager {
 
             KeyAgreement keyAgreement = null;
             try {
-                keyAgreement = KeyAgreement.getInstance(ALGORITHM, BouncyCastleProviderSingleton.getInstance());
+                keyAgreement = KeyAgreement.getInstance(ALGORITHM, provider);
             } catch (Exception e){
                 //hack for unit tests
                 keyAgreement = KeyAgreement.getInstance(ALGORITHM);

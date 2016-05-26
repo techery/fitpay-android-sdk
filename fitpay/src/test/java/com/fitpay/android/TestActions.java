@@ -1,7 +1,7 @@
 package com.fitpay.android;
 
+import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.enums.DeviceTypes;
-import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.card.Address;
 import com.fitpay.android.api.models.card.CreditCard;
@@ -9,10 +9,10 @@ import com.fitpay.android.api.models.card.Reason;
 import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
 import com.fitpay.android.callback.ResultProvidingCallback;
-import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 
@@ -44,7 +44,7 @@ public class TestActions {
         ApiManager.init(TestConstants.getConfig());
     }
 
-    protected User createUser(UserCreateRequest user) throws Exception{
+    protected User createUser(UserCreateRequest user) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<User> callback = new ResultProvidingCallback<>(latch);
         ApiManager.getInstance().createUser(user, callback);
@@ -52,7 +52,7 @@ public class TestActions {
         return callback.getResult();
     }
 
-    protected boolean doLogin(LoginIdentity loginIdentity) throws Exception{
+    protected boolean doLogin(LoginIdentity loginIdentity) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
         ApiManager.getInstance().loginUser(loginIdentity, callback);
@@ -61,7 +61,6 @@ public class TestActions {
         assertEquals("login error code. (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return completed;
     }
-
 
 
     protected User getUser() throws Exception {
@@ -80,9 +79,9 @@ public class TestActions {
     protected LoginIdentity getTestLoginIdentity(String userName, String pin) throws ValidationException {
 
         LoginIdentity loginIdentity = new LoginIdentity.Builder()
-                    .setUsername(userName)
-                    .setPassword(pin)
-                    .build();
+                .setUsername(userName)
+                .setPassword(pin)
+                .build();
         return loginIdentity;
 
     }
@@ -125,7 +124,7 @@ public class TestActions {
         return creditCard;
     }
 
-    public Device getTestDevice()  {
+    public Device getTestDevice() {
 
         String manufacturerName = "X111";
         String deviceName = "TEST_DEVICE";
@@ -162,7 +161,7 @@ public class TestActions {
 
     }
 
-    public Device getPoorlyDefinedDevice()  {
+    public Device getPoorlyDefinedDevice() {
 
         String deviceName = "TEST_DEVICE";
         String firmwareRevision = "111.111";
@@ -185,7 +184,7 @@ public class TestActions {
 
     }
 
-    public Device getPoorlyDeviceTestSmartStrapDevice()  {
+    public Device getPoorlyDeviceTestSmartStrapDevice() {
 
         String manufacturerName = "X111";
         String deviceName = "TEST_DEVICE";
@@ -218,7 +217,7 @@ public class TestActions {
         return callback.getResult();
     }
 
-    protected CreditCard createCreditCard(User user, CreditCard creditCard)  throws Exception {
+    protected CreditCard createCreditCard(User user, CreditCard creditCard) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<CreditCard> callback = new ResultProvidingCallback<>(latch);
         user.createCreditCard(creditCard, callback);
@@ -226,7 +225,7 @@ public class TestActions {
         return callback.getResult();
     }
 
-    protected CreditCard getCreditCard(CreditCard creditCard)  throws Exception {
+    protected CreditCard getCreditCard(CreditCard creditCard) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<CreditCard> callback = new ResultProvidingCallback<>(latch);
         creditCard.self(callback);
@@ -239,7 +238,7 @@ public class TestActions {
     protected Collections.CreditCardCollection getCreditCards(User user) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<Collections.CreditCardCollection> callback = new ResultProvidingCallback<>(latch);
-        user.getCreditCards(10, 0 , callback);
+        user.getCreditCards(10, 0, callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         assertEquals("get credit cards had error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return callback.getResult();
@@ -314,13 +313,13 @@ public class TestActions {
     protected Collections.TransactionCollection getCardTransactions(CreditCard card) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<Collections.TransactionCollection> callback = new ResultProvidingCallback<>(latch);
-        card.getTransactions(10, 0 , callback);
+        card.getTransactions(10, 0, callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         assertEquals("get device transactions error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return callback.getResult();
     }
 
-    protected Transaction getTransaction(Transaction transaction)  throws Exception {
+    protected Transaction getTransaction(Transaction transaction) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<Transaction> callback = new ResultProvidingCallback<>(latch);
         transaction.self(callback);
@@ -333,12 +332,11 @@ public class TestActions {
     protected Collections.DeviceCollection getDevices(User user) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<Collections.DeviceCollection> callback = new ResultProvidingCallback<>(latch);
-        user.getDevices(10, 0 , callback);
+        user.getDevices(10, 0, callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         assertEquals("get devices error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return callback.getResult();
     }
-
 
 
 }
