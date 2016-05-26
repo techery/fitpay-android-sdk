@@ -1,6 +1,5 @@
-package com.fitpay.android.callback;
+package com.fitpay.android.api.callbacks;
 
-import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 
 import java.util.concurrent.CountDownLatch;
@@ -18,6 +17,7 @@ public class ResultProvidingCallback<T> implements ApiCallback<T> {
         public ResultProvidingCallback() {}
 
         public ResultProvidingCallback(CountDownLatch latch) {
+            this();
             this.latch = latch;
         }
 

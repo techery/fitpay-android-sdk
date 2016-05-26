@@ -1,4 +1,4 @@
-package com.fitpay.android.paymentdevice.model;
+package com.fitpay.android.paymentdevice.impl;
 
 import android.content.Context;
 import android.util.Log;
@@ -34,7 +34,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     public PaymentDeviceConnector() {
         state = States.NEW;
-        commitHandlers = new HashMap<>();
+        addDefaultCommitHandlers();
     }
 
     public PaymentDeviceConnector(Context context) {
@@ -57,10 +57,11 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         this.mContext = context;
     }
 
-    protected Map<String, CommitHandler> getDefaultCommitHandlers() {
-        Map<String, CommitHandler> handlers = new HashMap<>();
+    /**
+     * All connectors should handle apdu processing.
+     */
+    protected void addDefaultCommitHandlers() {
         addCommitHandler(CommitTypes.APDU_PACKAGE, new ApduCommitHandler());
-        return handlers;
     }
 
     @Override

@@ -32,6 +32,10 @@ public class BaseModel {
     }
 
     private <T> String getLink(String key, ApiCallback<T> callback) {
+        if (null== links) {
+            callback.onFailure(ResultCode.NOT_FOUND, "API endpoint is not available");
+            return null;
+        }
         String url = links.getLink(key);
 
         if (StringUtils.isEmpty(url)) {

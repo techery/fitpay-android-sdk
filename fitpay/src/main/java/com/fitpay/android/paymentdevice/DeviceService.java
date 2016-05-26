@@ -8,9 +8,13 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
+import com.fitpay.android.api.enums.CommitTypes;
 import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.enums.ResultCode;
+import com.fitpay.android.api.models.Payload;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
+import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
@@ -26,18 +30,22 @@ import com.fitpay.android.paymentdevice.utils.DevicePreferenceData;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
+import com.google.gson.Gson;
 import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
 import rx.Observer;
-import rx.Subscription;
 import rx.functions.Func1;
-import rx.schedulers.Schedulers;
 
 import static java.lang.Class.forName;
 
@@ -73,6 +81,8 @@ public final class DeviceService extends Service {
     private CustomListener mSyncListener = new CustomListener();
 
     private final IBinder mBinder = new LocalBinder();
+
+    Executor executor = Executors.newSingleThreadExecutor();
 
     public class LocalBinder extends Binder {
         public DeviceService getService() {
@@ -120,6 +130,10 @@ public final class DeviceService extends Service {
     }
 
     protected void configure(Intent intent) {
+        if (null == intent) {
+            Log.d(TAG, "DeviceService can not be configured with a null Intent");
+            return;
+        }
         if (null != intent.getExtras() && intent.hasExtra(EXTRA_PAYMENT_SERVICE_TYPE)) {
             String paymentDeviceConnectorType = intent.getExtras().getString(EXTRA_PAYMENT_SERVICE_TYPE);
             if (null != paymentDeviceConnectorType) {
@@ -237,7 +251,12 @@ public final class DeviceService extends Service {
             Log.e(TAG, "payment device service is not connected.  Can not do operation: readDeviceInfo");
             return;
         }
-        paymentDeviceConnector.readDeviceInfo();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                paymentDeviceConnector.readDeviceInfo();
+            }
+        });
     }
 
 
@@ -281,11 +300,18 @@ public final class DeviceService extends Service {
             Logger.w("Sync already in progress. Try again later");
             throw new IllegalStateException("Another sync is currently active.  Please try again later");
         }
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                syncDevice();
+            }
+        });
 
-        Subscription syncSubscription = getSyncObservable()
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.newThread())
-                .subscribe(getSyncObserver());
+//
+//        Subscription syncSubscription = getSyncObservable()
+//                .subscribeOn(Schedulers.io())
+//                .observeOn(Schedulers.newThread())
+//                .subscribe(getSyncObserver());
 
     }
 
@@ -318,27 +344,53 @@ public final class DeviceService extends Service {
 
         DevicePreferenceData deviceData = DevicePreferenceData.load(this, device.getDeviceIdentifier());
 
-        //TODO verify this is not being done on the main thread
-        device.getAllCommits(deviceData.getLastCommitId(), new ApiCallback<Collections.CommitsCollection>() {
-            @Override
-            public void onSuccess(Collections.CommitsCollection result) {
+        //TODO getAllCommits callback is done on UI Thread - make change
+        // since we do not want processing to be done on UI Thread need to make it a blocking call
 
-                Log.d(TAG, "processing commits.  count: " + result.getTotalResults());
+        //TODO remove apdu testing features
+        boolean testApdus = false;
 
-                mCommits = result.getResults();
+        /*
+         * getAllCommits callback will revert to UI thread.   To continue the process on
+         * background thread, the callback blocks, waits for a result, and provides it back to the
+         * current thread of execution
+         */
 
-                RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<Collections.CommitsCollection> callback = new ResultProvidingCallback<>(latch);
+        device.getAllCommits(deviceData.getLastCommitId(), callback);
 
-                processNextCommit();
-            }
+        //TODO make callback timeout configurable?
+        try {
+            latch.await(5000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            //party on
+        }
+        if (null != callback.getResult()) {
 
-            @Override
-            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                Logger.e(errorCode + " " + errorMessage);
+                mCommits = callback.getResult().getResults();
 
+                //TODO remove this test code:  This code is for testing of apdus only - remove for production
+                if (testApdus) {
+                    Log.w(TAG, "adding apdu command for testing purposes");
+                    Gson gson = new Gson();
+                    ApduPackage apduPackage = gson.fromJson(getTestApduPackage(), ApduPackage.class);
+                    Commit commit = new Commit.Builder()
+                            .commitId(UUID.randomUUID().toString())
+                            .commitType(CommitTypes.APDU_PACKAGE)
+                            .createdTs(System.currentTimeMillis())
+                            .payload(new Payload(apduPackage))
+                            .build();
+                    mCommits.add(commit);
+                }
+
+            Log.d(TAG, "processing commits.  count: " + callback.getResult().getTotalResults());
+            RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
+            processNextCommit();
+        } else {
+                Log.e(TAG, "get commits failed.  reasonCode: " + callback.getErrorCode() + ",  " + callback.getErrorMessage());
                 RxBus.getInstance().post(new Sync(States.FAILED));
-            }
-        });
+        }
     }
 
     private Observer<Boolean> getSyncObserver() {
@@ -367,33 +419,12 @@ public final class DeviceService extends Service {
      * process next commit
      */
     private void processNextCommit(){
-        if(mCommits != null && mCommits.size() > 0){
+        if(mCommits != null && mCommits.size() > 0) {
             Commit commit = mCommits.get(0);
             Log.d(TAG, "process commit: " + commit);
             paymentDeviceConnector.processCommit(commit);
             // expose the commit out to others who may want to take action
             RxBus.getInstance().post(commit);
-            // TODO remove dead code below - moved into handler
-//            Object payload = commit.getPayload();
-//            if (payload instanceof ApduPackage) {
-//                ApduPackage pkg = (ApduPackage) payload;
-//
-//                long validUntil = TimestampUtils.getDateForISO8601String(pkg.getValidUntil()).getTime();
-//                long currentTime = System.currentTimeMillis();
-//
-//                if(validUntil > currentTime){
-//                    paymentDeviceConnector.executeApduPackage(pkg);
-//                } else {
-//                    ApduExecutionResult result = new ApduExecutionResult(pkg.getPackageId());
-//                    result.setExecutedDuration(0);
-//                    result.setExecutedTsEpoch(currentTime);
-//                    result.setState(ResponseState.EXPIRED);
-//
-//                    RxBus.getInstance().post(result);
-//                }
-//            } else {
-//                RxBus.getInstance().post(commit);
-//            }
         } else {
             RxBus.getInstance().post(new Sync(States.COMPLETED));
         }
@@ -419,8 +450,7 @@ public final class DeviceService extends Service {
 
                 @Override
                 public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                    Logger.e("Could not post apduExecutionResult. " + errorCode + ": " + errorMessage);
-
+                    Log.e(TAG, "Could not post apduExecutionResult. " + errorCode + ": " + errorMessage);
                     RxBus.getInstance().post(new Sync(States.FAILED));
                 }
             });
@@ -542,6 +572,68 @@ public final class DeviceService extends Service {
             Log.e(TAG, "can not convert config to properties.  Reason: " + e.getMessage());
         }
         return props;
+    }
+
+
+    //TODO remove this test code after completing apdu testing
+    private String getTestApduPackage() {
+
+        String apduJson = "{  \n" +
+                "   \"seIdType\":\"iccid\",\n" +
+                "   \"targetDeviceType\":\"fitpay.gandd.model.Device\",\n" +
+                "   \"targetDeviceId\":\"72425c1e-3a17-4e1a-b0a4-a41ffcd00a5a\",\n" +
+                "   \"packageId\":\"baff08fb-0b73-5019-8877-7c490a43dc64\",\n" +
+                "   \"seId\":\"333274689f09352405792e9493356ac880c44444442\",\n" +
+                "   \"targetAid\":\"8050200008CF0AFB2A88611AD51C\",\n" +
+                "   \"commandApdus\":[  \n" +
+                "      {  \n" +
+                "         \"commandId\":\"5f2acf6f-536d-4444-9cf4-7c83fdf394bf\",\n" +
+                "         \"groupId\":0,\n" +
+                "         \"sequence\":0,\n" +
+                "         \"command\":\"00E01234567890ABCDEF\",\n" +
+                "         \"type\":\"CREATE FILE\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"00df5f39-7627-447d-9380-46d8574e0643\",\n" +
+                "         \"groupId\":1,\n" +
+                "         \"sequence\":1,\n" +
+                "         \"command\":\"8050200008CF0AFB2A88611AD51C\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"9c719928-8bb0-459c-b7c0-2bc48ec53f3c\",\n" +
+                "         \"groupId\":1,\n" +
+                "         \"sequence\":2,\n" +
+                "         \"command\":\"84820300106BBC29E6A224522E83A9B26FD456111500\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"b148bea5-6d98-4c83-8a20-575b4edd7a42\",\n" +
+                "         \"groupId\":1,\n" +
+                "         \"sequence\":3,\n" +
+                "         \"command\":\"9800E01234567890ABCDEF84820300106BBC29E6A224522E83A9B26FD456111500\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"905fc5ab-4b15-4704-889b-2c5ffcfb2d68\",\n" +
+                "         \"groupId\":2,\n" +
+                "         \"sequence\":4,\n" +
+                "         \"command\":\"84F2200210F25397DCFB728E25FBEE52E748A116A800\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"8e87ff12-dfc2-472a-bbf1-5f2e891e864c\",\n" +
+                "         \"groupId\":3,\n" +
+                "         \"sequence\":5,\n" +
+                "         \"command\":\"84F2200210F25397DCFB728E25FBEE52E748A116A800\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      }\n" +
+                "   ],\n" +
+                "   \"validUntil\":\"2020-12-11T21:22:58.691Z\",\n" +
+                "   \"apduPackageUrl\":\"http://localhost:9103/transportservice/v1/apdupackages/baff08fb-0b73-5019-8877-7c490a43dc64\"\n" +
+                "}";
+        return apduJson;
+
     }
 
 }

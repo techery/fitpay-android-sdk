@@ -23,6 +23,7 @@ public final class ApduExecutionResult {
 
     public ApduExecutionResult(String packageId){
         this.packageId = packageId;
+        this.setExecutedTsEpoch(System.currentTimeMillis());
         apduResponses = new ArrayList<>();
     }
 
@@ -53,6 +54,10 @@ public final class ApduExecutionResult {
 
     public void setExecutedDuration(int executedDuration) {
         this.executedDuration = executedDuration;
+    }
+
+    public void setExecutedDurationTilNow() {
+        this.executedDuration = (int) ((System.currentTimeMillis() - getExecutedTsEpoch()) / 1000);
     }
 
     public List<ApduCommandResult> getResponses() {
@@ -89,6 +94,17 @@ public final class ApduExecutionResult {
                 }
             }
         }
+    }
 
+    @Override
+    public String toString() {
+        return "ApduExecutionResult{" +
+                "errorReason='" + errorReason + '\'' +
+                ", executedDuration=" + executedDuration +
+                ", executedTsEpoch=" + executedTsEpoch +
+                ", packageId='" + packageId + '\'' +
+                ", state='" + state + '\'' +
+                ", numberOfApduCommandResults='" + apduResponses.size() + '\'' +
+                '}';
     }
 }

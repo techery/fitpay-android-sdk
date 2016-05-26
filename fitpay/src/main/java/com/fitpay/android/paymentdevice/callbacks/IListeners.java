@@ -7,6 +7,7 @@ import com.fitpay.android.paymentdevice.enums.Connection;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
+import com.fitpay.android.paymentdevice.events.PaymentDeviceOperationFailed;
 
 /**
  * Collection of payment device callbacks
@@ -31,6 +32,7 @@ public final class IListeners {
 
     public interface PaymentDeviceListener extends ConnectionListener {
         void onDeviceInfoReceived(final Device device);
+        void onDeviceOperationFailed(final PaymentDeviceOperationFailed failure);
         void onNFCStateReceived(final boolean isEnabled, final byte errorCode);
         void onNotificationReceived(final byte[] data);
         void onApplicationControlReceived(final byte[] data);

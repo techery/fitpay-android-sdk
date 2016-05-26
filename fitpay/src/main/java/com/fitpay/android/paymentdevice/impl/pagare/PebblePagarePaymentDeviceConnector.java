@@ -7,11 +7,16 @@ import android.util.Log;
 
 import com.fitpay.android.api.enums.CommitTypes;
 import com.fitpay.android.api.enums.DeviceTypes;
+import com.fitpay.android.api.enums.ResponseState;
+import com.fitpay.android.api.models.apdu.ApduCommand;
+import com.fitpay.android.api.models.apdu.ApduCommandResult;
+import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.CreditCardCommit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentdevice.CommitHandler;
+import com.fitpay.android.paymentdevice.DeviceOperationException;
 import com.fitpay.android.paymentdevice.DeviceService;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.NFC;
@@ -19,9 +24,11 @@ import com.fitpay.android.paymentdevice.enums.SecureElement;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
+import com.fitpay.android.paymentdevice.events.PaymentDeviceOperationFailed;
+import com.fitpay.android.paymentdevice.impl.PaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.impl.pagare.model.WalletEntry;
-import com.fitpay.android.paymentdevice.model.PaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.utils.DevicePreferenceData;
+import com.fitpay.android.utils.Hex;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
@@ -38,12 +45,6 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.UUID;
 
-import rx.Observable;
-import rx.Observer;
-import rx.Subscription;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
-
 /**
  * Created by tgs on 5/16/16.
  */
@@ -55,6 +56,24 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
     public static final String WALLET_KEY = "wallet";
 
     private static final int MESSAGE_ID_WALLET_UPDATE = 0x2000;
+    private static final int MESSAGE_ID_DEVICE_INFO_DEVICE_TYPE = 8190;
+    private static final int MESSAGE_ID_DEVICE_INFO_MANUFACTURER_NAME = 8191;
+    private static final int MESSAGE_ID_DEVICE_INFO_DEVICE_NAME       = 8192;
+    private static final int MESSAGE_ID_DEVICE_INFO_SERIAL_NUMBER     = 8193;
+    private static final int MESSAGE_ID_DEVICE_INFO_MODEL_NUMBER      = 8194;
+    private static final int MESSAGE_ID_DEVICE_INFO_HARDWARE_REVISION = 8195;
+    private static final int MESSAGE_ID_DEVICE_INFO_FIRMWARE_REVISION = 8196;
+    private static final int MESSAGE_ID_DEVICE_INFO_SOFTWARE_REVISION = 8197;
+    private static final int MESSAGE_ID_DEVICE_INFO_SYSTEM_ID         = 8198;
+    private static final int MESSAGE_ID_DEVICE_INFO_OS_NAME           = 8199;
+    private static final int MESSAGE_ID_DEVICE_INFO_LICENSE_KEY       = 8200;
+    private static final int MESSAGE_ID_DEVICE_INFO_BD_ADDRESS        = 8201;
+    private static final int MESSAGE_ID_DEVICE_INFO_SECURE_ELEMENT_ID  = 8202;
+
+    private static final int MESSAGE_ID_APDU_COMMAND  = 36864;
+    private static final int MESSAGE_ID_APDU_SEQUENCE_NUMBER = 36865;
+
+    private static final int MESSAGE_ID_APDU_COMMAND_RESULT  = 36864;
 
     private UUID pebbleAppUuid;
 
@@ -109,62 +128,24 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
 
     @Override
     public void connect() {
+        PebbleKit.registerPebbleConnectedReceiver(this.mContext, connectionBroadcastReceiver);
+        PebbleKit.registerPebbleDisconnectedReceiver(this.mContext, connectionBroadcastReceiver);
+
         /*
          * In the case of Pebble, connected really means connected to the device and the Pagare App open
          */
         boolean isConnected = PebbleKit.isWatchConnected(mContext);
         if (isConnected) {
             setState(States.CONNECTED);
+            Log.d(TAG, "start watch pagare app");
+            PebbleKit.startAppOnPebble(mContext, pebbleAppUuid);
         } else {
             setState(States.DISCONNECTED);
             //TODO need to fire some kind of event to inform client that connect failed
         }
-        PebbleKit.registerPebbleConnectedReceiver(this.mContext, connectionBroadcastReceiver);
-        PebbleKit.registerPebbleDisconnectedReceiver(this.mContext, connectionBroadcastReceiver);
-
-        PebbleKit.registerReceivedAckHandler(mContext,
-                new PebbleKit.PebbleAckReceiver(pebbleAppUuid) {
-
-                    @Override
-                    public void receiveAck(Context context, int transactionId) {
-                        Log.d(TAG, "received pebble ack: " + transactionId);
-                        switch (transactionId) {
-                            case MESSAGE_ID_WALLET_UPDATE: {
-                                Log.d(TAG, "Wallet update message acknowledged");
-                                break;
-                            }
-                            default: {
-                                Log.d(TAG, "unhandled ACK for transaction: " + transactionId);
-                            }
-                        }
-                    }
-
-                });
-
-        PebbleKit.registerReceivedNackHandler(mContext,
-                new PebbleKit.PebbleNackReceiver(pebbleAppUuid) {
-
-                    @Override
-                    public void receiveNack(Context context, int transactionId) {
-                        Log.d(TAG, "received pebble nack: " + transactionId);
-                        switch (transactionId) {
-                            case MESSAGE_ID_WALLET_UPDATE: {
-                                Log.d(TAG, "Wallet update message nacked");
-                                break;
-                            }
-                            default: {
-                                Log.d(TAG, "unhandled NACK for transaction: " + transactionId);
-                            }
-                        }
-                    }
-
-                });
 
         syncCompleteListener = new SyncCompleteListener();
         NotificationManager.getInstance().addListener(syncCompleteListener);
-
-        // use this entry point to initialize wallet
-        syncWalletState();
     }
 
     private BroadcastReceiver connectionBroadcastReceiver = new PebbleConnectionBroadcastReceiver();
@@ -185,19 +166,22 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
             //TODO need to fire some kind of event to inform client that connect and hence readDeviceInfo failed
             return;
         }
+        PebbleKit.startAppOnPebble(mContext, pebbleAppUuid);
 
-        Subscription subscription = getReadPebbleDeviceInfoObservable()
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.newThread())
-                .subscribe(getPebbleDeviceInfoObserver());
+        PebbleDeviceInfo pebbleDeviceInfo = readPebbleDeviceInfo();
+        RxBus.getInstance().post(pebbleDeviceInfo);
 
-        // Mock device read
-
-        Subscription deviceReadSubscription = getAsyncSimulatingObservable()
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.newThread())
-                .subscribe(getDeviceInfoObserver(getMockDevice()));
-
+        Device device = null;
+        try {
+            device = readPagareDeviceInfo();
+        } catch (DeviceOperationException e) {
+            RxBus.getInstance().post(new PaymentDeviceOperationFailed.Builder()
+                    .reasonCode(e.getErrorCode())
+                    .reason(e.getMessage())
+                    .build());
+            return;
+        }
+        RxBus.getInstance().post(device);
     }
 
     @Override
@@ -214,8 +198,88 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
 
     @Override
     public void executeApduPackage(ApduPackage apduPackage) {
-        throw new UnsupportedOperationException("method not supported in this iteration");
 
+        //TODO the boilerplate of this method should be extracted to base class
+
+        Log.d(TAG, "executeApduPackage executing on thread: " + Thread.currentThread());
+
+        ApduExecutionResult apduExecutionResult = new ApduExecutionResult(apduPackage.getPackageId());
+        apduExecutionResult.setExecutedTsEpoch(System.currentTimeMillis());
+
+        int i = 0;
+        for (ApduCommand apduCommand: apduPackage.getApduCommands()) {
+
+            int currentSequenceNumber = apduCommand.getSequence();
+
+            PebbleDictionary dict = new PebbleDictionary();
+            dict.addString(MESSAGE_ID_APDU_COMMAND, Hex.bytesToHexString(apduCommand.getCommand()));
+            dict.addString(MESSAGE_ID_APDU_SEQUENCE_NUMBER, "" + currentSequenceNumber);
+
+            PebbleWrapper wrapper = new PebbleWrapper(mContext, PebblePagarePaymentDeviceConnector.this.pebbleAppUuid);
+            PebbleDictionary response = null;
+            try {
+                response = wrapper.readData(dict, MESSAGE_ID_APDU_COMMAND + i);
+            } catch (DeviceOperationException e) {
+                Log.w(TAG, "apdu command was not processed");
+                processApduCommandExecutionFailure(apduExecutionResult, e.getMessage());
+                return;
+            }
+            if (null == response) {
+                Log.w(TAG, "got null response to apdu command");
+                apduExecutionResult.setState(ResponseState.FAILED);
+                apduExecutionResult.setExecutedDurationTilNow();
+                apduExecutionResult.setErrorReason("Device did not respond");
+                RxBus.getInstance().post(apduExecutionResult);
+                return;
+            }
+
+            String sequenceNumber = response.getString(MESSAGE_ID_APDU_SEQUENCE_NUMBER);
+            if (null != sequenceNumber) {
+                int responseSequenceNumber = Integer.parseInt(sequenceNumber);
+                if (currentSequenceNumber != responseSequenceNumber) {
+                    //TODO got responses out of order
+                    Log.e(TAG, "got apdu responses out of order.  expected: " + currentSequenceNumber + ", got: " + responseSequenceNumber);
+                    processApduCommandExecutionFailure(apduExecutionResult, "Device provided response out of order");
+                    return;
+                }
+            } else {
+                Log.e(TAG, "no sequence number provide in response");
+                processApduCommandExecutionFailure(apduExecutionResult, "Device response did not contain a sequence number");
+                return;
+            }
+
+            String apduResponse = response.getString(MESSAGE_ID_APDU_COMMAND_RESULT);
+            if (null == apduResponse) {
+                processApduCommandExecutionFailure(apduExecutionResult, "Device provided invalid response.  Apdu result does not contain a command result");
+                return;
+            } else if (apduResponse.length() < 4) {
+                //TODO apdu response not correct length
+                Log.e(TAG, "apdu command response does not have the correct length: " + apduResponse.length());
+                processApduCommandExecutionFailure(apduExecutionResult, "Device provided invalid response.  Apdu result does not contain a response code");
+                return;
+            }
+
+            ApduCommandResult commandResult = new ApduCommandResult.Builder()
+                    .setCommandId(apduCommand.getCommandId())
+                    .setResponseCode(apduResponse.substring(apduResponse.length() - 4))
+                    .setResponseData(apduResponse)
+                    .build();
+            apduExecutionResult.addResponse(commandResult);
+
+            //TODO only continue to next command if this one was successful
+
+        }
+        apduExecutionResult.deriveState();
+        apduExecutionResult.setExecutedDurationTilNow();;
+
+        RxBus.getInstance().post(apduExecutionResult);
+    }
+
+    private void processApduCommandExecutionFailure(ApduExecutionResult apduExecutionResult, String errorReason) {
+        apduExecutionResult.setState(ResponseState.FAILED);
+        apduExecutionResult.setExecutedDurationTilNow();
+        apduExecutionResult.setErrorReason(errorReason);
+        RxBus.getInstance().post(apduExecutionResult);
     }
 
     @Override
@@ -243,123 +307,44 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
         NotificationManager.getInstance().removeListener(syncCompleteListener);
     }
 
-    private Observable<PebbleDeviceInfo> getReadPebbleDeviceInfoObservable() {
-        return Observable.just(true).map(new Func1<Boolean, PebbleDeviceInfo>() {
-            @Override
-            public PebbleDeviceInfo call(Boolean aBoolean) {
-                PebbleKit.FirmwareVersionInfo info = PebbleKit.getWatchFWVersion(mContext);
-                boolean appMessageSupported = PebbleKit.areAppMessagesSupported(mContext);
-                PebbleDeviceInfo pebble = new PebbleDeviceInfo.Builder()
-                        .setFirmwareVersion(info.getMajor() + "." + info.getMinor() + "." + info.getPoint())
-                        .setAppMessageSupported(appMessageSupported)
-                        .build();
-                return pebble;
-            }
-        });
-    }
-
-
-    private Observer<PebbleDeviceInfo> getPebbleDeviceInfoObserver() {
-
-        return new Observer<PebbleDeviceInfo>() {
-
-            @Override
-            public void onCompleted() {
-                Log.d(TAG, "pebble deviceInfo observer completed");
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                Log.d(TAG, "pebble deviceInfo observer error: " + e.getMessage());
-            }
-
-            @Override
-            public void onNext(PebbleDeviceInfo deviceInfo) {
-                Log.d(TAG, "pebble device info has been read.  device: " + deviceInfo);
-                if (null != deviceInfo) {
-                    RxBus.getInstance().post(deviceInfo);
-                } else {
-                    Log.e(TAG, "pebble read device info returned null. This is a application defect");
-                }
-            }
-        };
-    }
-
-    // Mock device info methods
-    protected Device getMockDevice() {
-        Device mockDevice = new Device.Builder()
-                .setDeviceType(DeviceTypes.WATCH)
-                .setManufacturerName("Fitpay")
-                .setDeviceName("Pagare Smart Strap")
-                .setSerialNumber("074DC456B5")
-                .setModelNumber("Pagare One")
-                .setHardwareRevision("1.0.0.0")
-                .setFirmwareRevision("1030.6408.1309.0001")
-                //.setSoftwareRevision("2.0.242009.6")
-                .setSystemId("0x123456FFFE9ABCDE")
-                .setOSName("ANDROID")
-                .setLicenseKey("6b413f37-90a9-47ed-962d-80e6a3528036")
-                //.setBdAddress("977214bf-d038-4077-bdf8-226b17d5958d")
-                .setSecureElementId("8765b2c7-74c5-43e5-b224-39992060161b")
+    private PebbleDeviceInfo readPebbleDeviceInfo() {
+        PebbleKit.FirmwareVersionInfo info = PebbleKit.getWatchFWVersion(mContext);
+        boolean appMessageSupported = PebbleKit.areAppMessagesSupported(mContext);
+        PebbleDeviceInfo pebble = new PebbleDeviceInfo.Builder()
+                .setFirmwareVersion(info.getMajor() + "." + info.getMinor() + "." + info.getPoint())
+                .setAppMessageSupported(appMessageSupported)
                 .build();
-        return mockDevice;
+        return pebble;
     }
 
-    private Observable<Boolean> getAsyncSimulatingObservable() {
-        return Observable.just(true).map(new Func1<Boolean, Boolean>() {
-            @Override
-            public Boolean call(Boolean aBoolean) {
-                delay(delay);
-                return aBoolean;
-            }
-        });
-    }
-
-    private Observer<Boolean> getDeviceInfoObserver(final Device deviceInfo) {
-
-        return new Observer<Boolean>() {
-
-            @Override
-            public void onCompleted() {
-                Log.d(TAG, "device info has been read.  device: " + deviceInfo);
-                if (null != deviceInfo) {
-                    RxBus.getInstance().post(deviceInfo);
-                } else {
-                    Log.e(TAG, "read device info returned null. This is a application defect");
-                }
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                Log.d(TAG, "deviceInfo observer error: " + e.getMessage());
-            }
-
-            @Override
-            public void onNext(Boolean bool) {
-                Log.d(TAG, "deviceInfo observer onNext: " + bool);
-            }
-        };
-    }
-
-
-
-    protected void delay(long delayInterval) {
-
-        try {
-            Thread.sleep(random.nextInt((int)delayInterval));
-        } catch (InterruptedException e) {
-            // carry on
+    private Device readPagareDeviceInfo() throws DeviceOperationException {
+        PebbleWrapper wrapper = new PebbleWrapper(mContext, PebblePagarePaymentDeviceConnector.this.pebbleAppUuid);
+        PebbleDictionary dict = new PebbleDictionary();
+        dict.addString(MESSAGE_ID_DEVICE_INFO_DEVICE_TYPE, "");
+        PebbleDictionary response = wrapper.readData(dict, MESSAGE_ID_DEVICE_INFO_DEVICE_TYPE);
+        if (null == response) {
+            Log.e(TAG, "read device info was not successful.  reasonCode: " + wrapper.getReasonCode() + ", reason: " + wrapper.getReason());
+            throw new DeviceOperationException(wrapper.getReason(), wrapper.getReasonCode());
         }
+        return getDeviceFromDictionary(response, DeviceTypes.WATCH);
     }
 
-
-    private void rebuildWallet(String lastCommitId) {
-        if (null == lastCommitId) {
-            wallet = new HashMap<>();
-            return;
-        }
-        //TODO need to get commmits but to do so need a reference to Device
-
+    private Device getDeviceFromDictionary(PebbleDictionary dict, String deviceType) {
+        return  new Device.Builder()
+                .setDeviceType(deviceType)
+                .setDeviceName(dict.getString(MESSAGE_ID_DEVICE_INFO_DEVICE_NAME))
+                .setManufacturerName(dict.getString(MESSAGE_ID_DEVICE_INFO_MANUFACTURER_NAME))
+                .setModelNumber(dict.getString(MESSAGE_ID_DEVICE_INFO_MODEL_NUMBER))
+                .setSerialNumber(dict.getString(MESSAGE_ID_DEVICE_INFO_SERIAL_NUMBER))
+                .setBdAddress(dict.getString(MESSAGE_ID_DEVICE_INFO_BD_ADDRESS))
+                .setFirmwareRevision(dict.getString(MESSAGE_ID_DEVICE_INFO_FIRMWARE_REVISION))
+                .setHardwareRevision(dict.getString(MESSAGE_ID_DEVICE_INFO_HARDWARE_REVISION))
+                .setSoftwareRevision(dict.getString(MESSAGE_ID_DEVICE_INFO_SOFTWARE_REVISION))
+                .setLicenseKey(dict.getString(MESSAGE_ID_DEVICE_INFO_LICENSE_KEY))
+                .setOSName(dict.getString(MESSAGE_ID_DEVICE_INFO_OS_NAME))
+                .setSecureElementId(dict.getString(MESSAGE_ID_DEVICE_INFO_SECURE_ELEMENT_ID))
+                .setSystemId(dict.getString(MESSAGE_ID_DEVICE_INFO_SYSTEM_ID))
+                .build();
     }
 
     private synchronized void updateWallet(CreditCardCommit card) {
@@ -457,19 +442,30 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
         }
     }
 
-    private void syncWalletState() {
-        //TODO should this be implemented?   if last commit id is not null but wallet not defined then it should be rebuilt
-    }
-
     private void sendWalletToPebble() {
-        PebbleDictionary dict = getPebbleUpdateWalletMessage();
-        if (null == dict || dict.size() == 0) {
-            Log.d(TAG, "wallet is empty");
-            dict = getPebbleEmptyWalletMessage();
-        }
-        dict.addString(0x2FFF, "Wallet updates were successful");
-        Log.d(TAG, "sending wallet update to pebble app.  transactionId: " + MESSAGE_ID_WALLET_UPDATE + ", size: " + dict.size());
-        PebbleKit.sendDataToPebbleWithTransactionId(mContext, this.pebbleAppUuid, dict, MESSAGE_ID_WALLET_UPDATE);
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                PebbleDictionary dict = getPebbleUpdateWalletMessage();
+                if (null == dict || dict.size() == 0) {
+                    Log.d(TAG, "wallet is empty");
+                    dict = getPebbleEmptyWalletMessage();
+                    dict.addString(0x2FFF, "Your wallet is empty.  Please add cards");
+                } else {
+                    dict.addString(0x2FFF, "Your wallet has been updated");
+                }
+                Log.d(TAG, "sending wallet update to pebble app.  transactionId: " + MESSAGE_ID_WALLET_UPDATE + ", size: " + dict.size());
+                PebbleWrapper wrapper = new PebbleWrapper(PebblePagarePaymentDeviceConnector.this.mContext, PebblePagarePaymentDeviceConnector.this.pebbleAppUuid);
+                try {
+                    wrapper.writeData(dict, MESSAGE_ID_WALLET_UPDATE);
+                    Log.d(TAG, "pebble wallet successfully updated");
+                } catch (DeviceOperationException e) {
+                    //TODO what is correct handling?   Want to retry until successful - what mechanism?
+                    Log.d(TAG, "pebble wallet was not updated");
+                }
+            }
+        };
+        new Thread(runnable).start();
     }
 
     private PebbleDictionary getPebbleUpdateWalletMessage() {

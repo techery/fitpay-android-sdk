@@ -10,12 +10,12 @@ import com.google.gson.annotations.SerializedName;
  */
 abstract class CommitModel extends BaseModel {
 
-    private String commitId;
+    protected String commitId;
     @CommitTypes.Type
-    private String commitType;
-    private Long createdTs;
+    protected String commitType;
+    protected Long createdTs;
     @SerializedName("encryptedData")
-    private Payload payload;
+    protected Payload payload;
 
     @CommitTypes.Type
     public String getCommitType() {

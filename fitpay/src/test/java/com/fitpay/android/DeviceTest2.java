@@ -4,7 +4,7 @@ import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
-import com.fitpay.android.callback.ResultProvidingCallback;
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 
 import org.junit.After;
 import org.junit.Before;
