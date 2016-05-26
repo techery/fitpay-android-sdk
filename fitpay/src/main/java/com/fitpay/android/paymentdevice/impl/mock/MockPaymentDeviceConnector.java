@@ -18,7 +18,7 @@ import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
-import com.fitpay.android.paymentdevice.model.PaymentDeviceConnector;
+import com.fitpay.android.paymentdevice.impl.PaymentDeviceConnector;
 import com.fitpay.android.utils.RxBus;
 import com.google.gson.Gson;
 

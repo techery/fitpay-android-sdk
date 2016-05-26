@@ -7,6 +7,7 @@ import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentdevice.callbacks.PaymentDeviceListener;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Connection;
+import com.fitpay.android.paymentdevice.events.PaymentDeviceOperationFailed;
 import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.utils.NotificationManager;
@@ -66,6 +67,11 @@ public class PaymentDeviceTest {
             public void onDeviceStateChanged(@Connection.State int state) {
                 Log.d(TAG, "status changed.  new status: " + state);
                 connectionStates[0] = state;
+            }
+
+            @Override
+            public void onDeviceOperationFailed(PaymentDeviceOperationFailed failure) {
+
             }
 
             @Override
