@@ -8,12 +8,17 @@ import android.webkit.WebView;
 import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
+import com.fitpay.android.api.models.apdu.ApduExecutionResult;
+import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.DeviceService;
+import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
+import com.fitpay.android.paymentdevice.events.CommitFailed;
+import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.webview.WebViewCommunicator;
@@ -22,6 +27,10 @@ import com.google.gson.Gson;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import retrofit2.http.HEAD;
 import rx.Observable;
@@ -40,6 +49,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
     private static String USER_DATA_STUB_RESPONSE = "0";
     private static String SYNC_STUB_RESPONSE = "0";
     private static final String RESPONSE_FAILURE = "1";
+    private static final String APP_CALLBACK_STATUS_OK ="OK";
 
 
     private final Activity activity;
@@ -51,6 +61,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
     private Device device;
 
     private SyncCompleteListener syncListener;
+    private CustomListener commitListenerForAppCallbacks = new CustomListener();
 
     public WebViewCommunicatorStubImpl(Activity ctx, int wId, OnTaskCompleted callback) {
         this(ctx, wId);
@@ -152,6 +163,8 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
         }
         syncListener = new SyncCompleteListener(callbackId);
         NotificationManager.getInstance().addListener(syncListener);
+
+        NotificationManager.getInstance().addListener(commitListenerForAppCallbacks);
 
         try {
             deviceService.syncData(device);
@@ -408,8 +421,85 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
         }
     }
 
+    private class CustomListener extends Listener implements IListeners.ApduListener, IListeners.SyncListener{
 
+        private CustomListener(){
+            super();
+           /* mCommands.put(ApduExecutionResult.class, data -> {
+                ApduExecutionResult result = (ApduExecutionResult) data;
 
+                switch (result.getState()){
+                    case ResponseState.ERROR:
+                        onApduPackageErrorReceived(result);
+                        break;
+
+                    default:
+                        onApduPackageResultReceived(result);
+                        break;
+                }
+            });*/
+            mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
+            //TODO remove non-Apdu listener = responsibility moved to PaymentService
+            // mCommands.put(Commit.class, data -> onNonApduCommit((Commit) data));
+            mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
+            mCommands.put(CommitFailed.class, data -> onCommitFailed((CommitFailed) data));
+        }
+
+        @Override
+        public void onApduPackageResultReceived(ApduExecutionResult result) {
+           
+        }
+
+        @Override
+        public void onApduPackageErrorReceived(ApduExecutionResult result) {
+
+        }
+
+        @Override
+        public void onSyncStateChanged(Sync syncEvent) {
+            //
+        }
+
+        @Override
+        public void onNonApduCommit(Commit commit) {
+            Log.d(TAG, "received non-Apdu commit event: " + commit);
+            //TODO just do next commit - needs to be elaborated with event processing
+
+        }
+
+        @Override
+        public void onCommitFailed(CommitFailed commitFailed) {
+            Log.d(TAG, "received commit failed event: " + commitFailed.getCommitId());
+
+        }
+
+        @Override
+        public void onCommitSuccess(CommitSuccess commitSuccess) {
+            Log.d(TAG, "Successful commit reported, type: " + commitSuccess.getCommitType() + ", id: " + commitSuccess.getCommitId());
+
+            callback.onTaskCompleted(buildAppCallbackPayload(
+                                    commitSuccess.getCommitType(),
+                                    APP_CALLBACK_STATUS_OK,
+                                    "",
+                                    commitSuccess.getCreatedTs()));
+
+        }
+    }
+
+    private String buildAppCallbackPayload(String command, String status, String reason, long createdTs){
+
+        AppCallbackModel appCallbackPayload = new AppCallbackModel();
+
+        Date date = new Date(createdTs);
+        Format format = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss.SSS");
+
+        appCallbackPayload.setTimestamp(format.format(date));
+        appCallbackPayload.setCommand(command);
+        appCallbackPayload.setStatus(status);
+        appCallbackPayload.setReason(reason);
+
+        return new Gson().toJson(appCallbackPayload);
+    }
 }
 
 

@@ -389,7 +389,8 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                     Log.d(TAG, "Mock wallet has been updated. Card updated: " + card.getCreditCardId());
                     updateWallet(card);
                     // signal commit processing is complete
-                    RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
+                    Log.d(TAG, "dropping CommitSuccess on the bus, commit type : " + commit.getCommitType());
+                    RxBus.getInstance().post(new CommitSuccess(commit.getCommitId(), commit.getCommitType(), commit.getCreatedTs()));
                 }
 
                 @Override
