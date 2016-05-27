@@ -32,7 +32,6 @@ import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import retrofit2.http.HEAD;
 import rx.Observable;
 import rx.Observer;
 import rx.functions.Func1;
@@ -40,11 +39,11 @@ import rx.functions.Func1;
 
 /**
  * Created by Ross Gabay on 4/13/2016.
- * Stubbed out implementation of the WebViewCommunicator interface
+ * Implementation of the WebViewCommunicator interface
  */
-public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
+public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
-    private final String TAG = WebViewCommunicatorStubImpl.class.getSimpleName();
+    private final String TAG = WebViewCommunicatorImpl.class.getSimpleName();
 
     private static String USER_DATA_STUB_RESPONSE = "0";
     private static String SYNC_STUB_RESPONSE = "0";
@@ -63,12 +62,12 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
     private SyncCompleteListener syncListener;
     private CustomListener commitListenerForAppCallbacks = new CustomListener();
 
-    public WebViewCommunicatorStubImpl(Activity ctx, int wId, OnTaskCompleted callback) {
+    public WebViewCommunicatorImpl(Activity ctx, int wId, OnTaskCompleted callback) {
         this(ctx, wId);
         this.callback = callback;
     }
 
-    public WebViewCommunicatorStubImpl(Activity ctx, int wId) {
+    public WebViewCommunicatorImpl(Activity ctx, int wId) {
         this.activity = ctx;
         this.wId = wId;
     }
@@ -79,7 +78,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
 
     final Gson gson = new Gson();
 
-
+    @Override
     @JavascriptInterface
     public void dispatchMessage(String message) throws JSONException{
 
@@ -130,7 +129,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
             Log.d(TAG, "sync can not be done.  No device has been specified.   response: " + response);
 
             if (null != callbackId) {
-                sendMessageToJs(callbackId, "true", gson.toJson(response));
+                sendMessageToJs(callbackId, "false", gson.toJson(response));
             }
             if (null != callback){
                 callback.onTaskCompleted(RESPONSE_FAILURE);
@@ -149,7 +148,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
             Log.d(TAG, "sync can not be done.  No device service configured.   response: " + response);
 
             if (null != callbackId) {
-                sendMessageToJs(callbackId, "true", gson.toJson(response));
+                sendMessageToJs(callbackId, "false", gson.toJson(response));
             }
             if (null != callback){
                 callback.onTaskCompleted(RESPONSE_FAILURE);
@@ -253,11 +252,11 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
         ApiManager.getInstance().getUser(new ApiCallback<User>() {
             @Override
             public void onSuccess(User result) {
-                WebViewCommunicatorStubImpl.this.user = result;
+                WebViewCommunicatorImpl.this.user = result;
                 result.getDevice(deviceId, new ApiCallback<Device>() {
                     @Override
                     public void onSuccess(Device result) {
-                        WebViewCommunicatorStubImpl.this.device = result;
+                        WebViewCommunicatorImpl.this.device = result;
                         AckResponseModel stubResponse = new AckResponseModel.Builder()
                             .status(USER_DATA_STUB_RESPONSE)
                             .build();
@@ -331,7 +330,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
                 user.getDevice(deviceId, new ApiCallback<Device>() {
                     @Override
                     public void onSuccess(Device result) {
-                        WebViewCommunicatorStubImpl.this.device = result;
+                        WebViewCommunicatorImpl.this.device = result;
                     }
 
                     @Override
@@ -406,7 +405,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
                             .reason("sync failure")
                             .build();
                     if (null != callbackId) {
-                        sendMessageToJs(callbackId, "true", gson.toJson(response));
+                        sendMessageToJs(callbackId, "false" , gson.toJson(response));
                     }
                     if (null != callback) {
                         callback.onTaskCompleted(RESPONSE_FAILURE);
@@ -425,29 +424,16 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
 
         private CustomListener(){
             super();
-           /* mCommands.put(ApduExecutionResult.class, data -> {
-                ApduExecutionResult result = (ApduExecutionResult) data;
 
-                switch (result.getState()){
-                    case ResponseState.ERROR:
-                        onApduPackageErrorReceived(result);
-                        break;
-
-                    default:
-                        onApduPackageResultReceived(result);
-                        break;
-                }
-            });*/
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
-            //TODO remove non-Apdu listener = responsibility moved to PaymentService
-            // mCommands.put(Commit.class, data -> onNonApduCommit((Commit) data));
+
             mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
             mCommands.put(CommitFailed.class, data -> onCommitFailed((CommitFailed) data));
         }
 
         @Override
         public void onApduPackageResultReceived(ApduExecutionResult result) {
-           
+
         }
 
         @Override

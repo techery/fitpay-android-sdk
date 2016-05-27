@@ -4,8 +4,15 @@ import android.webkit.JavascriptInterface;
 
 import com.fitpay.android.paymentdevice.DeviceService;
 
+import org.json.JSONException;
+
 
 public interface WebViewCommunicator {
+
+    /**
+     *  this method is called by the WV to initiate sync() or sendUserData() indirectly
+     */
+    void dispatchMessage(String message) throws JSONException;
 
     /**
      *  this method is called by the WV to initiate the sync sequence in the SDK
