@@ -24,7 +24,7 @@ import static junit.framework.Assert.assertTrue;
 /**
  * Created by tgs on 5/20/16.
  */
-public class WebViewCommunictorTest extends TestActions {
+public class WebViewCommunicatorTest extends TestActions {
 
     private User user;
 
@@ -62,7 +62,7 @@ public class WebViewCommunictorTest extends TestActions {
         String deviceId = "458ba377-5b73-49f6-b284-1846793bb38c";
         String token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhOTZlN2M0Yi0zMThkLTM4ZWItOTk3ZS05ZTgwZWMwNzUzZmEiLCJ1c2VyX25hbWUiOiJsZWpmZmdpb0B2amx1cGZ0b2wudGJha292enBoIiwiaXNzIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODBcL3VhYVwvb2F1dGhcL3Rva2VuIiwiY2xpZW50X2lkIjoicGFnYXJlIiwiYXVkIjpbInBhZ2FyZSIsInVzZXIiLCJ0cmFuc2FjdGlvbnMiLCJkZXZpY2VzIiwiY3JlZGl0Q2FyZHMiXSwiemlkIjoidWFhIiwidXNlcl9pZCI6ImE5NmU3YzRiLTMxOGQtMzhlYi05OTdlLTllODBlYzA3NTNmYSIsImF6cCI6InBhZ2FyZSIsInNjb3BlIjpbInVzZXIucmVhZCIsInVzZXIud3JpdGUiLCJ0cmFuc2FjdGlvbnMucmVhZCIsImRldmljZXMud3JpdGUiLCJkZXZpY2VzLnJlYWQiLCJjcmVkaXRDYXJkcy53cml0ZSIsImNyZWRpdENhcmRzLnJlYWQiXSwiZXhwIjoxNDYzNzczMjAyLCJpYXQiOjE0NjM3NzE0MDIsImp0aSI6IjFlYTljYzRiLWJkYzctNGRiOS1hOGMzLTUwZmI2NmMyZTllZCIsImVtYWlsIjoibGVqZmZnaW9AdmpsdXBmdG9sLnRiYWtvdnpwaCIsImNpZCI6InBhZ2FyZSJ9.5yphjJ1qFqAh4Af62xB5SwjdQLCRK1g5JvlJxmG2JxQ";
         String userId = "a96e7c4b-318d-38eb-997e-9e80ec0753fa";
-        WebViewCommunicator wvc = new WebViewCommunicatorStubImpl(null, -1, callback);
+        WebViewCommunicator wvc = new WebViewCommunicatorImpl(null, -1, callback);
         String ack = wvc.sendUserData(null, deviceId, token, userId);
         assertEquals("ack value", "{\"status\":\"OK\"}", ack);
 
