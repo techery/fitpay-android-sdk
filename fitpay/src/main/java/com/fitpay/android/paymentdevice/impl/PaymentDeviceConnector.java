@@ -81,6 +81,15 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         return mAddress;
     }
 
+    @Override
+    public void close() {
+        disconnect();
+    }
+
+    @Override
+    public void reset() {
+        // subclasses to implement as needed
+    }
 
     @Override
     public void reconnect() {

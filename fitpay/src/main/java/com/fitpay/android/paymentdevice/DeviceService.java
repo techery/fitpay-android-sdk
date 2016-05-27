@@ -131,7 +131,7 @@ public final class DeviceService extends Service {
 
     protected void configure(Intent intent) {
         if (null == intent) {
-            Log.d(TAG, "DeviceService can not be configured with a null Intent");
+            Log.d(TAG, "DeviceService can not be configured with a null Intent.  Current connector: " + paymentDeviceConnector);
             return;
         }
         if (null != intent.getExtras() && intent.hasExtra(EXTRA_PAYMENT_SERVICE_TYPE)) {
@@ -179,12 +179,11 @@ public final class DeviceService extends Service {
                 paymentDeviceConnector.init(props);
             }
         }
+        if (null != paymentDeviceConnector) {
+            paymentDeviceConnector.reset();
+        }
     }
 
-    //TODO remove
-//    public String getPaymentServiceType() {
-//        return paymentDeviceConnectorType;
-//    }
 
     /**
      * Get paired payment device
@@ -338,7 +337,7 @@ public final class DeviceService extends Service {
 
         mErrorRepeats = null;
 
-        NotificationManager.getInstance().addListener(mSyncListener);
+        NotificationManager.getInstance().addListenerToCurrentThread(mSyncListener);
 
         RxBus.getInstance().post(new Sync(States.STARTED));
 
@@ -421,7 +420,7 @@ public final class DeviceService extends Service {
     private void processNextCommit(){
         if(mCommits != null && mCommits.size() > 0) {
             Commit commit = mCommits.get(0);
-            Log.d(TAG, "process commit: " + commit);
+            Log.d(TAG, "process commit: " + commit + " on thread: " + Thread.currentThread());
             paymentDeviceConnector.processCommit(commit);
             // expose the commit out to others who may want to take action
             RxBus.getInstance().post(commit);
