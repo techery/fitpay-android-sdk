@@ -18,6 +18,7 @@ public interface IPaymentDeviceConnector extends CommitHandler {
     void setContext(Context contexxt);
     void init(Properties props);
 
+    void reset();
     void connect();
     void disconnect();
     void reconnect();

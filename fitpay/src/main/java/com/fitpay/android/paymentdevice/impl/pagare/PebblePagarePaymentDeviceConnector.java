@@ -42,7 +42,6 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
 import java.util.UUID;
 
 /**
@@ -77,9 +76,7 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
 
     private UUID pebbleAppUuid;
 
-    // for mock response delay
-    private final int delay = 3000;
-    private final Random random = new Random();
+    private final int connectDelay = 2000;
 
     private String syncDeviceId;
     private Map<String, WalletEntry> wallet;
@@ -139,19 +136,31 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
             setState(States.CONNECTED);
             Log.d(TAG, "start watch pagare app");
             PebbleKit.startAppOnPebble(mContext, pebbleAppUuid);
+            delay(connectDelay);
         } else {
             setState(States.DISCONNECTED);
             //TODO need to fire some kind of event to inform client that connect failed
         }
 
         syncCompleteListener = new SyncCompleteListener();
-        NotificationManager.getInstance().addListener(syncCompleteListener);
+        NotificationManager.getInstance().addListenerToCurrentThread(syncCompleteListener);
     }
 
     private BroadcastReceiver connectionBroadcastReceiver = new PebbleConnectionBroadcastReceiver();
 
     @Override
+    public void reset() {
+        if (null != this.pebbleAppUuid) {
+            PebbleKit.closeAppOnPebble(this.mContext, this.pebbleAppUuid);
+            delay(connectDelay);
+        }
+    }
+
+    @Override
     public void disconnect() {
+        if (null != this.pebbleAppUuid) {
+            PebbleKit.closeAppOnPebble(this.mContext, this.pebbleAppUuid);
+        }
         if (null != syncCompleteListener) {
             NotificationManager.getInstance().removeListener(syncCompleteListener);
             syncCompleteListener = null;
@@ -491,6 +500,14 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
         PebbleDictionary dict = new PebbleDictionary();
         dict.addString(8191, "");
         return dict;
+    }
+
+    private void delay(long delay) {
+        try {
+            Thread.sleep(delay);
+        } catch (InterruptedException e) {
+            // no consequences
+        }
     }
 
 
