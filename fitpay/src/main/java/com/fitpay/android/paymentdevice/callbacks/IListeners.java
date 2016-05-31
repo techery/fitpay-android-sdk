@@ -1,7 +1,6 @@
 package com.fitpay.android.paymentdevice.callbacks;
 
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
-import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentdevice.enums.Connection;
 import com.fitpay.android.paymentdevice.enums.Sync;
@@ -25,7 +24,6 @@ public final class IListeners {
 
     public interface SyncListener {
         void onSyncStateChanged(final Sync syncEvent);
-        void onNonApduCommit(final Commit commit);
         void onCommitSuccess(final CommitSuccess commitSuccess);
         void onCommitFailed(final CommitFailed commitFailed);
     }

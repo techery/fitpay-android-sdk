@@ -3,16 +3,21 @@ package com.fitpay.android.paymentdevice.impl;
 import android.content.Context;
 import android.util.Log;
 
+import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.CommitTypes;
 import com.fitpay.android.api.enums.ResponseState;
+import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.paymentdevice.CommitHandler;
+import com.fitpay.android.paymentdevice.callbacks.ApduExecutionListener;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Connection;
+import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
+import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
 
@@ -22,15 +27,23 @@ import java.util.Properties;
 
 /**
  * Base model for wearable payment device
+ *
+ * This component is designed to handle one operation at a time.  It is not thread safe.
  */
 public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector {
 
     private final static String TAG = PaymentDeviceConnector.class.getSimpleName();
 
+    private static final int MAX_REPEATS = 3;
+
     protected Context mContext;
     protected String mAddress;
     protected @Connection.State int state;
     protected Map<String, CommitHandler> commitHandlers;
+    protected ApduExecutionListener apduExecutionListener;
+    protected Commit currentCommit;
+    private ErrorPair mErrorRepeats;
+
 
     public PaymentDeviceConnector() {
         state = States.NEW;
@@ -115,6 +128,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     @Override
     public void processCommit(Commit commit) {
         Log.d(TAG, "processing commit on Thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
+        currentCommit = commit;
         if (null == commitHandlers) {
             return;
         }
@@ -131,12 +145,17 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     @Override
     public void syncInit() {
-        // null implementation - override in implementation class as needed
+        if (null == apduExecutionListener) {
+            apduExecutionListener = getApduExecutionListener();
+            NotificationManager.getInstance().removeListener(this.apduExecutionListener);
+        }
     }
 
     @Override
     public void syncComplete() {
-        // null implementation - override in implementation class as needed
+        if (null != apduExecutionListener) {
+            NotificationManager.getInstance().removeListener(this.apduExecutionListener);
+        }
     }
 
     private class ApduCommitHandler implements CommitHandler {
@@ -145,6 +164,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         public void processCommit(Commit commit) {
             Object payload = commit.getPayload();
             if (payload instanceof ApduPackage) {
+                mErrorRepeats = null;
                 ApduPackage pkg = (ApduPackage) payload;
 
                 long validUntil = TimestampUtils.getDateForISO8601String(pkg.getValidUntil()).getTime();
@@ -165,4 +185,81 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
             }
         }
     }
+
+    private ApduExecutionListener getApduExecutionListener() {
+        return new ApduExecutionListener() {
+
+            @Override
+            public void onApduPackageResultReceived(ApduExecutionResult result) {
+                sendApduExecutionResult(result);
+            }
+
+            @Override
+            public void onApduPackageErrorReceived(ApduExecutionResult result) {
+
+                final String id = result.getPackageId();
+
+                switch (result.getState()) {
+                    case ResponseState.EXPIRED:
+                        sendApduExecutionResult(result);
+                        break;
+
+                    default:  //retry error and failure
+                        if (mErrorRepeats == null || !mErrorRepeats.first.equals(id)) {
+                            mErrorRepeats = new ErrorPair(id, 0);
+                        }
+
+                        if (++mErrorRepeats.second == MAX_REPEATS) {
+                            sendApduExecutionResult(result);
+                        } else {
+                            // retry
+                            processCommit(currentCommit);
+                        }
+                        break;
+                }
+            }
+
+        };
+    }
+
+
+    /**
+     * Send apdu execution result to the server
+     * @param result apdu execution result
+     */
+    private void sendApduExecutionResult(ApduExecutionResult result){
+        if(null != currentCommit){
+
+            currentCommit.confirm(result, new ApiCallback<Void>() {
+                @Override
+                public void onSuccess(Void result2) {
+                    if (ResponseState.PROCESSED == result.getState()) {
+                        RxBus.getInstance().post(new CommitSuccess(currentCommit.getCommitId()));
+                    } else {
+                        RxBus.getInstance().post(new CommitFailed(currentCommit.getCommitId()));
+                    }
+                }
+
+                @Override
+                public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                    Log.e(TAG, "Could not post apduExecutionResult. " + errorCode + ": " + errorMessage);
+                    RxBus.getInstance().post(new CommitFailed(currentCommit.getCommitId()));
+                }
+            });
+        } else {
+            Log.w(TAG, "Unexpected state - current commit is null but should be populated");
+        }
+    }
+
+
+    private class ErrorPair{
+        String first;
+        int second;
+
+        ErrorPair(String first, int second){
+            this.first = first;
+            this.second = second;
+        }
+    }
+
 }

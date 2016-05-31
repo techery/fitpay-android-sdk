@@ -9,7 +9,6 @@ import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
-import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.User;
@@ -426,7 +425,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             super();
 
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
-
             mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
             mCommands.put(CommitFailed.class, data -> onCommitFailed((CommitFailed) data));
         }
@@ -444,13 +442,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         @Override
         public void onSyncStateChanged(Sync syncEvent) {
             //
-        }
-
-        @Override
-        public void onNonApduCommit(Commit commit) {
-            Log.d(TAG, "received non-Apdu commit event: " + commit);
-            //TODO just do next commit - needs to be elaborated with event processing
-
         }
 
         @Override
