@@ -235,10 +235,7 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
             }
             if (null == response) {
                 Log.w(TAG, "got null response to apdu command");
-                apduExecutionResult.setState(ResponseState.FAILED);
-                apduExecutionResult.setExecutedDurationTilNow();
-                apduExecutionResult.setErrorReason("Device did not respond");
-                RxBus.getInstance().post(apduExecutionResult);
+                processApduCommandExecutionFailure(apduExecutionResult, "Device did not respond");
                 return;
             }
 

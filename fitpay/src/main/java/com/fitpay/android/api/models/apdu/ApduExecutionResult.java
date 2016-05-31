@@ -64,8 +64,15 @@ public final class ApduExecutionResult {
         return apduResponses;
     }
 
-    public void addResponse(ApduCommandResult response){
+    public void addResponse(ApduCommandResult response) {
         apduResponses.add(response);
+        if (null == state || ResponseState.PROCESSED == state) {
+            if (isSuccessResponseCode(response.getResponseCode())) {
+                state = ResponseState.PROCESSED;
+            } else {
+                state = ResponseState.FAILED;
+            }
+        }
     }
 
     public String getErrorReason() {
@@ -82,29 +89,34 @@ public final class ApduExecutionResult {
         } else {
             state = ResponseState.PROCESSED;
 
-            resultsLoop:
             for (ApduCommandResult response : getResponses()) {
-                int size = ApduConstants.SUCCESS_RESULTS.length;
-
-                for (int i = 0; i < size; i++) {
-                    if (!Arrays.equals(ApduConstants.SUCCESS_RESULTS[i], Hex.hexStringToBytes(response.getResponseCode()))) {
-                        state = ResponseState.FAILED;
-                        break resultsLoop;
-                    }
+                if (!isSuccessResponseCode(response.getResponseCode())) {
+                    state = ResponseState.FAILED;
+                    break;
                 }
             }
         }
     }
 
+    protected boolean isSuccessResponseCode(String responseCode) {
+        byte[] code = Hex.hexStringToBytes(responseCode);
+        for (int i = 0; i < ApduConstants.SUCCESS_RESULTS.length; i++) {
+            if (Arrays.equals(ApduConstants.SUCCESS_RESULTS[i], code)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public String toString() {
         return "ApduExecutionResult{" +
-                "errorReason='" + errorReason + '\'' +
+                "state='" + state + '\'' +
+                ", packageId='" + packageId + '\'' +
+                ", numberOfApduCommandResults='" + apduResponses.size() + '\'' +
+                ", errorReason='" + errorReason + '\'' +
                 ", executedDuration=" + executedDuration +
                 ", executedTsEpoch=" + executedTsEpoch +
-                ", packageId='" + packageId + '\'' +
-                ", state='" + state + '\'' +
-                ", numberOfApduCommandResults='" + apduResponses.size() + '\'' +
                 '}';
     }
 }

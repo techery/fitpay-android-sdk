@@ -7,13 +7,9 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.enums.CommitTypes;
-import com.fitpay.android.api.enums.ResponseState;
-import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.Payload;
-import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
@@ -65,13 +61,11 @@ public final class DeviceService extends Service {
 
     public final static String SYNC_PROPERTY_DEVICE_ID = "syncDeviceId";
 
-    private static final int MAX_REPEATS = 3;
-
     private IPaymentDeviceConnector paymentDeviceConnector;
+    private String paymentDeviceConnectorType;
 
     private String configParams;
 
-    private ErrorPair mErrorRepeats;
 
     private @Sync.State Integer mSyncEventState;
 
@@ -129,13 +123,28 @@ public final class DeviceService extends Service {
         NotificationManager.getInstance().removeListener(mSyncListener);
     }
 
+    /**
+     * Used for retrieving connector config information
+     *
+     * @return name of connector class
+     */
+    public String getPaymentServiceType() {
+        if (null == paymentDeviceConnectorType) {
+            if (null != paymentDeviceConnector) {
+                paymentDeviceConnectorType = paymentDeviceConnector.getClass().getName();
+            }
+        }
+        return paymentDeviceConnectorType;
+    }
+
+
     protected void configure(Intent intent) {
         if (null == intent) {
             Log.d(TAG, "DeviceService can not be configured with a null Intent.  Current connector: " + paymentDeviceConnector);
             return;
         }
         if (null != intent.getExtras() && intent.hasExtra(EXTRA_PAYMENT_SERVICE_TYPE)) {
-            String paymentDeviceConnectorType = intent.getExtras().getString(EXTRA_PAYMENT_SERVICE_TYPE);
+            paymentDeviceConnectorType = intent.getExtras().getString(EXTRA_PAYMENT_SERVICE_TYPE);
             if (null != paymentDeviceConnectorType) {
                 switch (paymentDeviceConnectorType) {
                     case PAYMENT_SERVICE_TYPE_MOCK: {
@@ -184,40 +193,40 @@ public final class DeviceService extends Service {
         }
     }
 
-
     /**
      * Get paired payment device
      *
-     * @return interface of payment device
+     * @param paymentDeviceConnector the payment device
      */
-    public IPaymentDeviceConnector getPairedDevice() {
-        return paymentDeviceConnector;
-    }
-
-    /**
-     * Pair with payment device
-     *
-     * @param paymentDeviceConnector interface of payment device
-     */
-    public void pairWithDevice(@NonNull IPaymentDeviceConnector paymentDeviceConnector) {
-
+    public void setPaymentDeviceConnector(IPaymentDeviceConnector paymentDeviceConnector) {
         // check to see if device has changed, if so close the existing connection
         //TODO should test on device config - more general than MacAddress which is BLE specific (or at least pertinent to Mac devices)
         if (this.paymentDeviceConnector != null
                 && ((this.paymentDeviceConnector.getMacAddress() == null && paymentDeviceConnector.getMacAddress() != null)
-                    || null != this.paymentDeviceConnector.getMacAddress() && !this.paymentDeviceConnector.getMacAddress().equals(paymentDeviceConnector.getMacAddress()))
+                || null != this.paymentDeviceConnector.getMacAddress() && !this.paymentDeviceConnector.getMacAddress().equals(paymentDeviceConnector.getMacAddress()))
                 && this.paymentDeviceConnector.getState() == States.CONNECTED) {
             this.paymentDeviceConnector.disconnect();
             this.paymentDeviceConnector.close();
             this.paymentDeviceConnector = null;
         }
-
         this.paymentDeviceConnector = paymentDeviceConnector;
-
-        pairWithDevice();
     }
 
-    public void pairWithDevice() {
+
+    /**
+     * Get device connector
+     *
+     * @return interface of payment device
+     */
+    public IPaymentDeviceConnector getPaymentDeviceConnector() {
+        return paymentDeviceConnector;
+    }
+
+    public void connectToDevice() {
+
+        if (null == paymentDeviceConnector) {
+            throw new IllegalStateException("Payment device connector has not been configured");
+        }
 
         switch (paymentDeviceConnector.getState()) {
             case States.CONNECTED:
@@ -263,7 +272,7 @@ public final class DeviceService extends Service {
      * Disconnect from payment device
      */
     public void disconnect() {
-        if (paymentDeviceConnector != null && paymentDeviceConnector.getState() == States.CONNECTED) {
+        if (paymentDeviceConnector != null && paymentDeviceConnector.getState() != States.DISCONNECTED) {
             paymentDeviceConnector.disconnect();
         }
     }
@@ -314,6 +323,8 @@ public final class DeviceService extends Service {
 
     }
 
+
+    //TODO remove
     private Observable<Boolean> getSyncObservable() {
         return Observable.just(true).map(new Func1<Boolean, Boolean>() {
             @Override
@@ -334,8 +345,6 @@ public final class DeviceService extends Service {
         syncProperties.put(SYNC_PROPERTY_DEVICE_ID, device.getDeviceIdentifier()) ;
         paymentDeviceConnector.init(syncProperties);
         paymentDeviceConnector.syncInit();
-
-        mErrorRepeats = null;
 
         NotificationManager.getInstance().addListenerToCurrentThread(mSyncListener);
 
@@ -392,6 +401,7 @@ public final class DeviceService extends Service {
         }
     }
 
+    //TODO remove
     private Observer<Boolean> getSyncObserver() {
 
         return new Observer<Boolean>() {
@@ -419,6 +429,7 @@ public final class DeviceService extends Service {
      */
     private void processNextCommit(){
         if(mCommits != null && mCommits.size() > 0) {
+            RxBus.getInstance().post(new Sync(States.INC_PROGRESS, mCommits.size()));
             Commit commit = mCommits.get(0);
             Log.d(TAG, "process commit: " + commit + " on thread: " + Thread.currentThread());
             paymentDeviceConnector.processCommit(commit);
@@ -430,79 +441,15 @@ public final class DeviceService extends Service {
     }
 
     /**
-     * Send apdu execution result to the server
-     * @param result apdu execution result
-     */
-    private void sendApduExecutionResult(ApduExecutionResult result){
-        if(mCommits != null && mCommits.size() > 0){
-            Commit commit = mCommits.get(0);
-
-            commit.confirm(result, new ApiCallback<Void>() {
-                @Override
-                public void onSuccess(Void result2) {
-                    if (ResponseState.PROCESSED == result.getState()) {
-                        RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
-                    } else {
-                        RxBus.getInstance().post(new CommitFailed((commit.getCommitId())));
-                    }
-                }
-
-                @Override
-                public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                    Log.e(TAG, "Could not post apduExecutionResult. " + errorCode + ": " + errorMessage);
-                    RxBus.getInstance().post(new Sync(States.FAILED));
-                }
-            });
-        }
-    }
-
-    /**
      * Apdu and Sync callbacks
      */
-    private class CustomListener extends Listener implements IListeners.ApduListener, IListeners.SyncListener{
+    private class CustomListener extends Listener implements IListeners.SyncListener{
 
         private CustomListener(){
             super();
-            mCommands.put(ApduExecutionResult.class, data -> {
-                ApduExecutionResult result = (ApduExecutionResult) data;
-
-                switch (result.getState()){
-                    case ResponseState.ERROR:
-                        onApduPackageErrorReceived(result);
-                        break;
-
-                    default:
-                        onApduPackageResultReceived(result);
-                        break;
-                }
-            });
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
-            //TODO remove non-Apdu listener = responsibility moved to PaymentService
-           // mCommands.put(Commit.class, data -> onNonApduCommit((Commit) data));
             mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
             mCommands.put(CommitFailed.class, data -> onCommitFailed((CommitFailed) data));
-        }
-
-        @Override
-        public void onApduPackageResultReceived(ApduExecutionResult result) {
-            sendApduExecutionResult(result);
-        }
-
-        @Override
-        public void onApduPackageErrorReceived(ApduExecutionResult result) {
-
-            final String id = result.getPackageId();
-
-            if(mErrorRepeats == null || !mErrorRepeats.first.equals(id)){
-                mErrorRepeats = new ErrorPair(id, 0);
-            }
-
-            if(++mErrorRepeats.second == MAX_REPEATS){
-                sendApduExecutionResult(result);
-            } else {
-                // retry
-                processNextCommit();
-            }
         }
 
         @Override
@@ -513,19 +460,16 @@ public final class DeviceService extends Service {
             if (mSyncEventState == States.COMPLETED || mSyncEventState == States.FAILED) {
                 NotificationManager.getInstance().removeListener(mSyncListener);
             }
-        }
 
-        @Override
-        public void onNonApduCommit(Commit commit) {
-            Log.d(TAG, "received non-Apdu commit event: " + commit);
-            //TODO just do next commit - needs to be elaborated with event processing
-            RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
+            if (mSyncEventState == States.COMMIT_COMPLETED) {
+                processNextCommit();
+            }
         }
 
         @Override
         public void onCommitFailed(CommitFailed commitFailed) {
             Log.d(TAG, "received commit failed event: " + commitFailed.getCommitId());
-
+            RxBus.getInstance().post(new Sync(States.FAILED));
         }
 
         @Override
@@ -536,16 +480,6 @@ public final class DeviceService extends Service {
             DevicePreferenceData.store(DeviceService.this, deviceData);
             Commit commit = mCommits.remove(0);
             processNextCommit();
-        }
-    }
-
-    private class ErrorPair{
-        String first;
-        int second;
-
-        ErrorPair(String first, int second){
-            this.first = first;
-            this.second = second;
         }
     }
 

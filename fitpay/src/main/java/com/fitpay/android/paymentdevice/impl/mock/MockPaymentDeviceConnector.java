@@ -244,6 +244,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 ApduCommand apduCommand = apduPackage.getApduCommands().get(apduCommandNumber);
                 ApduCommandResult apduCommandResult = getMockResultForApduCommand(apduCommand);
                 apduExecutionResult.addResponse(apduCommandResult);
+                Log.d(TAG, "apduExecutionResult: " + apduExecutionResult);
 
                 if (apduCommandNumber + 1 < apduPackage.getApduCommands().size()) {
                     apduSubscription = getAsyncSimulatingObservable()
@@ -253,6 +254,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
                 } else {
                     apduExecutionResult.deriveState();
+                    Log.d(TAG, "apduExecutionResult: " + apduExecutionResult);
                     int duration = (int) ((System.currentTimeMillis() - apduExecutionResult.getExecutedTsEpoch()) / 1000);
                     apduExecutionResult.setExecutedDuration(duration);
                     Log.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));

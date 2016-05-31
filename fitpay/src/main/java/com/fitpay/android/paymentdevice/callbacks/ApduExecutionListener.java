@@ -14,14 +14,13 @@ public abstract class ApduExecutionListener extends Listener implements IListene
             ApduExecutionResult result = (ApduExecutionResult) data;
 
             switch (result.getState()){
-                case ResponseState.ERROR:
-                    onApduPackageErrorReceived(result);
+                case ResponseState.PROCESSED:
+                    onApduPackageResultReceived(result);
                     break;
 
                 default:
-                    onApduPackageResultReceived(result);
-                    break;
-            }
+                    onApduPackageErrorReceived(result);
+                    break;            }
         });
     }
 }

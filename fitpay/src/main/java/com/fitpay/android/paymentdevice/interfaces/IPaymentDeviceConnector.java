@@ -15,7 +15,7 @@ import java.util.Properties;
  */
 public interface IPaymentDeviceConnector extends CommitHandler {
 
-    void setContext(Context contexxt);
+    void setContext(Context context);
     void init(Properties props);
 
     void reset();
@@ -24,6 +24,7 @@ public interface IPaymentDeviceConnector extends CommitHandler {
     void reconnect();
     void close();
 
+    //TODO remove ?  since some devices do not have MacAddress and / or it is not of interest in getting connection
     String getMacAddress();
 
     void readDeviceInfo();
