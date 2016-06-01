@@ -132,24 +132,21 @@ public final class Device extends DeviceModel implements Parcelable {
     }
 
     /**
-     * Retrieves all events that should be committed to this device.
-     * Limit: 10
-     * Offset: 0
+     * Retrieves 'all' events that should be committed to this device.
+     * All is really limited to 100.
+     *
      *
      * @param lastCommitId last commit id
      * @param callback     result callback
      */
     public void getAllCommits(String lastCommitId, final ApiCallback<Collections.CommitsCollection> callback) {
-        final Collections.CommitsCollection allCommits = new Collections.CommitsCollection();
-        getCommits(lastCommitId, new ApiCallback<Collections.CommitsCollection>() {
+        getCommits(100, 0, lastCommitId, new ApiCallback<Collections.CommitsCollection>() {
             @Override
             public void onSuccess(Collections.CommitsCollection result) {
-                allCommits.addCollection(result.getResults());
-
                 if(result.hasNext()){
-                    result.getNext(this);
+                    getCommits(result.getTotalResults(), 0, lastCommitId, this);
                 } else {
-                    callback.onSuccess(allCommits);
+                    callback.onSuccess(result);
                 }
             }
 
