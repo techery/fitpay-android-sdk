@@ -95,8 +95,8 @@ public final class NotificationManager {
     public void addListener(Listener listener, Scheduler observerScheduler) {
         Log.d(TAG, "addListener " + listener + " on scheduler: " + observerScheduler);
         synchronized (this) {
-            Log.d(TAG, "addListener executing");
             if (!mListeners.contains(listener)) {
+                Log.d(TAG, "addListener: " + listener);
                 mListeners.add(listener);
 
                 Map<Class, Command> commands = listener.getCommands();
@@ -112,6 +112,8 @@ public final class NotificationManager {
 
                     mCommands.get(clazz).add(map.getValue());
                 }
+            } else {
+                Log.d(TAG, "addListener skipped.  Listener already exists: " + listener);
             }
         }
     }

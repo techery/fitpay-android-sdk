@@ -8,9 +8,6 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.fitpay.android.api.callbacks.ResultProvidingCallback;
-import com.fitpay.android.api.enums.CommitTypes;
-import com.fitpay.android.api.models.Payload;
-import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
@@ -26,22 +23,16 @@ import com.fitpay.android.paymentdevice.utils.DevicePreferenceData;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
-import com.google.gson.Gson;
 import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import rx.Observable;
-import rx.Observer;
-import rx.functions.Func1;
 
 import static java.lang.Class.forName;
 
@@ -227,24 +218,29 @@ public final class DeviceService extends Service {
         if (null == paymentDeviceConnector) {
             throw new IllegalStateException("Payment device connector has not been configured");
         }
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "Starting execution of connectToDevice");
+                switch (paymentDeviceConnector.getState()) {
+                    case States.CONNECTED:
+                        break;
 
-        switch (paymentDeviceConnector.getState()) {
-            case States.CONNECTED:
-                break;
+                    case States.INITIALIZED:
+                        paymentDeviceConnector.connect();
+                        break;
 
-            case States.INITIALIZED:
-                paymentDeviceConnector.connect();
-                break;
+                    case States.DISCONNECTED:
+                        paymentDeviceConnector.reconnect();
+                        break;
 
-            case States.DISCONNECTED:
-                paymentDeviceConnector.reconnect();
-                break;
-
-            default:
-                //TODO - why not let device decide if it can connect from this state?
-                Logger.e("Can't connect to device.  Current device state does not support the connect operation.  State: " + paymentDeviceConnector.getState());
-                break;
-        }
+                    default:
+                        //TODO - why not let device decide if it can connect from this state?
+                        Logger.e("Can't connect to device.  Current device state does not support the connect operation.  State: " + paymentDeviceConnector.getState());
+                        break;
+                }
+            }
+        });
 
     }
 
@@ -262,6 +258,7 @@ public final class DeviceService extends Service {
         executor.execute(new Runnable() {
             @Override
             public void run() {
+                Log.d(TAG, "Starting execution of readDeviceInfo");
                 paymentDeviceConnector.readDeviceInfo();
             }
         });
@@ -272,9 +269,17 @@ public final class DeviceService extends Service {
      * Disconnect from payment device
      */
     public void disconnect() {
-        if (paymentDeviceConnector != null && paymentDeviceConnector.getState() != States.DISCONNECTED) {
-            paymentDeviceConnector.disconnect();
-        }
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "Starting execution of disconnect");
+                if (null != paymentDeviceConnector) {
+                    paymentDeviceConnector.disconnect();
+                }
+                NotificationManager.getInstance().removeListener(mSyncListener);
+            }
+        });
+
     }
 
     /**
@@ -311,28 +316,11 @@ public final class DeviceService extends Service {
         executor.execute(new Runnable() {
             @Override
             public void run() {
+                Log.d(TAG, "Starting execution of syncDevice");
                 syncDevice();
             }
         });
 
-//
-//        Subscription syncSubscription = getSyncObservable()
-//                .subscribeOn(Schedulers.io())
-//                .observeOn(Schedulers.newThread())
-//                .subscribe(getSyncObserver());
-
-    }
-
-
-    //TODO remove
-    private Observable<Boolean> getSyncObservable() {
-        return Observable.just(true).map(new Func1<Boolean, Boolean>() {
-            @Override
-            public Boolean call(Boolean aBoolean) {
-                syncDevice();
-                return aBoolean;
-            }
-        });
     }
 
 
@@ -351,19 +339,11 @@ public final class DeviceService extends Service {
         RxBus.getInstance().post(new Sync(States.STARTED));
 
         DevicePreferenceData deviceData = DevicePreferenceData.load(this, device.getDeviceIdentifier());
-
-        //TODO getAllCommits callback is done on UI Thread - make change
-        // since we do not want processing to be done on UI Thread need to make it a blocking call
-
-        //TODO remove apdu testing features
-        boolean testApdus = false;
-
         /*
          * getAllCommits callback will revert to UI thread.   To continue the process on
          * background thread, the callback blocks, waits for a result, and provides it back to the
          * current thread of execution
          */
-
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<Collections.CommitsCollection> callback = new ResultProvidingCallback<>(latch);
         device.getAllCommits(deviceData.getLastCommitId(), callback);
@@ -376,21 +356,7 @@ public final class DeviceService extends Service {
         }
         if (null != callback.getResult()) {
 
-                mCommits = callback.getResult().getResults();
-
-                //TODO remove this test code:  This code is for testing of apdus only - remove for production
-                if (testApdus) {
-                    Log.w(TAG, "adding apdu command for testing purposes");
-                    Gson gson = new Gson();
-                    ApduPackage apduPackage = gson.fromJson(getTestApduPackage(), ApduPackage.class);
-                    Commit commit = new Commit.Builder()
-                            .commitId(UUID.randomUUID().toString())
-                            .commitType(CommitTypes.APDU_PACKAGE)
-                            .createdTs(System.currentTimeMillis())
-                            .payload(new Payload(apduPackage))
-                            .build();
-                    mCommits.add(commit);
-                }
+            mCommits = callback.getResult().getResults();
 
             Log.d(TAG, "processing commits.  count: " + callback.getResult().getTotalResults());
             RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
@@ -400,29 +366,6 @@ public final class DeviceService extends Service {
                 RxBus.getInstance().post(new Sync(States.FAILED));
         }
     }
-
-    //TODO remove
-    private Observer<Boolean> getSyncObserver() {
-
-        return new Observer<Boolean>() {
-
-            @Override
-            public void onCompleted() {
-                Log.d(TAG, "sync kickoff completed");
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                Log.d(TAG, "sync observer error: " + e.getMessage());
-            }
-
-            @Override
-            public void onNext(Boolean bool) {
-                Log.d(TAG, "sync observer onNext: " + bool);
-            }
-        };
-    }
-
 
     /**
      * process next commit
@@ -458,7 +401,10 @@ public final class DeviceService extends Service {
             mSyncEventState = syncEvent.getState();
 
             if (mSyncEventState == States.COMPLETED || mSyncEventState == States.FAILED) {
-                NotificationManager.getInstance().removeListener(mSyncListener);
+                //At this time, the sync listener is no longer needed and can be unregisered.
+                //However, a listener should not unregister itself so we will leave it
+                //NotificationManager.getInstance().removeListener(mSyncListener);
+                Log.d(TAG, "sync has ended");
             }
 
             if (mSyncEventState == States.COMMIT_COMPLETED) {
@@ -505,68 +451,6 @@ public final class DeviceService extends Service {
             Log.e(TAG, "can not convert config to properties.  Reason: " + e.getMessage());
         }
         return props;
-    }
-
-
-    //TODO remove this test code after completing apdu testing
-    private String getTestApduPackage() {
-
-        String apduJson = "{  \n" +
-                "   \"seIdType\":\"iccid\",\n" +
-                "   \"targetDeviceType\":\"fitpay.gandd.model.Device\",\n" +
-                "   \"targetDeviceId\":\"72425c1e-3a17-4e1a-b0a4-a41ffcd00a5a\",\n" +
-                "   \"packageId\":\"baff08fb-0b73-5019-8877-7c490a43dc64\",\n" +
-                "   \"seId\":\"333274689f09352405792e9493356ac880c44444442\",\n" +
-                "   \"targetAid\":\"8050200008CF0AFB2A88611AD51C\",\n" +
-                "   \"commandApdus\":[  \n" +
-                "      {  \n" +
-                "         \"commandId\":\"5f2acf6f-536d-4444-9cf4-7c83fdf394bf\",\n" +
-                "         \"groupId\":0,\n" +
-                "         \"sequence\":0,\n" +
-                "         \"command\":\"00E01234567890ABCDEF\",\n" +
-                "         \"type\":\"CREATE FILE\"\n" +
-                "      },\n" +
-                "      {  \n" +
-                "         \"commandId\":\"00df5f39-7627-447d-9380-46d8574e0643\",\n" +
-                "         \"groupId\":1,\n" +
-                "         \"sequence\":1,\n" +
-                "         \"command\":\"8050200008CF0AFB2A88611AD51C\",\n" +
-                "         \"type\":\"UNKNOWN\"\n" +
-                "      },\n" +
-                "      {  \n" +
-                "         \"commandId\":\"9c719928-8bb0-459c-b7c0-2bc48ec53f3c\",\n" +
-                "         \"groupId\":1,\n" +
-                "         \"sequence\":2,\n" +
-                "         \"command\":\"84820300106BBC29E6A224522E83A9B26FD456111500\",\n" +
-                "         \"type\":\"UNKNOWN\"\n" +
-                "      },\n" +
-                "      {  \n" +
-                "         \"commandId\":\"b148bea5-6d98-4c83-8a20-575b4edd7a42\",\n" +
-                "         \"groupId\":1,\n" +
-                "         \"sequence\":3,\n" +
-                "         \"command\":\"9800E01234567890ABCDEF84820300106BBC29E6A224522E83A9B26FD456111500\",\n" +
-                "         \"type\":\"UNKNOWN\"\n" +
-                "      },\n" +
-                "      {  \n" +
-                "         \"commandId\":\"905fc5ab-4b15-4704-889b-2c5ffcfb2d68\",\n" +
-                "         \"groupId\":2,\n" +
-                "         \"sequence\":4,\n" +
-                "         \"command\":\"84F2200210F25397DCFB728E25FBEE52E748A116A800\",\n" +
-                "         \"type\":\"UNKNOWN\"\n" +
-                "      },\n" +
-                "      {  \n" +
-                "         \"commandId\":\"8e87ff12-dfc2-472a-bbf1-5f2e891e864c\",\n" +
-                "         \"groupId\":3,\n" +
-                "         \"sequence\":5,\n" +
-                "         \"command\":\"84F2200210F25397DCFB728E25FBEE52E748A116A800\",\n" +
-                "         \"type\":\"UNKNOWN\"\n" +
-                "      }\n" +
-                "   ],\n" +
-                "   \"validUntil\":\"2020-12-11T21:22:58.691Z\",\n" +
-                "   \"apduPackageUrl\":\"http://localhost:9103/transportservice/v1/apdupackages/baff08fb-0b73-5019-8877-7c490a43dc64\"\n" +
-                "}";
-        return apduJson;
-
     }
 
 }

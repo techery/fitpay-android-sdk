@@ -272,7 +272,9 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
                     .build();
             apduExecutionResult.addResponse(commandResult);
 
-            //TODO only continue to next command if this one was successful
+            if (!ResponseState.PROCESSED.equals(apduExecutionResult.getState())) {
+                break;
+            }
 
         }
         apduExecutionResult.deriveState();
@@ -348,7 +350,9 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
                 .setSoftwareRevision(dict.getString(MESSAGE_ID_DEVICE_INFO_SOFTWARE_REVISION))
                 .setLicenseKey(dict.getString(MESSAGE_ID_DEVICE_INFO_LICENSE_KEY))
                 .setOSName(dict.getString(MESSAGE_ID_DEVICE_INFO_OS_NAME))
-                .setSecureElementId(dict.getString(MESSAGE_ID_DEVICE_INFO_SECURE_ELEMENT_ID))
+                // TODO remove this hack - since all Pagares currently return the same seId, use a random value
+                //.setSecureElementId(dict.getString(MESSAGE_ID_DEVICE_INFO_SECURE_ELEMENT_ID))
+                .setSecureElementId(UUID.randomUUID().toString())
                 .setSystemId(dict.getString(MESSAGE_ID_DEVICE_INFO_SYSTEM_ID))
                 .build();
     }
@@ -432,7 +436,11 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
             Log.d(TAG, "commit payload: " + payload);
             if (!(payload instanceof CreditCardCommit)) {
                 Log.e(TAG, "Wallet received a commit to process that was not a credit card.  Commit: " + commit);
-                RxBus.getInstance().post(new CommitFailed(commit.getCommitId()));
+                RxBus.getInstance().post(new CommitFailed.Builder()
+                        .commit(commit)
+                        .errorCode(999)
+                        .errorMessage("Commit does not contain a credit card")
+                        .build());
                 return;
             }
             if (CommitTypes.CREDITCARD_DELETED.equals(commit.getCommitType())) {
@@ -444,7 +452,7 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
             DevicePreferenceData data = DevicePreferenceData.load(mContext, syncDeviceId);
             data.putAdditionalValue(WALLET_KEY, new Gson().toJson(wallet));
             DevicePreferenceData.store(mContext, data);
-            RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
+            RxBus.getInstance().post(new CommitSuccess(commit));
         }
     }
 

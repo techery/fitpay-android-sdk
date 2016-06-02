@@ -1,40 +1,39 @@
 package com.fitpay.android.paymentdevice.events;
 
+import com.fitpay.android.api.models.device.Commit;
+
 /**
  * Created by tgs on 5/15/16.
  */
 public class CommitSuccess {
 
-    private String commitId;
-    private String commitType;
-    private long createdTs;
+    private Commit commit;
 
-    public CommitSuccess(String commitId) {
-        this.commitId = commitId;
+    public CommitSuccess(Commit commit) {
+        this.commit = commit;
     }
 
-    public CommitSuccess(String commitId, String commitType, long createdTs) {
-        this.commitId = commitId;
-        this.commitType = commitType;
-        this.createdTs = createdTs;
+    public Commit getCommit() {
+        return commit;
     }
 
     public String getCommitId() {
-        return commitId;
+        return commit.getCommitId();
     }
 
     public String getCommitType() {
-        return commitType;
+        return commit.getCommitType();
     }
 
     public long getCreatedTs() {
-        return createdTs;
+        return commit.getCreatedTs();
     }
 
     @Override
     public String toString() {
         return "CommitSuccess{" +
-                "commitId='" + commitId + '\'' +
+                "commitId='" + getCommitId() + '\'' +
+                ", commitType='" + getCommitType() + '\'' +
                 '}';
     }
 }
