@@ -138,7 +138,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         } else {
             Log.d(TAG, "No action taken for commit.  No handler defined for commit: " + commit);
             // still need to signal that processing of the commit has completed
-            RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
+            RxBus.getInstance().post(new CommitSuccess(commit));
         }
     }
 
@@ -147,14 +147,16 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     public void syncInit() {
         if (null == apduExecutionListener) {
             apduExecutionListener = getApduExecutionListener();
-            NotificationManager.getInstance().removeListener(this.apduExecutionListener);
+            NotificationManager.getInstance().addListener(this.apduExecutionListener);
         }
+        mErrorRepeats = null;
     }
 
     @Override
     public void syncComplete() {
         if (null != apduExecutionListener) {
             NotificationManager.getInstance().removeListener(this.apduExecutionListener);
+            apduExecutionListener = null;
         }
     }
 
@@ -164,7 +166,6 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         public void processCommit(Commit commit) {
             Object payload = commit.getPayload();
             if (payload instanceof ApduPackage) {
-                mErrorRepeats = null;
                 ApduPackage pkg = (ApduPackage) payload;
 
                 long validUntil = TimestampUtils.getDateForISO8601String(pkg.getValidUntil()).getTime();
@@ -205,11 +206,11 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                         break;
 
                     default:  //retry error and failure
-                        if (mErrorRepeats == null || !mErrorRepeats.first.equals(id)) {
+                        if (mErrorRepeats == null || !mErrorRepeats.id.equals(id)) {
                             mErrorRepeats = new ErrorPair(id, 0);
                         }
 
-                        if (++mErrorRepeats.second == MAX_REPEATS) {
+                        if (++mErrorRepeats.count >= MAX_REPEATS) {
                             sendApduExecutionResult(result);
                         } else {
                             // retry
@@ -228,22 +229,30 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      * @param result apdu execution result
      */
     private void sendApduExecutionResult(ApduExecutionResult result){
-        if(null != currentCommit){
 
+        if (null != currentCommit){
             currentCommit.confirm(result, new ApiCallback<Void>() {
                 @Override
                 public void onSuccess(Void result2) {
                     if (ResponseState.PROCESSED == result.getState()) {
-                        RxBus.getInstance().post(new CommitSuccess(currentCommit.getCommitId()));
+                        RxBus.getInstance().post(new CommitSuccess(currentCommit));
                     } else {
-                        RxBus.getInstance().post(new CommitFailed(currentCommit.getCommitId()));
+                        RxBus.getInstance().post(new CommitFailed.Builder()
+                                .commit(currentCommit)
+                                .errorCode(999)         //TODO create enum for errors
+                                .errorMessage("apdu command failure")
+                                .build());
                     }
                 }
 
                 @Override
                 public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
                     Log.e(TAG, "Could not post apduExecutionResult. " + errorCode + ": " + errorMessage);
-                    RxBus.getInstance().post(new CommitFailed(currentCommit.getCommitId()));
+                    RxBus.getInstance().post(new CommitFailed.Builder()
+                            .commit(currentCommit)
+                            .errorCode(errorCode)
+                            .errorMessage("Could not send adpu confirmation.  cause: " + errorMessage)
+                            .build());
                 }
             });
         } else {
@@ -253,12 +262,12 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
 
     private class ErrorPair{
-        String first;
-        int second;
+        String id;
+        int count;
 
-        ErrorPair(String first, int second){
-            this.first = first;
-            this.second = second;
+        ErrorPair(String id, int count){
+            this.id = id;
+            this.count = count;
         }
     }
 

@@ -4,10 +4,14 @@ import android.content.Context;
 import android.util.Log;
 
 import com.fitpay.android.TestActions;
+import com.fitpay.android.TestUtils;
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.user.User;
+import com.fitpay.android.api.models.user.UserCreateRequest;
 import com.fitpay.android.paymentdevice.callbacks.ApduExecutionListener;
 import com.fitpay.android.paymentdevice.callbacks.PaymentDeviceListener;
 import com.fitpay.android.paymentdevice.constants.States;
@@ -49,11 +53,12 @@ public class MockPaymentDeviceTest extends TestActions {
     private NotificationManager manager;
     private Listener listener;
 
+    private User user = null;
 
     Context context;
 
     @BeforeClass
-    public static void init() {
+    public static void initLogger() {
         Logger.init();
     }
 
@@ -72,6 +77,33 @@ public class MockPaymentDeviceTest extends TestActions {
             manager.removeListener(listener);
         }
     }
+
+    @After
+    public void deleteUser() throws Exception {
+        if (null != this.user) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
+            this.user.deleteUser(callback);
+            latch.await(TIMEOUT, TimeUnit.SECONDS);
+        }
+    }
+
+
+    public void createAndLoginUser() throws Exception {
+        userName = TestUtils.getRandomLengthString(5, 10)
+                + "@" + TestUtils.getRandomLengthString(5, 10) + "." + TestUtils.getRandomLengthString(4, 10);
+        pin = TestUtils.getRandomLengthNumber(4, 4);
+
+        UserCreateRequest user = getNewTestUser(userName, pin);
+        User createdUser = createUser(user);
+        assertNotNull("user should have been created", createdUser);
+
+        loginIdentity = getTestLoginIdentity(userName, pin);
+        doLogin(loginIdentity);
+        this.user = getUser();
+        assertNotNull(user);
+    }
+
 
 
     @Test
@@ -297,5 +329,6 @@ public class MockPaymentDeviceTest extends TestActions {
 
         }
     }
+
 
 }

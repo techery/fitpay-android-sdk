@@ -8,25 +8,7 @@ import java.util.Map;
 /**
  */
 public final class TestConstants {
-
-
-//    // local testing
-////    static final String BASE_URL = "http://localhost:9092/";
-////    static final String BASE_AUTH_URL = "http://localhost:9091/";
-////    static final String CLIENT_ID = "fitpay";
-//
-//    // demo
-////    static final String BASE_URL = "https://gi-de.pagare.me/api/";
-////    static final String BASE_AUTH_URL = "https://gi-de.pagare.me";
-////    static final String CLIENT_ID = "pagare";
-////    static final String REDIRECT_URI = "https://demo.pagare.me";
-//
-//    // qa
-//    static final String BASE_URL = "http://api.qa.fitpay.ninja/";
-//    static final String BASE_AUTH_URL = "http://auth.qa.fitpay.ninja";
-//    static final String CLIENT_ID = "fitpay";
-//    static final String REDIRECT_URI = "https://api.qa.fitpay.ninja";
-
+    
     static Map<String, String> getConfig() {
         Map<String, String> env = System.getenv();
 

@@ -68,8 +68,6 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
     Subscription deviceReadSubscription;
     Subscription apduSubscription;
 
-    private ApduExecutionResult apduExecutionResult;
-
     public MockPaymentDeviceConnector() {
         state = States.INITIALIZED;
         loadDefaultDevice();
@@ -418,7 +416,12 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
             Log.d(TAG, "commit payload: " + payload);
             if (!(payload instanceof CreditCardCommit)) {
                 Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
-                RxBus.getInstance().post(new CommitFailed(commit.getCommitId()));
+                RxBus.getInstance().post(new CommitFailed.Builder()
+                        .commit(commit)
+                        .errorCode(999)
+                        .errorMessage("Commit does not contain a credit card")
+                        .build());
+
                 return;
             }
             // process with a delay to mock device response time
@@ -438,7 +441,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                     Log.d(TAG, "Mock wallet has been updated. Card removed: " + card.getCreditCardId());
                     removeCardFromWallet(card.getCreditCardId());
                     // signal commit processing is complete
-                    RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
+                    RxBus.getInstance().post(new CommitSuccess(commit));
                 }
 
                 @Override
@@ -462,7 +465,11 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
             Log.d(TAG, "commit payload: " + payload);
             if (!(payload instanceof CreditCardCommit)) {
                 Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
-                RxBus.getInstance().post(new CommitFailed(commit.getCommitId()));
+                RxBus.getInstance().post(new CommitFailed.Builder()
+                        .commit(commit)
+                        .errorCode(999)
+                        .errorMessage("Commit does not contain a credit card")
+                        .build());
                 return;
             }
             // process with a delay to mock device response time
@@ -483,7 +490,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                     updateWallet(card);
                     // signal commit processing is complete
                     Log.d(TAG, "dropping CommitSuccess on the bus, commit type : " + commit.getCommitType());
-                    RxBus.getInstance().post(new CommitSuccess(commit.getCommitId(), commit.getCommitType(), commit.getCreatedTs()));
+                    RxBus.getInstance().post(new CommitSuccess(commit));
                 }
 
                 @Override

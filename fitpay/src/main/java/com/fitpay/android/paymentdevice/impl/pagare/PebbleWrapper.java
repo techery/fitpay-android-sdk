@@ -73,6 +73,7 @@ public class PebbleWrapper {
                     }
                     if (null == result || result.booleanValue() == false) {
                         //TODO what actions should be taken to increase chances of success?  open app
+                        PebbleKit.closeAppOnPebble(this.context, this.pebbleAppUuid);
                         PebbleKit.startAppOnPebble(this.context, this.pebbleAppUuid);
                     }
                     attemptNumber++;

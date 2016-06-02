@@ -35,4 +35,9 @@ public final class IListeners {
         void onNotificationReceived(final byte[] data);
         void onApplicationControlReceived(final byte[] data);
     }
+
+    public interface CommitListener {
+        void onCommitFailed(CommitFailed commitFailed);
+        void onCommitSuccess(CommitSuccess commitSuccess);
+    }
 }
