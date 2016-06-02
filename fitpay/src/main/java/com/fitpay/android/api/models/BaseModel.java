@@ -70,6 +70,14 @@ public class BaseModel {
         }
     }
 
+    protected <U> void makeNoResponsePostCall(String key, U data, ApiCallback<Void> callback) {
+        String url = getLink(key, callback);
+        if (url != null) {
+            ApiManager.getInstance().post(url, data, callback);
+        }
+    }
+
+
     protected <T, U> void makePatchCall(U data, boolean encrypt, Type type, ApiCallback<T> callback) {
         String url = getLink(SELF, callback);
         if (url != null) {
