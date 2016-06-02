@@ -48,6 +48,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     private static String SYNC_STUB_RESPONSE = "0";
     private static final String RESPONSE_FAILURE = "1";
     private static final String APP_CALLBACK_STATUS_OK ="OK";
+    private static final String APP_CALLBACK_STATUS_FAILED ="FAILED";
 
 
     private final Activity activity;
@@ -407,7 +408,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                         sendMessageToJs(callbackId, "false" , gson.toJson(response));
                     }
                     if (null != callback) {
-                        callback.onTaskCompleted(RESPONSE_FAILURE);
+                          callback.onTaskCompleted(RESPONSE_FAILURE);
                     }
                     break;
                 }
@@ -448,17 +449,25 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         public void onCommitFailed(CommitFailed commitFailed) {
             Log.d(TAG, "received commit failed event: " + commitFailed.getCommitId());
 
+            if(callback != null)
+                               callback.onTaskCompleted(buildAppCallbackPayload(
+                                                        commitFailed.getCommitType(),
+                                                        APP_CALLBACK_STATUS_FAILED,
+                                                        commitFailed.getErrorMessage(),
+                                                        commitFailed.getCreatedTs()));
+
         }
 
         @Override
         public void onCommitSuccess(CommitSuccess commitSuccess) {
             Log.d(TAG, "Successful commit reported, type: " + commitSuccess.getCommitType() + ", id: " + commitSuccess.getCommitId());
 
-            callback.onTaskCompleted(buildAppCallbackPayload(
-                                    commitSuccess.getCommitType(),
-                                    APP_CALLBACK_STATUS_OK,
-                                    "",
-                                    commitSuccess.getCreatedTs()));
+            if(callback != null)
+                                callback.onTaskCompleted(buildAppCallbackPayload(
+                                                        commitSuccess.getCommitType(),
+                                                        APP_CALLBACK_STATUS_OK,
+                                                        "",
+                                                        commitSuccess.getCreatedTs()));
 
         }
     }
