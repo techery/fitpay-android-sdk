@@ -17,6 +17,7 @@ import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
+import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
@@ -470,6 +471,19 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                                                         commitSuccess.getCreatedTs()));
 
         }
+
+        @Override
+        public void onCommitSkipped(CommitSkipped commitSkipped) {
+            Log.d(TAG, "Skipped commit reported, type: " + commitSkipped.getCommitType() + ", id: " + commitSkipped.getCommitId());
+
+            callback.onTaskCompleted(buildAppCallbackPayload(
+                    commitSkipped.getCommitType(),
+                    APP_CALLBACK_STATUS_OK,
+                    "",
+                    commitSkipped.getCreatedTs()));
+
+        }
+
     }
 
     private String buildAppCallbackPayload(String command, String status, String reason, long createdTs){

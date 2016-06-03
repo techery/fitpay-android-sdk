@@ -15,6 +15,7 @@ import com.fitpay.android.paymentdevice.callbacks.ApduExecutionListener;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Connection;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
+import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.utils.NotificationManager;
@@ -234,19 +235,37 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
             currentCommit.confirm(result, new ApiCallback<Void>() {
                 @Override
                 public void onSuccess(Void result2) {
-                    if (ResponseState.PROCESSED == result.getState()) {
-                        RxBus.getInstance().post(new CommitSuccess(currentCommit));
-                    } else {
-                        RxBus.getInstance().post(new CommitFailed.Builder()
-                                .commit(currentCommit)
-                                .errorCode(999)         //TODO create enum for errors
-                                .errorMessage("apdu command failure")
-                                .build());
+                    @ResponseState.ApduState String state = result.getState();
+
+                    switch (state) {
+                        case ResponseState.PROCESSED:
+                            RxBus.getInstance().post(new CommitSuccess(currentCommit));
+                            break;
+                        case ResponseState.EXPIRED:
+                            RxBus.getInstance().post(new CommitSkipped(currentCommit));
+                            break;
+                        case ResponseState.FAILED:
+                            // TODO: determine if apdu package is retryable or not, right now the
+                            // FitPay API doesn't support this attribute, but it will!
+                            RxBus.getInstance().post(new CommitSkipped(currentCommit));
+                            break;
+                        case ResponseState.ERROR:
+                            // TODO: determine what to do here, retry immediatly?
+                            RxBus.getInstance().post(new CommitFailed.Builder()
+                                    .commit(currentCommit)
+                                    .errorCode(999)         //TODO create enum for errors
+                                    .errorMessage("apdu command failure")
+                                    .build());
+                            break;
                     }
                 }
 
                 @Override
                 public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                    // TODO: determine what to do here, a failure reporting the confirmation to
+                    // FitPay isn't really a commit failure, it's something that needs to be
+                    // managed properly... i.e. the commit was applied, it was successful, it was
+                    // the reporting to FitPay that wasn't, is that part of the commit?
                     Log.e(TAG, "Could not post apduExecutionResult. " + errorCode + ": " + errorMessage);
                     RxBus.getInstance().post(new CommitFailed.Builder()
                             .commit(currentCommit)
