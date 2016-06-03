@@ -15,6 +15,7 @@ import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
+import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.impl.ble.BluetoothPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
@@ -393,6 +394,7 @@ public final class DeviceService extends Service {
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
             mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
             mCommands.put(CommitFailed.class, data -> onCommitFailed((CommitFailed) data));
+            mCommands.put(CommitSkipped.class, data -> onCommitSkipped((CommitSkipped) data));
         }
 
         @Override
@@ -424,9 +426,20 @@ public final class DeviceService extends Service {
             DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSuccess.getCommitId());
             DevicePreferenceData.store(DeviceService.this, deviceData);
-            Commit commit = mCommits.remove(0);
+            mCommits.remove(0);
             processNextCommit();
         }
+
+        @Override
+        public void onCommitSkipped(CommitSkipped commitSkipped) {
+            Log.d(TAG, "received commit skipped event.  moving last commit pointer to: " + commitSkipped.getCommitId());
+            DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
+            deviceData.setLastCommitId(commitSkipped.getCommitId());
+            DevicePreferenceData.store(DeviceService.this, deviceData);
+            mCommits.remove(0);
+            processNextCommit();
+        }
+
     }
 
     private Properties convertCommaSeparatedList(String input) throws IOException {
