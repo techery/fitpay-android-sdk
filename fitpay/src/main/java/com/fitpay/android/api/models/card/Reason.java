@@ -66,4 +66,12 @@ public final class Reason implements Parcelable {
             return new Reason[size];
         }
     };
+
+    @Override
+    public String toString() {
+        return "Reason{" +
+                "causedBy='" + causedBy + '\'' +
+                ", reason='" + reason + '\'' +
+                '}';
+    }
 }

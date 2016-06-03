@@ -1,10 +1,11 @@
 package com.fitpay.android.utils;
 
+import android.util.Log;
+
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.Payload;
-import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
-import com.fitpay.android.api.models.card.CreditCard;
+import com.fitpay.android.api.models.device.CreditCardCommit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.google.gson.Gson;
@@ -25,6 +26,8 @@ import java.util.Set;
 /**
  */
 final class ModelAdapter {
+
+    private static final String TAG = ModelAdapter.class.getSimpleName();
 
     public static final class DataSerializer<T> implements JsonSerializer<T>, JsonDeserializer<T> {
 
@@ -61,18 +64,19 @@ final class ModelAdapter {
             if (!json.isJsonObject() && !StringUtils.isEmpty(json.getAsString())) {
 
                 final String decryptedString = StringUtils.getDecryptedString(KeysManager.KEY_API, json.getAsString());
-
                 if (!StringUtils.isEmpty(decryptedString)) {
 
                     Payload payload = null;
                     Gson gson = new Gson();
-
-                    if(decryptedString.contains("cardType")){
-                        CreditCard creditCard = gson.fromJson(decryptedString, CreditCard.class);
+                    // Deserialize to desired object type based on unique key field in each object type
+                    if (decryptedString.contains("creditCardId")) {
+                        CreditCardCommit creditCard = gson.fromJson(decryptedString, CreditCardCommit.class);
                         payload = new Payload(creditCard);
-                    } else {
+                    } else if (decryptedString.contains("packageId")) {
                         ApduPackage apduPackage = gson.fromJson(decryptedString, ApduPackage.class);
                         payload = new Payload(apduPackage);
+                    } else {
+                        Log.w(TAG, "commit payload type is not handled.  Application could be miss receiving important events");
                     }
 
                     return payload;
@@ -116,17 +120,6 @@ final class ModelAdapter {
             }
 
             return links;
-        }
-    }
-
-    public static final class AdpuCommandResponseSerializer implements JsonSerializer<ApduCommandResult> {
-        public JsonElement serialize(ApduCommandResult data, Type typeOfSrc, JsonSerializationContext context) {
-
-            JsonObject jo = new JsonObject();
-            jo.addProperty("commandId", data.getCommandId());
-            jo.addProperty("responseCode", Hex.bytesToHexString(data.getResponseCode()));
-            jo.addProperty("responseData", Hex.bytesToHexString(data.getResponseData()));
-            return jo;
         }
     }
 

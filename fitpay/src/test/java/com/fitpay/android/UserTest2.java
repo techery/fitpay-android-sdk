@@ -1,9 +1,11 @@
 package com.fitpay.android;
 
+import com.fitpay.android.api.ApiManager;
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.models.collection.Collections;
+import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
-import com.fitpay.android.callback.ResultProvidingCallback;
 
 import org.junit.After;
 import org.junit.Before;
@@ -16,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
 
 public class UserTest2 extends TestActions {
 
@@ -57,6 +60,22 @@ public class UserTest2 extends TestActions {
     }
 
     @Test
+    @Ignore  // this test does not work in demo environment since does auto-login
+    public void testCantLoginWithDifferentPassword() throws Exception {
+        this.user = getUser();
+        assertNotNull(user);
+        LoginIdentity badCredentials = getTestLoginIdentity(userName, TestUtils.getRandomLengthNumber(4, 4));
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
+        ApiManager.getInstance().loginUser(badCredentials, callback);
+        boolean completed = latch.await(TIMEOUT, TimeUnit.SECONDS);
+        assertTrue("login did not complete successfully", completed);
+        assertEquals("login error code. (message: " + callback.getErrorMessage() + ")", 401, callback.getErrorCode());
+    }
+
+
+    @Test
     public void testCanRepeatLogin() throws Exception {
         this.user = getUser();
         assertNotNull(user);
@@ -79,7 +98,7 @@ public class UserTest2 extends TestActions {
         assertEquals("user id", user.getId(), user2.getId());
         assertEquals("email", user.getEmail(), user2.getEmail());
         assertEquals("user name", user.getUsername(), user2.getUsername());
-        assertEquals("create ts", user.getCreatedTsEpoch(), user2.getCreatedTsEpoch());
+        assertEquals("build ts", user.getCreatedTsEpoch(), user2.getCreatedTsEpoch());
     }
 
     @Test

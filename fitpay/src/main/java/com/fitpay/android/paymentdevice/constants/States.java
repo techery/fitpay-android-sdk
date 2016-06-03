@@ -12,6 +12,7 @@ public final class States {
     public static final byte POWER_ON = (byte) 0x02;
     public static final byte RESET = (byte) 0x01;
 
+    public static final int NEW = -1;
     public static final int DISCONNECTED = 0;
     public static final int CONNECTED = 1;
     public static final int CONNECTING = 2;
@@ -23,5 +24,6 @@ public final class States {
     public static final int FAILED = 2;
     public static final int IN_PROGRESS = 3;
     public static final int INC_PROGRESS = 4;
+    public static final int COMMIT_COMPLETED = 5;
 
 }

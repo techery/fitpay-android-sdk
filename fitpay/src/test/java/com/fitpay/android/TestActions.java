@@ -1,20 +1,22 @@
 package com.fitpay.android;
 
+import com.fitpay.android.api.ApiManager;
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
-import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.Transaction;
+import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.card.Address;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.card.Reason;
 import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
-import com.fitpay.android.callback.ResultProvidingCallback;
-import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
+import com.google.gson.Gson;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -118,7 +120,7 @@ public class TestActions {
                 .setExpDate(expYear, expMonth)
                 .setAddress(address)
                 .setName(cardName)
-                .create();
+                .build();
         return creditCard;
     }
 
@@ -153,7 +155,7 @@ public class TestActions {
                 .setBdAddress(bdAddress)
                 .setPairingTs(pairingTs)
                 .setSecureElementId(secureElementId)
-                .create();
+                .build();
 
         return newDevice;
 
@@ -176,7 +178,7 @@ public class TestActions {
         String secureElementId = "cccccc-1111-1111-1111-1111111111";
         Device newDevice = new Device.Builder()
                 .setDeviceName(deviceName)
-                .create();
+                .build();
 
         return newDevice;
 
@@ -201,7 +203,7 @@ public class TestActions {
         Device newDevice = new Device.Builder()
                 .setDeviceType(DeviceTypes.SMART_STRAP)
                 .setDeviceName(deviceName)
-                .create();
+                .build();
 
         return newDevice;
 
@@ -336,6 +338,151 @@ public class TestActions {
         return callback.getResult();
     }
 
+
+    protected Collections.CommitsCollection getCommits(Device device, String lastCommitId) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<Collections.CommitsCollection> callback = new ResultProvidingCallback<>(latch);
+        device.getCommits(lastCommitId, callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        assertEquals("get commits error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
+        return callback.getResult();
+    }
+
+
+    protected Collections.CommitsCollection getAllCommits(Device device, String lastCommitId) throws Exception {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<Collections.CommitsCollection> callback = new ResultProvidingCallback<>(latch);
+        device.getAllCommits(lastCommitId, callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        assertEquals("get commits error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
+        return callback.getResult();
+    }
+
+    protected ApduPackage getTestApduPackage() {
+
+        String apduJson = "{  \n" +
+                "   \"seIdType\":\"iccid\",\n" +
+                "   \"targetDeviceType\":\"fitpay.gandd.model.Device\",\n" +
+                "   \"targetDeviceId\":\"72425c1e-3a17-4e1a-b0a4-a41ffcd00a5a\",\n" +
+                "   \"packageId\":\"baff08fb-0b73-5019-8877-7c490a43dc64\",\n" +
+                "   \"seId\":\"333274689f09352405792e9493356ac880c44444442\",\n" +
+                "   \"targetAid\":\"8050200008CF0AFB2A88611AD51C\",\n" +
+                "   \"commandApdus\":[  \n" +
+                "      {  \n" +
+                "         \"commandId\":\"5f2acf6f-536d-4444-9cf4-7c83fdf394bf\",\n" +
+                "         \"groupId\":0,\n" +
+                "         \"sequence\":0,\n" +
+                "         \"command\":\"00E01234567890ABCDEF\",\n" +
+                "         \"type\":\"CREATE FILE\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"00df5f39-7627-447d-9380-46d8574e0643\",\n" +
+                "         \"groupId\":1,\n" +
+                "         \"sequence\":1,\n" +
+                "         \"command\":\"8050200008CF0AFB2A88611AD51C\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"9c719928-8bb0-459c-b7c0-2bc48ec53f3c\",\n" +
+                "         \"groupId\":1,\n" +
+                "         \"sequence\":2,\n" +
+                "         \"command\":\"84820300106BBC29E6A224522E83A9B26FD456111500\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"b148bea5-6d98-4c83-8a20-575b4edd7a42\",\n" +
+                "         \"groupId\":1,\n" +
+                "         \"sequence\":3,\n" +
+                "         \"command\":\"8800E01234567890ABCDEF84820300106BBC29E6A224522E83A9B26FD456111500\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"905fc5ab-4b15-4704-889b-2c5ffcfb2d68\",\n" +
+                "         \"groupId\":2,\n" +
+                "         \"sequence\":4,\n" +
+                "         \"command\":\"84F2200210F25397DCFB728E25FBEE52E748A116A800\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"8e87ff12-dfc2-472a-bbf1-5f2e891e864c\",\n" +
+                "         \"groupId\":3,\n" +
+                "         \"sequence\":5,\n" +
+                "         \"command\":\"84F2200210F25397DCFB728E25FBEE52E748A116A800\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      }\n" +
+                "   ],\n" +
+                "   \"validUntil\":\"2020-12-11T21:22:58.691Z\",\n" +
+                "   \"apduPackageUrl\":\"http://localhost:9103/transportservice/v1/apdupackages/baff08fb-0b73-5019-8877-7c490a43dc64\"\n" +
+                "}";
+
+        Gson gson = new Gson();
+        ApduPackage apduPackage = gson.fromJson(apduJson, ApduPackage.class);
+        return apduPackage;
+
+    }
+
+    protected ApduPackage getFailingTestApduPackage() {
+
+        String apduJson = "{  \n" +
+                "   \"seIdType\":\"iccid\",\n" +
+                "   \"targetDeviceType\":\"fitpay.gandd.model.Device\",\n" +
+                "   \"targetDeviceId\":\"72425c1e-3a17-4e1a-b0a4-a41ffcd00a5a\",\n" +
+                "   \"packageId\":\"baff08fb-0b73-5019-8877-7c490a43dc64\",\n" +
+                "   \"seId\":\"333274689f09352405792e9493356ac880c44444442\",\n" +
+                "   \"targetAid\":\"8050200008CF0AFB2A88611AD51C\",\n" +
+                "   \"commandApdus\":[  \n" +
+                "      {  \n" +
+                "         \"commandId\":\"5f2acf6f-536d-4444-9cf4-7c83fdf394bf\",\n" +
+                "         \"groupId\":0,\n" +
+                "         \"sequence\":0,\n" +
+                "         \"command\":\"00E01234567890ABCDEF\",\n" +
+                "         \"type\":\"CREATE FILE\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"00df5f39-7627-447d-9380-46d8574e0643\",\n" +
+                "         \"groupId\":1,\n" +
+                "         \"sequence\":1,\n" +
+                "         \"command\":\"8050200008CF0AFB2A88611AD51C\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"9c719928-8bb0-459c-b7c0-2bc48ec53f3c\",\n" +
+                "         \"groupId\":1,\n" +
+                "         \"sequence\":2,\n" +
+                "         \"command\":\"999900\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"b148bea5-6d98-4c83-8a20-575b4edd7a42\",\n" +
+                "         \"groupId\":1,\n" +
+                "         \"sequence\":3,\n" +
+                "         \"command\":\"9800E01234567890ABCDEF84820300106BBC29E6A224522E83A9B26FD456111500\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"905fc5ab-4b15-4704-889b-2c5ffcfb2d68\",\n" +
+                "         \"groupId\":2,\n" +
+                "         \"sequence\":4,\n" +
+                "         \"command\":\"84F2200210F25397DCFB728E25FBEE52E748A116A800\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      },\n" +
+                "      {  \n" +
+                "         \"commandId\":\"8e87ff12-dfc2-472a-bbf1-5f2e891e864c\",\n" +
+                "         \"groupId\":3,\n" +
+                "         \"sequence\":5,\n" +
+                "         \"command\":\"84F2200210F25397DCFB728E25FBEE52E748A116A800\",\n" +
+                "         \"type\":\"UNKNOWN\"\n" +
+                "      }\n" +
+                "   ],\n" +
+                "   \"validUntil\":\"2020-12-11T21:22:58.691Z\",\n" +
+                "   \"apduPackageUrl\":\"http://localhost:9103/transportservice/v1/apdupackages/baff08fb-0b73-5019-8877-7c490a43dc64\"\n" +
+                "}";
+
+        Gson gson = new Gson();
+        ApduPackage apduPackage = gson.fromJson(apduJson, ApduPackage.class);
+        return apduPackage;
+
+    }
 
 
 }

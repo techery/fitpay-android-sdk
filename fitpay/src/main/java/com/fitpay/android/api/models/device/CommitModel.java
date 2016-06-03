@@ -10,13 +10,12 @@ import com.google.gson.annotations.SerializedName;
  */
 abstract class CommitModel extends BaseModel {
 
-    private String commitId;
-    private String previousCommitId;
+    protected String commitId;
     @CommitTypes.Type
-    private String commitType;
-    private Long createdTs;
+    protected String commitType;
+    protected Long createdTs;
     @SerializedName("encryptedData")
-    private Payload payload;
+    protected Payload payload;
 
     @CommitTypes.Type
     public String getCommitType() {
@@ -31,11 +30,16 @@ abstract class CommitModel extends BaseModel {
         return commitId;
     }
 
-    public String getPreviousCommitId() {
-        return previousCommitId;
-    }
-
     public Object getPayload() {
         return payload.getData(commitType);
+    }
+
+    @Override
+    public String toString() {
+        return "CommitModel{" +
+                "commitId='" + commitId + '\'' +
+                ", commitType='" + commitType + '\'' +
+                ", createdTs=" + createdTs +
+                '}';
     }
 }

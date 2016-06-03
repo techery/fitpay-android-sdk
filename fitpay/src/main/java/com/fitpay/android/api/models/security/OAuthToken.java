@@ -14,6 +14,7 @@ import java.text.ParseException;
  * OAuth token.
  */
 final public class OAuthToken {
+
     @SerializedName("token_type")
     private String tokenType;
     @SerializedName("access_token")
@@ -47,5 +48,42 @@ final public class OAuthToken {
         }
 
         return userId;
+    }
+
+    public static class Builder {
+
+        private String tokenType;
+        private String accessToken;
+        private long expiresIn;
+        private String userId = null;
+
+        public Builder tokenType(String tokenType) {
+            this.tokenType = tokenType;
+            return this;
+        }
+
+        public Builder accessToken(String accessToken) {
+            this.accessToken = accessToken;
+            return this;
+        }
+
+        public Builder expiresIn(long expiresIn) {
+            this.expiresIn = expiresIn;
+            return this;
+        }
+
+        public Builder userId(String userId) {
+            this.userId = userId;
+            return this;
+        }
+
+        public OAuthToken build() {
+            OAuthToken token = new OAuthToken();
+            token.accessToken = this.accessToken;
+            token.tokenType = this.tokenType;
+            token.expiresIn = this.expiresIn;
+            token.userId = this.userId;
+            return token;
+        }
     }
 }

@@ -79,6 +79,10 @@ public class ApiManager {
         config.putAll(props);
     }
 
+    public void setAuthToken(OAuthToken token) {
+        apiService.updateToken(token);
+    }
+
     public FitPayClient getClient() {
         return apiService.getClient();
     }
@@ -155,7 +159,7 @@ public class ApiManager {
     /**
      * User Creation
      *
-     * @param user user to create
+     * @param user user to build
      * @param callback result callback
      */
     public void createUser(UserCreateRequest user, final ApiCallback<User> callback) {
@@ -420,5 +424,11 @@ public class ApiManager {
     public void delete(String url, final ApiCallback<Void> callback) {
         Call<Void> deleteDataCall = getClient().delete(url);
         deleteDataCall.enqueue(new CallbackWrapper<>(callback));
+    }
+
+    public <U> void post(String url, final U data, final ApiCallback<Void> callback) {
+        Call<Void> postDataCall = data != null ?
+                getClient().postNoResponse(url, data) : getClient().postNoResponse(url);
+        postDataCall.enqueue(new CallbackWrapper<>(callback));
     }
 }
