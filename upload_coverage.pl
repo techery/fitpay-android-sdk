@@ -5,6 +5,9 @@
 
 # only push coverage results for non-pull requests (which would normally put us on a branch build)
 # that are on the develop/master branch AND that were successful
+#
+# You need a personal oauth token (settings, personal access tokens) - make sure that full repo privs (including for private repos is set)
+#
 use strict;
 use warnings;
 
