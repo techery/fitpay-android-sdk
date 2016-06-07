@@ -11,9 +11,12 @@
 use strict;
 use warnings;
 
-if (! (($ENV{TRAVIS_PULL_REQUEST} eq "false") &&
+if (! (
+       ($ENV{TRAVIS_PULL_REQUEST} eq "false") &&
        ($ENV{TRAVIS_TEST_RESULT} == 0) && #build succeeded on a 0
-       (($ENV{TRAVIS_BRANCH} eq "develop") || ($ENV{TRAVIS_BRANCH} eq "master")) ) ) {
+       (($ENV{TRAVIS_BRANCH} eq "develop") || ($ENV{TRAVIS_BRANCH} eq "master") || ($ENV{TRAVIS_BRANCH} =~ /coverage/))
+      )
+   ) {
     print "I only run coverage uploads for 'develop' or 'master' branch builds\n";
     exit 0;
 }
