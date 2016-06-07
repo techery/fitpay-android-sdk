@@ -54,6 +54,8 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
     public static final String EXTRA_PEBBLE_APP_UUID = "PEBBLE_APP_UUID";
     public static final String WALLET_KEY = "wallet";
 
+    private static final int MESSAGE_ID_EMPTY_WALLET = 8191;
+
     private static final int MESSAGE_ID_WALLET_UPDATE = 0x2000;
     private static final int MESSAGE_ID_DEVICE_INFO_DEVICE_TYPE = 8190;
     private static final int MESSAGE_ID_DEVICE_INFO_MANUFACTURER_NAME = 8191;
@@ -230,12 +232,12 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
                 response = wrapper.readData(dict, MESSAGE_ID_APDU_COMMAND + i);
             } catch (DeviceOperationException e) {
                 Log.w(TAG, "apdu command was not processed");
-                processApduCommandExecutionFailure(apduExecutionResult, e.getMessage());
+                processApduCommandExecutionFailure(apduExecutionResult, ResponseState.ERROR, e.getMessage());
                 return;
             }
             if (null == response) {
                 Log.w(TAG, "got null response to apdu command");
-                processApduCommandExecutionFailure(apduExecutionResult, "Device did not respond");
+                processApduCommandExecutionFailure(apduExecutionResult, ResponseState.ERROR, "Device did not respond");
                 return;
             }
 
@@ -245,23 +247,23 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
                 if (currentSequenceNumber != responseSequenceNumber) {
                     //TODO got responses out of order
                     Log.e(TAG, "got apdu responses out of order.  expected: " + currentSequenceNumber + ", got: " + responseSequenceNumber);
-                    processApduCommandExecutionFailure(apduExecutionResult, "Device provided response out of order");
+                    processApduCommandExecutionFailure(apduExecutionResult, ResponseState.FAILED, "Device provided response out of order");
                     return;
                 }
             } else {
                 Log.e(TAG, "no sequence number provide in response");
-                processApduCommandExecutionFailure(apduExecutionResult, "Device response did not contain a sequence number");
+                processApduCommandExecutionFailure(apduExecutionResult, ResponseState.FAILED, "Device response did not contain a sequence number");
                 return;
             }
 
             String apduResponse = response.getString(MESSAGE_ID_APDU_COMMAND_RESULT);
             if (null == apduResponse) {
-                processApduCommandExecutionFailure(apduExecutionResult, "Device provided invalid response.  Apdu result does not contain a command result");
+                processApduCommandExecutionFailure(apduExecutionResult, ResponseState.FAILED, "Device provided invalid response.  Apdu result does not contain a command result");
                 return;
             } else if (apduResponse.length() < 4) {
                 //TODO apdu response not correct length
                 Log.e(TAG, "apdu command response does not have the correct length: " + apduResponse.length());
-                processApduCommandExecutionFailure(apduExecutionResult, "Device provided invalid response.  Apdu result does not contain a response code");
+                processApduCommandExecutionFailure(apduExecutionResult, ResponseState.FAILED, "Device provided invalid response.  Apdu result does not contain a response code");
                 return;
             }
 
@@ -283,8 +285,8 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
         RxBus.getInstance().post(apduExecutionResult);
     }
 
-    private void processApduCommandExecutionFailure(ApduExecutionResult apduExecutionResult, String errorReason) {
-        apduExecutionResult.setState(ResponseState.FAILED);
+    private void processApduCommandExecutionFailure(ApduExecutionResult apduExecutionResult, String state, String errorReason) {
+        apduExecutionResult.setState(state);
         apduExecutionResult.setExecutedDurationTilNow();
         apduExecutionResult.setErrorReason(errorReason);
         RxBus.getInstance().post(apduExecutionResult);
@@ -352,7 +354,8 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
                 .setOSName(dict.getString(MESSAGE_ID_DEVICE_INFO_OS_NAME))
                 // TODO remove this hack - since all Pagares currently return the same seId, use a random value
                 //.setSecureElementId(dict.getString(MESSAGE_ID_DEVICE_INFO_SECURE_ELEMENT_ID))
-                .setSecureElementId(UUID.randomUUID().toString())
+                //.setSecureElementId(UUID.randomUUID().toString())
+                .setSecureElementId("8949222123456789013F")  // G&D supported seid
                 .setSystemId(dict.getString(MESSAGE_ID_DEVICE_INFO_SYSTEM_ID))
                 .build();
     }
@@ -493,9 +496,9 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
             dict.addString(msgId + 0x01, "" + entry.getExpYear());
             dict.addString(msgId + 0x02, entry.getExpMonth() < 10 ? "0" + entry.getExpMonth() : "" + entry.getExpMonth());
             dict.addString(msgId + 0x03, entry.getCardType());
-            dict.addInt32(msgId + 0x04, entry.isActive() ? 1 : 0);
-            dict.addInt32(msgId + 0x05, entry.isDefault() ? 1 : 0);
-            dict.addInt32(msgId + 0x06, entry.isMostRecentTouch() ? 1 : 0);
+            dict.addInt8(msgId + 0x04, entry.isActive() ? (byte) 0x01 : (byte) 0x00);
+            dict.addInt8(msgId + 0x05, entry.isDefault() ? (byte) 0x01 : (byte) 0x00);
+            dict.addInt8(msgId + 0x06, entry.isMostRecentTouch() ? (byte) 0x01 : (byte) 0x00);
             msgId += 0x0010;
         }
         return dict;
@@ -503,7 +506,7 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
 
     private PebbleDictionary getPebbleEmptyWalletMessage() {
         PebbleDictionary dict = new PebbleDictionary();
-        dict.addString(8191, "");
+        //dict.addString(MESSAGE_ID_EMPTY_WALLET, "");
         return dict;
     }
 

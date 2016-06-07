@@ -93,7 +93,7 @@ public final class NotificationManager {
      * @param listener listener
      */
     public void addListener(Listener listener, Scheduler observerScheduler) {
-        Log.d(TAG, "addListener " + listener + " on scheduler: " + observerScheduler);
+        Log.d(TAG, "addListener " + listener + " on scheduler: " + observerScheduler + ", current thread: " + Thread.currentThread());
         synchronized (this) {
             if (!mListeners.contains(listener)) {
                 Log.d(TAG, "addListener: " + listener);

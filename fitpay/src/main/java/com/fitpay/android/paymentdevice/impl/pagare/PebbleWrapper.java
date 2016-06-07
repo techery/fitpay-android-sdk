@@ -8,7 +8,9 @@ import com.fitpay.android.paymentdevice.DeviceOperationException;
 import com.fitpay.android.paymentdevice.enums.DeviceOperationError;
 import com.getpebble.android.kit.PebbleKit;
 import com.getpebble.android.kit.util.PebbleDictionary;
+import com.getpebble.android.kit.util.PebbleTuple;
 
+import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +28,7 @@ public class PebbleWrapper {
     private UUID pebbleAppUuid;
     private String reason;
     private int reasonCode;
-
+    private int appSelectionDelay = 100;
 
     public PebbleWrapper(Context context, UUID pebbleAppUuid) {
         Log.d(TAG, "creating PebbleWrapper on thread: " + Thread.currentThread());
@@ -47,6 +49,7 @@ public class PebbleWrapper {
     public void writeData(PebbleDictionary dict, int transactionId) throws DeviceOperationException {
         reason = null;
         reasonCode = DeviceOperationError.NONE;
+        selectPebbleApp();
         Boolean result = null;
         if (null != dict && dict.size() > 0) {
             ResultProvider resultProvider = new ResultProvider();
@@ -55,7 +58,8 @@ public class PebbleWrapper {
                 while ((null == result || false == result.booleanValue()) && attemptNumber < numberRetries) {
                     final CountDownLatch latch = new CountDownLatch(1);
                     resultProvider.setLatch(latch);
-                    Log.d(TAG, "sending data to pebble with transactionId: " + transactionId);
+                    Log.d(TAG, "sending data to pebble with transactionId: " + transactionId + ", number of elements: " + dict.size());
+                    Log.d(TAG, "sending Pebble dictionary contents: " + getPebbleDictionaryContents(dict));
                     PebbleKit.sendDataToPebbleWithTransactionId(this.context, this.pebbleAppUuid, dict, transactionId);
 
                     try {
@@ -73,8 +77,7 @@ public class PebbleWrapper {
                     }
                     if (null == result || result.booleanValue() == false) {
                         //TODO what actions should be taken to increase chances of success?  open app
-                        PebbleKit.closeAppOnPebble(this.context, this.pebbleAppUuid);
-                        PebbleKit.startAppOnPebble(this.context, this.pebbleAppUuid);
+                        resetPebble();
                     }
                     attemptNumber++;
                 }
@@ -89,6 +92,25 @@ public class PebbleWrapper {
             throw new DeviceOperationException("device did not respond", DeviceOperationError.DEVICE_FAILED_TO_RESPOND);
         } else if (false == result.booleanValue()) {
             throw new DeviceOperationException("device denied the request", DeviceOperationError.DEVICE_DENIED_THE_REQUEST);
+        }
+    }
+
+    public void selectPebbleApp() {
+        PebbleKit.startAppOnPebble(this.context, this.pebbleAppUuid);
+        delay(appSelectionDelay);
+    }
+
+    public void resetPebble() {
+        PebbleKit.closeAppOnPebble(this.context, this.pebbleAppUuid);
+        delay(appSelectionDelay);
+        selectPebbleApp();
+    }
+
+    public void delay(int delay) {
+        try {
+            Thread.sleep(delay);
+        } catch (InterruptedException e) {
+            // party on
         }
     }
 
@@ -236,6 +258,23 @@ public class PebbleWrapper {
 
         }
 
+    }
+
+    private String getPebbleDictionaryContents(PebbleDictionary dict) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("PebbleDictionary={");
+        Iterator<PebbleTuple> iterator = dict.iterator();
+        while (iterator.hasNext()) {
+            PebbleTuple tuple = iterator.next();
+            sb.append("(key=" + tuple.key);
+            sb.append(", value=" + tuple.value);
+            sb.append(", type=" + tuple.type);
+            sb.append(", width=" + tuple.width);
+            sb.append(", length=" + tuple.length);
+            sb.append(")");
+        }
+        sb.append("}");
+        return sb.toString();
     }
 
 
