@@ -15,4 +15,4 @@ script:
   - which perl
   - ./upload_coverage.js
 #  - ./gradlew clean testDebugUnitTestCoverage  
-#  - ./upload_coverage.pl
+  - ./upload_coverage.pl
