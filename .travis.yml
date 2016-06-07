@@ -11,8 +11,5 @@ android:
 
 script:
 #  - ./gradlew clean test
-#  - which node
-#  - which perl
-#  - ./upload_coverage.js
   - ./gradlew clean testDebugUnitTestCoverage  
   - ./upload_coverage.pl
