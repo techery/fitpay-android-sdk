@@ -1,4 +1,4 @@
-#!/usr/bin perl
+#!/usr/bin/perl
 # This script uploads a (weekly) coverage report to github pages using a token.
 # the token should be specified in the environment variables when running this
 # original credit/howto available at: http://sleepycoders.blogspot.com/2013/03/sharing-travis-ci-generated-files.html
