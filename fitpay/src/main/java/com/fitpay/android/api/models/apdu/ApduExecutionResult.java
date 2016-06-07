@@ -20,6 +20,7 @@ public final class ApduExecutionResult {
     private int executedDuration;
     private List<ApduCommandResult> apduResponses;
     private String errorReason;
+    private Integer errorCode;
 
     public ApduExecutionResult(String packageId){
         this.packageId = packageId;
@@ -81,6 +82,14 @@ public final class ApduExecutionResult {
 
     public void setErrorReason(String errorReason) {
         this.errorReason = errorReason;
+    }
+
+    public Integer getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(int errorCode) {
+        this.errorCode = errorCode;
     }
 
     public void deriveState() {
