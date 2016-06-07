@@ -35,7 +35,7 @@ if (! -d "pageycheckout") {
 } else {
     print "github pages already present\n";
 }
-chdir("pageycheckout") || die ("Couldn't chdir to pageycheckout");
+chdir("pageycheckout/android-sdk") || die ("Couldn't chdir to pageycheckout/android-sdk");
 
 print "cp -R $cvgdir/fitpay/build/reports/jacoco/testDebugUnitTestCoverage/html ./coverage_$now\n";
 system("cp -R $cvgdir/fitpay/build/reports/jacoco/testDebugUnitTestCoverage/html ./coverage_$now");
