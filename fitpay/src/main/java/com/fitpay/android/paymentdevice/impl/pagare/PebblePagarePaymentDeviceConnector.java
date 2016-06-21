@@ -141,7 +141,10 @@ public class PebblePagarePaymentDeviceConnector extends PaymentDeviceConnector {
             delay(connectDelay);
         } else {
             setState(States.DISCONNECTED);
-            //TODO need to fire some kind of event to inform client that connect failed
+            RxBus.getInstance().post(new PaymentDeviceOperationFailed.Builder()
+                    .reasonCode(1001) // TODO: do we have a list of reason codes produced by the SDK?
+                    .reason("failed connecting to pebble watch")
+                    .build());
         }
 
         syncCompleteListener = new SyncCompleteListener();
