@@ -110,3 +110,52 @@ dependencies {
 }
 
 apply from: '../jacoco.gradle'
+
+group = 'com.fitpay.android'
+version = '0.3.0'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.github.dcendents.android-maven'
+
+task generateSourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier 'sources'
+}
+
+task generateJavadocs(type: Javadoc) {
+    failOnError false
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath()
+            .join(File.pathSeparator))
+}
+
+task generateJavadocsJar(type: Jar) {
+    from generateJavadocs.destinationDir
+    classifier 'javadoc'
+}
+generateJavadocsJar.dependsOn generateJavadocs
+
+artifacts {
+    archives generateJavadocsJar
+    archives generateSourcesJar
+}
+
+bintray {
+   
+    Properties properties = new Properties()
+    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+    user = properties.getProperty("bintray_user")
+    key = properties.getProperty("bintray_key")
+
+    pkg {
+        repo = 'maven'
+        name = 'com.fitpay'
+        licenses = ['MIT']
+        vcsUrl = 'https://github.com/fitpay/fitpay-android-sdk.git'
+
+        version {
+            name = '0.3.0'
+        }
+    }
+
+    configurations = ['archives']
+}

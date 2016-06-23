@@ -11,6 +11,8 @@ buildscript {
         classpath 'me.tatarka:gradle-retrolambda:3.2.5'
         // java 8 lint issues
         classpath 'me.tatarka.retrolambda.projectlombok:lombok.ast:0.2.3.a2'
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.6'
+        classpath "com.github.dcendents:android-maven-gradle-plugin:1.3"
 
     }
 
