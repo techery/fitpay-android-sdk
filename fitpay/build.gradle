@@ -112,7 +112,7 @@ dependencies {
 apply from: '../jacoco.gradle'
 
 group = 'com.fitpay.android'
-version = '0.3.0'
+version = '0.4.0'
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'com.github.dcendents.android-maven'
 
