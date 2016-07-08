@@ -152,7 +152,7 @@ bintray {
         vcsUrl = 'https://github.com/fitpay/fitpay-android-sdk.git'
 
         version {
-            name = '0.3.0'
+            name = '0.4.0'
         }
     }
 
