@@ -11,5 +11,5 @@ android:
 
 script:
   - ./gradlew clean test
-  - ./gradlew clean testDebugUnitTestCoverage  
+  - ./gradlew clean testDebugUnitTestCoverage  --debug
   - ./upload_coverage.pl
