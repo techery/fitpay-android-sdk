@@ -4,6 +4,7 @@ import android.util.Log;
 
 import com.fitpay.android.api.enums.CommitTypes;
 import com.fitpay.android.api.enums.DeviceTypes;
+import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.models.apdu.ApduCommand;
 import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
@@ -18,13 +19,16 @@ import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
-import com.fitpay.android.paymentdevice.model.PaymentDeviceConnector;
+import com.fitpay.android.paymentdevice.impl.PaymentDeviceConnector;
+import com.fitpay.android.utils.Hex;
 import com.fitpay.android.utils.RxBus;
 import com.google.gson.Gson;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Random;
+import java.util.UUID;
 
 import rx.Observable;
 import rx.Observer;
@@ -39,9 +43,19 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
     private final String TAG = MockPaymentDeviceConnector.class.getSimpleName();
 
+    public static final String CONFIG_DEFAULT_DELAY_TIME = "DEFAULT_DELAY_TIME";
+    public static final String CONFIG_CONNECTING_RESPONSE_TIME = "CONNECTING_RESPONSE_TIME";
+    public static final String CONFIG_CONNECTED_RESPONSE_TIME = "CONNECTED_RESPONSE_TIME";
+    public static final String CONFIG_DISCONNECTING_RESPONSE_TIME = "DISCONNECTING_RESPONSE_TIME";
+    public static final String CONFIG_DISCONNECTED_RESPONSE_TIME = "DISCONNECTED_RESPONSE_TIME";
+    private static final int DEFAULT_DELAY = 3000;
+
     private Device device;
     private final Random random = new Random();
-    private final int delay = 3000;
+    private int delay = DEFAULT_DELAY;
+
+
+    private Properties config;
 
     /*
      * credit cards is a mock of a payment device that has local storage and / or display
@@ -53,8 +67,6 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
     Subscription connectionSubscription;
     Subscription deviceReadSubscription;
     Subscription apduSubscription;
-
-    private ApduExecutionResult apduExecutionResult;
 
     public MockPaymentDeviceConnector() {
         state = States.INITIALIZED;
@@ -76,7 +88,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 .setDeviceType(DeviceTypes.WATCH)
                 .setManufacturerName("Fitpay")
                 .setDeviceName("PSPS")
-                .setSerialNumber("074DCC022E14")
+                .setSerialNumber(UUID.randomUUID().toString())
                 .setModelNumber("FB404")
                 .setHardwareRevision("1.0.0.0")
                 .setFirmwareRevision("1030.6408.1309.0001")
@@ -84,9 +96,40 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 .setSystemId("0x123456FFFE9ABCDE")
                 .setOSName("ANDROID")
                 .setLicenseKey("6b413f37-90a9-47ed-962d-80e6a3528036")
-                .setBdAddress("977214bf-d038-4077-bdf8-226b17d5958d")
-                .setSecureElementId("8615b2c7-74c5-43e5-b224-38882060161b")
+                .setBdAddress(UUID.randomUUID().toString())
+                .setSecureElementId(UUID.randomUUID().toString())
                 .build();
+    }
+
+
+    @Override
+    public void init(Properties props) {
+        if (null == config) {
+            config = props;
+        } else {
+            config.putAll(props);
+        }
+        if (config.contains(CONFIG_DEFAULT_DELAY_TIME)) {
+            delay = getIntValue(config.getProperty(CONFIG_DEFAULT_DELAY_TIME));
+        }
+    }
+
+    private int getIntValue(String value) {
+        int intValue = delay;
+        try {
+            intValue = Integer.parseInt(value);
+        } catch (Exception ex) {
+            Log.d(TAG, "could not convert string to int: " + value);
+        }
+        return intValue;
+    }
+
+
+    private int getTimeValueFromConfig(String key) {
+        if (null == config || null == config.getProperty(key)) {
+            return delay;
+        }
+        return getIntValue(config.getProperty(key));
     }
 
     @Override
@@ -103,7 +146,12 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
             return;
         }
 
-        connectionSubscription = getAsyncSimulatingObservable()
+        int responseDelay = getTimeValueFromConfig(CONFIG_CONNECTING_RESPONSE_TIME);
+        if (responseDelay <= 0) {
+            return;
+        }
+
+        connectionSubscription = getAsyncSimulatingObservable(responseDelay)
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.newThread())
                 .subscribe(getConnectionObserver(States.CONNECTING));
@@ -114,6 +162,16 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
             @Override
             public Boolean call(Boolean aBoolean) {
                 delay(delay);
+                return aBoolean;
+            }
+        });
+    }
+
+    private Observable<Boolean> getAsyncSimulatingObservable(int responseDelay) {
+        return Observable.just(true).map(new Func1<Boolean, Boolean>() {
+            @Override
+            public Boolean call(Boolean aBoolean) {
+                delay(responseDelay);
                 return aBoolean;
             }
         });
@@ -130,12 +188,20 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 Log.d(TAG, "connection changed state.  new state: " + newState);
                 setState(newState);
                 if (newState == States.CONNECTING) {
-                    connectionSubscription = getAsyncSimulatingObservable()//
+                    int responseDelay = getTimeValueFromConfig(CONFIG_CONNECTED_RESPONSE_TIME);
+                    if (responseDelay <= 0) {
+                        return;
+                    }
+                    connectionSubscription = getAsyncSimulatingObservable(responseDelay)
                             .subscribeOn(Schedulers.io())
                             .observeOn(Schedulers.newThread())
                             .subscribe(getConnectionObserver(States.CONNECTED));
                 } else if (newState == States.DISCONNECTING) {
-                    connectionSubscription = getAsyncSimulatingObservable()//
+                    int responseDelay = getTimeValueFromConfig(CONFIG_DISCONNECTING_RESPONSE_TIME);
+                    if (responseDelay <= 0) {
+                        return;
+                    }
+                    connectionSubscription = getAsyncSimulatingObservable(responseDelay)
                             .subscribeOn(Schedulers.io())
                             .observeOn(Schedulers.newThread())
                             .subscribe(getConnectionObserver(States.DISCONNECTED));
@@ -244,15 +310,22 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 ApduCommand apduCommand = apduPackage.getApduCommands().get(apduCommandNumber);
                 ApduCommandResult apduCommandResult = getMockResultForApduCommand(apduCommand);
                 apduExecutionResult.addResponse(apduCommandResult);
+                Log.d(TAG, "apduExecutionResult: " + apduExecutionResult);
 
-                if (apduCommandNumber + 1 < apduPackage.getApduCommands().size()) {
+                if (!ResponseState.PROCESSED.equals(apduExecutionResult.getState())) {
+                    Log.d(TAG, "apduExecutionResult: " + apduExecutionResult);
+                    int duration = (int) ((System.currentTimeMillis() - apduExecutionResult.getExecutedTsEpoch()) / 1000);
+                    apduExecutionResult.setExecutedDuration(duration);
+                    Log.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
+                    RxBus.getInstance().post(apduExecutionResult);
+                } else if (apduCommandNumber + 1 < apduPackage.getApduCommands().size()) {
                     apduSubscription = getAsyncSimulatingObservable()
                             .subscribeOn(Schedulers.io())
                             .observeOn(Schedulers.newThread())
                             .subscribe(getApduObserver(apduPackage, apduExecutionResult, apduCommandNumber + 1));
 
                 } else {
-                    apduExecutionResult.deriveState();
+                    Log.d(TAG, "apduExecutionResult: " + apduExecutionResult);
                     int duration = (int) ((System.currentTimeMillis() - apduExecutionResult.getExecutedTsEpoch()) / 1000);
                     apduExecutionResult.setExecutedDuration(duration);
                     Log.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
@@ -273,10 +346,28 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
     }
 
     private ApduCommandResult getMockResultForApduCommand(ApduCommand apduCommand) {
+        String responseData = "9000";
+
+        byte[] request = apduCommand.getCommand();
+        // should we simulate an error?  if the first byte is 0x99 or 0x98, then the
+        // next two represent the simulated error
+        if (request[0] == (byte)0x99) {
+            responseData = Hex.bytesToHexString(new byte[] { request[1], request[2] });
+        }
+
+        if (request[0] == (byte)0x98) {
+            byte[] val = new byte[request.length + 2];
+            System.arraycopy(request, 0, val, 0, request.length);
+            System.arraycopy(new byte[] { request[1], request[2] }, 0, val, request.length, 2);
+            responseData = Hex.bytesToHexString(val);
+        }
+
+        String responseCode = responseData.substring(responseData.length() - 4);
+
         ApduCommandResult result = new ApduCommandResult.Builder()
             .setCommandId(apduCommand.getCommandId())
-                .setResponseData("9000")
-                .setResponseCode("9000")
+                .setResponseData(responseData)
+                .setResponseCode(responseCode)
                 .build();
         return result;
     }
@@ -325,7 +416,12 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
             Log.d(TAG, "commit payload: " + payload);
             if (!(payload instanceof CreditCardCommit)) {
                 Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
-                RxBus.getInstance().post(new CommitFailed(commit.getCommitId()));
+                RxBus.getInstance().post(new CommitFailed.Builder()
+                        .commit(commit)
+                        .errorCode(999)
+                        .errorMessage("Commit does not contain a credit card")
+                        .build());
+
                 return;
             }
             // process with a delay to mock device response time
@@ -345,7 +441,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                     Log.d(TAG, "Mock wallet has been updated. Card removed: " + card.getCreditCardId());
                     removeCardFromWallet(card.getCreditCardId());
                     // signal commit processing is complete
-                    RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
+                    RxBus.getInstance().post(new CommitSuccess(commit));
                 }
 
                 @Override
@@ -369,7 +465,11 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
             Log.d(TAG, "commit payload: " + payload);
             if (!(payload instanceof CreditCardCommit)) {
                 Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
-                RxBus.getInstance().post(new CommitFailed(commit.getCommitId()));
+                RxBus.getInstance().post(new CommitFailed.Builder()
+                        .commit(commit)
+                        .errorCode(999)
+                        .errorMessage("Commit does not contain a credit card")
+                        .build());
                 return;
             }
             // process with a delay to mock device response time
@@ -389,7 +489,8 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                     Log.d(TAG, "Mock wallet has been updated. Card updated: " + card.getCreditCardId());
                     updateWallet(card);
                     // signal commit processing is complete
-                    RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
+                    Log.d(TAG, "dropping CommitSuccess on the bus, commit type : " + commit.getCommitType());
+                    RxBus.getInstance().post(new CommitSuccess(commit));
                 }
 
                 @Override

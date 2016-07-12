@@ -7,6 +7,7 @@ import com.orhanobut.logger.Logger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import rx.Scheduler;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
@@ -39,6 +40,19 @@ public class RxBus {
                 .map(obj -> (T) obj)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        onNext,
+                        throwable -> Logger.e(throwable.toString() + ", " + getStackTrace(throwable))
+                );
+    }
+
+    public <T> Subscription register(final Class<T> eventClass, final Scheduler scheduler, Action1<T> onNext) {
+        return mBus
+                .asObservable()
+                .filter(event -> eventClass.isAssignableFrom(event.getClass()))
+                .map(obj -> (T) obj)
+                .subscribeOn(Schedulers.io())
+                .observeOn(scheduler)
                 .subscribe(
                         onNext,
                         throwable -> Logger.e(throwable.toString() + ", " + getStackTrace(throwable))

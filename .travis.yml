@@ -9,7 +9,12 @@ android:
     - android-23
     - extra-android-m2repository
 
+before_install:
+- export ANDROID_HOME=/usr/local/android-sdk
+- export PATH=${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools
+- echo "sdk.dir=$ANDROID_HOME" > local.properties
+
 script:
   - ./gradlew clean test
-
-
+  - ./gradlew clean testDebugUnitTestCoverage  
+  - ./upload_coverage.pl

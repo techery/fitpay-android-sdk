@@ -16,9 +16,17 @@ public final class Commit extends CommitModel {
      * Endpoint to confirm APDU execution.
      *
      * @param apduExecutionResult package confirmation data:(packageId, state, executedTs, executedDuration, apduResponses:(commandId, commandId, responseData))
-     * @param callback   result callback
+     * @param callback            result callback
      */
     public void confirm(@NonNull ApduExecutionResult apduExecutionResult, @NonNull ApiCallback<Void> callback) {
-        makePostCall(APDU_RESPONSE, apduExecutionResult, Void.class, callback);
+        makeNoResponsePostCall(APDU_RESPONSE, apduExecutionResult, callback);
     }
+
+
+    public boolean canConfirm() {
+        return hasLink(APDU_RESPONSE);
+    }
+
+
+
 }

@@ -20,9 +20,11 @@ public final class ApduExecutionResult {
     private int executedDuration;
     private List<ApduCommandResult> apduResponses;
     private String errorReason;
+    private Integer errorCode;
 
     public ApduExecutionResult(String packageId){
         this.packageId = packageId;
+        this.setExecutedTsEpoch(System.currentTimeMillis());
         apduResponses = new ArrayList<>();
     }
 
@@ -55,12 +57,23 @@ public final class ApduExecutionResult {
         this.executedDuration = executedDuration;
     }
 
+    public void setExecutedDurationTilNow() {
+        this.executedDuration = (int) ((System.currentTimeMillis() - getExecutedTsEpoch()) / 1000);
+    }
+
     public List<ApduCommandResult> getResponses() {
         return apduResponses;
     }
 
-    public void addResponse(ApduCommandResult response){
+    public void addResponse(ApduCommandResult response) {
         apduResponses.add(response);
+        if (null == state || ResponseState.PROCESSED == state) {
+            if (isSuccessResponseCode(response.getResponseCode())) {
+                state = ResponseState.PROCESSED;
+            } else {
+                state = ResponseState.FAILED;
+            }
+        }
     }
 
     public String getErrorReason() {
@@ -71,24 +84,48 @@ public final class ApduExecutionResult {
         this.errorReason = errorReason;
     }
 
+    public Integer getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(int errorCode) {
+        this.errorCode = errorCode;
+    }
+
     public void deriveState() {
         if (getResponses().size() == 0) {
             state = ResponseState.ERROR;
         } else {
             state = ResponseState.PROCESSED;
 
-            resultsLoop:
             for (ApduCommandResult response : getResponses()) {
-                int size = ApduConstants.SUCCESS_RESULTS.length;
-
-                for (int i = 0; i < size; i++) {
-                    if (!Arrays.equals(ApduConstants.SUCCESS_RESULTS[i], Hex.hexStringToBytes(response.getResponseCode()))) {
-                        state = ResponseState.FAILED;
-                        break resultsLoop;
-                    }
+                if (!isSuccessResponseCode(response.getResponseCode())) {
+                    state = ResponseState.FAILED;
+                    break;
                 }
             }
         }
+    }
 
+    protected boolean isSuccessResponseCode(String responseCode) {
+        byte[] code = Hex.hexStringToBytes(responseCode);
+        for (int i = 0; i < ApduConstants.SUCCESS_RESULTS.length; i++) {
+            if (Arrays.equals(ApduConstants.SUCCESS_RESULTS[i], code)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return "ApduExecutionResult{" +
+                "state='" + state + '\'' +
+                ", packageId='" + packageId + '\'' +
+                ", numberOfApduCommandResults='" + apduResponses.size() + '\'' +
+                ", errorReason='" + errorReason + '\'' +
+                ", executedDuration=" + executedDuration +
+                ", executedTsEpoch=" + executedTsEpoch +
+                '}';
     }
 }

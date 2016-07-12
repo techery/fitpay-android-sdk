@@ -5,11 +5,13 @@ import com.fitpay.android.api.models.device.Commit;
 /**
  * Created by tgs on 5/15/16.
  */
-public class CommitSuccess {
+public abstract class AbstractCommitNotProcessed {
 
-    private Commit commit;
+    protected Commit commit;
+    protected String errorMessage;
+    protected int errorCode;
 
-    public CommitSuccess(Commit commit) {
+    public AbstractCommitNotProcessed(Commit commit) {
         this.commit = commit;
     }
 
@@ -29,11 +31,11 @@ public class CommitSuccess {
         return commit.getCreatedTs();
     }
 
-    @Override
-    public String toString() {
-        return "CommitSuccess{" +
-                "commitId='" + getCommitId() + '\'' +
-                ", commitType='" + getCommitType() + '\'' +
-                '}';
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public int getErrorCode() {
+        return errorCode;
     }
 }

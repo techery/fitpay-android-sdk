@@ -100,11 +100,14 @@ public interface FitPayClient {
     @POST
     Call<JsonElement> post(@Url String url, @Body Object data);
 
-//    @PUT
-//    Call<JsonElement> put(@Url String url);
-//
-//    @PUT
-//    Call<JsonElement> put(@Url String url, @QueryMap Map<String, Object> queryMap);
+    @POST
+    Call<Void> postNoResponse(@Url String url, @Body Object data);
+
+    @POST
+    Call<Void> postNoResponse(@Url String url);
+
+    @PUT
+    Call<JsonElement> put(@Url String url, @QueryMap Map<String, Object> queryMap);
 
     @PATCH
     Call<JsonElement> patch(@Url String url, @Body JsonElement data);

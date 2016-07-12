@@ -435,4 +435,10 @@ public class ApiManager {
         Call<Void> deleteDataCall = getClient().delete(url);
         deleteDataCall.enqueue(new CallbackWrapper<>(callback));
     }
+
+    public <U> void post(String url, final U data, final ApiCallback<Void> callback) {
+        Call<Void> postDataCall = data != null ?
+                getClient().postNoResponse(url, data) : getClient().postNoResponse(url);
+        postDataCall.enqueue(new CallbackWrapper<>(callback));
+    }
 }

@@ -24,5 +24,6 @@ public final class States {
     public static final int FAILED = 2;
     public static final int IN_PROGRESS = 3;
     public static final int INC_PROGRESS = 4;
+    public static final int COMMIT_COMPLETED = 5;
 
 }

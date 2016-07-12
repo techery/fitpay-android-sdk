@@ -7,10 +7,7 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.fitpay.android.api.callbacks.ApiCallback;
-import com.fitpay.android.api.enums.ResponseState;
-import com.fitpay.android.api.enums.ResultCode;
-import com.fitpay.android.api.models.apdu.ApduExecutionResult;
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
@@ -18,6 +15,7 @@ import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
+import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.impl.ble.BluetoothPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
@@ -32,12 +30,10 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Properties;
-
-import rx.Observable;
-import rx.Observer;
-import rx.Subscription;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.Class.forName;
 
@@ -57,13 +53,11 @@ public final class DeviceService extends Service {
 
     public final static String SYNC_PROPERTY_DEVICE_ID = "syncDeviceId";
 
-    private static final int MAX_REPEATS = 3;
-
     private IPaymentDeviceConnector paymentDeviceConnector;
+    private String paymentDeviceConnectorType;
 
     private String configParams;
 
-    private ErrorPair mErrorRepeats;
 
     private @Sync.State Integer mSyncEventState;
 
@@ -73,6 +67,8 @@ public final class DeviceService extends Service {
     private CustomListener mSyncListener = new CustomListener();
 
     private final IBinder mBinder = new LocalBinder();
+
+    Executor executor = Executors.newSingleThreadExecutor();
 
     public class LocalBinder extends Binder {
         public DeviceService getService() {
@@ -119,9 +115,28 @@ public final class DeviceService extends Service {
         NotificationManager.getInstance().removeListener(mSyncListener);
     }
 
+    /**
+     * Used for retrieving connector config information
+     *
+     * @return name of connector class
+     */
+    public String getPaymentServiceType() {
+        if (null == paymentDeviceConnectorType) {
+            if (null != paymentDeviceConnector) {
+                paymentDeviceConnectorType = paymentDeviceConnector.getClass().getName();
+            }
+        }
+        return paymentDeviceConnectorType;
+    }
+
+
     protected void configure(Intent intent) {
+        if (null == intent) {
+            Log.d(TAG, "DeviceService can not be configured with a null Intent.  Current connector: " + paymentDeviceConnector);
+            return;
+        }
         if (null != intent.getExtras() && intent.hasExtra(EXTRA_PAYMENT_SERVICE_TYPE)) {
-            String paymentDeviceConnectorType = intent.getExtras().getString(EXTRA_PAYMENT_SERVICE_TYPE);
+            paymentDeviceConnectorType = intent.getExtras().getString(EXTRA_PAYMENT_SERVICE_TYPE);
             if (null != paymentDeviceConnectorType) {
                 switch (paymentDeviceConnectorType) {
                     case PAYMENT_SERVICE_TYPE_MOCK: {
@@ -165,64 +180,68 @@ public final class DeviceService extends Service {
                 paymentDeviceConnector.init(props);
             }
         }
+        if (null != paymentDeviceConnector) {
+            paymentDeviceConnector.reset();
+        }
     }
-
-    //TODO remove
-//    public String getPaymentServiceType() {
-//        return paymentDeviceConnectorType;
-//    }
 
     /**
      * Get paired payment device
      *
-     * @return interface of payment device
+     * @param paymentDeviceConnector the payment device
      */
-    public IPaymentDeviceConnector getPairedDevice() {
-        return paymentDeviceConnector;
-    }
-
-    /**
-     * Pair with payment device
-     *
-     * @param paymentDeviceConnector interface of payment device
-     */
-    public void pairWithDevice(@NonNull IPaymentDeviceConnector paymentDeviceConnector) {
-
+    public void setPaymentDeviceConnector(IPaymentDeviceConnector paymentDeviceConnector) {
         // check to see if device has changed, if so close the existing connection
         //TODO should test on device config - more general than MacAddress which is BLE specific (or at least pertinent to Mac devices)
         if (this.paymentDeviceConnector != null
                 && ((this.paymentDeviceConnector.getMacAddress() == null && paymentDeviceConnector.getMacAddress() != null)
-                    || null != this.paymentDeviceConnector.getMacAddress() && !this.paymentDeviceConnector.getMacAddress().equals(paymentDeviceConnector.getMacAddress()))
+                || null != this.paymentDeviceConnector.getMacAddress() && !this.paymentDeviceConnector.getMacAddress().equals(paymentDeviceConnector.getMacAddress()))
                 && this.paymentDeviceConnector.getState() == States.CONNECTED) {
             this.paymentDeviceConnector.disconnect();
             this.paymentDeviceConnector.close();
             this.paymentDeviceConnector = null;
         }
-
         this.paymentDeviceConnector = paymentDeviceConnector;
-
-        pairWithDevice();
     }
 
-    public void pairWithDevice() {
 
-        switch (paymentDeviceConnector.getState()) {
-            case States.CONNECTED:
-                break;
+    /**
+     * Get device connector
+     *
+     * @return interface of payment device
+     */
+    public IPaymentDeviceConnector getPaymentDeviceConnector() {
+        return paymentDeviceConnector;
+    }
 
-            case States.INITIALIZED:
-                paymentDeviceConnector.connect();
-                break;
+    public void connectToDevice() {
 
-            case States.DISCONNECTED:
-                paymentDeviceConnector.reconnect();
-                break;
-
-            default:
-                //TODO - why not let device decide if it can connect from this state?
-                Logger.e("Can't connect to device.  Current device state does not support the connect operation.  State: " + paymentDeviceConnector.getState());
-                break;
+        if (null == paymentDeviceConnector) {
+            throw new IllegalStateException("Payment device connector has not been configured");
         }
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "Starting execution of connectToDevice");
+                switch (paymentDeviceConnector.getState()) {
+                    case States.CONNECTED:
+                        break;
+
+                    case States.INITIALIZED:
+                        paymentDeviceConnector.connect();
+                        break;
+
+                    case States.DISCONNECTED:
+                        paymentDeviceConnector.reconnect();
+                        break;
+
+                    default:
+                        //TODO - why not let device decide if it can connect from this state?
+                        Logger.e("Can't connect to device.  Current device state does not support the connect operation.  State: " + paymentDeviceConnector.getState());
+                        break;
+                }
+            }
+        });
 
     }
 
@@ -237,7 +256,13 @@ public final class DeviceService extends Service {
             Log.e(TAG, "payment device service is not connected.  Can not do operation: readDeviceInfo");
             return;
         }
-        paymentDeviceConnector.readDeviceInfo();
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "Starting execution of readDeviceInfo");
+                paymentDeviceConnector.readDeviceInfo();
+            }
+        });
     }
 
 
@@ -245,9 +270,17 @@ public final class DeviceService extends Service {
      * Disconnect from payment device
      */
     public void disconnect() {
-        if (paymentDeviceConnector != null && paymentDeviceConnector.getState() == States.CONNECTED) {
-            paymentDeviceConnector.disconnect();
-        }
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "Starting execution of disconnect");
+                if (null != paymentDeviceConnector) {
+                    paymentDeviceConnector.disconnect();
+                }
+                NotificationManager.getInstance().removeListener(mSyncListener);
+            }
+        });
+
     }
 
     /**
@@ -281,22 +314,14 @@ public final class DeviceService extends Service {
             Logger.w("Sync already in progress. Try again later");
             throw new IllegalStateException("Another sync is currently active.  Please try again later");
         }
-
-        Subscription syncSubscription = getSyncObservable()
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.newThread())
-                .subscribe(getSyncObserver());
-
-    }
-
-    private Observable<Boolean> getSyncObservable() {
-        return Observable.just(true).map(new Func1<Boolean, Boolean>() {
+        executor.execute(new Runnable() {
             @Override
-            public Boolean call(Boolean aBoolean) {
+            public void run() {
+                Log.d(TAG, "Starting execution of syncDevice");
                 syncDevice();
-                return aBoolean;
             }
         });
+
     }
 
 
@@ -310,170 +335,66 @@ public final class DeviceService extends Service {
         paymentDeviceConnector.init(syncProperties);
         paymentDeviceConnector.syncInit();
 
-        mErrorRepeats = null;
-
-        NotificationManager.getInstance().addListener(mSyncListener);
+        NotificationManager.getInstance().addListenerToCurrentThread(mSyncListener);
 
         RxBus.getInstance().post(new Sync(States.STARTED));
 
         DevicePreferenceData deviceData = DevicePreferenceData.load(this, device.getDeviceIdentifier());
+        /*
+         * getAllCommits callback will revert to UI thread.   To continue the process on
+         * background thread, the callback blocks, waits for a result, and provides it back to the
+         * current thread of execution
+         */
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<Collections.CommitsCollection> callback = new ResultProvidingCallback<>(latch);
+        device.getAllCommits(deviceData.getLastCommitId(), callback);
 
-        //TODO verify this is not being done on the main thread
-        device.getAllCommits(deviceData.getLastCommitId(), new ApiCallback<Collections.CommitsCollection>() {
-            @Override
-            public void onSuccess(Collections.CommitsCollection result) {
+        //TODO make callback timeout configurable?
+        try {
+            latch.await(5000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            //party on
+        }
+        if (null != callback.getResult()) {
 
-                Log.d(TAG, "processing commits.  count: " + result.getTotalResults());
+            mCommits = callback.getResult().getResults();
 
-                mCommits = result.getResults();
-
-                RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
-
-                processNextCommit();
-            }
-
-            @Override
-            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                Logger.e(errorCode + " " + errorMessage);
-
+            Log.d(TAG, "processing commits.  count: " + callback.getResult().getTotalResults());
+            RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
+            processNextCommit();
+        } else {
+                Log.e(TAG, "get commits failed.  reasonCode: " + callback.getErrorCode() + ",  " + callback.getErrorMessage());
                 RxBus.getInstance().post(new Sync(States.FAILED));
-            }
-        });
+        }
     }
-
-    private Observer<Boolean> getSyncObserver() {
-
-        return new Observer<Boolean>() {
-
-            @Override
-            public void onCompleted() {
-                Log.d(TAG, "sync kickoff completed");
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                Log.d(TAG, "sync observer error: " + e.getMessage());
-            }
-
-            @Override
-            public void onNext(Boolean bool) {
-                Log.d(TAG, "sync observer onNext: " + bool);
-            }
-        };
-    }
-
 
     /**
      * process next commit
      */
     private void processNextCommit(){
-        if(mCommits != null && mCommits.size() > 0){
+        if(mCommits != null && mCommits.size() > 0) {
+            RxBus.getInstance().post(new Sync(States.INC_PROGRESS, mCommits.size()));
             Commit commit = mCommits.get(0);
-            Log.d(TAG, "process commit: " + commit);
+            Log.d(TAG, "process commit: " + commit + " on thread: " + Thread.currentThread());
             paymentDeviceConnector.processCommit(commit);
             // expose the commit out to others who may want to take action
             RxBus.getInstance().post(commit);
-            // TODO remove dead code below - moved into handler
-//            Object payload = commit.getPayload();
-//            if (payload instanceof ApduPackage) {
-//                ApduPackage pkg = (ApduPackage) payload;
-//
-//                long validUntil = TimestampUtils.getDateForISO8601String(pkg.getValidUntil()).getTime();
-//                long currentTime = System.currentTimeMillis();
-//
-//                if(validUntil > currentTime){
-//                    paymentDeviceConnector.executeApduPackage(pkg);
-//                } else {
-//                    ApduExecutionResult result = new ApduExecutionResult(pkg.getPackageId());
-//                    result.setExecutedDuration(0);
-//                    result.setExecutedTsEpoch(currentTime);
-//                    result.setState(ResponseState.EXPIRED);
-//
-//                    RxBus.getInstance().post(result);
-//                }
-//            } else {
-//                RxBus.getInstance().post(commit);
-//            }
         } else {
             RxBus.getInstance().post(new Sync(States.COMPLETED));
         }
     }
 
     /**
-     * Send apdu execution result to the server
-     * @param result apdu execution result
-     */
-    private void sendApduExecutionResult(ApduExecutionResult result){
-        if(mCommits != null && mCommits.size() > 0){
-            Commit commit = mCommits.get(0);
-
-            commit.confirm(result, new ApiCallback<Void>() {
-                @Override
-                public void onSuccess(Void result2) {
-                    if (ResponseState.PROCESSED == result.getState()) {
-                        RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
-                    } else {
-                        RxBus.getInstance().post(new CommitFailed((commit.getCommitId())));
-                    }
-                }
-
-                @Override
-                public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                    Logger.e("Could not post apduExecutionResult. " + errorCode + ": " + errorMessage);
-
-                    RxBus.getInstance().post(new Sync(States.FAILED));
-                }
-            });
-        }
-    }
-
-    /**
      * Apdu and Sync callbacks
      */
-    private class CustomListener extends Listener implements IListeners.ApduListener, IListeners.SyncListener{
+    private class CustomListener extends Listener implements IListeners.SyncListener{
 
         private CustomListener(){
             super();
-            mCommands.put(ApduExecutionResult.class, data -> {
-                ApduExecutionResult result = (ApduExecutionResult) data;
-
-                switch (result.getState()){
-                    case ResponseState.ERROR:
-                        onApduPackageErrorReceived(result);
-                        break;
-
-                    default:
-                        onApduPackageResultReceived(result);
-                        break;
-                }
-            });
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
-            //TODO remove non-Apdu listener = responsibility moved to PaymentService
-           // mCommands.put(Commit.class, data -> onNonApduCommit((Commit) data));
             mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
             mCommands.put(CommitFailed.class, data -> onCommitFailed((CommitFailed) data));
-        }
-
-        @Override
-        public void onApduPackageResultReceived(ApduExecutionResult result) {
-            sendApduExecutionResult(result);
-        }
-
-        @Override
-        public void onApduPackageErrorReceived(ApduExecutionResult result) {
-
-            final String id = result.getPackageId();
-
-            if(mErrorRepeats == null || !mErrorRepeats.first.equals(id)){
-                mErrorRepeats = new ErrorPair(id, 0);
-            }
-
-            if(++mErrorRepeats.second == MAX_REPEATS){
-                sendApduExecutionResult(result);
-            } else {
-                // retry
-                processNextCommit();
-            }
+            mCommands.put(CommitSkipped.class, data -> onCommitSkipped((CommitSkipped) data));
         }
 
         @Override
@@ -482,21 +403,21 @@ public final class DeviceService extends Service {
             mSyncEventState = syncEvent.getState();
 
             if (mSyncEventState == States.COMPLETED || mSyncEventState == States.FAILED) {
-                NotificationManager.getInstance().removeListener(mSyncListener);
+                //At this time, the sync listener is no longer needed and can be unregisered.
+                //However, a listener should not unregister itself so we will leave it
+                //NotificationManager.getInstance().removeListener(mSyncListener);
+                Log.d(TAG, "sync has ended");
             }
-        }
 
-        @Override
-        public void onNonApduCommit(Commit commit) {
-            Log.d(TAG, "received non-Apdu commit event: " + commit);
-            //TODO just do next commit - needs to be elaborated with event processing
-            RxBus.getInstance().post(new CommitSuccess(commit.getCommitId()));
+            if (mSyncEventState == States.COMMIT_COMPLETED) {
+                processNextCommit();
+            }
         }
 
         @Override
         public void onCommitFailed(CommitFailed commitFailed) {
             Log.d(TAG, "received commit failed event: " + commitFailed.getCommitId());
-
+            RxBus.getInstance().post(new Sync(States.FAILED));
         }
 
         @Override
@@ -505,19 +426,20 @@ public final class DeviceService extends Service {
             DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSuccess.getCommitId());
             DevicePreferenceData.store(DeviceService.this, deviceData);
-            Commit commit = mCommits.remove(0);
+            mCommits.remove(0);
             processNextCommit();
         }
-    }
 
-    private class ErrorPair{
-        String first;
-        int second;
-
-        ErrorPair(String first, int second){
-            this.first = first;
-            this.second = second;
+        @Override
+        public void onCommitSkipped(CommitSkipped commitSkipped) {
+            Log.d(TAG, "received commit skipped event.  moving last commit pointer to: " + commitSkipped.getCommitId());
+            DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
+            deviceData.setLastCommitId(commitSkipped.getCommitId());
+            DevicePreferenceData.store(DeviceService.this, deviceData);
+            mCommits.remove(0);
+            processNextCommit();
         }
+
     }
 
     private Properties convertCommaSeparatedList(String input) throws IOException {

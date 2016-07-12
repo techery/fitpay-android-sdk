@@ -15,25 +15,51 @@ import java.util.Properties;
  */
 public interface IPaymentDeviceConnector extends CommitHandler {
 
-    void setContext(Context contexxt);
+    /**
+     * Provide an Android context to the PaymentDeviceConnector so tha it can access
+     * application and environment reseources as needed.
+     *
+     * @param context Android context.   In most case this will be the DeviceService context.
+     */
+    void setContext(Context context);
+
+    /**
+     * Configuration properties for the PaymentDeviceConnector.
+     * Property content is specific to the PaymentDeviceConnector implementation.
+     *
+     * @param props configuration properties
+     */
     void init(Properties props);
 
+    void reset();
     void connect();
     void disconnect();
     void reconnect();
     void close();
 
+    //TODO remove ?  since some devices do not have MacAddress and / or it is not of interest in getting connection
     String getMacAddress();
 
     void readDeviceInfo();
     void readNFCState();
     void setNFCState(@NFC.Action byte state);
-    void executeApduPackage(ApduPackage apduPackage);
     void sendNotification(byte[] data);
     void setSecureElementState(@SecureElement.Action byte state);
 
+    /**
+     * Do any pre-sync preparation.
+     * Typically this will be used to make sure the device is in the proper state
+     * and to register event listeners used in the sync process
+     */
     void syncInit();
+
+    /**
+     * Do any post-sync operations
+     * Typically used for device finalization or to unregister sync specific listeners
+     */
     void syncComplete();
+
+    void executeApduPackage(ApduPackage apduPackage);
 
     void addCommitHandler(String commitType, CommitHandler handler);
     void removeCommitHandler(String commitType);

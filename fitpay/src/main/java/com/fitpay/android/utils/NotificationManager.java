@@ -8,7 +8,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import rx.Scheduler;
 import rx.Subscription;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 /**
  * Notification manager. Support any {@link Listener} object
@@ -42,12 +45,12 @@ public final class NotificationManager {
         mSubscriptions = new ConcurrentHashMap<>();
     }
 
-    private void subscribeTo(final Class clazz) {
+    private void subscribeTo(final Class clazz, final Scheduler scheduler) {
         Log.d(TAG, "subscribeTo class: " + clazz + " from thread: " + Thread.currentThread());
 
         if (!mSubscriptions.containsKey(clazz)) {
             Log.d(TAG, "subscribeTo doing put of class:  " + clazz + " from thread: " + Thread.currentThread());
-            mSubscriptions.put(clazz, RxBus.getInstance().register(clazz, commit -> {
+            mSubscriptions.put(clazz, RxBus.getInstance().register(clazz, scheduler, commit -> {
                 for (Command command : mCommands.get(clazz)) {
                     command.execute(commit);
                 }
@@ -67,14 +70,33 @@ public final class NotificationManager {
 
     /**
      * Add current listener. !!! Don't forget to remove it
+     * The listener will execute on the Android UI thread
      *
      * @param listener listener
      */
     public void addListener(Listener listener) {
-        Log.d(TAG, "addListener " + listener + " called from thread: " + Thread.currentThread());
+        addListener(listener, AndroidSchedulers.mainThread());
+    }
+
+    /**
+     * Add current listener. !!! Don't forget to remove it
+     *
+     * @param listener listener
+     */
+    public void addListenerToCurrentThread(Listener listener) {
+        addListener(listener, Schedulers.trampoline());
+    }
+
+    /**
+     * Add current listener. !!! Don't forget to remove it
+     *
+     * @param listener listener
+     */
+    public void addListener(Listener listener, Scheduler observerScheduler) {
+        Log.d(TAG, "addListener " + listener + " on scheduler: " + observerScheduler + ", current thread: " + Thread.currentThread());
         synchronized (this) {
-            Log.d(TAG, "addListener executing");
             if (!mListeners.contains(listener)) {
+                Log.d(TAG, "addListener: " + listener);
                 mListeners.add(listener);
 
                 Map<Class, Command> commands = listener.getCommands();
@@ -82,7 +104,7 @@ public final class NotificationManager {
                 for (Map.Entry<Class, Command> map : commands.entrySet()) {
                     Class clazz = map.getKey();
 
-                    subscribeTo(clazz);
+                    subscribeTo(clazz, observerScheduler);
 
                     if (!mCommands.containsKey(clazz)) {
                         mCommands.put(clazz, Collections.synchronizedList(new ArrayList<>()));
@@ -90,6 +112,8 @@ public final class NotificationManager {
 
                     mCommands.get(clazz).add(map.getValue());
                 }
+            } else {
+                Log.d(TAG, "addListener skipped.  Listener already exists: " + listener);
             }
         }
     }

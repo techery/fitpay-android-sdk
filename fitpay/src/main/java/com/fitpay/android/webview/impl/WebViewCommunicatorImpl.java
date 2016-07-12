@@ -8,12 +8,17 @@ import android.webkit.WebView;
 import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
+import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.DeviceService;
+import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
+import com.fitpay.android.paymentdevice.events.CommitFailed;
+import com.fitpay.android.paymentdevice.events.CommitSkipped;
+import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.webview.WebViewCommunicator;
@@ -23,7 +28,10 @@ import com.google.gson.Gson;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import retrofit2.http.HEAD;
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import rx.Observable;
 import rx.Observer;
 import rx.functions.Func1;
@@ -31,15 +39,17 @@ import rx.functions.Func1;
 
 /**
  * Created by Ross Gabay on 4/13/2016.
- * Stubbed out implementation of the WebViewCommunicator interface
+ * Implementation of the WebViewCommunicator interface
  */
-public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
+public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
-    private final String TAG = WebViewCommunicatorStubImpl.class.getSimpleName();
+    private final String TAG = WebViewCommunicatorImpl.class.getSimpleName();
 
     private static String USER_DATA_STUB_RESPONSE = "0";
     private static String SYNC_STUB_RESPONSE = "0";
     private static final String RESPONSE_FAILURE = "1";
+    private static final String APP_CALLBACK_STATUS_OK ="OK";
+    private static final String APP_CALLBACK_STATUS_FAILED ="FAILED";
 
 
     private final Activity activity;
@@ -51,13 +61,14 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
     private Device device;
 
     private SyncCompleteListener syncListener;
+    private CustomListener commitListenerForAppCallbacks = new CustomListener();
 
-    public WebViewCommunicatorStubImpl(Activity ctx, int wId, OnTaskCompleted callback) {
+    public WebViewCommunicatorImpl(Activity ctx, int wId, OnTaskCompleted callback) {
         this(ctx, wId);
         this.callback = callback;
     }
 
-    public WebViewCommunicatorStubImpl(Activity ctx, int wId) {
+    public WebViewCommunicatorImpl(Activity ctx, int wId) {
         this.activity = ctx;
         this.wId = wId;
     }
@@ -68,7 +79,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
 
     final Gson gson = new Gson();
 
-
+    @Override
     @JavascriptInterface
     public void dispatchMessage(String message) throws JSONException{
 
@@ -119,7 +130,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
             Log.d(TAG, "sync can not be done.  No device has been specified.   response: " + response);
 
             if (null != callbackId) {
-                sendMessageToJs(callbackId, "true", gson.toJson(response));
+                sendMessageToJs(callbackId, "false", gson.toJson(response));
             }
             if (null != callback){
                 callback.onTaskCompleted(RESPONSE_FAILURE);
@@ -138,7 +149,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
             Log.d(TAG, "sync can not be done.  No device service configured.   response: " + response);
 
             if (null != callbackId) {
-                sendMessageToJs(callbackId, "true", gson.toJson(response));
+                sendMessageToJs(callbackId, "false", gson.toJson(response));
             }
             if (null != callback){
                 callback.onTaskCompleted(RESPONSE_FAILURE);
@@ -152,6 +163,8 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
         }
         syncListener = new SyncCompleteListener(callbackId);
         NotificationManager.getInstance().addListener(syncListener);
+
+        NotificationManager.getInstance().addListener(commitListenerForAppCallbacks);
 
         try {
             deviceService.syncData(device);
@@ -240,11 +253,11 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
         ApiManager.getInstance().getUser(new ApiCallback<User>() {
             @Override
             public void onSuccess(User result) {
-                WebViewCommunicatorStubImpl.this.user = result;
+                WebViewCommunicatorImpl.this.user = result;
                 result.getDevice(deviceId, new ApiCallback<Device>() {
                     @Override
                     public void onSuccess(Device result) {
-                        WebViewCommunicatorStubImpl.this.device = result;
+                        WebViewCommunicatorImpl.this.device = result;
                         AckResponseModel stubResponse = new AckResponseModel.Builder()
                             .status(USER_DATA_STUB_RESPONSE)
                             .build();
@@ -318,7 +331,7 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
                 user.getDevice(deviceId, new ApiCallback<Device>() {
                     @Override
                     public void onSuccess(Device result) {
-                        WebViewCommunicatorStubImpl.this.device = result;
+                        WebViewCommunicatorImpl.this.device = result;
                     }
 
                     @Override
@@ -393,10 +406,10 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
                             .reason("sync failure")
                             .build();
                     if (null != callbackId) {
-                        sendMessageToJs(callbackId, "true", gson.toJson(response));
+                        sendMessageToJs(callbackId, "false" , gson.toJson(response));
                     }
                     if (null != callback) {
-                        callback.onTaskCompleted(RESPONSE_FAILURE);
+                          callback.onTaskCompleted(RESPONSE_FAILURE);
                     }
                     break;
                 }
@@ -408,8 +421,85 @@ public class WebViewCommunicatorStubImpl implements WebViewCommunicator {
         }
     }
 
+    private class CustomListener extends Listener implements IListeners.ApduListener, IListeners.SyncListener{
 
+        private CustomListener(){
+            super();
 
+            mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
+            mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
+            mCommands.put(CommitFailed.class, data -> onCommitFailed((CommitFailed) data));
+        }
+
+        @Override
+        public void onApduPackageResultReceived(ApduExecutionResult result) {
+
+        }
+
+        @Override
+        public void onApduPackageErrorReceived(ApduExecutionResult result) {
+
+        }
+
+        @Override
+        public void onSyncStateChanged(Sync syncEvent) {
+            //
+        }
+
+        @Override
+        public void onCommitFailed(CommitFailed commitFailed) {
+            Log.d(TAG, "received commit failed event: " + commitFailed.getCommitId());
+
+            if(callback != null)
+                               callback.onTaskCompleted(buildAppCallbackPayload(
+                                                        commitFailed.getCommitType(),
+                                                        APP_CALLBACK_STATUS_FAILED,
+                                                        commitFailed.getErrorMessage(),
+                                                        commitFailed.getCreatedTs()));
+
+        }
+
+        @Override
+        public void onCommitSuccess(CommitSuccess commitSuccess) {
+            Log.d(TAG, "Successful commit reported, type: " + commitSuccess.getCommitType() + ", id: " + commitSuccess.getCommitId());
+
+            if(callback != null)
+                                callback.onTaskCompleted(buildAppCallbackPayload(
+                                                        commitSuccess.getCommitType(),
+                                                        APP_CALLBACK_STATUS_OK,
+                                                        "",
+                                                        commitSuccess.getCreatedTs()));
+
+        }
+
+        @Override
+        public void onCommitSkipped(CommitSkipped commitSkipped) {
+            Log.d(TAG, "Skipped commit reported, type: " + commitSkipped.getCommitType() + ", id: " + commitSkipped.getCommitId());
+
+            callback.onTaskCompleted(buildAppCallbackPayload(
+                    commitSkipped.getCommitType(),
+                    APP_CALLBACK_STATUS_OK,
+                    "",
+                    commitSkipped.getCreatedTs()));
+
+        }
+
+    }
+
+    private String buildAppCallbackPayload(String command, String status, String reason, long createdTs){
+
+        AppCallbackModel appCallbackPayload = new AppCallbackModel();
+
+        Date date = new Date(createdTs);
+        Format format = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss.SSS");
+
+        appCallbackPayload.setTimestamp(format.format(date));
+        appCallbackPayload.setCommand(command);
+        appCallbackPayload.setStatus(status);
+        appCallbackPayload.setReason(reason);
+
+        return new Gson().toJson(appCallbackPayload);
+    }
 }
 
 
