@@ -10,6 +10,8 @@ android:
     - extra-android-m2repository
 
 script:
-  - ./gradlew clean test --stacktrace
-  - ./gradlew clean testDebugUnitTestCoverage
+  - ./gradlew clean
+  - ./gradlew test
+  - ./gradlew clean
+  - ./gradlew testDebugUnitTestCoverage
   - ./upload_coverage.pl
