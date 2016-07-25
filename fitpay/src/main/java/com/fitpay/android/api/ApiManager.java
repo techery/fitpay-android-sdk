@@ -100,11 +100,11 @@ public class ApiManager {
                 }
                 if (null == config.get(ApiManager.PROPERTY_CLIENT_ID)) {
                     throw new IllegalArgumentException("The configuration must contain the following property: "
-                            +  ApiManager.PROPERTY_CLIENT_ID);
+                            + ApiManager.PROPERTY_CLIENT_ID);
                 }
                 if (null == config.get(ApiManager.PROPERTY_REDIRECT_URI)) {
                     throw new IllegalArgumentException("The configuration must contain the following property: "
-                            +  ApiManager.PROPERTY_REDIRECT_URI);
+                            + ApiManager.PROPERTY_REDIRECT_URI);
                 }
                 authService = new AuthService(baseUrl);
             }
@@ -159,7 +159,7 @@ public class ApiManager {
     /**
      * User Creation
      *
-     * @param user user to build
+     * @param user     user to build
      * @param callback result callback
      */
     public void createUser(UserCreateRequest user, final ApiCallback<User> callback) {
@@ -377,7 +377,12 @@ public class ApiManager {
     }
 
     public <T> void get(final String url, final Map<String, Object> queryMap, final Type type, final ApiCallback<T> callback) {
-        Call<JsonElement> getDataCall = getClient().get(url, queryMap);
+        Call<JsonElement> getDataCall = null;
+        if (queryMap != null) {
+            getDataCall = getClient().get(url, queryMap);
+        } else {
+            getDataCall = getClient().get(url);
+        }
         makeCall(getDataCall, type, callback);
     }
 
@@ -416,10 +421,15 @@ public class ApiManager {
         makeCall(patchDataCall, type, callback);
     }
 
-    public <T, U> void put(final String url, final U data, final Type type, final ApiCallback<T> callback) {
-        Call<JsonElement> putDataCall = getClient().post(url, data);
-        makeCall(putDataCall, type, callback);
-    }
+//    public <T, U> void put(final String url, final Map<String, Object> queryMap, final Type type, final ApiCallback<T> callback) {
+//        Call<JsonElement> putDataCall = null;
+//        if (queryMap != null) {
+//            putDataCall = getClient().put(url, queryMap);
+//        } else {
+//            putDataCall = getClient().put(url);
+//        }
+//        makeCall(putDataCall, type, callback);
+//    }
 
     public void delete(String url, final ApiCallback<Void> callback) {
         Call<Void> deleteDataCall = getClient().delete(url);

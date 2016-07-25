@@ -92,8 +92,7 @@ dependencies {
     compile 'com.squareup.retrofit2:converter-gson:2.1.0'
     compile 'com.squareup.okhttp3:logging-interceptor:3.4.1'
 
-    compile 'org.bouncycastle:bcprov-jdk15on:1.54'
-    compile 'com.nimbusds:nimbus-jose-jwt:4.22'
+//    compile 'com.github.skynet67:Nimbus-JOSE-JWT-Spongycastle:fe8e0b783f'
 
     compile 'com.orhanobut:logger:1.15'
 
@@ -101,6 +100,9 @@ dependencies {
     compile 'io.reactivex:rxandroid:1.2.1'
 
     compile 'me.alexrs:prefs:1.1.0'
+
+    compile 'org.bouncycastle:bcprov-jdk15on:1.54'
+    compile 'com.nimbusds:nimbus-jose-jwt:4.22'
 
     testCompile 'org.mockito:mockito-core:1.10.19'
     testCompile 'junit:junit:4.12'
@@ -136,7 +138,7 @@ artifacts {
 
 bintray {
     Properties properties = new Properties()
-    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+    properties.load(project.rootProject.file('bintray.properties').newDataInputStream())
     user = properties.getProperty("bintray_user")
     key = properties.getProperty("bintray_key")
 
