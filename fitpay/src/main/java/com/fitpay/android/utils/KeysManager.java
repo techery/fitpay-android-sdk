@@ -1,5 +1,6 @@
 package com.fitpay.android.utils;
 
+
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 
@@ -9,8 +10,10 @@ import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.security.ECCKeyPair;
 
-import org.spongycastle.jce.provider.BouncyCastleProvider;
-import org.spongycastle.util.encoders.Hex;
+import org.bouncycastle.jce.interfaces.ECPrivateKey;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -21,8 +24,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.interfaces.ECPrivateKey;
-import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -58,11 +59,13 @@ final public class KeysManager {
     }
 
     private static BouncyCastleProvider provider;
+
     static {
         try {
             provider = new BouncyCastleProvider();
             Security.insertProviderAt(provider, 1);
-        } catch (Exception e){}
+        } catch (Exception e) {
+        }
     }
 
     static KeysManager sInstance;
@@ -93,6 +96,7 @@ final public class KeysManager {
 
         ECCKeyPair eccKeyPair = new ECCKeyPair();
         eccKeyPair.setKeyId(UUID.randomUUID().toString());
+
         eccKeyPair.setPrivateKey(Hex.toHexString(privateKey.getEncoded()));
         eccKeyPair.setPublicKey(Hex.toHexString(publicKey.getEncoded()));
 
@@ -117,7 +121,7 @@ final public class KeysManager {
         ECCKeyPair keyPair = getPairForType(type);
         SecretKey secretKey = keyPair.getSecretKey();
 
-        if(secretKey == null) {
+        if (secretKey == null) {
             secretKey = createSecretKey(keyPair.getPrivateKey(), keyPair.getServerPublicKey());
             keyPair.setSecretKey(secretKey);
         }
@@ -134,7 +138,7 @@ final public class KeysManager {
             KeyAgreement keyAgreement = null;
             try {
                 keyAgreement = KeyAgreement.getInstance(ALGORITHM, provider);
-            } catch (Exception e){
+            } catch (Exception e) {
                 //hack for unit tests
                 keyAgreement = KeyAgreement.getInstance(ALGORITHM);
             }
@@ -161,8 +165,8 @@ final public class KeysManager {
         return keyPair;
     }
 
-    public void removePairForType(@KeyType int type){
-        if(mKeysMap.containsKey(type)){
+    public void removePairForType(@KeyType int type) {
+        if (mKeysMap.containsKey(type)) {
             mKeysMap.remove(type);
         }
     }
@@ -179,7 +183,7 @@ final public class KeysManager {
                     result.setPrivateKey(mKeysMap.get(type).getPrivateKey());
                     mKeysMap.put(type, result);
 
-                    if(successRunnable != null) {
+                    if (successRunnable != null) {
                         successRunnable.run();
                     }
                 }
