@@ -15,6 +15,8 @@ before_install:
 - echo "sdk.dir=$ANDROID_HOME" > local.properties
 
 script:
-  - ./gradlew clean test
-  - ./gradlew clean testDebugUnitTestCoverage  
+  - ./gradlew clean
+  - ./gradlew test
+  - ./gradlew clean
+  - ./gradlew testDebugUnitTestCoverage
   - ./upload_coverage.pl
