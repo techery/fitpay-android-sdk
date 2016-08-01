@@ -3,16 +3,21 @@ package com.fitpay.android.paymentdevice.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.fitpay.android.paymentdevice.DeviceService;
+import com.fitpay.android.utils.StringUtils;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+
+import me.alexrs.prefs.lib.Prefs;
 
 /**
  * Created by tgs on 5/14/16.
  */
 public class DevicePreferenceData {
 
-    private static final String[] KEY_VALUES = { "lastCommitId", "paymentDeviceServiceType", "paymentDeviceConfig"};
+    private static final String[] KEY_VALUES = {"lastCommitId", "paymentDeviceServiceType", "paymentDeviceConfig"};
 
     private String deviceId;
     private String lastCommitId;
@@ -27,7 +32,7 @@ public class DevicePreferenceData {
     public static DevicePreferenceData load(Context context, String deviceId) {
         SharedPreferences prefs = getPreferences(context, deviceId);
         Map<String, String> values = new HashMap<>();
-        for (String key: prefs.getAll().keySet()) {
+        for (String key : prefs.getAll().keySet()) {
             if (!Arrays.asList(KEY_VALUES).contains(key)) {
                 values.put(key, prefs.getString(key, null));
             }
@@ -41,6 +46,21 @@ public class DevicePreferenceData {
                 .additionalValues(values)
                 .build();
         return data;
+    }
+
+    /**
+     * Remove current device prefs.
+     * Call this method when watch app was deleted and you need to resync the data.
+     *
+     * @param context Context
+     */
+    public static void clearCurrentData(Context context) {
+        Prefs prefs = Prefs.with(context);
+        String devId = prefs.getString(DeviceService.SYNC_PROPERTY_DEVICE_ID, null);
+        if (!StringUtils.isEmpty(devId)) {
+            getPreferences(context, devId).edit().clear().apply();
+            prefs.save(DeviceService.SYNC_PROPERTY_DEVICE_ID, "");
+        }
     }
 
     public static void store(Context context, DevicePreferenceData data) {
@@ -146,7 +166,5 @@ public class DevicePreferenceData {
             data.additionalValues = this.additionalValues;
             return data;
         }
-
-
     }
 }

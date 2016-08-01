@@ -48,8 +48,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     private static String USER_DATA_STUB_RESPONSE = "0";
     private static String SYNC_STUB_RESPONSE = "0";
     private static final String RESPONSE_FAILURE = "1";
-    private static final String APP_CALLBACK_STATUS_OK ="OK";
-    private static final String APP_CALLBACK_STATUS_FAILED ="FAILED";
+    private static final String APP_CALLBACK_STATUS_OK = "OK";
+    private static final String APP_CALLBACK_STATUS_FAILED = "FAILED";
 
 
     private final Activity activity;
@@ -81,29 +81,32 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     @Override
     @JavascriptInterface
-    public void dispatchMessage(String message) throws JSONException{
+    public void dispatchMessage(String message) throws JSONException {
 
-        if(message == null) throw new IllegalArgumentException("invalid message");
+        if (message == null) throw new IllegalArgumentException("invalid message");
 
-        Log.d(TAG, "received message: "+ message);
+        Log.d(TAG, "received message: " + message);
         JSONObject obj = new JSONObject(message);
 
         String callBackId = obj.getString("callBackId");
-        if(callBackId == null) throw new IllegalArgumentException("action is missing in the message from the UI");
-        Log.d(TAG, "received callbackId: "+ callBackId);
+        if (callBackId == null)
+            throw new IllegalArgumentException("action is missing in the message from the UI");
+        Log.d(TAG, "received callbackId: " + callBackId);
 
         String action = obj.getJSONObject("data").getString("action");
-        if(action == null) throw new IllegalArgumentException("action is missing in the message from the UI");
+        if (action == null)
+            throw new IllegalArgumentException("action is missing in the message from the UI");
 
-        switch(action){
+        switch (action) {
 
-            case "userData" :
+            case "userData":
                 //params are only there for the userData action
                 String deviceId = obj.getJSONObject("data").getJSONObject("data").getString("deviceId");
                 String token = obj.getJSONObject("data").getJSONObject("data").getString("token");
                 String userId = obj.getJSONObject("data").getJSONObject("data").getString("userId");
 
-                if((deviceId==null) || (token ==null) || (userId == null)) throw new IllegalArgumentException("missing required message data");
+                if ((deviceId == null) || (token == null) || (userId == null))
+                    throw new IllegalArgumentException("missing required message data");
                 sendUserData(callBackId, deviceId, token, userId);
                 break;
 
@@ -132,7 +135,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             if (null != callbackId) {
                 sendMessageToJs(callbackId, "false", gson.toJson(response));
             }
-            if (null != callback){
+            if (null != callback) {
                 callback.onTaskCompleted(RESPONSE_FAILURE);
             }
 
@@ -151,7 +154,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             if (null != callbackId) {
                 sendMessageToJs(callbackId, "false", gson.toJson(response));
             }
-            if (null != callback){
+            if (null != callback) {
                 callback.onTaskCompleted(RESPONSE_FAILURE);
             }
 
@@ -179,7 +182,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             if (null != callbackId) {
                 sendMessageToJs(callbackId, "true", gson.toJson(response));
             }
-            if (null != callback){
+            if (null != callback) {
                 callback.onTaskCompleted(RESPONSE_FAILURE);
             }
 
@@ -197,7 +200,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     @JavascriptInterface
     public String sendUserData(String callbackId, String deviceId, String token, String userId) {
 
-        Log.d(TAG, "sendUserData received data: deviceId: " + deviceId +", token: " + token + ", userId: " + userId);
+        Log.d(TAG, "sendUserData received data: deviceId: " + deviceId + ", token: " + token + ", userId: " + userId);
 
         OAuthToken oAuthToken = new OAuthToken.Builder()
                 .accessToken(token)
@@ -231,15 +234,15 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     public void sendMessageToJs(String callBackId, String success, String response) {
 
         String responseMessage = "{ \"callBackId\" :" + callBackId + "," +
-                                   "\"success\" :"  + success + "," +
-                                   "\"response\" :" + response +" }";
+                "\"success\" :" + success + "," +
+                "\"response\" :" + response + " }";
 
         Log.d(TAG, "sending message to webview: " + responseMessage);
 
         String url = "javascript:window.RtmBridge.resolve('" + responseMessage + "');";
         Log.d(TAG, "message url: " + url);
 
-        WebView w = (WebView)activity.findViewById(wId);
+        WebView w = (WebView) activity.findViewById(wId);
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -259,12 +262,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     public void onSuccess(Device result) {
                         WebViewCommunicatorImpl.this.device = result;
                         AckResponseModel stubResponse = new AckResponseModel.Builder()
-                            .status(USER_DATA_STUB_RESPONSE)
-                            .build();
+                                .status(USER_DATA_STUB_RESPONSE)
+                                .build();
                         if (null != callbackId) {
                             sendMessageToJs(callbackId, "true", gson.toJson(stubResponse));
                         }
-                        if (null != callback){
+                        if (null != callback) {
                             callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
                         }
                     }
@@ -352,12 +355,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             public void onCompleted() {
                 Log.d(TAG, "get device completed");
                 AckResponseModel stubResponse = new AckResponseModel.Builder()
-                    .status(USER_DATA_STUB_RESPONSE)
+                        .status(USER_DATA_STUB_RESPONSE)
                         .build();
                 if (null != callBackId) {
                     sendMessageToJs(callBackId, "true", gson.toJson(stubResponse));
                 }
-                if (null != callback){
+                if (null != callback) {
                     callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
                 }
             }
@@ -388,7 +391,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         public void onSyncStateChanged(Sync syncEvent) {
             Log.d(TAG, "received on sync state changed event: " + syncEvent);
             switch (syncEvent.getState()) {
-                case States.COMPLETED: {
+                case States.COMPLETED:
+                case States.COMPLETED_NO_UPDATES: {
                     AckResponseModel stubResponse = new AckResponseModel.Builder()
                             .status(USER_DATA_STUB_RESPONSE)
                             .build();
@@ -406,10 +410,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                             .reason("sync failure")
                             .build();
                     if (null != callbackId) {
-                        sendMessageToJs(callbackId, "false" , gson.toJson(response));
+                        sendMessageToJs(callbackId, "false", gson.toJson(response));
                     }
                     if (null != callback) {
-                          callback.onTaskCompleted(RESPONSE_FAILURE);
+                        callback.onTaskCompleted(RESPONSE_FAILURE);
                     }
                     break;
                 }
@@ -421,9 +425,9 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         }
     }
 
-    private class CustomListener extends Listener implements IListeners.ApduListener, IListeners.SyncListener{
+    private class CustomListener extends Listener implements IListeners.ApduListener, IListeners.SyncListener {
 
-        private CustomListener(){
+        private CustomListener() {
             super();
 
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
@@ -450,12 +454,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         public void onCommitFailed(CommitFailed commitFailed) {
             Log.d(TAG, "received commit failed event: " + commitFailed.getCommitId());
 
-            if(callback != null)
-                               callback.onTaskCompleted(buildAppCallbackPayload(
-                                                        commitFailed.getCommitType(),
-                                                        APP_CALLBACK_STATUS_FAILED,
-                                                        commitFailed.getErrorMessage(),
-                                                        commitFailed.getCreatedTs()));
+            if (callback != null)
+                callback.onTaskCompleted(buildAppCallbackPayload(
+                        commitFailed.getCommitType(),
+                        APP_CALLBACK_STATUS_FAILED,
+                        commitFailed.getErrorMessage(),
+                        commitFailed.getCreatedTs()));
 
         }
 
@@ -463,12 +467,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         public void onCommitSuccess(CommitSuccess commitSuccess) {
             Log.d(TAG, "Successful commit reported, type: " + commitSuccess.getCommitType() + ", id: " + commitSuccess.getCommitId());
 
-            if(callback != null)
-                                callback.onTaskCompleted(buildAppCallbackPayload(
-                                                        commitSuccess.getCommitType(),
-                                                        APP_CALLBACK_STATUS_OK,
-                                                        "",
-                                                        commitSuccess.getCreatedTs()));
+            if (callback != null)
+                callback.onTaskCompleted(buildAppCallbackPayload(
+                        commitSuccess.getCommitType(),
+                        APP_CALLBACK_STATUS_OK,
+                        "",
+                        commitSuccess.getCreatedTs()));
 
         }
 
@@ -486,7 +490,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     }
 
-    private String buildAppCallbackPayload(String command, String status, String reason, long createdTs){
+    private String buildAppCallbackPayload(String command, String status, String reason, long createdTs) {
 
         AppCallbackModel appCallbackPayload = new AppCallbackModel();
 

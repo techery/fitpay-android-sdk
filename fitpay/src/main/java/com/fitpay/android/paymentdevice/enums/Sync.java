@@ -13,7 +13,7 @@ import java.lang.annotation.RetentionPolicy;
 public final class Sync {
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({States.STARTED, States.IN_PROGRESS, States.COMPLETED, States.FAILED, States.INC_PROGRESS, States.COMMIT_COMPLETED})
+    @IntDef({States.STARTED, States.IN_PROGRESS, States.COMPLETED, States.FAILED, States.INC_PROGRESS, States.COMMIT_COMPLETED, States.COMPLETED_NO_UPDATES})
     public @interface State {
     }
 
