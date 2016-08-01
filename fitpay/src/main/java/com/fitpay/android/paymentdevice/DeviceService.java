@@ -24,6 +24,7 @@ import com.fitpay.android.paymentdevice.utils.DevicePreferenceData;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
+import com.fitpay.android.utils.StringUtils;
 import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
@@ -35,11 +36,13 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import me.alexrs.prefs.lib.Prefs;
+
 import static java.lang.Class.forName;
 
 /**
  * Connection and synchronization service
- *
+ * <p>
  * Allows for service binding or start
  */
 public final class DeviceService extends Service {
@@ -59,7 +62,9 @@ public final class DeviceService extends Service {
     private String configParams;
 
 
-    private @Sync.State Integer mSyncEventState;
+    private
+    @Sync.State
+    Integer mSyncEventState;
 
     private List<Commit> mCommits;
     private Device device;
@@ -155,7 +160,7 @@ public final class DeviceService extends Service {
                 if (null == paymentDeviceConnector) {
 
                     try {
-                        Class paymentDeviceConnectorClass =  forName(paymentDeviceConnectorType);
+                        Class paymentDeviceConnectorClass = forName(paymentDeviceConnectorType);
                         paymentDeviceConnector = (IPaymentDeviceConnector) paymentDeviceConnectorClass.newInstance();
                         paymentDeviceConnector.setContext(this);
                     } catch (ClassNotFoundException e) {
@@ -285,7 +290,7 @@ public final class DeviceService extends Service {
 
     /**
      * Sync data between FitPay server and payment device
-     *
+     * <p>
      * This is an asynchronous operation.
      *
      * @param device device object with hypermedia data
@@ -329,9 +334,11 @@ public final class DeviceService extends Service {
 
         Log.d(TAG, "sync running on thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
 
+        String devId = device.getDeviceIdentifier();
+
         // provide sync specific data to device connector
         Properties syncProperties = new Properties();
-        syncProperties.put(SYNC_PROPERTY_DEVICE_ID, device.getDeviceIdentifier()) ;
+        syncProperties.put(SYNC_PROPERTY_DEVICE_ID, devId);
         paymentDeviceConnector.init(syncProperties);
         paymentDeviceConnector.syncInit();
 
@@ -339,7 +346,17 @@ public final class DeviceService extends Service {
 
         RxBus.getInstance().post(new Sync(States.STARTED));
 
-        DevicePreferenceData deviceData = DevicePreferenceData.load(this, device.getDeviceIdentifier());
+        /*
+         * In case of another account force update our wallet
+         */
+        boolean forceWalletUpdate = false;
+        final String prevDeviceId = Prefs.with(this).getString(SYNC_PROPERTY_DEVICE_ID, null);
+        if (StringUtils.isEmpty(prevDeviceId) || !prevDeviceId.equals(devId)) {
+            Prefs.with(this).save(SYNC_PROPERTY_DEVICE_ID, devId);
+            forceWalletUpdate = true;
+        }
+
+        DevicePreferenceData deviceData = DevicePreferenceData.load(this, devId);
         /*
          * getAllCommits callback will revert to UI thread.   To continue the process on
          * background thread, the callback blocks, waits for a result, and provides it back to the
@@ -359,20 +376,24 @@ public final class DeviceService extends Service {
 
             mCommits = callback.getResult().getResults();
 
-            Log.d(TAG, "processing commits.  count: " + callback.getResult().getTotalResults());
-            RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
-            processNextCommit();
+            if (mCommits != null && mCommits.size() > 0) {
+                Log.d(TAG, "processing commits.  count: " + callback.getResult().getTotalResults());
+                RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
+                processNextCommit();
+            } else {
+                RxBus.getInstance().post(new Sync(forceWalletUpdate ? States.COMPLETED : States.COMPLETED_NO_UPDATES));
+            }
         } else {
-                Log.e(TAG, "get commits failed.  reasonCode: " + callback.getErrorCode() + ",  " + callback.getErrorMessage());
-                RxBus.getInstance().post(new Sync(States.FAILED));
+            Log.e(TAG, "get commits failed.  reasonCode: " + callback.getErrorCode() + ",  " + callback.getErrorMessage());
+            RxBus.getInstance().post(new Sync(States.FAILED));
         }
     }
 
     /**
      * process next commit
      */
-    private void processNextCommit(){
-        if(mCommits != null && mCommits.size() > 0) {
+    private void processNextCommit() {
+        if (mCommits != null && mCommits.size() > 0) {
             RxBus.getInstance().post(new Sync(States.INC_PROGRESS, mCommits.size()));
             Commit commit = mCommits.get(0);
             Log.d(TAG, "process commit: " + commit + " on thread: " + Thread.currentThread());
@@ -387,9 +408,9 @@ public final class DeviceService extends Service {
     /**
      * Apdu and Sync callbacks
      */
-    private class CustomListener extends Listener implements IListeners.SyncListener{
+    private class CustomListener extends Listener implements IListeners.SyncListener {
 
-        private CustomListener(){
+        private CustomListener() {
             super();
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
             mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
@@ -402,7 +423,7 @@ public final class DeviceService extends Service {
             Log.d(TAG, "received on sync state changed event: " + syncEvent);
             mSyncEventState = syncEvent.getState();
 
-            if (mSyncEventState == States.COMPLETED || mSyncEventState == States.FAILED) {
+            if (mSyncEventState == States.COMPLETED || mSyncEventState == States.FAILED || mSyncEventState == States.COMPLETED_NO_UPDATES) {
                 //At this time, the sync listener is no longer needed and can be unregisered.
                 //However, a listener should not unregister itself so we will leave it
                 //NotificationManager.getInstance().removeListener(mSyncListener);
@@ -446,10 +467,10 @@ public final class DeviceService extends Service {
         if (null == input) {
             return null;
         }
-            String propertiesFormat = input.replaceAll(",", "\n");
-            Properties properties = new Properties();
-            properties.load(new StringReader(propertiesFormat));
-            return properties;
+        String propertiesFormat = input.replaceAll(",", "\n");
+        Properties properties = new Properties();
+        properties.load(new StringReader(propertiesFormat));
+        return properties;
     }
 
     public String getConfigString() {
