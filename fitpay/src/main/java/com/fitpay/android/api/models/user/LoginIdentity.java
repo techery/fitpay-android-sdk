@@ -31,7 +31,7 @@ public final class LoginIdentity {
          * Creates a Builder instance that can be used to build {@link Map<>} with various configuration
          * settings. Builder follows the builder pattern, and it is typically used by first
          * invoking various configuration methods to set desired options, and finally calling
-         * {@link #create()}.
+         * {@link #build()}.
          */
         public Builder(){
         }

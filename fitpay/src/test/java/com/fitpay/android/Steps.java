@@ -19,8 +19,10 @@ import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 
+import java.security.Security;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -46,6 +48,8 @@ public class Steps {
     private Commit currentCommit;
 
     protected Steps() {
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+
         userName = TestUtils.getRandomLengthString(5, 10) + "@"
                 + TestUtils.getRandomLengthString(5, 10) + "." + TestUtils.getRandomLengthString(4, 10);
         password = TestUtils.getRandomLengthNumber(4, 4);
@@ -198,7 +202,7 @@ public class Steps {
                 .setLastName(lastName)
                 .setBirthDate(currentTimestamp)
                 .setTermsVersion(termsVersion)
-                .create();
+                .build();
 
         currentUser.updateUser(patchingUser, new ApiCallback<User>() {
             @Override
@@ -256,7 +260,7 @@ public class Steps {
                 .setExpDate(expYear, expMonth)
                 .setAddress(address)
                 .setName(cardName)
-                .create();
+                .build();
 
         currentUser.createCreditCard(creditCard, new ApiCallback<CreditCard>() {
             @Override
@@ -423,7 +427,7 @@ public class Steps {
 
         CreditCard creditCard = new CreditCard.Builder()
                 .setAddress(address)
-                .create();
+                .build();
 
         currentCard.updateCard(creditCard, new ApiCallback<CreditCard>() {
             @Override
@@ -677,7 +681,7 @@ public class Steps {
                 .setBdAddress(bdAddress)
                 .setPairingTs(pairingTs)
                 .setSecureElementId(secureElementId)
-                .create();
+                .build();
         final String[] errors = { "" };
         final int[] errorCodes = {-1};
         currentUser.createDevice(newDevice, new ApiCallback<Device>() {
@@ -695,7 +699,7 @@ public class Steps {
             }
         });
         latch.await(TIMEOUT, TimeUnit.SECONDS);
-        assertEquals("create device had an error.  (Message: " + errors[0] + ")", -1, errorCodes[0]);
+        assertEquals("build device had an error.  (Message: " + errors[0] + ")", -1, errorCodes[0]);
         Assert.assertNotNull(currentDevice);
         Assert.assertEquals(manufacturerName, currentDevice.getManufacturerName());
         Assert.assertEquals(deviceName, currentDevice.getDeviceName());
@@ -774,7 +778,7 @@ public class Steps {
         Device newDevice = new Device.Builder()
                 .setFirmwareRevision(firmwareRevision)
                 .setSoftwareRevision(softwareRevision)
-                .create();
+                .build();
 
         currentDevice.updateDevice(newDevice, new ApiCallback<Device>() {
             @Override
@@ -919,31 +923,6 @@ public class Steps {
         final boolean[] isRequestSuccess = {false};
 
         currentCommit.self(new ApiCallback<Commit>() {
-            @Override
-            public void onSuccess(Commit result) {
-                isRequestSuccess[0] = true;
-                currentCommit = result;
-                latch.countDown();
-            }
-
-            @Override
-            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                latch.countDown();
-            }
-        });
-
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Assert.assertTrue(isRequestSuccess[0]);
-        Assert.assertNotNull(currentCommit);
-    }
-
-    public void previousCommit() throws InterruptedException {
-        Assert.assertNotNull(currentCommit);
-
-        final CountDownLatch latch = new CountDownLatch(1);
-        final boolean[] isRequestSuccess = {false};
-
-        currentCommit.getPreviousCommit(new ApiCallback<Commit>() {
             @Override
             public void onSuccess(Commit result) {
                 isRequestSuccess[0] = true;

@@ -4,7 +4,7 @@ import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
-import com.fitpay.android.callback.ResultProvidingCallback;
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 
 import org.junit.After;
 import org.junit.Before;
@@ -57,7 +57,7 @@ public class DeviceTest2 extends TestActions {
     public void testCanAddDevice() throws Exception {
         Device device = getTestDevice();
 
-       Device createdDevice = createDevice(user, device);
+        Device createdDevice = createDevice(user, device);
 
         assertNotNull("device", createdDevice);
         assertNotNull("device id", createdDevice.getDeviceIdentifier());
@@ -112,6 +112,25 @@ public class DeviceTest2 extends TestActions {
         assertEquals("device id", createdDevice.getDeviceIdentifier(), retrievedDevice.getDeviceIdentifier());
 
     }
+    @Test
+    public void testCanGetDeviceById() throws Exception {
+        Device device = getTestDevice();
+
+        Device createdDevice = createDevice(user, device);
+
+        assertNotNull("device", createdDevice);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        ResultProvidingCallback<Device> callback = new ResultProvidingCallback<>(latch);
+        user.getDevice(createdDevice.getDeviceIdentifier(), callback);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Device retrievedDevice = callback.getResult();
+
+        assertNotNull("device should have been retrieved", retrievedDevice);
+        assertEquals("device id", createdDevice.getDeviceIdentifier(), retrievedDevice.getDeviceIdentifier());
+
+    }
+
 
     @Test
     public void testCanDevicesWhenOnlyOneInCollection() throws Exception {

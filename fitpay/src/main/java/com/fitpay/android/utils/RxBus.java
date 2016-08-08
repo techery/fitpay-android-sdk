@@ -1,6 +1,11 @@
 package com.fitpay.android.utils;
 
+import android.util.Log;
+
 import com.orhanobut.logger.Logger;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import rx.Scheduler;
 import rx.Subscription;
@@ -37,11 +42,32 @@ public class RxBus {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         onNext,
-                        throwable -> Logger.e(throwable.toString())
+                        throwable -> Logger.e(throwable.toString() + ", " + getStackTrace(throwable))
                 );
     }
 
-    public void post(Object object){
+    public <T> Subscription register(final Class<T> eventClass, final Scheduler scheduler, Action1<T> onNext) {
+        return mBus
+                .asObservable()
+                .filter(event -> eventClass.isAssignableFrom(event.getClass()))
+                .map(obj -> (T) obj)
+                .subscribeOn(Schedulers.io())
+                .observeOn(scheduler)
+                .subscribe(
+                        onNext,
+                        throwable -> Logger.e(throwable.toString() + ", " + getStackTrace(throwable))
+                );
+    }
+
+    public void post(Object object) {
+        Log.d("RxBus", "post event: " + object);
         mBus.onNext(object);
+    }
+
+    private String getStackTrace(Throwable t) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        t.printStackTrace(pw);
+        return sw.toString(); // stack trace as a string
     }
 }

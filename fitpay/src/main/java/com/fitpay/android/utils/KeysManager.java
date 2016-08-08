@@ -1,5 +1,6 @@
 package com.fitpay.android.utils;
 
+
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 
@@ -8,8 +9,10 @@ import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.security.ECCKeyPair;
-import com.nimbusds.jose.crypto.bc.BouncyCastleProviderSingleton;
 
+import org.bouncycastle.jce.interfaces.ECPrivateKey;
+import org.bouncycastle.jce.interfaces.ECPublicKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.lang.annotation.Retention;
@@ -21,8 +24,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.interfaces.ECPrivateKey;
-import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -57,8 +58,14 @@ final public class KeysManager {
     public @interface KeyType {
     }
 
+    private static BouncyCastleProvider provider;
+
     static {
-        Security.addProvider(BouncyCastleProviderSingleton.getInstance());
+        try {
+            provider = new BouncyCastleProvider();
+            Security.insertProviderAt(provider, 1);
+        } catch (Exception e) {
+        }
     }
 
     static KeysManager sInstance;
@@ -79,7 +86,7 @@ final public class KeysManager {
 
     // Create the public and private keys
     private ECCKeyPair createECCKeyPair() throws Exception {
-        KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance(ALGORITHM, BouncyCastleProviderSingleton.getInstance());
+        KeyPairGenerator keyGenerator = KeyPairGenerator.getInstance(ALGORITHM, provider);
         keyGenerator.initialize(new ECGenParameterSpec(EC_CURVE), new SecureRandom());
 
         KeyPair keyPair = keyGenerator.generateKeyPair();
@@ -89,6 +96,7 @@ final public class KeysManager {
 
         ECCKeyPair eccKeyPair = new ECCKeyPair();
         eccKeyPair.setKeyId(UUID.randomUUID().toString());
+
         eccKeyPair.setPrivateKey(Hex.toHexString(privateKey.getEncoded()));
         eccKeyPair.setPublicKey(Hex.toHexString(publicKey.getEncoded()));
 
@@ -97,13 +105,13 @@ final public class KeysManager {
 
     // methods for ASN.1 encoded keys
     private PrivateKey getPrivateKey(byte[] privateKey) throws Exception {
-        KeyFactory kf = KeyFactory.getInstance(ALGORITHM, BouncyCastleProviderSingleton.getInstance());
+        KeyFactory kf = KeyFactory.getInstance(ALGORITHM, provider);
         PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(privateKey);
         return kf.generatePrivate(keySpec);
     }
 
     private PublicKey getPublicKey(byte[] publicKey) throws Exception {
-        KeyFactory kf = KeyFactory.getInstance(ALGORITHM, BouncyCastleProviderSingleton.getInstance());
+        KeyFactory kf = KeyFactory.getInstance(ALGORITHM, provider);
         X509EncodedKeySpec keySpec = new X509EncodedKeySpec(publicKey);
         return kf.generatePublic(keySpec);
     }
@@ -113,7 +121,7 @@ final public class KeysManager {
         ECCKeyPair keyPair = getPairForType(type);
         SecretKey secretKey = keyPair.getSecretKey();
 
-        if(secretKey == null) {
+        if (secretKey == null) {
             secretKey = createSecretKey(keyPair.getPrivateKey(), keyPair.getServerPublicKey());
             keyPair.setSecretKey(secretKey);
         }
@@ -127,7 +135,14 @@ final public class KeysManager {
             PrivateKey privateKey = getPrivateKey(Hex.decode(privateKeyStr));
             PublicKey publicKey = getPublicKey(Hex.decode(publicKeyStr));
 
-            KeyAgreement keyAgreement = KeyAgreement.getInstance(ALGORITHM, BouncyCastleProviderSingleton.getInstance());
+            KeyAgreement keyAgreement = null;
+            try {
+                keyAgreement = KeyAgreement.getInstance(ALGORITHM, provider);
+            } catch (Exception e) {
+                //hack for unit tests
+                keyAgreement = KeyAgreement.getInstance(ALGORITHM);
+            }
+
             keyAgreement.init(privateKey);
             keyAgreement.doPhase(publicKey, true);
 
@@ -150,8 +165,8 @@ final public class KeysManager {
         return keyPair;
     }
 
-    public void removePairForType(@KeyType int type){
-        if(mKeysMap.containsKey(type)){
+    public void removePairForType(@KeyType int type) {
+        if (mKeysMap.containsKey(type)) {
             mKeysMap.remove(type);
         }
     }
@@ -168,7 +183,7 @@ final public class KeysManager {
                     result.setPrivateKey(mKeysMap.get(type).getPrivateKey());
                     mKeysMap.put(type, result);
 
-                    if(successRunnable != null) {
+                    if (successRunnable != null) {
                         successRunnable.run();
                     }
                 }

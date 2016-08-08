@@ -1,35 +1,56 @@
 package com.fitpay.android.api.models.apdu;
 
-import com.fitpay.android.paymentdevice.interfaces.IApduMessage;
-
-import java.util.Arrays;
-
 /**
  * Single apdu command execution result
  */
 public class ApduCommandResult {
 
     private String commandId;
-    private byte[] responseCode;
-    private byte[] responseData;
+    private String responseCode;
+    private String responseData;
 
-    public ApduCommandResult(String commandId, IApduMessage message) {
-        this.commandId = commandId;
-
-        byte[] data = message.getData();
-        responseCode = Arrays.copyOfRange(data, data.length - 2, data.length);
-        responseData = data;
-    }
+    private ApduCommandResult() {}
 
     public String getCommandId() {
         return commandId;
     }
 
-    public byte[] getResponseData() {
+    public String getResponseData() {
         return responseData;
     }
 
-    public byte[] getResponseCode() {
+    public String getResponseCode() {
         return responseCode;
+    }
+
+    public static class Builder {
+        private String commandId;
+        private String responseCode;
+        private String responseData;
+
+        public Builder() {}
+
+        public ApduCommandResult build() {
+            ApduCommandResult result = new ApduCommandResult();
+            result.commandId = this.commandId;
+            result.responseCode = this.responseCode;
+            result.responseData = this.responseData;
+            return result;
+        }
+
+        public Builder setCommandId(String commandId) {
+            this.commandId = commandId;
+            return this;
+        }
+
+        public Builder setResponseCode(String responseCode) {
+            this.responseCode = responseCode;
+            return this;
+        }
+
+        public Builder setResponseData(String responseData) {
+            this.responseData = responseData;
+            return this;
+        }
     }
 }

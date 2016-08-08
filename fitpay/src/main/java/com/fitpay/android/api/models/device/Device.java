@@ -43,6 +43,10 @@ public final class Device extends DeviceModel implements Parcelable {
         makeGetCall(USER, null, User.class, callback);
     }
 
+    public boolean canGetUser() {
+        return hasLink(USER);
+    }
+
     /**
      * Update the details of an existing device.
      *
@@ -52,6 +56,11 @@ public final class Device extends DeviceModel implements Parcelable {
         makePatchCall(device, false, Device.class, callback);
     }
 
+    public boolean canUpdate() {
+        return hasLink(SELF);
+    }
+
+
     /**
      * Delete a single device.
      *
@@ -59,6 +68,10 @@ public final class Device extends DeviceModel implements Parcelable {
      */
     public void deleteDevice(@NonNull ApiCallback<Void> callback){
         makeDeleteCall(callback);
+    }
+
+    public boolean canDelete() {
+        return hasLink(SELF);
     }
 
     /**
@@ -78,6 +91,11 @@ public final class Device extends DeviceModel implements Parcelable {
         }
         makeGetCall(COMMITS, queryMap, Collections.CommitsCollection.class, callback);
     }
+
+    public boolean canGetCommits() {
+        return hasLink(COMMITS);
+    }
+
 
     /**
      * Retrieves a collection of events that should be committed to this device.
@@ -114,24 +132,21 @@ public final class Device extends DeviceModel implements Parcelable {
     }
 
     /**
-     * Retrieves all events that should be committed to this device.
-     * Limit: 10
-     * Offset: 0
+     * Retrieves 'all' events that should be committed to this device.
+     * All is really limited to 100.
+     *
      *
      * @param lastCommitId last commit id
      * @param callback     result callback
      */
     public void getAllCommits(String lastCommitId, final ApiCallback<Collections.CommitsCollection> callback) {
-        final Collections.CommitsCollection allCommits = new Collections.CommitsCollection();
-        getCommits(lastCommitId, new ApiCallback<Collections.CommitsCollection>() {
+        getCommits(100, 0, lastCommitId, new ApiCallback<Collections.CommitsCollection>() {
             @Override
             public void onSuccess(Collections.CommitsCollection result) {
-                allCommits.addCollection(result.getResults());
-
                 if(result.hasNext()){
-                    getCommits(result.getLimit(), result.getOffset(), this);
+                    getCommits(result.getTotalResults(), 0, lastCommitId, this);
                 } else {
-                    callback.onSuccess(allCommits);
+                    callback.onSuccess(result);
                 }
             }
 
@@ -163,7 +178,7 @@ public final class Device extends DeviceModel implements Parcelable {
          * Creates a Builder instance that can be used to build Gson with various configuration
          * settings. Builder follows the builder pattern, and it is typically used by first
          * invoking various configuration methods to set desired options, and finally calling
-         * {@link #create()}.
+         * {@link #build()}.
          */
         public Builder(){
         }
@@ -174,7 +189,7 @@ public final class Device extends DeviceModel implements Parcelable {
          *
          * @return an instance of {@link CreditCard} configured with the options currently set in this builder
          */
-        public Device create(){
+        public Device build(){
             Device device = new Device();
             device.deviceType = deviceType;
             device.manufacturerName = manufacturerName;

@@ -1,8 +1,11 @@
 package com.fitpay.android.api.models.apdu;
 
 import com.fitpay.android.api.enums.ResponseState;
+import com.fitpay.android.paymentdevice.constants.ApduConstants;
+import com.fitpay.android.utils.Hex;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -16,9 +19,12 @@ public final class ApduExecutionResult {
     private long executedTsEpoch;
     private int executedDuration;
     private List<ApduCommandResult> apduResponses;
+    private String errorReason;
+    private Integer errorCode;
 
     public ApduExecutionResult(String packageId){
         this.packageId = packageId;
+        this.setExecutedTsEpoch(System.currentTimeMillis());
         apduResponses = new ArrayList<>();
     }
 
@@ -51,11 +57,75 @@ public final class ApduExecutionResult {
         this.executedDuration = executedDuration;
     }
 
+    public void setExecutedDurationTilNow() {
+        this.executedDuration = (int) ((System.currentTimeMillis() - getExecutedTsEpoch()) / 1000);
+    }
+
     public List<ApduCommandResult> getResponses() {
         return apduResponses;
     }
 
-    public void addResponse(ApduCommandResult response){
+    public void addResponse(ApduCommandResult response) {
         apduResponses.add(response);
+        if (null == state || ResponseState.PROCESSED == state) {
+            if (isSuccessResponseCode(response.getResponseCode())) {
+                state = ResponseState.PROCESSED;
+            } else {
+                state = ResponseState.FAILED;
+            }
+        }
+    }
+
+    public String getErrorReason() {
+        return errorReason;
+    }
+
+    public void setErrorReason(String errorReason) {
+        this.errorReason = errorReason;
+    }
+
+    public Integer getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(int errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public void deriveState() {
+        if (getResponses().size() == 0) {
+            state = ResponseState.ERROR;
+        } else {
+            state = ResponseState.PROCESSED;
+
+            for (ApduCommandResult response : getResponses()) {
+                if (!isSuccessResponseCode(response.getResponseCode())) {
+                    state = ResponseState.FAILED;
+                    break;
+                }
+            }
+        }
+    }
+
+    protected boolean isSuccessResponseCode(String responseCode) {
+        byte[] code = Hex.hexStringToBytes(responseCode);
+        for (int i = 0; i < ApduConstants.SUCCESS_RESULTS.length; i++) {
+            if (Arrays.equals(ApduConstants.SUCCESS_RESULTS[i], code)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        return "ApduExecutionResult{" +
+                "state='" + state + '\'' +
+                ", packageId='" + packageId + '\'' +
+                ", numberOfApduCommandResults='" + apduResponses.size() + '\'' +
+                ", errorReason='" + errorReason + '\'' +
+                ", executedDuration=" + executedDuration +
+                ", executedTsEpoch=" + executedTsEpoch +
+                '}';
     }
 }
