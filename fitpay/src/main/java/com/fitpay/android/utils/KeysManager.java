@@ -62,6 +62,7 @@ final public class KeysManager {
 
     static {
         try {
+            Security.removeProvider("BC");
             provider = new BouncyCastleProvider();
             Security.insertProviderAt(provider, 1);
         } catch (Exception e) {
