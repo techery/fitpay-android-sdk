@@ -9,6 +9,7 @@ import com.fitpay.android.api.models.apdu.ApduCommand;
 import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
+import com.fitpay.android.api.models.card.TopOfWallet;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.CreditCardCommit;
 import com.fitpay.android.api.models.device.Device;
@@ -25,6 +26,7 @@ import com.fitpay.android.utils.RxBus;
 import com.google.gson.Gson;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
@@ -298,6 +300,10 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 .observeOn(Schedulers.newThread())
                 .subscribe(getApduObserver(apduPackage, apduExecutionResult, 0));
 
+    }
+
+    @Override
+    public void executeTopOfWallet(List<TopOfWallet> towPackage) {
     }
 
     private Observer<Boolean> getApduObserver(final ApduPackage apduPackage, final ApduExecutionResult apduExecutionResult, int apduCommandNumber) {

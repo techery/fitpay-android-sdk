@@ -7,6 +7,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.fitpay.android.api.models.apdu.ApduPackage;
+import com.fitpay.android.api.models.card.TopOfWallet;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
@@ -15,6 +16,8 @@ import com.fitpay.android.paymentdevice.impl.PaymentDeviceConnector;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
 import com.orhanobut.logger.Logger;
+
+import java.util.List;
 
 /**
  * BLE implementation
@@ -147,6 +150,10 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
         Log.d(TAG, "initiate executeApduPackage request");
         GattOperation sendApduOperation = new GattApduOperation(apduPackage);
         mGattManager.queue(sendApduOperation);
+    }
+
+    @Override
+    public void executeTopOfWallet(List<TopOfWallet> towPackage) {
     }
 
     @Override

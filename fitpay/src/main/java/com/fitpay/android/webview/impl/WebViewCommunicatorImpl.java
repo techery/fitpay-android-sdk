@@ -170,7 +170,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         NotificationManager.getInstance().addListener(commitListenerForAppCallbacks);
 
         try {
-            deviceService.syncData(device);
+            deviceService.syncData(user, device);
         } catch (IllegalArgumentException ex) {
             SyncResponseModel response = new SyncResponseModel.Builder()
                     .status(RESPONSE_FAILURE)
@@ -297,32 +297,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             @Override
             public Boolean call(Boolean aBoolean) {
                 Log.d(TAG, "initiate sync");
-                deviceService.syncData(device);
+                deviceService.syncData(user, device);
                 return aBoolean;
             }
         });
-    }
-
-    private Observer<Boolean> getSyncObserver(final String callbackId) {
-
-        return new Observer<Boolean>() {
-
-            @Override
-            public void onCompleted() {
-                Log.d(TAG, "sync observer on completed");
-                //TODO ?  either here of in onNext process response to callback
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                Log.d(TAG, "sync observer error: " + e.getMessage());
-            }
-
-            @Override
-            public void onNext(Boolean bool) {
-                Log.d(TAG, "sync observer onNext: " + bool);
-            }
-        };
     }
 
     private Observable<Boolean> getDeviceObservable(final String deviceId) {

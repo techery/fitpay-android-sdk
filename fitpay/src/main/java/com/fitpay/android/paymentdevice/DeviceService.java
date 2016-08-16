@@ -11,6 +11,7 @@ import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
@@ -61,13 +62,12 @@ public final class DeviceService extends Service {
 
     private String configParams;
 
-
-    private
     @Sync.State
-    Integer mSyncEventState;
+    private Integer mSyncEventState;
 
     private List<Commit> mCommits;
     private Device device;
+    private User user;
 
     private CustomListener mSyncListener = new CustomListener();
 
@@ -293,13 +293,15 @@ public final class DeviceService extends Service {
      * <p>
      * This is an asynchronous operation.
      *
+     * @param user   current user with hypermedia data
      * @param device device object with hypermedia data
      */
-    public void syncData(@NonNull Device device) {
+    public void syncData(@NonNull User user, @NonNull Device device) {
 
         Log.d(TAG, "starting device sync.  device: " + device.getDeviceIdentifier());
         Log.d(TAG, "sync initiated from thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
 
+        this.user = user;
         this.device = device;
 
         if (paymentDeviceConnector == null) {
@@ -319,6 +321,9 @@ public final class DeviceService extends Service {
             Logger.w("Sync already in progress. Try again later");
             throw new IllegalStateException("Another sync is currently active.  Please try again later");
         }
+
+        paymentDeviceConnector.setUser(user);
+
         executor.execute(new Runnable() {
             @Override
             public void run() {
