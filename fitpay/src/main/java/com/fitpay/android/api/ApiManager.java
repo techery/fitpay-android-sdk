@@ -41,6 +41,7 @@ public class ApiManager {
     public static final String PROPERTY_TIMEOUT = "timeout";
     public static final String PROPERTY_REDIRECT_URI = "redirectUri";
 
+
     private static Map<String, String> config = new HashMap<>();
 
     static {
