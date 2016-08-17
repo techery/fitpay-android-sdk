@@ -21,8 +21,10 @@ import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
+import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.webview.WebViewCommunicator;
 import com.fitpay.android.webview.callback.OnTaskCompleted;
+import com.fitpay.android.webview.events.UserReceived;
 import com.google.gson.Gson;
 
 import org.json.JSONException;
@@ -257,6 +259,9 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             @Override
             public void onSuccess(User result) {
                 WebViewCommunicatorImpl.this.user = result;
+
+                RxBus.getInstance().post(new UserReceived(user.getUsername()));
+
                 result.getDevice(deviceId, new ApiCallback<Device>() {
                     @Override
                     public void onSuccess(Device result) {
