@@ -279,7 +279,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
                     @Override
                     public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                        Log.d(TAG, "getDevice failed");
+                        Log.d(TAG, "getDevice failed " + errorMessage);
                         //TODO handle failure and report back to WVC
                     }
                 });
@@ -288,7 +288,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                Log.d(TAG, "getDevice failed");
+                Log.d(TAG, "getUser failed " + errorMessage);
                 //TODO handle failure and report back to WVC
             }
         });

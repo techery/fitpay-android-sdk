@@ -7,8 +7,6 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.fitpay.android.api.callbacks.ResultProvidingCallback;
-import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
@@ -32,12 +30,13 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.alexrs.prefs.lib.Prefs;
+import rx.schedulers.Schedulers;
 
 import static java.lang.Class.forName;
 
@@ -354,44 +353,42 @@ public final class DeviceService extends Service {
         /*
          * In case of another account force update our wallet
          */
-        boolean forceWalletUpdate = false;
+        final AtomicBoolean forceWalletUpdate = new AtomicBoolean(false);
         final String prevDeviceId = Prefs.with(this).getString(SYNC_PROPERTY_DEVICE_ID, null);
         if (StringUtils.isEmpty(prevDeviceId) || !prevDeviceId.equals(devId)) {
             Prefs.with(this).save(SYNC_PROPERTY_DEVICE_ID, devId);
-            forceWalletUpdate = true;
+            forceWalletUpdate.set(true);
         }
 
         DevicePreferenceData deviceData = DevicePreferenceData.load(this, devId);
-        /*
-         * getAllCommits callback will revert to UI thread.   To continue the process on
-         * background thread, the callback blocks, waits for a result, and provides it back to the
-         * current thread of execution
-         */
-        final CountDownLatch latch = new CountDownLatch(1);
-        ResultProvidingCallback<Collections.CommitsCollection> callback = new ResultProvidingCallback<>(latch);
-        device.getAllCommits(deviceData.getLastCommitId(), callback);
 
-        //TODO make callback timeout configurable?
-        try {
-            latch.await(5000, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            //party on
-        }
-        if (null != callback.getResult()) {
+        device.getAllCommits(deviceData.getLastCommitId())
+                .timeout(15000, TimeUnit.MILLISECONDS)
+                .subscribeOn(Schedulers.from(executor))
+                .observeOn(Schedulers.from(executor))
+                .subscribe(
+                        commitsCollection -> {
+                            mCommits = commitsCollection.getResults();
 
-            mCommits = callback.getResult().getResults();
+                            if (mCommits != null && mCommits.size() > 0) {
+                                Log.d(TAG, "processing commits.  count: " + mCommits.size());
+                                RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
+                                processNextCommit();
+                            } else {
+                                RxBus.getInstance().post(new Sync(forceWalletUpdate.get() ? States.COMPLETED : States.COMPLETED_NO_UPDATES));
+                            }
+                        },
+                        throwable -> {
+                            if (throwable instanceof DeviceOperationException) {
+                                DeviceOperationException doe = (DeviceOperationException) throwable;
+                                Log.e(TAG, "get commits failed.  reasonCode: " + doe.getErrorCode() + ",  " + doe.getMessage());
+                            } else {
+                                Log.e(TAG, "get commits failed. " + throwable.getMessage());
+                            }
 
-            if (mCommits != null && mCommits.size() > 0) {
-                Log.d(TAG, "processing commits.  count: " + callback.getResult().getTotalResults());
-                RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
-                processNextCommit();
-            } else {
-                RxBus.getInstance().post(new Sync(forceWalletUpdate ? States.COMPLETED : States.COMPLETED_NO_UPDATES));
-            }
-        } else {
-            Log.e(TAG, "get commits failed.  reasonCode: " + callback.getErrorCode() + ",  " + callback.getErrorMessage());
-            RxBus.getInstance().post(new Sync(States.FAILED));
-        }
+                            RxBus.getInstance().post(new Sync(States.FAILED));
+                        });
+
     }
 
     /**
