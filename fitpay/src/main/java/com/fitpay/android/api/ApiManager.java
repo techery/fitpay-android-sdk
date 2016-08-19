@@ -378,12 +378,8 @@ public class ApiManager {
     }
 
     public <T> void get(final String url, final Map<String, Object> queryMap, final Type type, final ApiCallback<T> callback) {
-        Call<JsonElement> getDataCall = null;
-        if (queryMap != null) {
-            getDataCall = getClient().get(url, queryMap);
-        } else {
-            getDataCall = getClient().get(url);
-        }
+        Call<JsonElement> getDataCall = queryMap != null ?
+                getClient().get(url, queryMap) : getClient().get(url);
         makeCall(getDataCall, type, callback);
     }
 
@@ -391,6 +387,12 @@ public class ApiManager {
         Call<JsonElement> postDataCall = data != null ?
                 getClient().post(url, data) : getClient().post(url);
         makeCall(postDataCall, type, callback);
+    }
+
+    public <U> void post(String url, final U data, final ApiCallback<Void> callback) {
+        Call<Void> postDataCall = data != null ?
+                getClient().postNoResponse(url, data) : getClient().postNoResponse(url);
+        postDataCall.enqueue(new CallbackWrapper<>(callback));
     }
 
     public <T, U> void patch(final String url, final U data, final boolean encrypt, final Type type, final ApiCallback<T> callback) {
@@ -422,24 +424,14 @@ public class ApiManager {
         makeCall(patchDataCall, type, callback);
     }
 
-//    public <T, U> void put(final String url, final Map<String, Object> queryMap, final Type type, final ApiCallback<T> callback) {
-//        Call<JsonElement> putDataCall = null;
-//        if (queryMap != null) {
-//            putDataCall = getClient().put(url, queryMap);
-//        } else {
-//            putDataCall = getClient().put(url);
-//        }
-//        makeCall(putDataCall, type, callback);
-//    }
+    public <T> void put(final String url, final T data, final Type type, final ApiCallback<T> callback) {
+        Call<JsonElement> putDataCall = getClient().put(url, data);
+        makeCall(putDataCall, type, callback);
+    }
 
     public void delete(String url, final ApiCallback<Void> callback) {
         Call<Void> deleteDataCall = getClient().delete(url);
         deleteDataCall.enqueue(new CallbackWrapper<>(callback));
     }
 
-    public <U> void post(String url, final U data, final ApiCallback<Void> callback) {
-        Call<Void> postDataCall = data != null ?
-                getClient().postNoResponse(url, data) : getClient().postNoResponse(url);
-        postDataCall.enqueue(new CallbackWrapper<>(callback));
-    }
 }

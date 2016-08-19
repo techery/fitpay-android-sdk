@@ -11,7 +11,6 @@ import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.card.TopOfWallet;
-import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.CommitHandler;
@@ -33,7 +32,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import rx.Observable;
-import rx.Subscriber;
 
 /**
  * Base model for wearable payment device
@@ -178,54 +176,23 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         this.user = user;
     }
 
-    private void getCards(final User user, final int limit, final int start, final Subscriber<? super List<TopOfWallet>> subscriber) {
-        Observable.create(new Observable.OnSubscribe<List<TopOfWallet>>() {
-            @Override
-            public void call(final Subscriber<? super List<TopOfWallet>> sbs) {
-                user.getCreditCards(limit, start, new ApiCallback<Collections.CreditCardCollection>() {
-                    @Override
-                    public void onSuccess(Collections.CreditCardCollection result) {
-                        List<TopOfWallet> tow = new ArrayList<>();
-                        if (result != null && result.getResults() != null) {
-                            for (CreditCard card : result.getResults()) {
-                                tow.add(card.getTOW());
-                            }
-                        }
-                        sbs.onNext(tow);
-
-                        if (result.hasNext()) {
-                            getCards(user, limit, start + limit, subscriber);
-                        } else {
-                            subscriber.onCompleted();
-                        }
-
-                        sbs.onCompleted();
-                    }
-
-                    @Override
-                    public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                        sbs.onError(new Exception(errorMessage));
-                    }
-                });
-            }
-        }).subscribe(subscriber::onNext);
-    }
-
     protected void getTopOfWalletData() {
-        final List<TopOfWallet> towList = new ArrayList<>();
-
-        Observable.create(new Observable.OnSubscribe<List<TopOfWallet>>() {
-            @Override
-            public void call(Subscriber<? super List<TopOfWallet>> subscriber) {
-                getCards(user, 1, 0, subscriber);
+        user.getAllCreditCards().flatMap(creditCardCollection -> {
+            List<TopOfWallet> tow = new ArrayList<>();
+            if (creditCardCollection.getResults() != null) {
+                for (CreditCard card : creditCardCollection.getResults()) {
+                    tow.add(card.getTOW());
+                }
             }
+            return Observable.just(tow);
         }).subscribe(
-                towList::addAll,
-                throwable -> Log.i(TAG, "Something goes wrong"),
-                () -> {
-                    executeTopOfWallet(towList);
-                    RxBus.getInstance().post(towList);
-                });
+                topOfWallets -> {
+                    if (topOfWallets.size() > 0) {
+                        executeTopOfWallet(topOfWallets);
+                        RxBus.getInstance().post(topOfWallets);
+                    }
+                },
+                throwable -> Log.i(TAG, "Something goes wrong"));
     }
 
     private class ApduCommitHandler implements CommitHandler {

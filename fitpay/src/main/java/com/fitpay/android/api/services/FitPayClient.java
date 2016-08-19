@@ -1,8 +1,8 @@
 package com.fitpay.android.api.services;
 
 import com.fitpay.android.api.models.Relationship;
-import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.security.ECCKeyPair;
+import com.fitpay.android.api.models.user.User;
 import com.google.gson.JsonElement;
 
 import java.util.Map;
@@ -107,7 +107,7 @@ public interface FitPayClient {
     Call<Void> postNoResponse(@Url String url);
 
     @PUT
-    Call<JsonElement> put(@Url String url, @QueryMap Map<String, Object> queryMap);
+    Call<JsonElement> put(@Url String url, @Body Object data);
 
     @PATCH
     Call<JsonElement> patch(@Url String url, @Body JsonElement data);
