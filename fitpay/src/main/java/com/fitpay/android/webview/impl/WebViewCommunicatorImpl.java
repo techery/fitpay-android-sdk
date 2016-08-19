@@ -20,6 +20,7 @@ import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.utils.Listener;
+import com.fitpay.android.utils.MessagesManager;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.webview.WebViewCommunicator;
@@ -241,20 +242,15 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         Log.d(TAG, "sending message to webview: " + responseMessage);
 
-        String url = "javascript:window.RtmBridge.resolve('" + responseMessage + "');";
+        final String url = "javascript:window.RtmBridge.resolve('" + responseMessage + "');";
         Log.d(TAG, "message url: " + url);
 
-        WebView w = (WebView) activity.findViewById(wId);
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                w.loadUrl(url);
-            }
-        });
+        final WebView w = (WebView) activity.findViewById(wId);
+        activity.runOnUiThread(() -> w.loadUrl(url));
     }
 
 
-    private void getUserAndDevice(String deviceId, String callbackId) {
+    private void getUserAndDevice(final String deviceId, final String callbackId) {
         ApiManager.getInstance().getUser(new ApiCallback<User>() {
             @Override
             public void onSuccess(User result) {
@@ -266,6 +262,25 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     @Override
                     public void onSuccess(Device result) {
                         WebViewCommunicatorImpl.this.device = result;
+
+                        String token = MessagesManager.getInstance().getToken();
+                        String deviceToken = device.getNotificationToken();
+
+                        if (deviceToken == null || !deviceToken.equals(token)) {
+                            Device updatedDevice = new Device.Builder().setNotificaitonToken(token).build();
+                            device.updateDevice(updatedDevice, new ApiCallback<Device>() {
+                                @Override
+                                public void onSuccess(Device result) {
+                                    WebViewCommunicatorImpl.this.device = result;
+                                }
+
+                                @Override
+                                public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                                    Log.e(TAG, errorMessage);
+                                }
+                            });
+                        }
+
                         AckResponseModel stubResponse = new AckResponseModel.Builder()
                                 .status(USER_DATA_STUB_RESPONSE)
                                 .build();

@@ -3,9 +3,9 @@ package com.fitpay.android.api.models;
 
 import android.support.annotation.NonNull;
 
+import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
-import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.utils.StringUtils;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -32,7 +32,7 @@ public class BaseModel {
     }
 
     private <T> String getLink(String key, ApiCallback<T> callback) {
-        if (null== links) {
+        if (null == links) {
             callback.onFailure(ResultCode.NOT_FOUND, "API endpoint is not available");
             return null;
         }
@@ -85,6 +85,13 @@ public class BaseModel {
         }
     }
 
+    protected <T> void makePutCall(T data, Type type, ApiCallback<T> callback) {
+        String url = getLink(SELF, callback);
+        if (url != null) {
+            ApiManager.getInstance().put(url, data, type, callback);
+        }
+    }
+
     protected void makeDeleteCall(ApiCallback<Void> callback) {
         String url = getLink(SELF, callback);
         if (url != null) {
@@ -92,7 +99,7 @@ public class BaseModel {
         }
     }
 
-    protected boolean hasLink(String key){
+    protected boolean hasLink(String key) {
         return links.getLink(key) != null;
     }
 

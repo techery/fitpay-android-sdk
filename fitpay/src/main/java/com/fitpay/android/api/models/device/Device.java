@@ -60,10 +60,18 @@ public final class Device extends DeviceModel implements Parcelable {
         makePatchCall(device, false, Device.class, callback);
     }
 
+    /**
+     * Add values to existing device.
+     *
+     * @param callback result callback
+     */
+    public void addValues(@NonNull Device device, @NonNull ApiCallback<Device> callback) {
+        makePutCall(device, Device.class, callback);
+    }
+
     public boolean canUpdate() {
         return hasLink(SELF);
     }
-
 
     /**
      * Delete a single device.
@@ -214,6 +222,7 @@ public final class Device extends DeviceModel implements Parcelable {
         private String bdAddress;
         private String secureElementId;
         private String pairingTs;
+        private String notificationToken;
 
         /**
          * Creates a Builder instance that can be used to build Gson with various configuration
@@ -246,6 +255,7 @@ public final class Device extends DeviceModel implements Parcelable {
             device.bdAddress = bdAddress;
             device.secureElement = new SecureElement(secureElementId);
             device.pairingTs = pairingTs;
+            device.notificationToken = notificationToken;
             return device;
         }
 
@@ -402,6 +412,17 @@ public final class Device extends DeviceModel implements Parcelable {
             this.pairingTs = TimestampUtils.getISO8601StringForTime(pairingTs);
             return this;
         }
+
+        /**
+         * Set notification token
+         *
+         * @param notificationToken The hardware revision for the hardware within the device.
+         * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
+         */
+        public Builder setNotificaitonToken(String notificationToken) {
+            this.notificationToken = notificationToken;
+            return this;
+        }
     }
 
     @Override
@@ -426,6 +447,7 @@ public final class Device extends DeviceModel implements Parcelable {
         dest.writeString(this.hostDeviceId);
         dest.writeList(this.cardRelationships);
         dest.writeParcelable(this.links, flags);
+        dest.writeString(this.notificationToken);
     }
 
     public Device() {
@@ -448,6 +470,7 @@ public final class Device extends DeviceModel implements Parcelable {
         this.cardRelationships = new ArrayList<>();
         in.readList(this.cardRelationships, CreditCardRef.class.getClassLoader());
         this.links = in.readParcelable(Links.class.getClassLoader());
+        this.notificationToken = in.readString();
     }
 
     public static final Parcelable.Creator<Device> CREATOR = new Parcelable.Creator<Device>() {

@@ -63,6 +63,11 @@ abstract class DeviceModel extends PaymentDevice {
 
     protected String hostDeviceId;
 
+    /**
+     * notification token. (Optional)
+     */
+    protected String notificationToken;
+
     protected DeviceModel() {
     }
 
@@ -116,5 +121,9 @@ abstract class DeviceModel extends PaymentDevice {
 
     public String getHostDeviceId() {
         return hostDeviceId;
+    }
+
+    public String getNotificationToken() {
+        return notificationToken;
     }
 }
