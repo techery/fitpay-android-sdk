@@ -12,6 +12,7 @@ import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
+import com.fitpay.android.paymentdevice.enums.AppMessage;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSkipped;
@@ -418,6 +419,7 @@ public final class DeviceService extends Service {
             mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
             mCommands.put(CommitFailed.class, data -> onCommitFailed((CommitFailed) data));
             mCommands.put(CommitSkipped.class, data -> onCommitSkipped((CommitSkipped) data));
+            mCommands.put(AppMessage.class, data -> syncData(user, device));
         }
 
         @Override

@@ -20,7 +20,6 @@ import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.utils.Listener;
-import com.fitpay.android.utils.MessagesManager;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.webview.WebViewCommunicator;
@@ -263,7 +262,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     public void onSuccess(Device result) {
                         WebViewCommunicatorImpl.this.device = result;
 
-                        String token = MessagesManager.getInstance().getToken();
+                        String token = ApiManager.getInstance().getPushToken();
                         String deviceToken = device.getNotificationToken();
 
                         if (deviceToken == null || !deviceToken.equals(token)) {

@@ -54,6 +54,8 @@ public class ApiManager {
     private UserService userService;
     private AuthService authService;
 
+    private String pushToken;
+
     private ApiManager() {
         if (null == getBaseUrl()) {
             throw new IllegalStateException("The ApiManager must be initialized prior to use.  API base url required");
@@ -74,6 +76,14 @@ public class ApiManager {
         }
 
         return sInstance;
+    }
+
+    public String getPushToken() {
+        return pushToken;
+    }
+
+    public void setPushToken(String pushToken) {
+        this.pushToken = pushToken;
     }
 
     public static void init(Map<String, String> props) {
