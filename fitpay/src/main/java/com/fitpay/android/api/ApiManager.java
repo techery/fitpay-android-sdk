@@ -54,7 +54,7 @@ public class ApiManager {
     private UserService userService;
     private AuthService authService;
 
-    private String pushToken;
+    private static String sPushToken;
 
     private ApiManager() {
         if (null == getBaseUrl()) {
@@ -78,12 +78,12 @@ public class ApiManager {
         return sInstance;
     }
 
-    public String getPushToken() {
-        return pushToken;
+    public static String getPushToken() {
+        return sPushToken;
     }
 
-    public void setPushToken(String pushToken) {
-        this.pushToken = pushToken;
+    public static void setPushToken(String pushToken) {
+        sPushToken = pushToken;
     }
 
     public static void init(Map<String, String> props) {

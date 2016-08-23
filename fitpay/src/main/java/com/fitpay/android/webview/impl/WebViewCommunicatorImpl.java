@@ -262,7 +262,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     public void onSuccess(Device result) {
                         WebViewCommunicatorImpl.this.device = result;
 
-                        String token = ApiManager.getInstance().getPushToken();
+                        String token = ApiManager.getPushToken();
                         String deviceToken = device.getNotificationToken();
 
                         if (deviceToken == null || !deviceToken.equals(token)) {
