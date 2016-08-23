@@ -65,8 +65,8 @@ public final class Device extends DeviceModel implements Parcelable {
      *
      * @param callback result callback
      */
-    public void addValues(@NonNull Device device, @NonNull ApiCallback<Device> callback) {
-        makePutCall(device, Device.class, callback);
+    public void updateToken(@NonNull Device device, boolean add, @NonNull ApiCallback<Device> callback) {
+        makePatchCall(device, add, false, Device.class, callback);
     }
 
     public boolean canUpdate() {

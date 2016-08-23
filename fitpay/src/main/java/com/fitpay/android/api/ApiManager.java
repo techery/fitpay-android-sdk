@@ -405,13 +405,13 @@ public class ApiManager {
         postDataCall.enqueue(new CallbackWrapper<>(callback));
     }
 
-    public <T, U> void patch(final String url, final U data, final boolean encrypt, final Type type, final ApiCallback<T> callback) {
+    public <T, U> void patch(final String url, final U data, final boolean add, final boolean encrypt, final Type type, final ApiCallback<T> callback) {
         JsonArray updateData = new JsonArray();
 
         Map<String, Object> userMap = ObjectConverter.convertToSimpleMap(data);
         for (Map.Entry<String, Object> entry : userMap.entrySet()) {
             JsonObject item = new JsonObject();
-            item.addProperty("op", "replace");
+            item.addProperty("op", add ? "add" : "replace");
             item.addProperty("path", entry.getKey());
             item.addProperty("value", String.valueOf(entry.getValue()));
 

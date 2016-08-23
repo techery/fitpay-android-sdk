@@ -267,7 +267,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
                         if (deviceToken == null || !deviceToken.equals(token)) {
                             Device updatedDevice = new Device.Builder().setNotificaitonToken(token).build();
-                            device.updateDevice(updatedDevice, new ApiCallback<Device>() {
+                            device.updateToken(updatedDevice, deviceToken == null, new ApiCallback<Device>() {
                                 @Override
                                 public void onSuccess(Device result) {
                                     WebViewCommunicatorImpl.this.device = result;
