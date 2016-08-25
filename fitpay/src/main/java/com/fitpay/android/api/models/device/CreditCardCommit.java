@@ -28,7 +28,7 @@ public class CreditCardCommit {
     protected String targetDeviceId;
     protected String targetDeviceType;
     protected String externalTokenReference;
-    protected List<VerificationMethod> verificationMethods;
+//    protected List<VerificationMethod> verificationMethods;
     protected String termsAssetId;
     protected Long eligibilityExpirationEpoch;
     protected List<AssetReference> termsAssetReferences;
@@ -100,9 +100,9 @@ public class CreditCardCommit {
         return externalTokenReference;
     }
 
-    public List<VerificationMethod> getVerificationMethods() {
-        return verificationMethods;
-    }
+//    public List<VerificationMethod> getVerificationMethods() {
+//        return verificationMethods;
+//    }
 
     public Address getAddress() {
         return address;

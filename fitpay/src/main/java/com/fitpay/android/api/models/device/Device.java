@@ -65,8 +65,8 @@ public final class Device extends DeviceModel implements Parcelable {
      *
      * @param callback result callback
      */
-    public void addValues(@NonNull Device device, @NonNull ApiCallback<Device> callback) {
-        makePutCall(device, Device.class, callback);
+    public void updateToken(@NonNull Device device, boolean add, @NonNull ApiCallback<Device> callback) {
+        makePatchCall(device, add, false, Device.class, callback);
     }
 
     public boolean canUpdate() {
@@ -221,6 +221,7 @@ public final class Device extends DeviceModel implements Parcelable {
         private String licenseKey;
         private String bdAddress;
         private String secureElementId;
+        private String casd;
         private String pairingTs;
         private String notificationToken;
 
@@ -256,6 +257,7 @@ public final class Device extends DeviceModel implements Parcelable {
             device.secureElement = new SecureElement(secureElementId);
             device.pairingTs = pairingTs;
             device.notificationToken = notificationToken;
+            device.casd = casd;
             return device;
         }
 
@@ -423,6 +425,17 @@ public final class Device extends DeviceModel implements Parcelable {
             this.notificationToken = notificationToken;
             return this;
         }
+
+        /**
+         * Set CASD
+         *
+         * @param casd
+         * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
+         */
+        public Builder setCASD(String casd) {
+            this.casd = casd;
+            return this;
+        }
     }
 
     @Override
@@ -448,6 +461,7 @@ public final class Device extends DeviceModel implements Parcelable {
         dest.writeList(this.cardRelationships);
         dest.writeParcelable(this.links, flags);
         dest.writeString(this.notificationToken);
+        dest.writeString(this.casd);
     }
 
     public Device() {
@@ -471,6 +485,7 @@ public final class Device extends DeviceModel implements Parcelable {
         in.readList(this.cardRelationships, CreditCardRef.class.getClassLoader());
         this.links = in.readParcelable(Links.class.getClassLoader());
         this.notificationToken = in.readString();
+        this.casd = in.readString();
     }
 
     public static final Parcelable.Creator<Device> CREATOR = new Parcelable.Creator<Device>() {

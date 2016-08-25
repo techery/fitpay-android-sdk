@@ -79,9 +79,13 @@ public class BaseModel {
 
 
     protected <T, U> void makePatchCall(U data, boolean encrypt, Type type, ApiCallback<T> callback) {
+        makePatchCall(data, false, encrypt, type, callback);
+    }
+
+    protected <T, U> void makePatchCall(U data, boolean add, boolean encrypt, Type type, ApiCallback<T> callback) {
         String url = getLink(SELF, callback);
         if (url != null) {
-            ApiManager.getInstance().patch(url, data, encrypt, type, callback);
+            ApiManager.getInstance().patch(url, data, add, encrypt, type, callback);
         }
     }
 

@@ -54,6 +54,8 @@ public class ApiManager {
     private UserService userService;
     private AuthService authService;
 
+    private static String sPushToken;
+
     private ApiManager() {
         if (null == getBaseUrl()) {
             throw new IllegalStateException("The ApiManager must be initialized prior to use.  API base url required");
@@ -74,6 +76,14 @@ public class ApiManager {
         }
 
         return sInstance;
+    }
+
+    public static String getPushToken() {
+        return sPushToken;
+    }
+
+    public static void setPushToken(String pushToken) {
+        sPushToken = pushToken;
     }
 
     public static void init(Map<String, String> props) {
@@ -395,13 +405,13 @@ public class ApiManager {
         postDataCall.enqueue(new CallbackWrapper<>(callback));
     }
 
-    public <T, U> void patch(final String url, final U data, final boolean encrypt, final Type type, final ApiCallback<T> callback) {
+    public <T, U> void patch(final String url, final U data, final boolean add, final boolean encrypt, final Type type, final ApiCallback<T> callback) {
         JsonArray updateData = new JsonArray();
 
         Map<String, Object> userMap = ObjectConverter.convertToSimpleMap(data);
         for (Map.Entry<String, Object> entry : userMap.entrySet()) {
             JsonObject item = new JsonObject();
-            item.addProperty("op", "replace");
+            item.addProperty("op", add ? "add" : "replace");
             item.addProperty("path", entry.getKey());
             item.addProperty("value", String.valueOf(entry.getValue()));
 
