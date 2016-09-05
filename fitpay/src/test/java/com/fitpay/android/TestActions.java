@@ -19,7 +19,9 @@ import com.fitpay.android.utils.ValidationException;
 import com.google.gson.Gson;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 
 import java.security.Security;
@@ -28,17 +30,18 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 
 public class TestActions {
 
     protected final int TIMEOUT = 10;
 
-    protected Random random = new Random();
-
     protected String userName = null;
     protected String pin = null;
     protected LoginIdentity loginIdentity = null;
+
+    protected User user;
 
     @BeforeClass
     public static void init() {
@@ -46,15 +49,41 @@ public class TestActions {
         ApiManager.init(TestConstants.getConfig());
     }
 
-    protected User createUser(UserCreateRequest user) throws Exception{
+    @Before
+    public void setup() throws Exception {
+        userName = TestUtils.getRandomLengthString(5, 10) + "@"
+                + TestUtils.getRandomLengthString(5, 10) + "." + TestUtils.getRandomLengthString(4, 10);
+        pin = TestUtils.getRandomLengthNumber(4, 4);
+
+        this.user = createUser(getNewTestUser(userName, pin));
+        assertNotNull(this.user);
+
+        loginIdentity = getTestLoginIdentity(userName, pin);
+        doLogin(loginIdentity);
+
+        this.user = getUser();
+        assertNotNull(user);
+    }
+
+    @After
+    public void deleteUser() throws Exception {
+        if (null != this.user) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
+            this.user.deleteUser(callback);
+            latch.await(TIMEOUT, TimeUnit.SECONDS);
+        }
+    }
+
+    protected User createUser(UserCreateRequest user) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<User> callback = new ResultProvidingCallback<>(latch);
         ApiManager.getInstance().createUser(user, callback);
-        boolean completed = latch.await(TIMEOUT, TimeUnit.SECONDS);
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
         return callback.getResult();
     }
 
-    protected boolean doLogin(LoginIdentity loginIdentity) throws Exception{
+    protected boolean doLogin(LoginIdentity loginIdentity) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
         ApiManager.getInstance().loginUser(loginIdentity, callback);
@@ -63,7 +92,6 @@ public class TestActions {
         assertEquals("login error code. (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return completed;
     }
-
 
 
     protected User getUser() throws Exception {
@@ -82,21 +110,18 @@ public class TestActions {
     protected LoginIdentity getTestLoginIdentity(String userName, String pin) throws ValidationException {
 
         LoginIdentity loginIdentity = new LoginIdentity.Builder()
-                    .setUsername(userName)
-                    .setPassword(pin)
-                    .build();
+                .setUsername(userName)
+                .setPassword(pin)
+                .build();
         return loginIdentity;
 
     }
 
     protected UserCreateRequest getNewTestUser(String userName, String pin) throws ValidationException {
-
-        UserCreateRequest user = new UserCreateRequest.Builder()
+        return new UserCreateRequest.Builder()
                 .email(userName)
                 .pin(pin)
                 .build();
-        return user;
-
     }
 
     protected CreditCard getTestCreditCard(String pan) {
@@ -127,7 +152,7 @@ public class TestActions {
         return creditCard;
     }
 
-    public Device getTestDevice()  {
+    public Device getTestDevice() {
 
         String manufacturerName = "X111";
         String deviceName = "TEST_DEVICE";
@@ -164,7 +189,7 @@ public class TestActions {
 
     }
 
-    public Device getPoorlyDefinedDevice()  {
+    public Device getPoorlyDefinedDevice() {
 
         String deviceName = "TEST_DEVICE";
         String firmwareRevision = "111.111";
@@ -187,7 +212,7 @@ public class TestActions {
 
     }
 
-    public Device getPoorlyDeviceTestSmartStrapDevice()  {
+    public Device getPoorlyDeviceTestSmartStrapDevice() {
 
         String manufacturerName = "X111";
         String deviceName = "TEST_DEVICE";
@@ -220,7 +245,7 @@ public class TestActions {
         return callback.getResult();
     }
 
-    protected CreditCard createCreditCard(User user, CreditCard creditCard)  throws Exception {
+    protected CreditCard createCreditCard(User user, CreditCard creditCard) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<CreditCard> callback = new ResultProvidingCallback<>(latch);
         user.createCreditCard(creditCard, callback);
@@ -228,7 +253,7 @@ public class TestActions {
         return callback.getResult();
     }
 
-    protected CreditCard getCreditCard(CreditCard creditCard)  throws Exception {
+    protected CreditCard getCreditCard(CreditCard creditCard) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<CreditCard> callback = new ResultProvidingCallback<>(latch);
         creditCard.self(callback);
@@ -241,7 +266,7 @@ public class TestActions {
     protected Collections.CreditCardCollection getCreditCards(User user) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<Collections.CreditCardCollection> callback = new ResultProvidingCallback<>(latch);
-        user.getCreditCards(10, 0 , callback);
+        user.getCreditCards(10, 0, callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         assertEquals("get credit cards had error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return callback.getResult();
@@ -316,13 +341,13 @@ public class TestActions {
     protected Collections.TransactionCollection getCardTransactions(CreditCard card) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<Collections.TransactionCollection> callback = new ResultProvidingCallback<>(latch);
-        card.getTransactions(10, 0 , callback);
+        card.getTransactions(10, 0, callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         assertEquals("get device transactions error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return callback.getResult();
     }
 
-    protected Transaction getTransaction(Transaction transaction)  throws Exception {
+    protected Transaction getTransaction(Transaction transaction) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<Transaction> callback = new ResultProvidingCallback<>(latch);
         transaction.self(callback);
@@ -335,7 +360,7 @@ public class TestActions {
     protected Collections.DeviceCollection getDevices(User user) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<Collections.DeviceCollection> callback = new ResultProvidingCallback<>(latch);
-        user.getDevices(10, 0 , callback);
+        user.getDevices(10, 0, callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         assertEquals("get devices error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return callback.getResult();

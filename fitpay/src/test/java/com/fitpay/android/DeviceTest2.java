@@ -23,36 +23,6 @@ import static junit.framework.Assert.assertNull;
  */
 public class DeviceTest2 extends TestActions {
 
-    private User user;
-
-    @Before
-    public void setup() throws Exception {
-        userName = TestUtils.getRandomLengthString(5, 10) + "@"
-                + TestUtils.getRandomLengthString(5, 10) + "." + TestUtils.getRandomLengthString(4, 10);
-        pin = TestUtils.getRandomLengthNumber(4, 4);
-
-        UserCreateRequest user = getNewTestUser(userName, pin);
-        User createdUser = createUser(user);
-        assertNotNull("user should have been created", createdUser);
-
-        loginIdentity = getTestLoginIdentity(userName, pin);
-        doLogin(loginIdentity);
-
-        this.user = getUser();
-        assertNotNull(user);
-
-    }
-
-    @After
-    public void deleteUser() throws Exception {
-        if (null != this.user) {
-            final CountDownLatch latch = new CountDownLatch(1);
-            ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
-            this.user.deleteUser(callback);
-            latch.await(TIMEOUT, TimeUnit.SECONDS);
-        }
-    }
-
     @Test
     public void testCanAddDevice() throws Exception {
         Device device = getTestDevice();
