@@ -6,41 +6,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Test constants
  */
 public final class TestConstants {
-    
+
     static Map<String, String> getConfig() {
-        Map<String, String> env = System.getenv();
+        String baseURL = System.getenv(ApiManager.PROPERTY_API_BASE_URL);
+        String authURL = System.getenv(ApiManager.PROPERTY_AUTH_BASE_URL);
+        String clientID = System.getenv(ApiManager.PROPERTY_CLIENT_ID);
+        String redirectURI = System.getenv(ApiManager.PROPERTY_REDIRECT_URI);
 
-        String currentEnv = System.getProperty("environment", "demo");
+        System.out.print("clientID:" + clientID);
 
-        Map<String, String>  config = new HashMap<>();
-        switch (currentEnv) {
-            case "qa":
-                config.put(ApiManager.PROPERTY_API_BASE_URL, "https://api.qa.fitpay.ninja/");
-                config.put(ApiManager.PROPERTY_AUTH_BASE_URL, "https://auth.qa.fitpay.ninja");
-                config.put(ApiManager.PROPERTY_CLIENT_ID, "fitpay");
-                config.put(ApiManager.PROPERTY_REDIRECT_URI, "https://api.qa.fitpay.ninja");
-                break;
-
-            case "demo":
-                config.put(ApiManager.PROPERTY_API_BASE_URL, "https://gi-de.pagare.me/api/");
-                config.put(ApiManager.PROPERTY_AUTH_BASE_URL, "https://gi-de.pagare.me");
-                config.put(ApiManager.PROPERTY_CLIENT_ID, "pagare");
-                config.put(ApiManager.PROPERTY_REDIRECT_URI, "https://demo.pagare.me");
-                break;
-
-            case "dev":
-            default:
-                config.put(ApiManager.PROPERTY_API_BASE_URL, "http://localhost:9092/");
-                config.put(ApiManager.PROPERTY_AUTH_BASE_URL, "http://localhost:9091/");
-                config.put(ApiManager.PROPERTY_CLIENT_ID, "fitpay");
-                config.put(ApiManager.PROPERTY_REDIRECT_URI, "http://localhost:9092");
-
-        }
-
+        Map<String, String> config = new HashMap<>();
+        config.put(ApiManager.PROPERTY_API_BASE_URL, baseURL != null ? baseURL : "https://api.fit-pay.com");
+        config.put(ApiManager.PROPERTY_AUTH_BASE_URL, authURL != null ? authURL : "https://auth.fit-pay.com");
+        config.put(ApiManager.PROPERTY_CLIENT_ID, clientID != null ? clientID : "fp_webapp_pJkVp2Rl");
+        config.put(ApiManager.PROPERTY_REDIRECT_URI, redirectURI != null ? redirectURI : "https://webapp.fit-pay.com");
         return config;
-
     }
-
 }

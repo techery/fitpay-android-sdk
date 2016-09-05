@@ -14,5 +14,4 @@ public interface UserClient {
      */
     @POST("users")
     Call<User> createUser(@Body UserCreateRequest user);
-
 }

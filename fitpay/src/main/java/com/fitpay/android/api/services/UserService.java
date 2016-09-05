@@ -4,12 +4,9 @@ import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.KeysManager;
 
-import java.io.IOException;
-
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.Response;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -17,29 +14,23 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 final public class UserService extends BaseClient {
 
-    private static final String FP_KEY_ID = "fp-key-id";
-
     private OAuthToken authToken;
 
     private UserClient mClient;
 
     public UserService(String apiBaseUrl) {
 
-        Interceptor interceptor = new Interceptor() {
-            @Override
-            public Response intercept(Chain chain) throws IOException {
+        Interceptor interceptor = chain -> {
+            Request.Builder builder = chain.request().newBuilder()
+                    .header("Accept", "application/json")
+                    .header("Content-Type", "application/json");
 
-                Request.Builder builder = chain.request().newBuilder()
-                        .header("Accept", "application/json")
-                        .header("Content-Type", "application/json");
-
-                String keyId = KeysManager.getInstance().getKeyId(KeysManager.KEY_API);
-                if (keyId != null) {
-                    builder.header(FP_KEY_ID, keyId);
-                }
-
-                return chain.proceed(builder.build());
+            String keyId = KeysManager.getInstance().getKeyId(KeysManager.KEY_API);
+            if (keyId != null) {
+                builder.header(FP_KEY_ID, keyId);
             }
+
+            return chain.proceed(builder.build());
         };
 
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
@@ -73,7 +64,7 @@ final public class UserService extends BaseClient {
         authToken = token;
     }
 
-    public boolean isAuthorized(){
+    public boolean isAuthorized() {
         return authToken != null;
     }
 

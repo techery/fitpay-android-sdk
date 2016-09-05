@@ -16,6 +16,8 @@ import okhttp3.OkHttpClient;
  */
 public class BaseClient {
 
+    protected static final String FP_KEY_ID = "fp-key-id";
+
     /*
      * OKClientBuilder for untrusted ssl endpoints
      * DO NOT USE IN PRODUCTION

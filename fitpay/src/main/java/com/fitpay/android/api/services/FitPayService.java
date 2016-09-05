@@ -29,7 +29,6 @@ final public class FitPayService extends BaseClient {
         Interceptor interceptor = new Interceptor() {
             @Override
             public Response intercept(Chain chain) throws IOException {
-
                 Request.Builder builder = chain.request().newBuilder()
                         .header("Accept", "application/json")
                         .header("Content-Type", "application/json");
@@ -91,7 +90,7 @@ final public class FitPayService extends BaseClient {
         return mAuthToken.getUserId();
     }
 
-    public boolean isAuthorized(){
+    public boolean isAuthorized() {
         return mAuthToken != null;
     }
 
