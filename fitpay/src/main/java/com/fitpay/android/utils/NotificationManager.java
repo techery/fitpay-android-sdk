@@ -18,7 +18,7 @@ import rx.schedulers.Schedulers;
  */
 public final class NotificationManager {
 
-    private final static String TAG= NotificationManager.class.getSimpleName();
+    private final static String TAG = NotificationManager.class.getSimpleName();
 
     private static NotificationManager sInstance;
 
@@ -124,6 +124,10 @@ public final class NotificationManager {
      * @param listener listener
      */
     public void removeListener(Listener listener) {
+        if (listener == null) {
+            return;
+        }
+
         Log.d(TAG, "removeListener " + listener + " called from thread: " + Thread.currentThread());
         synchronized (this) {
             Log.d(TAG, "removeListener executing");
