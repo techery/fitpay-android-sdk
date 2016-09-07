@@ -1,6 +1,7 @@
 package com.fitpay.android.paymentdevice;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
@@ -75,6 +76,10 @@ public final class DeviceService extends Service {
 
     Executor executor = Executors.newSingleThreadExecutor();
 
+    public static void run(Context context) {
+        context.startService(new Intent(context, DeviceService.class));
+    }
+
     public class LocalBinder extends Binder {
         public DeviceService getService() {
             return DeviceService.this;
@@ -89,7 +94,13 @@ public final class DeviceService extends Service {
 
     @Override
     public boolean onUnbind(Intent intent) {
-        return super.onUnbind(intent);
+        super.onUnbind(intent);
+
+        if (paymentDeviceConnector != null) {
+            paymentDeviceConnector.disconnect();
+        }
+
+        return true;
     }
 
     @Override

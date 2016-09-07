@@ -5,6 +5,7 @@ import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import com.fitpay.android.R;
 import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
@@ -24,6 +25,7 @@ import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.webview.WebViewCommunicator;
 import com.fitpay.android.webview.callback.OnTaskCompleted;
+import com.fitpay.android.webview.events.DeviceStatusMessage;
 import com.fitpay.android.webview.events.UserReceived;
 import com.google.gson.Gson;
 
@@ -33,10 +35,6 @@ import org.json.JSONObject;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import rx.Observable;
-import rx.Observer;
-import rx.functions.Func1;
 
 
 /**
@@ -53,17 +51,19 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     private static final String APP_CALLBACK_STATUS_OK = "OK";
     private static final String APP_CALLBACK_STATUS_FAILED = "FAILED";
 
-
     private final Activity activity;
     private OnTaskCompleted callback;
-    private int wId;
     private DeviceService deviceService;
 
     private User user;
     private Device device;
 
-    private SyncCompleteListener syncListener;
-    private CustomListener commitListenerForAppCallbacks = new CustomListener();
+    private DeviceStatusListener deviceStatusListener;
+    private CustomListener listenerForAppCallbacks;
+
+    private WebView webView;
+
+    private final Gson gson = new Gson();
 
     public WebViewCommunicatorImpl(Activity ctx, int wId, OnTaskCompleted callback) {
         this(ctx, wId);
@@ -72,14 +72,22 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     public WebViewCommunicatorImpl(Activity ctx, int wId) {
         this.activity = ctx;
-        this.wId = wId;
+        deviceStatusListener = new DeviceStatusListener();
+        NotificationManager.getInstance().addListener(deviceStatusListener);
+
+        webView = (WebView) activity.findViewById(wId);
     }
 
     public void setDeviceService(DeviceService deviceService) {
         this.deviceService = deviceService;
     }
 
-    final Gson gson = new Gson();
+    @Override
+    public void logout() {
+        sendLogoutSignalToJs();
+
+        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.connecting), DeviceStatusMessage.PENDING));
+    }
 
     @Override
     @JavascriptInterface
@@ -126,6 +134,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     @JavascriptInterface
     public String sync(String callbackId) {
 
+        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
+
         if (null == device) {
             SyncResponseModel response = new SyncResponseModel.Builder()
                     .status(RESPONSE_FAILURE)
@@ -141,8 +151,9 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 callback.onTaskCompleted(RESPONSE_FAILURE);
             }
 
-            return gson.toJson(response);
+            RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
 
+            return gson.toJson(response);
         }
 
         if (null == deviceService) {
@@ -160,20 +171,19 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 callback.onTaskCompleted(RESPONSE_FAILURE);
             }
 
+            RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
+
             return gson.toJson(response);
         }
 
-        if (null != syncListener) {
-            NotificationManager.getInstance().removeListener(syncListener);
-        }
-        syncListener = new SyncCompleteListener(callbackId);
-        NotificationManager.getInstance().addListener(syncListener);
+        NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
 
-        NotificationManager.getInstance().addListener(commitListenerForAppCallbacks);
+        listenerForAppCallbacks = new CustomListener(callbackId);
+        NotificationManager.getInstance().addListener(listenerForAppCallbacks);
 
         try {
             deviceService.syncData(user, device);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalStateException ex) {
             SyncResponseModel response = new SyncResponseModel.Builder()
                     .status(RESPONSE_FAILURE)
                     .reason(ex.getMessage())
@@ -188,6 +198,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 callback.onTaskCompleted(RESPONSE_FAILURE);
             }
 
+            RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
         }
 
         AckResponseModel stubResponse = new AckResponseModel.Builder()
@@ -233,6 +244,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         throw new UnsupportedOperationException("method not supported in this iteration");
     }
 
+    @Override
+    public void close() {
+        NotificationManager.getInstance().removeListener(deviceStatusListener);
+        NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
+    }
+
     public void sendMessageToJs(String callBackId, String success, String response) {
 
         String responseMessage = "{ \"callBackId\" :" + callBackId + "," +
@@ -244,10 +261,26 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         final String url = "javascript:window.RtmBridge.resolve('" + responseMessage + "');";
         Log.d(TAG, "message url: " + url);
 
-        final WebView w = (WebView) activity.findViewById(wId);
-        activity.runOnUiThread(() -> w.loadUrl(url));
+        activity.runOnUiThread(() -> webView.loadUrl(url));
     }
 
+    public void sendDeviceStatusToJs(DeviceStatusMessage event) {
+
+        String responseMessage = "{\"message\":\"" + event.getMessage() + "\",\"type\":" + event.getType() + "}";
+
+        final String url = "javascript:window.RtmBridge.setDeviceStatus(" + responseMessage + ");";
+        Log.d(TAG, "message url: " + url);
+
+        activity.runOnUiThread(() -> webView.loadUrl(url));
+    }
+
+    public void sendLogoutSignalToJs() {
+        Log.d(TAG, "sending logout message to the webview");
+
+        final String jurl = "javascript:window.RtmBridge.forceLogout();";
+
+        activity.runOnUiThread(() -> webView.loadUrl(jurl));
+    }
 
     private void getUserAndDevice(final String deviceId, final String callbackId) {
         ApiManager.getInstance().getUser(new ApiCallback<User>() {
@@ -309,124 +342,20 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     }
 
-
-    private Observable<Boolean> getSyncObservable(final DeviceService deviceService, final Device device, final String callbackId) {
-
-        return Observable.just(true).map(new Func1<Boolean, Boolean>() {
-            @Override
-            public Boolean call(Boolean aBoolean) {
-                Log.d(TAG, "initiate sync");
-                deviceService.syncData(user, device);
-                return aBoolean;
-            }
-        });
-    }
-
-    private Observable<Boolean> getDeviceObservable(final String deviceId) {
-
-        return Observable.just(true).map(new Func1<Boolean, Boolean>() {
-            @Override
-            public Boolean call(Boolean aBoolean) {
-                Log.d(TAG, "get device");
-                user.getDevice(deviceId, new ApiCallback<Device>() {
-                    @Override
-                    public void onSuccess(Device result) {
-                        WebViewCommunicatorImpl.this.device = result;
-                    }
-
-                    @Override
-                    public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                        //TODO handle failure
-                    }
-                });
-                return aBoolean;
-            }
-        });
-    }
-
-    private Observer<Boolean> getDeviceObserver(final String callBackId) {
-
-        return new Observer<Boolean>() {
-
-            @Override
-            public void onCompleted() {
-                Log.d(TAG, "get device completed");
-                AckResponseModel stubResponse = new AckResponseModel.Builder()
-                        .status(USER_DATA_STUB_RESPONSE)
-                        .build();
-                if (null != callBackId) {
-                    sendMessageToJs(callBackId, "true", gson.toJson(stubResponse));
-                }
-                if (null != callback) {
-                    callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
-                }
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                Log.d(TAG, "connection observer error: " + e.getMessage());
-            }
-
-            @Override
-            public void onNext(Boolean bool) {
-                Log.d(TAG, "connection observer onNext: " + bool);
-            }
-        };
-    }
-
-
-    private class SyncCompleteListener extends Listener {
-
-        private String callbackId;
-
-        private SyncCompleteListener(final String callbackId) {
-            this.callbackId = callbackId;
-            mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
-        }
-
-        //        @Override
-        public void onSyncStateChanged(Sync syncEvent) {
-            Log.d(TAG, "received on sync state changed event: " + syncEvent);
-            switch (syncEvent.getState()) {
-                case States.COMPLETED:
-                case States.COMPLETED_NO_UPDATES: {
-                    AckResponseModel stubResponse = new AckResponseModel.Builder()
-                            .status(USER_DATA_STUB_RESPONSE)
-                            .build();
-                    if (null != callbackId) {
-                        sendMessageToJs(callbackId, "true", gson.toJson(stubResponse));
-                    }
-                    if (null != callback) {
-                        callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
-                    }
-                    break;
-                }
-                case States.FAILED: {
-                    SyncResponseModel response = new SyncResponseModel.Builder()
-                            .status(RESPONSE_FAILURE)
-                            .reason("sync failure")
-                            .build();
-                    if (null != callbackId) {
-                        sendMessageToJs(callbackId, "false", gson.toJson(response));
-                    }
-                    if (null != callback) {
-                        callback.onTaskCompleted(RESPONSE_FAILURE);
-                    }
-                    break;
-                }
-                default: {
-                    Log.d(TAG, "skipping sync changed event: " + syncEvent);
-                    break;
-                }
-            }
+    private class DeviceStatusListener extends Listener {
+        private DeviceStatusListener() {
+            super();
+            mCommands.put(DeviceStatusMessage.class, data -> sendDeviceStatusToJs((DeviceStatusMessage) data));
         }
     }
 
     private class CustomListener extends Listener implements IListeners.ApduListener, IListeners.SyncListener {
 
-        private CustomListener() {
-            super();
+        private String callbackId;
 
+        private CustomListener(String callbackId) {
+            super();
+            this.callbackId = callbackId;
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
             mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
             mCommands.put(CommitFailed.class, data -> onCommitFailed((CommitFailed) data));
@@ -444,7 +373,45 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         @Override
         public void onSyncStateChanged(Sync syncEvent) {
-            //
+            Log.d(TAG, "received on sync state changed event: " + syncEvent);
+            switch (syncEvent.getState()) {
+                case States.COMPLETED:
+                case States.COMPLETED_NO_UPDATES: {
+                    AckResponseModel stubResponse = new AckResponseModel.Builder()
+                            .status(USER_DATA_STUB_RESPONSE)
+                            .build();
+
+                    if (null != callbackId) {
+                        sendMessageToJs(callbackId, "true", gson.toJson(stubResponse));
+                    }
+                    if (null != callback) {
+                        callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
+                    }
+
+                    RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_finished), DeviceStatusMessage.SUCCESS));
+
+                    break;
+                }
+                case States.FAILED: {
+                    SyncResponseModel response = new SyncResponseModel.Builder()
+                            .status(RESPONSE_FAILURE)
+                            .reason("sync failure")
+                            .build();
+                    if (null != callbackId) {
+                        sendMessageToJs(callbackId, "false", gson.toJson(response));
+                    }
+                    if (null != callback) {
+                        callback.onTaskCompleted(RESPONSE_FAILURE);
+                    }
+
+                    RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
+                    break;
+                }
+                default: {
+                    Log.d(TAG, "skipping sync changed event: " + syncEvent);
+                    break;
+                }
+            }
         }
 
         @Override

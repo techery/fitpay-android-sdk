@@ -41,7 +41,6 @@ public class ApiManager {
     public static final String PROPERTY_TIMEOUT = "timeout";
     public static final String PROPERTY_REDIRECT_URI = "redirectUri";
 
-
     private static Map<String, String> config = new HashMap<>();
 
     static {
@@ -175,16 +174,13 @@ public class ApiManager {
      */
     public void createUser(UserCreateRequest user, final ApiCallback<User> callback) {
 
-        Runnable onSuccess = new Runnable() {
-            @Override
-            public void run() {
-                Call<User> createUserCall = getUserClient().createUser(user);
-                createUserCall.enqueue(new CallbackWrapper<>(callback));
-            }
+        Runnable onSuccess = () -> {
+            user.addCredentials(config.get(PROPERTY_CLIENT_ID));
+            Call<User> createUserCall = getUserClient().createUser(user);
+            createUserCall.enqueue(new CallbackWrapper<>(callback));
         };
 
         checkKeyAndMakeCall(onSuccess, callback);
-
     }
 
     /**
