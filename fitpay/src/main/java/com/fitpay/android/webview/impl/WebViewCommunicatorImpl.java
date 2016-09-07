@@ -5,6 +5,7 @@ import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
+import com.fitpay.android.R;
 import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
@@ -52,7 +53,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private final Activity activity;
     private OnTaskCompleted callback;
-    private int wId;
     private DeviceService deviceService;
 
     private User user;
@@ -61,6 +61,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     private DeviceStatusListener deviceStatusListener;
     private CustomListener listenerForAppCallbacks;
 
+    private WebView webView;
+
+    private final Gson gson = new Gson();
+
     public WebViewCommunicatorImpl(Activity ctx, int wId, OnTaskCompleted callback) {
         this(ctx, wId);
         this.callback = callback;
@@ -68,16 +72,22 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     public WebViewCommunicatorImpl(Activity ctx, int wId) {
         this.activity = ctx;
-        this.wId = wId;
         deviceStatusListener = new DeviceStatusListener();
         NotificationManager.getInstance().addListener(deviceStatusListener);
+
+        webView = (WebView) activity.findViewById(wId);
     }
 
     public void setDeviceService(DeviceService deviceService) {
         this.deviceService = deviceService;
     }
 
-    final Gson gson = new Gson();
+    @Override
+    public void logout() {
+        sendLogoutSignalToJs();
+
+        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.connecting), DeviceStatusMessage.PENDING));
+    }
 
     @Override
     @JavascriptInterface
@@ -124,6 +134,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     @JavascriptInterface
     public String sync(String callbackId) {
 
+        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
+
         if (null == device) {
             SyncResponseModel response = new SyncResponseModel.Builder()
                     .status(RESPONSE_FAILURE)
@@ -139,8 +151,9 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 callback.onTaskCompleted(RESPONSE_FAILURE);
             }
 
-            return gson.toJson(response);
+            RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
 
+            return gson.toJson(response);
         }
 
         if (null == deviceService) {
@@ -158,6 +171,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 callback.onTaskCompleted(RESPONSE_FAILURE);
             }
 
+            RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
+
             return gson.toJson(response);
         }
 
@@ -168,7 +183,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         try {
             deviceService.syncData(user, device);
-        } catch (IllegalArgumentException ex) {
+        } catch (IllegalStateException ex) {
             SyncResponseModel response = new SyncResponseModel.Builder()
                     .status(RESPONSE_FAILURE)
                     .reason(ex.getMessage())
@@ -183,6 +198,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 callback.onTaskCompleted(RESPONSE_FAILURE);
             }
 
+            RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
         }
 
         AckResponseModel stubResponse = new AckResponseModel.Builder()
@@ -245,20 +261,25 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         final String url = "javascript:window.RtmBridge.resolve('" + responseMessage + "');";
         Log.d(TAG, "message url: " + url);
 
-        final WebView w = (WebView) activity.findViewById(wId);
-        activity.runOnUiThread(() -> w.loadUrl(url));
+        activity.runOnUiThread(() -> webView.loadUrl(url));
     }
 
     public void sendDeviceStatusToJs(DeviceStatusMessage event) {
 
-        String responseMessage = "{ \"message\" :" + event.getMessage() + "," +
-                "\"type\" :" + event.getType() + " }";
+        String responseMessage = "{\"message\":\"" + event.getMessage() + "\",\"type\":" + event.getType() + "}";
 
-        final String url = "javascript:window.RtmBridge.setDeviceStatus('" + responseMessage + "');";
+        final String url = "javascript:window.RtmBridge.setDeviceStatus(" + responseMessage + ");";
         Log.d(TAG, "message url: " + url);
 
-        final WebView w = (WebView) activity.findViewById(wId);
-        activity.runOnUiThread(() -> w.loadUrl(url));
+        activity.runOnUiThread(() -> webView.loadUrl(url));
+    }
+
+    public void sendLogoutSignalToJs() {
+        Log.d(TAG, "sending logout message to the webview");
+
+        final String jurl = "javascript:window.RtmBridge.forceLogout();";
+
+        activity.runOnUiThread(() -> webView.loadUrl(jurl));
     }
 
     private void getUserAndDevice(final String deviceId, final String callbackId) {
@@ -367,6 +388,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                         callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
                     }
 
+                    RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_finished), DeviceStatusMessage.SUCCESS));
 
                     break;
                 }
@@ -381,6 +403,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     if (null != callback) {
                         callback.onTaskCompleted(RESPONSE_FAILURE);
                     }
+
+                    RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
                     break;
                 }
                 default: {

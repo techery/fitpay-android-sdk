@@ -43,6 +43,11 @@ public interface WebViewCommunicator {
     void setDeviceService(DeviceService deviceService);
 
     /**
+     * send logout message to JS
+     */
+    void logout();
+
+    /**
      * this method should be called manually in {@link Activity#onDestroy()}
      */
     void close();
