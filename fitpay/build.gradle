@@ -6,7 +6,7 @@ apply plugin: 'maven'
 apply from: '../jacoco.gradle'
 
 group = 'com.fitpay.android'
-version = '0.4.7'
+version = '0.4.8'
 archivesBaseName = "android_sdk"
 
 uploadArchives {
@@ -44,12 +44,12 @@ uploadArchives {
 }
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "24.0.1"
+    compileSdkVersion 24
+    buildToolsVersion "24.0.2"
 
     defaultConfig {
         minSdkVersion 19
-        targetSdkVersion 23
+        targetSdkVersion 24
     }
 
     buildTypes {
@@ -82,7 +82,7 @@ android {
 }
 
 ext {
-    supportLib = "23.4.0"
+    supportLib = "24.2.0"
 }
 
 dependencies {
@@ -97,7 +97,7 @@ dependencies {
 
     compile 'com.orhanobut:logger:1.15'
 
-    compile 'io.reactivex:rxjava:1.1.9'
+    compile 'io.reactivex:rxjava:1.1.10'
     compile 'io.reactivex:rxandroid:1.2.1'
 
     compile 'me.alexrs:prefs:1.1.0'
@@ -150,7 +150,7 @@ bintray {
         vcsUrl = 'https://github.com/fitpay/fitpay-android-sdk.git'
 
         version {
-            name = '0.4.7'
+            name = '0.4.8'
         }
     }
     configurations = ['archives']
