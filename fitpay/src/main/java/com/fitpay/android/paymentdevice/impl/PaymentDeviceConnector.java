@@ -42,7 +42,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     private final static String TAG = PaymentDeviceConnector.class.getSimpleName();
 
-    private static final int MAX_REPEATS = 3;
+    private static final int MAX_REPEATS = 0;
 
     protected Context mContext;
     protected String mAddress;
@@ -245,7 +245,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                             mErrorRepeats = new ErrorPair(id, 0);
                         }
 
-                        if (++mErrorRepeats.count >= MAX_REPEATS) {
+                        if (mErrorRepeats.count++ >= MAX_REPEATS) {
                             sendApduExecutionResult(result);
                         } else {
                             // retry
