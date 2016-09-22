@@ -77,7 +77,7 @@ public class NotificationsTest {
 
     @Test
     public void test02_addListener() throws InterruptedException {
-        manager.addListener(listener);
+        manager.addListenerMainThread(listener);
 
         Assert.assertEquals(1, listeners.size());
         Assert.assertEquals(1, subscriptions.size());

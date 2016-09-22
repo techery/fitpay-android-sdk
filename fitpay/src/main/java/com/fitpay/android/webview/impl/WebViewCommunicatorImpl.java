@@ -73,7 +73,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     public WebViewCommunicatorImpl(Activity ctx, int wId) {
         this.activity = ctx;
         deviceStatusListener = new DeviceStatusListener();
-        NotificationManager.getInstance().addListener(deviceStatusListener);
+        NotificationManager.getInstance().addListenerMainThread(deviceStatusListener);
 
         webView = (WebView) activity.findViewById(wId);
     }
@@ -179,7 +179,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
 
         listenerForAppCallbacks = new CustomListener(callbackId);
-        NotificationManager.getInstance().addListener(listenerForAppCallbacks);
+        NotificationManager.getInstance().addListenerMainThread(listenerForAppCallbacks);
 
         try {
             deviceService.syncData(user, device);

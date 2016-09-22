@@ -10,6 +10,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.orhanobut.logger.Logger;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 public final class Constants {
 
     public static final String FIT_PAY_TAG = "FitPay";
@@ -18,12 +21,16 @@ public final class Constants {
     static final String DATE_FORMAT_ISO8601 = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
     static final String DATE_FORMAT_SIMPLE = "yyyy-MM-dd";
 
-    static final String PUSHER_KEY = "ef31c4c7ce55c574d8f9";
+    private static Gson gson;
 
-    static Gson gson;
+    private static Executor executor = Executors.newSingleThreadExecutor();
+
+    public static Executor getExecutor() {
+        return executor;
+    }
 
     public static Gson getGson() {
-        if (gson == null){
+        if (gson == null) {
             gson = new GsonBuilder()
                     .setDateFormat(Constants.DATE_FORMAT)
                     .registerTypeAdapter(ECCKeyPair.class, new ModelAdapter.KeyPairSerializer())
@@ -36,7 +43,6 @@ public final class Constants {
         }
         return gson;
     }
-
 
     public static void printError(Throwable error) {
         printError(error.toString());
