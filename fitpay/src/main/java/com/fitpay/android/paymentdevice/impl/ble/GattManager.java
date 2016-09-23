@@ -9,6 +9,8 @@ import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.AsyncTask;
 
+import com.fitpay.android.paymentdevice.constants.States;
+import com.fitpay.android.paymentdevice.enums.ApduExecutionError;
 import com.fitpay.android.paymentdevice.impl.ble.message.ApduResultMessage;
 import com.fitpay.android.paymentdevice.impl.ble.message.ApplicationControlMessage;
 import com.fitpay.android.paymentdevice.impl.ble.message.ContinuationControlBeginMessage;
@@ -18,21 +20,17 @@ import com.fitpay.android.paymentdevice.impl.ble.message.ContinuationControlMess
 import com.fitpay.android.paymentdevice.impl.ble.message.ContinuationPacketMessage;
 import com.fitpay.android.paymentdevice.impl.ble.message.NotificationMessage;
 import com.fitpay.android.paymentdevice.impl.ble.message.SecurityStateMessage;
-import com.fitpay.android.utils.RxBus;
-import com.fitpay.android.paymentdevice.constants.States;
-import com.fitpay.android.paymentdevice.enums.ApduExecutionError;
-import com.fitpay.android.paymentdevice.interfaces.ISecureMessage;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
+import com.fitpay.android.paymentdevice.interfaces.ISecureMessage;
 import com.fitpay.android.paymentdevice.utils.Crc32;
 import com.fitpay.android.utils.Hex;
+import com.fitpay.android.utils.RxBus;
 import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
 import java.util.UUID;
 
 import rx.Observable;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
 
 /**
  * Manager that works with Bluetooth GATT Profile.
@@ -403,10 +401,9 @@ final class GattManager {
                     subscriber.onNext(null);
                     subscriber.onCompleted();
                 })
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(o -> {}, throwable -> {}, () -> {
-                    driveNext();
-                });
+                .compose(RxBus.applySchedulersMainThread())
+                .subscribe(o -> {
+                }, throwable -> {
+                }, this::driveNext);
     }
 }

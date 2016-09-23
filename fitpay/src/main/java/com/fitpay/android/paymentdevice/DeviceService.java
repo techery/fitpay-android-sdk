@@ -8,6 +8,7 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.fitpay.android.R;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
@@ -22,10 +23,12 @@ import com.fitpay.android.paymentdevice.impl.ble.BluetoothPaymentDeviceConnector
 import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.utils.DevicePreferenceData;
+import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
+import com.fitpay.android.webview.events.DeviceStatusMessage;
 import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
@@ -33,12 +36,10 @@ import java.io.StringReader;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.alexrs.prefs.lib.Prefs;
-import rx.schedulers.Schedulers;
 
 import static java.lang.Class.forName;
 
@@ -70,11 +71,11 @@ public final class DeviceService extends Service {
     private Device device;
     private User user;
 
+    private Executor executor = Constants.getExecutor();
+
     private CustomListener mSyncListener = new CustomListener();
 
     private final IBinder mBinder = new LocalBinder();
-
-    Executor executor = Executors.newSingleThreadExecutor();
 
     public static void run(Context context) {
         context.startService(new Intent(context, DeviceService.class));
@@ -235,27 +236,24 @@ public final class DeviceService extends Service {
         if (null == paymentDeviceConnector) {
             throw new IllegalStateException("Payment device connector has not been configured");
         }
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "Starting execution of connectToDevice");
-                switch (paymentDeviceConnector.getState()) {
-                    case States.CONNECTED:
-                        break;
+        executor.execute(() -> {
+            Log.d(TAG, "Starting execution of connectToDevice");
+            switch (paymentDeviceConnector.getState()) {
+                case States.CONNECTED:
+                    break;
 
-                    case States.INITIALIZED:
-                        paymentDeviceConnector.connect();
-                        break;
+                case States.INITIALIZED:
+                    paymentDeviceConnector.connect();
+                    break;
 
-                    case States.DISCONNECTED:
-                        paymentDeviceConnector.reconnect();
-                        break;
+                case States.DISCONNECTED:
+                    paymentDeviceConnector.reconnect();
+                    break;
 
-                    default:
-                        //TODO - why not let device decide if it can connect from this state?
-                        Logger.e("Can't connect to device.  Current device state does not support the connect operation.  State: " + paymentDeviceConnector.getState());
-                        break;
-                }
+                default:
+                    //TODO - why not let device decide if it can connect from this state?
+                    Logger.e("Can't connect to device.  Current device state does not support the connect operation.  State: " + paymentDeviceConnector.getState());
+                    break;
             }
         });
 
@@ -272,12 +270,9 @@ public final class DeviceService extends Service {
             Log.e(TAG, "payment device service is not connected.  Can not do operation: readDeviceInfo");
             return;
         }
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "Starting execution of readDeviceInfo");
-                paymentDeviceConnector.readDeviceInfo();
-            }
+        executor.execute(() -> {
+            Log.d(TAG, "Starting execution of readDeviceInfo");
+            paymentDeviceConnector.readDeviceInfo();
         });
     }
 
@@ -286,15 +281,12 @@ public final class DeviceService extends Service {
      * Disconnect from payment device
      */
     public void disconnect() {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "Starting execution of disconnect");
-                if (null != paymentDeviceConnector) {
-                    paymentDeviceConnector.disconnect();
-                }
-                NotificationManager.getInstance().removeListener(mSyncListener);
+        executor.execute(() -> {
+            Log.d(TAG, "Starting execution of disconnect");
+            if (null != paymentDeviceConnector) {
+                paymentDeviceConnector.disconnect();
             }
+            NotificationManager.getInstance().removeListener(mSyncListener);
         });
 
     }
@@ -335,18 +327,19 @@ public final class DeviceService extends Service {
 
         paymentDeviceConnector.setUser(user);
 
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "Starting execution of syncDevice");
-                syncDevice();
-            }
+        executor.execute(() -> {
+            Log.d(TAG, "Starting execution of syncDevice");
+            syncDevice();
         });
-
     }
 
-
     private void syncDevice() {
+
+        if(paymentDeviceConnector.getState() == States.DISCONNECTED || paymentDeviceConnector.getState() == States.DISCONNECTING){
+            RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.disconnected), DeviceStatusMessage.PENDING));
+            RxBus.getInstance().post(new Sync(States.FAILED));
+            return;
+        }
 
         Log.d(TAG, "sync running on thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
 
@@ -376,8 +369,7 @@ public final class DeviceService extends Service {
 
         device.getAllCommits(deviceData.getLastCommitId())
                 .timeout(15000, TimeUnit.MILLISECONDS)
-                .subscribeOn(Schedulers.from(executor))
-                .observeOn(Schedulers.from(executor))
+                .compose(RxBus.applySchedulersExecutorThread())
                 .subscribe(
                         commitsCollection -> {
                             mCommits = commitsCollection.getResults();
@@ -400,7 +392,6 @@ public final class DeviceService extends Service {
 
                             RxBus.getInstance().post(new Sync(States.FAILED));
                         });
-
     }
 
     /**
@@ -475,7 +466,6 @@ public final class DeviceService extends Service {
             mCommits.remove(0);
             processNextCommit();
         }
-
     }
 
     private Properties convertCommaSeparatedList(String input) throws IOException {
@@ -501,5 +491,4 @@ public final class DeviceService extends Service {
         }
         return props;
     }
-
 }
