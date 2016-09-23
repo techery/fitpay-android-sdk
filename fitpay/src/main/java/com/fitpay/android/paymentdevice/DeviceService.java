@@ -376,6 +376,7 @@ public final class DeviceService extends Service {
 
                             if (mCommits != null && mCommits.size() > 0) {
                                 Log.d(TAG, "processing commits.  count: " + mCommits.size());
+                                RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
                                 processNextCommit();
                             } else {
                                 RxBus.getInstance().post(new Sync(forceWalletUpdate.get() ? States.COMPLETED : States.COMPLETED_NO_UPDATES));
