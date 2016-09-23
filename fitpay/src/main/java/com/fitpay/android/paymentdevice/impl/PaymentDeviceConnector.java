@@ -158,7 +158,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     public void syncInit() {
         if (null == apduExecutionListener) {
             apduExecutionListener = getApduExecutionListener();
-            NotificationManager.getInstance().addListenerMainThread(this.apduExecutionListener);
+            NotificationManager.getInstance().addListener(this.apduExecutionListener);
         }
         mErrorRepeats = null;
     }

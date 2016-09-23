@@ -48,7 +48,7 @@ class GattApduOperation extends GattOperation {
                 mStartTime = System.currentTimeMillis();
 
                 mNotificationListener = new ApduNotificationListener();
-                NotificationManager.getInstance().addListenerMainThread(mNotificationListener);
+                NotificationManager.getInstance().addListener(mNotificationListener);
             }
 
             @Override

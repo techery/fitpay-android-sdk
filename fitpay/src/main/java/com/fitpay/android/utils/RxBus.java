@@ -38,17 +38,15 @@ public class RxBus {
         return register(eventClass, AndroidSchedulers.mainThread(), onNext);
     }
 
-    public <T> Subscription register(final Class<T> eventClass, final Scheduler scheduler, Action1<T> onNext) {
+    public <T> Subscription register(final Class<T> eventClass, final Scheduler scheduler, final Action1<T> onNext) {
         return mBus
                 .asObservable()
+                .onBackpressureBuffer()
+                .subscribeOn(Schedulers.from(Constants.getExecutor()))
+                .observeOn(scheduler)
                 .filter(event -> eventClass.isAssignableFrom(event.getClass()))
                 .map(obj -> (T) obj)
-                .subscribeOn(Schedulers.io())
-                .observeOn(scheduler)
-                .subscribe(
-                        onNext,
-                        throwable -> Logger.e(throwable.toString() + ", " + getStackTrace(throwable))
-                );
+                .subscribe(onNext, throwable -> Logger.e(throwable.toString() + ", " + getStackTrace(throwable)));
     }
 
     public void post(Object object) {

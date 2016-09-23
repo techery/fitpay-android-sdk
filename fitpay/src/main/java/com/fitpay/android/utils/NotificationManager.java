@@ -50,9 +50,11 @@ public final class NotificationManager {
 
         if (!mSubscriptions.containsKey(clazz)) {
             Log.d(TAG, "subscribeTo doing put of class:  " + clazz + " from thread: " + Thread.currentThread());
-            mSubscriptions.put(clazz, RxBus.getInstance().register(clazz, scheduler, commit -> {
+            mSubscriptions.put(clazz, RxBus.getInstance().register(clazz, scheduler, object -> {
+//                Log.d("RxBus", "get event:\t\t" + object);
                 for (Command command : mCommands.get(clazz)) {
-                    command.execute(commit);
+//                    Log.d("RxBus", "has event:\t\t\t" + object);
+                    command.execute(object);
                 }
             }));
         }
@@ -74,7 +76,7 @@ public final class NotificationManager {
      *
      * @param listener listener
      */
-    public void addListenerMainThread(Listener listener) {
+    public void addListener(Listener listener) {
         addListener(listener, AndroidSchedulers.mainThread());
     }
 
@@ -83,7 +85,7 @@ public final class NotificationManager {
      *
      * @param listener listener
      */
-    public void addListenerToExecutorThread(Listener listener) {
+    public void addListenerToCurrentThread(Listener listener) {
         addListener(listener, Schedulers.from(Constants.getExecutor()));
     }
 
