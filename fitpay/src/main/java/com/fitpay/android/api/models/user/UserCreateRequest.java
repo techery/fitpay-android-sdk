@@ -2,6 +2,8 @@ package com.fitpay.android.api.models.user;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Map;
+
 /**
  * User creation request
  */
@@ -14,6 +16,9 @@ public class UserCreateRequest {
      */
     @SerializedName("encryptedData")
     protected UserAuthInfo userInfo;
+
+    @SerializedName("client_id")
+    protected String clientId;
 
     /**
      * The version of the FitPay terms and conditions that were accepted
@@ -59,6 +64,10 @@ public class UserCreateRequest {
 
     public String getOrigin() {
         return origin;
+    }
+
+    public void addCredentials(String id){
+        clientId = id;
     }
 
     public static final class Builder {

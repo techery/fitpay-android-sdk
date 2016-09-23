@@ -9,7 +9,10 @@ import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
+import com.fitpay.android.api.models.card.CreditCard;
+import com.fitpay.android.api.models.card.TopOfWallet;
 import com.fitpay.android.api.models.device.Commit;
+import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.CommitHandler;
 import com.fitpay.android.paymentdevice.callbacks.ApduExecutionListener;
 import com.fitpay.android.paymentdevice.constants.States;
@@ -22,29 +25,35 @@ import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import rx.Observable;
+
 /**
  * Base model for wearable payment device
- *
+ * <p>
  * This component is designed to handle one operation at a time.  It is not thread safe.
  */
 public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector {
 
     private final static String TAG = PaymentDeviceConnector.class.getSimpleName();
 
-    private static final int MAX_REPEATS = 3;
+    private static final int MAX_REPEATS = 0;
 
     protected Context mContext;
     protected String mAddress;
-    protected @Connection.State int state;
+    @Connection.State
+    protected int state;
     protected Map<String, CommitHandler> commitHandlers;
     protected ApduExecutionListener apduExecutionListener;
     protected Commit currentCommit;
     private ErrorPair mErrorRepeats;
 
+    protected User user;
 
     public PaymentDeviceConnector() {
         state = States.NEW;
@@ -79,7 +88,9 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
     @Override
-    public @Connection.State int getState() {
+    public
+    @Connection.State
+    int getState() {
         return state;
     }
 
@@ -113,7 +124,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     @Override
     public void addCommitHandler(String commitType, CommitHandler handler) {
         if (null == commitHandlers) {
-            commitHandlers =  new HashMap<>();
+            commitHandlers = new HashMap<>();
         }
         commitHandlers.put(commitType, handler);
     }
@@ -143,7 +154,6 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         }
     }
 
-
     @Override
     public void syncInit() {
         if (null == apduExecutionListener) {
@@ -161,6 +171,30 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         }
     }
 
+    @Override
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    protected void getTopOfWalletData() {
+        user.getAllCreditCards().flatMap(creditCardCollection -> {
+            List<TopOfWallet> tow = new ArrayList<>();
+            if (creditCardCollection.getResults() != null) {
+                for (CreditCard card : creditCardCollection.getResults()) {
+                    tow.add(card.getTOW());
+                }
+            }
+            return Observable.just(tow);
+        }).subscribe(
+                topOfWallets -> {
+                    if (topOfWallets.size() > 0) {
+                        executeTopOfWallet(topOfWallets);
+                        RxBus.getInstance().post(topOfWallets);
+                    }
+                },
+                throwable -> Log.i(TAG, "Something goes wrong"));
+    }
+
     private class ApduCommitHandler implements CommitHandler {
 
         @Override
@@ -172,7 +206,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                 long validUntil = TimestampUtils.getDateForISO8601String(pkg.getValidUntil()).getTime();
                 long currentTime = System.currentTimeMillis();
 
-                if(validUntil > currentTime){
+                if (validUntil > currentTime) {
                     PaymentDeviceConnector.this.executeApduPackage(pkg);
                 } else {
                     ApduExecutionResult result = new ApduExecutionResult(pkg.getPackageId());
@@ -211,7 +245,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                             mErrorRepeats = new ErrorPair(id, 0);
                         }
 
-                        if (++mErrorRepeats.count >= MAX_REPEATS) {
+                        if (mErrorRepeats.count++ >= MAX_REPEATS) {
                             sendApduExecutionResult(result);
                         } else {
                             // retry
@@ -227,11 +261,12 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     /**
      * Send apdu execution result to the server
+     *
      * @param result apdu execution result
      */
-    private void sendApduExecutionResult(ApduExecutionResult result){
+    private void sendApduExecutionResult(final ApduExecutionResult result) {
 
-        if (null != currentCommit){
+        if (null != currentCommit) {
             currentCommit.confirm(result, new ApiCallback<Void>() {
                 @Override
                 public void onSuccess(Void result2) {
@@ -280,11 +315,11 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
 
-    private class ErrorPair{
+    private class ErrorPair {
         String id;
         int count;
 
-        ErrorPair(String id, int count){
+        ErrorPair(String id, int count) {
             this.id = id;
             this.count = count;
         }

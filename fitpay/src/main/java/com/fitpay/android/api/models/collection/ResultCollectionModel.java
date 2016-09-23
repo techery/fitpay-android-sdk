@@ -33,11 +33,17 @@ public class ResultCollectionModel<T> extends BaseModel {
         return results;
     }
 
-    public void addCollection(List<T> collection){
-        if(results == null){
+    public void addCollection(ResultCollectionModel<T> collection) {
+        if (collection == null) {
+            return;
+        }
+
+        if (results == null) {
             results = new ArrayList<>();
         }
 
-        results.addAll(collection);
+        results.addAll(collection.getResults());
+        offset += collection.getOffset();
+        totalResults = collection.getTotalResults();
     }
 }

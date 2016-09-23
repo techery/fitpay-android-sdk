@@ -63,6 +63,16 @@ abstract class DeviceModel extends PaymentDevice {
 
     protected String hostDeviceId;
 
+    /**
+     * notification token. (Optional)
+     */
+    protected String notificationToken;
+
+    /**
+     * CASD
+     */
+    protected String casd;
+
     protected DeviceModel() {
     }
 
@@ -116,5 +126,13 @@ abstract class DeviceModel extends PaymentDevice {
 
     public String getHostDeviceId() {
         return hostDeviceId;
+    }
+
+    public String getNotificationToken() {
+        return notificationToken;
+    }
+
+    public String getCASD() {
+        return casd;
     }
 }

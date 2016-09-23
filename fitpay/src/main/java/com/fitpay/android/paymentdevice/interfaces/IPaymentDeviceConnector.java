@@ -3,11 +3,14 @@ package com.fitpay.android.paymentdevice.interfaces;
 import android.content.Context;
 
 import com.fitpay.android.api.models.apdu.ApduPackage;
+import com.fitpay.android.api.models.card.TopOfWallet;
+import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.CommitHandler;
 import com.fitpay.android.paymentdevice.enums.Connection;
 import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
 
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -32,18 +35,26 @@ public interface IPaymentDeviceConnector extends CommitHandler {
     void init(Properties props);
 
     void reset();
+
     void connect();
+
     void disconnect();
+
     void reconnect();
+
     void close();
 
     //TODO remove ?  since some devices do not have MacAddress and / or it is not of interest in getting connection
     String getMacAddress();
 
     void readDeviceInfo();
+
     void readNFCState();
+
     void setNFCState(@NFC.Action byte state);
+
     void sendNotification(byte[] data);
+
     void setSecureElementState(@SecureElement.Action byte state);
 
     /**
@@ -61,10 +72,22 @@ public interface IPaymentDeviceConnector extends CommitHandler {
 
     void executeApduPackage(ApduPackage apduPackage);
 
+    void executeTopOfWallet(List<TopOfWallet> towPackages);
+
     void addCommitHandler(String commitType, CommitHandler handler);
+
     void removeCommitHandler(String commitType);
 
     //TODO review - should this have a getState method?
-    @Connection.State int getState();
+    @Connection.State
+    int getState();
+
     void setState(@Connection.State int state);
+
+    /**
+     * Add user
+     *
+     * @param user current user
+     */
+    void setUser(User user);
 }

@@ -13,12 +13,16 @@ import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.card.CreditCardRef;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.user.User;
+import com.fitpay.android.paymentdevice.DeviceOperationException;
 import com.fitpay.android.utils.TimestampUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import rx.Observable;
+import rx.Subscriber;
 
 /**
  * Payment Device Information
@@ -37,9 +41,9 @@ public final class Device extends DeviceModel implements Parcelable {
     /**
      * Get current user
      *
-     * @param callback   result callback
+     * @param callback result callback
      */
-    public void getUser(@NonNull ApiCallback<User> callback){
+    public void getUser(@NonNull ApiCallback<User> callback) {
         makeGetCall(USER, null, User.class, callback);
     }
 
@@ -50,23 +54,31 @@ public final class Device extends DeviceModel implements Parcelable {
     /**
      * Update the details of an existing device.
      *
-     * @param callback   result callback
+     * @param callback result callback
      */
-    public void updateDevice(@NonNull Device device, @NonNull ApiCallback<Device> callback){
+    public void updateDevice(@NonNull Device device, @NonNull ApiCallback<Device> callback) {
         makePatchCall(device, false, Device.class, callback);
+    }
+
+    /**
+     * Add values to existing device.
+     *
+     * @param callback result callback
+     */
+    public void updateToken(@NonNull Device device, boolean add, @NonNull ApiCallback<Device> callback) {
+        makePatchCall(device, add, false, Device.class, callback);
     }
 
     public boolean canUpdate() {
         return hasLink(SELF);
     }
 
-
     /**
      * Delete a single device.
      *
      * @param callback result callback
      */
-    public void deleteDevice(@NonNull ApiCallback<Void> callback){
+    public void deleteDevice(@NonNull ApiCallback<Void> callback) {
         makeDeleteCall(callback);
     }
 
@@ -86,7 +98,7 @@ public final class Device extends DeviceModel implements Parcelable {
         Map<String, Object> queryMap = new HashMap<>();
         queryMap.put("limit", limit);
         queryMap.put("offset", offset);
-        if(lastCommitId != null){
+        if (lastCommitId != null) {
             queryMap.put("commitsAfter", lastCommitId);
         }
         makeGetCall(COMMITS, queryMap, Collections.CommitsCollection.class, callback);
@@ -100,9 +112,9 @@ public final class Device extends DeviceModel implements Parcelable {
     /**
      * Retrieves a collection of events that should be committed to this device.
      *
-     * @param limit        Max number of events per page, default: 10
-     * @param offset       Start index position for list of entities returned
-     * @param callback     result callback
+     * @param limit    Max number of events per page, default: 10
+     * @param offset   Start index position for list of entities returned
+     * @param callback result callback
      */
     public void getCommits(int limit, int offset, final ApiCallback<Collections.CommitsCollection> callback) {
         this.getCommits(limit, offset, null, callback);
@@ -113,7 +125,7 @@ public final class Device extends DeviceModel implements Parcelable {
      * Limit: 10
      * Offset: 0
      *
-     * @param callback     result callback
+     * @param callback result callback
      */
     public void getCommits(final ApiCallback<Collections.CommitsCollection> callback) {
         this.getCommits(10, 0, null, callback);
@@ -135,29 +147,66 @@ public final class Device extends DeviceModel implements Parcelable {
      * Retrieves 'all' events that should be committed to this device.
      * All is really limited to 100.
      *
-     *
      * @param lastCommitId last commit id
      * @param callback     result callback
      */
     public void getAllCommits(String lastCommitId, final ApiCallback<Collections.CommitsCollection> callback) {
-        getCommits(100, 0, lastCommitId, new ApiCallback<Collections.CommitsCollection>() {
+        final int limit = 50;
+        final Collections.CommitsCollection tempCommitsStorage = new Collections.CommitsCollection();
+        getCommits(limit, 0, lastCommitId, new ApiCallback<Collections.CommitsCollection>() {
             @Override
             public void onSuccess(Collections.CommitsCollection result) {
-                if(result.hasNext()){
-                    getCommits(result.getTotalResults(), 0, lastCommitId, this);
+                tempCommitsStorage.addCollection(result);
+
+                if (result.hasNext()) {
+                    String lastCommitId = result.getResults().get(result.getResults().size() - 1).commitId;
+                    getCommits(limit, result.getOffset(), lastCommitId, this);
                 } else {
-                    callback.onSuccess(result);
+                    callback.onSuccess(tempCommitsStorage);
                 }
             }
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                tempCommitsStorage.getResults().clear();
                 callback.onFailure(errorCode, errorMessage);
             }
         });
     }
 
-    public static final class Builder{
+
+    /**
+     * Retrieves 'all' events that should be committed to this device.
+     *
+     * @param lastCommitId last commit id
+     * @return observable
+     */
+    public Observable<Collections.CommitsCollection> getAllCommits(final String lastCommitId) {
+        return Observable.create(new Observable.OnSubscribe<Collections.CommitsCollection>() {
+            @Override
+            public void call(Subscriber<? super Collections.CommitsCollection> subscriber) {
+                getAllCommits(lastCommitId, new ApiCallback<Collections.CommitsCollection>() {
+                    @Override
+                    public void onSuccess(Collections.CommitsCollection result) {
+                        if (result == null) {
+                            subscriber.onError(new Exception("commits result is null"));
+                            return;
+                        }
+
+                        subscriber.onNext(result);
+                        subscriber.onCompleted();
+                    }
+
+                    @Override
+                    public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                        subscriber.onError(new DeviceOperationException(errorMessage, errorCode));
+                    }
+                });
+            }
+        });
+    }
+
+    public static final class Builder {
         @DeviceTypes.Type
         private String deviceType;
         private String manufacturerName;
@@ -172,7 +221,9 @@ public final class Device extends DeviceModel implements Parcelable {
         private String licenseKey;
         private String bdAddress;
         private String secureElementId;
+        private String casd;
         private String pairingTs;
+        private String notificationToken;
 
         /**
          * Creates a Builder instance that can be used to build Gson with various configuration
@@ -180,7 +231,7 @@ public final class Device extends DeviceModel implements Parcelable {
          * invoking various configuration methods to set desired options, and finally calling
          * {@link #build()}.
          */
-        public Builder(){
+        public Builder() {
         }
 
         /**
@@ -189,7 +240,7 @@ public final class Device extends DeviceModel implements Parcelable {
          *
          * @return an instance of {@link CreditCard} configured with the options currently set in this builder
          */
-        public Device build(){
+        public Device build() {
             Device device = new Device();
             device.deviceType = deviceType;
             device.manufacturerName = manufacturerName;
@@ -205,21 +256,25 @@ public final class Device extends DeviceModel implements Parcelable {
             device.bdAddress = bdAddress;
             device.secureElement = new SecureElement(secureElementId);
             device.pairingTs = pairingTs;
+            device.notificationToken = notificationToken;
+            device.casd = casd;
             return device;
         }
 
         /**
          * Set device name
+         *
          * @param deviceName The name of the device model.
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
-        public Builder setDeviceName(@NonNull String deviceName){
+        public Builder setDeviceName(@NonNull String deviceName) {
             this.deviceName = deviceName;
             return this;
         }
 
         /**
          * Set device type
+         *
          * @param deviceType The type of device (PHONE, TABLET, ACTIVITY_TRACKER, SMARTWATCH, PC, CARD_EMULATOR, CLOTHING, JEWELRY, OTHER
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -230,6 +285,7 @@ public final class Device extends DeviceModel implements Parcelable {
 
         /**
          * Set manufacture name
+         *
          * @param manufacturerName The manufacturer name of the device.
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -240,6 +296,7 @@ public final class Device extends DeviceModel implements Parcelable {
 
         /**
          * Set serial number
+         *
          * @param serialNumber The serial number for a particular instance of the device
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -248,7 +305,9 @@ public final class Device extends DeviceModel implements Parcelable {
             return this;
         }
 
-        /** Set model number
+        /**
+         * Set model number
+         *
          * @param modelNumber The model number that is assigned by the device vendor.
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -259,6 +318,7 @@ public final class Device extends DeviceModel implements Parcelable {
 
         /**
          * Set hardware revision
+         *
          * @param hardwareRevision The hardware revision for the hardware within the device.
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -269,6 +329,7 @@ public final class Device extends DeviceModel implements Parcelable {
 
         /**
          * Set firmware revision
+         *
          * @param firmwareRevision The firmware revision for the hardware within the device.
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -279,6 +340,7 @@ public final class Device extends DeviceModel implements Parcelable {
 
         /**
          * Set software revision
+         *
          * @param softwareRevision The software revision for the hardware within the device.
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -289,6 +351,7 @@ public final class Device extends DeviceModel implements Parcelable {
 
         /**
          * Set system ID
+         *
          * @param systemId A structure containing an Organizationally Unique Identifier (OUI)
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -299,6 +362,7 @@ public final class Device extends DeviceModel implements Parcelable {
 
         /**
          * Set OS name
+         *
          * @param osName The name of the operating system
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -309,6 +373,7 @@ public final class Device extends DeviceModel implements Parcelable {
 
         /**
          * Set license key
+         *
          * @param licenseKey The license key parameter is used to read or write the license key of the device
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -319,6 +384,7 @@ public final class Device extends DeviceModel implements Parcelable {
 
         /**
          * Set bluetooth device address
+         *
          * @param bdAddress The BD address parameter is used to read the Bluetooth device address
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -329,6 +395,7 @@ public final class Device extends DeviceModel implements Parcelable {
 
         /**
          * Set secure element id
+         *
          * @param secureElementId The ID of a secure element in a payment capable device
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -339,11 +406,34 @@ public final class Device extends DeviceModel implements Parcelable {
 
         /**
          * Set pairing time
+         *
          * @param pairingTs The time the device was paired
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
         public Builder setPairingTs(long pairingTs) {
             this.pairingTs = TimestampUtils.getISO8601StringForTime(pairingTs);
+            return this;
+        }
+
+        /**
+         * Set notification token
+         *
+         * @param notificationToken The hardware revision for the hardware within the device.
+         * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
+         */
+        public Builder setNotificaitonToken(String notificationToken) {
+            this.notificationToken = notificationToken;
+            return this;
+        }
+
+        /**
+         * Set CASD
+         *
+         * @param casd
+         * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
+         */
+        public Builder setCASD(String casd) {
+            this.casd = casd;
             return this;
         }
     }
@@ -370,6 +460,8 @@ public final class Device extends DeviceModel implements Parcelable {
         dest.writeString(this.hostDeviceId);
         dest.writeList(this.cardRelationships);
         dest.writeParcelable(this.links, flags);
+        dest.writeString(this.notificationToken);
+        dest.writeString(this.casd);
     }
 
     public Device() {
@@ -392,6 +484,8 @@ public final class Device extends DeviceModel implements Parcelable {
         this.cardRelationships = new ArrayList<>();
         in.readList(this.cardRelationships, CreditCardRef.class.getClassLoader());
         this.links = in.readParcelable(Links.class.getClassLoader());
+        this.notificationToken = in.readString();
+        this.casd = in.readString();
     }
 
     public static final Parcelable.Creator<Device> CREATOR = new Parcelable.Creator<Device>() {

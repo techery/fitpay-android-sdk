@@ -2,6 +2,7 @@ package com.fitpay.android;
 
 import android.media.Image;
 
+import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.enums.CardInitiators;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.card.CreditCard;
@@ -11,12 +12,15 @@ import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.callbacks.ResultProvidingCallback;
+import com.fitpay.android.api.models.user.UserCreateRequest;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.security.Security;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -31,32 +35,6 @@ import static junit.framework.Assert.assertTrue;
  * Created by tgs on 4/21/16.
  */
 public class CreditCardTest2 extends TestActions {
-
-    private User user;
-
-    @Before
-    public void setup() throws Exception {
-        userName = TestUtils.getRandomLengthString(5, 10)
-                + "@" + TestUtils.getRandomLengthString(5, 10) + "." + TestUtils.getRandomLengthString(4, 10);
-        pin = TestUtils.getRandomLengthNumber(4, 4);
-
-        loginIdentity = getTestLoginIdentity(userName, pin);
-        doLogin(loginIdentity);
-
-        this.user = getUser();
-        assertNotNull(user);
-
-    }
-
-    @After
-    public void deleteUser() throws Exception {
-        if (null != this.user) {
-            final CountDownLatch latch = new CountDownLatch(1);
-            ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
-            this.user.deleteUser(callback);
-            latch.await(TIMEOUT, TimeUnit.SECONDS);
-        }
-    }
 
     @Test
     public void testCanAddCreditCard() throws Exception {

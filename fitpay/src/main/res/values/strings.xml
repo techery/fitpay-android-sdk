@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
+    <string name="connecting">Connecting with device</string>
+    <string name="connected">Ready to sync with device</string>
+    <string name="disconnected">Device is disconnected</string>
+    <string name="pairing">Pairing with device</string>
+    <string name="sync_started">Synchronizing with device</string>
+    <string name="sync_finished">Device is up to date</string>
+    <string name="sync_failed">Synchronizing failed</string>
 </resources>

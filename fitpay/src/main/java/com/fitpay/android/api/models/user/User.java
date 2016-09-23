@@ -5,14 +5,19 @@ import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.paymentdevice.DeviceOperationException;
 import com.fitpay.android.utils.TimestampUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import rx.Observable;
+import rx.Subscriber;
 
 /**
  * User
@@ -22,7 +27,7 @@ public final class User extends UserModel implements Parcelable {
     private static final String GET_DEVICES = "devices";
     private static final String GET_CARDS = "creditCards";
 
-    public User(){
+    public User() {
     }
 
     public User(Parcel in) {
@@ -70,7 +75,7 @@ public final class User extends UserModel implements Parcelable {
      *
      * @param callback result callback
      */
-    public void deleteUser(@NonNull ApiCallback<Void> callback){
+    public void deleteUser(@NonNull ApiCallback<Void> callback) {
         makeDeleteCall(callback);
     }
 
@@ -80,7 +85,7 @@ public final class User extends UserModel implements Parcelable {
      * @param user     user data to update: firstName, lastName, birthDate, originAccountCreatedTs, termsAcceptedTs, termsVersion
      * @param callback result callback
      */
-    public void updateUser(@NonNull User user, @NonNull ApiCallback<User> callback){
+    public void updateUser(@NonNull User user, @NonNull ApiCallback<User> callback) {
         makePatchCall(user, true, User.class, callback);
     }
 
@@ -91,7 +96,7 @@ public final class User extends UserModel implements Parcelable {
      * @param offset   Start index position for list of entities returned
      * @param callback result callback
      */
-    public void getCreditCards(int limit, int offset, @NonNull ApiCallback<Collections.CreditCardCollection> callback){
+    public void getCreditCards(int limit, int offset, @NonNull ApiCallback<Collections.CreditCardCollection> callback) {
         Map<String, Object> queryMap = new HashMap<>();
         queryMap.put("limit", limit);
         queryMap.put("offset", offset);
@@ -101,13 +106,69 @@ public final class User extends UserModel implements Parcelable {
     /**
      * retrieve a specific user card
      *
-     * @param cardId the Id of the device to be retrieved
+     * @param cardId   the Id of the device to be retrieved
      * @param callback result callback
      */
-    public void getCreditCard(String cardId, @NonNull ApiCallback<CreditCard> callback){
+    public void getCreditCard(String cardId, @NonNull ApiCallback<CreditCard> callback) {
         makeGetCall(GET_CARDS, cardId, null, CreditCard.class, callback);
     }
 
+    /**
+     * Retrieves 'all' credit cards
+     *
+     * @param callback result callback
+     */
+    public void getAllCreditCards(@NonNull final ApiCallback<Collections.CreditCardCollection> callback) {
+        final int limit = 10;
+        final Collections.CreditCardCollection tempCardsStorage = new Collections.CreditCardCollection();
+        getCreditCards(limit, 0, new ApiCallback<Collections.CreditCardCollection>() {
+            @Override
+            public void onSuccess(Collections.CreditCardCollection result) {
+                tempCardsStorage.addCollection(result);
+
+                if (result.hasNext()) {
+                    getCreditCards(limit, result.getOffset(), this);
+                } else {
+                    callback.onSuccess(tempCardsStorage);
+                }
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                callback.onFailure(errorCode, errorMessage);
+            }
+        });
+    }
+
+    /**
+     * Retrieves 'all' credit cards
+     *
+     * @return observable
+     */
+    public Observable<Collections.CreditCardCollection> getAllCreditCards() {
+        return Observable.create(new Observable.OnSubscribe<Collections.CreditCardCollection>() {
+            @Override
+            public void call(Subscriber<? super Collections.CreditCardCollection> subscriber) {
+                getAllCreditCards(new ApiCallback<Collections.CreditCardCollection>() {
+                    @Override
+                    public void onSuccess(Collections.CreditCardCollection result) {
+                        if (result == null) {
+                            subscriber.onError(new Exception("cards result is null"));
+                            return;
+                        }
+
+                        subscriber.onNext(result);
+                        subscriber.onCompleted();
+                    }
+
+                    @Override
+                    public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                        subscriber.onError(new DeviceOperationException(errorMessage, errorCode));
+                    }
+                });
+            }
+        });
+    }
 
     /**
      * retrieve a pagable collection of devices in their profile.
@@ -116,7 +177,7 @@ public final class User extends UserModel implements Parcelable {
      * @param offset   Start index position for list of entities returned
      * @param callback result callback
      */
-    public void getDevices(int limit, int offset, @NonNull ApiCallback<Collections.DeviceCollection> callback){
+    public void getDevices(int limit, int offset, @NonNull ApiCallback<Collections.DeviceCollection> callback) {
         Map<String, Object> queryMap = new HashMap<>();
         queryMap.put("limit", limit);
         queryMap.put("offset", offset);
@@ -129,10 +190,9 @@ public final class User extends UserModel implements Parcelable {
      * @param deviceId the Id of the device to be retrieved
      * @param callback result callback
      */
-    public void getDevice(String deviceId, @NonNull ApiCallback<Device> callback){
-         makeGetCall(GET_DEVICES, deviceId, null, Device.class, callback);
+    public void getDevice(String deviceId, @NonNull ApiCallback<Device> callback) {
+        makeGetCall(GET_DEVICES, deviceId, null, Device.class, callback);
     }
-
 
     /**
      * Add a single credit card to a user's profile.
@@ -144,7 +204,7 @@ public final class User extends UserModel implements Parcelable {
      *                   address data:(street1, street2, street3, city, state, postalCode, country))
      * @param callback   result callback
      */
-    public void createCreditCard(@NonNull CreditCard creditCard, @NonNull ApiCallback<CreditCard> callback){
+    public void createCreditCard(@NonNull CreditCard creditCard, @NonNull ApiCallback<CreditCard> callback) {
         makePostCall(GET_CARDS, creditCard, CreditCard.class, callback);
     }
 
@@ -156,11 +216,11 @@ public final class User extends UserModel implements Parcelable {
      *                 osName, licenseKey, bdAddress, secureElementId, pairingTs)
      * @param callback result callback
      */
-    public void createDevice(@NonNull Device device, @NonNull ApiCallback<Device> callback){
+    public void createDevice(@NonNull Device device, @NonNull ApiCallback<Device> callback) {
         makePostCall(GET_DEVICES, device, Device.class, callback);
     }
 
-    public static final class Builder{
+    public static final class Builder {
 
         private String firstName;
         private String lastName;
@@ -175,7 +235,7 @@ public final class User extends UserModel implements Parcelable {
          * invoking various configuration methods to set desired options, and finally calling
          * {@link #build()}.
          */
-        public Builder(){
+        public Builder() {
         }
 
         /**
@@ -184,7 +244,7 @@ public final class User extends UserModel implements Parcelable {
          *
          * @return an instance of User configured with the options currently set in this builder
          */
-        public User build(){
+        public User build() {
             User user = new User();
             user.userInfo.firstName = firstName;
             user.userInfo.lastName = lastName;
@@ -197,36 +257,40 @@ public final class User extends UserModel implements Parcelable {
 
         /**
          * Set first name
+         *
          * @param firstName the user's first name
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
-        public Builder setFirstName(@NonNull String firstName){
+        public Builder setFirstName(@NonNull String firstName) {
             this.firstName = firstName;
             return this;
         }
 
         /**
          * Set last name
+         *
          * @param lastName the user's last name
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
-        public Builder setLastName(@NonNull String lastName){
+        public Builder setLastName(@NonNull String lastName) {
             this.lastName = lastName;
             return this;
         }
 
         /**
          * Set birthdate
+         *
          * @param date time in milliseconds
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
-        public Builder setBirthDate(long date){
+        public Builder setBirthDate(long date) {
             this.birthDate = TimestampUtils.getReadableDate(date);
             return this;
         }
 
         /**
          * Set account creation time
+         *
          * @param originAccountCreatedAt time in milliseconds
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -238,6 +302,7 @@ public final class User extends UserModel implements Parcelable {
 
         /**
          * Set terms accepted time
+         *
          * @param termsAcceptedAt time in milliseconds
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
@@ -249,6 +314,7 @@ public final class User extends UserModel implements Parcelable {
 
         /**
          * Set terms version
+         *
          * @param termsVersion version name
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */

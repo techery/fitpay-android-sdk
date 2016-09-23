@@ -7,6 +7,7 @@ import com.orhanobut.logger.Logger;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import rx.Observable;
 import rx.Scheduler;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
@@ -34,29 +35,18 @@ public class RxBus {
     private final Subject<Object, Object> mBus = new SerializedSubject<>(PublishSubject.create());
 
     public <T> Subscription register(final Class<T> eventClass, Action1<T> onNext) {
-        return mBus
-                .asObservable()
-                .filter(event -> eventClass.isAssignableFrom(event.getClass()))
-                .map(obj -> (T) obj)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        onNext,
-                        throwable -> Logger.e(throwable.toString() + ", " + getStackTrace(throwable))
-                );
+        return register(eventClass, AndroidSchedulers.mainThread(), onNext);
     }
 
-    public <T> Subscription register(final Class<T> eventClass, final Scheduler scheduler, Action1<T> onNext) {
+    public <T> Subscription register(final Class<T> eventClass, final Scheduler scheduler, final Action1<T> onNext) {
         return mBus
                 .asObservable()
+                .onBackpressureBuffer()
+                .subscribeOn(Schedulers.from(Constants.getExecutor()))
+                .observeOn(scheduler)
                 .filter(event -> eventClass.isAssignableFrom(event.getClass()))
                 .map(obj -> (T) obj)
-                .subscribeOn(Schedulers.io())
-                .observeOn(scheduler)
-                .subscribe(
-                        onNext,
-                        throwable -> Logger.e(throwable.toString() + ", " + getStackTrace(throwable))
-                );
+                .subscribe(onNext, throwable -> Logger.e(throwable.toString() + ", " + getStackTrace(throwable)));
     }
 
     public void post(Object object) {
@@ -69,5 +59,15 @@ public class RxBus {
         PrintWriter pw = new PrintWriter(sw);
         t.printStackTrace(pw);
         return sw.toString(); // stack trace as a string
+    }
+
+    public static <T> Observable.Transformer<T, T> applySchedulersMainThread() {
+        return observable -> observable.subscribeOn(Schedulers.from(Constants.getExecutor()))
+                .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    public static <T> Observable.Transformer<T, T> applySchedulersExecutorThread() {
+        return observable -> observable.subscribeOn(Schedulers.from(Constants.getExecutor()))
+                .observeOn(Schedulers.from(Constants.getExecutor()));
     }
 }

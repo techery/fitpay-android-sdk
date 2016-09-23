@@ -32,8 +32,9 @@ abstract class CreditCardModel extends BaseModel {
     protected String termsAssetId;
     protected Long eligibilityExpirationEpoch;
     protected List<AssetReference> termsAssetReferences;
+    protected OfflineSeActions offlineSeActions;
 
-    protected CreditCardModel(){
+    protected CreditCardModel() {
         creditCardInfo = new CreditCardInfo();
     }
 
@@ -114,5 +115,9 @@ abstract class CreditCardModel extends BaseModel {
 
     public Address getAddress() {
         return creditCardInfo.address;
+    }
+
+    public TopOfWallet getTOW() {
+        return offlineSeActions != null ? offlineSeActions.getTopOfWallet() : null;
     }
 }
