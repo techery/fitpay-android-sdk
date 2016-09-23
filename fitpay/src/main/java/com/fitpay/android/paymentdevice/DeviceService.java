@@ -351,7 +351,7 @@ public final class DeviceService extends Service {
         paymentDeviceConnector.init(syncProperties);
         paymentDeviceConnector.syncInit();
 
-        NotificationManager.getInstance().addListenerToExecutorThread(mSyncListener);
+        NotificationManager.getInstance().addListenerToCurrentThread(mSyncListener);
 
         RxBus.getInstance().post(new Sync(States.STARTED));
 
@@ -376,7 +376,6 @@ public final class DeviceService extends Service {
 
                             if (mCommits != null && mCommits.size() > 0) {
                                 Log.d(TAG, "processing commits.  count: " + mCommits.size());
-                                RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
                                 processNextCommit();
                             } else {
                                 RxBus.getInstance().post(new Sync(forceWalletUpdate.get() ? States.COMPLETED : States.COMPLETED_NO_UPDATES));

@@ -83,7 +83,7 @@ public class MockPaymentDeviceTest extends TestActions {
         ConnectPaymentDeviceListener listener = new ConnectPaymentDeviceListener(latch);
         this.listener = listener;
 
-        manager.addListenerToExecutorThread(listener);
+        manager.addListenerToCurrentThread(listener);
 
         paymentDeviceService.connect();
 
@@ -108,7 +108,7 @@ public class MockPaymentDeviceTest extends TestActions {
         ConnectPaymentDeviceListener listener = new ConnectPaymentDeviceListener(latch);
         this.listener = listener;
 
-        manager.addListenerToExecutorThread(listener);
+        manager.addListenerToCurrentThread(listener);
 
         paymentDeviceService.connect();
 
@@ -128,7 +128,7 @@ public class MockPaymentDeviceTest extends TestActions {
         ReadDeviceInfoPaymentDeviceListener listener = new ReadDeviceInfoPaymentDeviceListener(latch);
         this.listener = listener;
 
-        manager.addListenerToExecutorThread(listener);
+        manager.addListenerToCurrentThread(listener);
 
         paymentDeviceService.readDeviceInfo();
 
@@ -147,7 +147,7 @@ public class MockPaymentDeviceTest extends TestActions {
         ApduListener listener = new ApduListener(latch);
         this.listener = listener;
 
-        manager.addListenerToExecutorThread(listener);
+        manager.addListenerToCurrentThread(listener);
 
         ApduPackage apduPackage = getTestApduPackage();
 
@@ -169,7 +169,7 @@ public class MockPaymentDeviceTest extends TestActions {
         ApduListener listener = new ApduListener(latch);
         this.listener = listener;
 
-        manager.addListenerToExecutorThread(listener);
+        manager.addListenerToCurrentThread(listener);
 
         ApduPackage apduPackage = getFailingTestApduPackage();
 

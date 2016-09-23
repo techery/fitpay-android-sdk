@@ -74,7 +74,7 @@ public final class NotificationManager {
      *
      * @param listener listener
      */
-    public void addListenerMainThread(Listener listener) {
+    public void addListener(Listener listener) {
         addListener(listener, AndroidSchedulers.mainThread());
     }
 
@@ -83,7 +83,7 @@ public final class NotificationManager {
      *
      * @param listener listener
      */
-    public void addListenerToExecutorThread(Listener listener) {
+    public void addListenerToCurrentThread(Listener listener) {
         addListener(listener, Schedulers.from(Constants.getExecutor()));
     }
 

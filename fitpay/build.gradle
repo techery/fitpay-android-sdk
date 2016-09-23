@@ -82,7 +82,7 @@ android {
 }
 
 ext {
-    supportLib = "24.2.0"
+    supportLib = "24.2.1"
 }
 
 dependencies {
@@ -97,7 +97,7 @@ dependencies {
 
     compile 'com.orhanobut:logger:1.15'
 
-    compile 'io.reactivex:rxjava:1.1.10'
+    compile 'io.reactivex:rxjava:1.2.0'
     compile 'io.reactivex:rxandroid:1.2.1'
 
     compile 'me.alexrs:prefs:1.1.0'
