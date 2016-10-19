@@ -181,7 +181,9 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
             List<TopOfWallet> tow = new ArrayList<>();
             if (creditCardCollection.getResults() != null) {
                 for (CreditCard card : creditCardCollection.getResults()) {
-                    tow.add(card.getTOW());
+                    if (card.getTOW() != null) {
+                        tow.add(card.getTOW());
+                    }
                 }
             }
             return Observable.just(tow);
