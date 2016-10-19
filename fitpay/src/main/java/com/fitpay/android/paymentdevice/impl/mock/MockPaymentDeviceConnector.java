@@ -33,7 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
@@ -203,7 +202,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 .setDeviceType(DeviceTypes.WATCH)
                 .setManufacturerName("Fitpay")
                 .setDeviceName("PSPS")
-                .setSerialNumber(UUID.randomUUID().toString())
+                .setSerialNumber("6e660ad5-7b06-4dec-ba4c-53b72a770f86")//(UUID.randomUUID().toString())
                 .setModelNumber("FB404")
                 .setHardwareRevision("1.0.0.0")
                 .setFirmwareRevision("1030.6408.1309.0001")
@@ -211,8 +210,8 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 .setSystemId("0x123456FFFE9ABCDE")
                 .setOSName("ANDROID")
                 .setLicenseKey("6b413f37-90a9-47ed-962d-80e6a3528036")
-                .setBdAddress(UUID.randomUUID().toString())
-                .setSecureElementId(UUID.randomUUID().toString())
+                .setBdAddress("96c37b2c-7848-406f-97b7-16d995c5f5a3")//(UUID.randomUUID().toString())
+                .setSecureElementId("4691b9a0-45d6-4268-8b78-8708c5163019")//(UUID.randomUUID().toString())
                 .build();
     }
 
@@ -256,10 +255,9 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                     Log.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
                     RxBus.getInstance().post(apduExecutionResult);
                 } else if (apduCommandNumber + 1 < apduPackage.getApduCommands().size()) {
-                    getDelayObservable()
+                    getDelayObservable(100)
                             .map(x -> true)
                             .subscribe(getApduObserver(apduPackage, apduExecutionResult, apduCommandNumber + 1));
-
                 } else {
                     Log.d(TAG, "apduExecutionResult: " + apduExecutionResult);
                     int duration = (int) ((System.currentTimeMillis() - apduExecutionResult.getExecutedTsEpoch()) / 1000);
@@ -369,7 +367,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 return;
             }
             // process with a delay to mock device response time
-            getDelayObservable().subscribe(
+            getDelayObservable(100).subscribe(
                     o -> Log.d(TAG, "processCommit " + commit.getCommitType()),
                     throwable -> Log.d(TAG, String.format("processCommit %s error:%s", commit.getCommitType(), throwable.toString())),
                     () -> {
@@ -398,7 +396,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
             }
 
             // process with a delay to mock device response time
-            getDelayObservable().subscribe(
+            getDelayObservable(100).subscribe(
                     o -> Log.d(TAG, "processCommit " + commit.getCommitType()),
                     throwable -> Log.d(TAG, String.format("processCommit %s error:%s", commit.getCommitType(), throwable.toString())),
                     () -> {
