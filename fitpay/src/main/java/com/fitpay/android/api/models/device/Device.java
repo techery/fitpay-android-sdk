@@ -168,7 +168,9 @@ public final class Device extends DeviceModel implements Parcelable {
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                tempCommitsStorage.getResults().clear();
+                if (tempCommitsStorage.getResults() != null) {
+                    tempCommitsStorage.getResults().clear();
+                }
                 callback.onFailure(errorCode, errorMessage);
             }
         });

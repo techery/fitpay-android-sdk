@@ -1,5 +1,6 @@
 package com.fitpay.android.paymentdevice.impl.mock;
 
+import android.annotation.SuppressLint;
 import android.util.Log;
 
 import com.fitpay.android.api.enums.CommitTypes;
@@ -18,10 +19,13 @@ import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Connection;
 import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
+import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.impl.PaymentDeviceConnector;
 import com.fitpay.android.utils.Hex;
+import com.fitpay.android.utils.Listener;
+import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.google.gson.Gson;
 
@@ -29,18 +33,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Random;
-import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
 import rx.Observer;
-import rx.Subscription;
-import rx.functions.Func1;
-import rx.schedulers.Schedulers;
 
 /**
  * Created by tgs on 5/3/16.
  */
+@SuppressLint("SupportAnnotationUsage")
 public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
     private final String TAG = MockPaymentDeviceConnector.class.getSimpleName();
@@ -50,12 +51,9 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
     public static final String CONFIG_CONNECTED_RESPONSE_TIME = "CONNECTED_RESPONSE_TIME";
     public static final String CONFIG_DISCONNECTING_RESPONSE_TIME = "DISCONNECTING_RESPONSE_TIME";
     public static final String CONFIG_DISCONNECTED_RESPONSE_TIME = "DISCONNECTED_RESPONSE_TIME";
-    private static final int DEFAULT_DELAY = 3000;
+    private static final int DEFAULT_DELAY = 2000;
 
-    private Device device;
-    private final Random random = new Random();
     private int delay = DEFAULT_DELAY;
-
 
     private Properties config;
 
@@ -66,13 +64,10 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
      */
     private Map<String, CreditCardCommit> creditCards;
 
-    Subscription connectionSubscription;
-    Subscription deviceReadSubscription;
-    Subscription apduSubscription;
+    private SyncCompleteListener syncCompleteListener = new SyncCompleteListener();
 
     public MockPaymentDeviceConnector() {
         state = States.INITIALIZED;
-        loadDefaultDevice();
 
         // configure commit handlers
         addCommitHandler(CommitTypes.CREDITCARD_CREATED, new MockWalletUpdateCommitHandler());
@@ -81,28 +76,8 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         addCommitHandler(CommitTypes.CREDITCARD_REACTIVATED, new MockWalletUpdateCommitHandler());
         addCommitHandler(CommitTypes.RESET_DEFAULT_CREDITCARD, new MockWalletUpdateCommitHandler());
         addCommitHandler(CommitTypes.SET_DEFAULT_CREDITCARD, new MockWalletUpdateCommitHandler());
-
         addCommitHandler(CommitTypes.CREDITCARD_DELETED, new MockWalletDeleteCommitHandler());
     }
-
-    protected void loadDefaultDevice() {
-        device = new Device.Builder()
-                .setDeviceType(DeviceTypes.WATCH)
-                .setManufacturerName("Fitpay")
-                .setDeviceName("PSPS")
-                .setSerialNumber(UUID.randomUUID().toString())
-                .setModelNumber("FB404")
-                .setHardwareRevision("1.0.0.0")
-                .setFirmwareRevision("1030.6408.1309.0001")
-                .setSoftwareRevision("2.0.242009.6")
-                .setSystemId("0x123456FFFE9ABCDE")
-                .setOSName("ANDROID")
-                .setLicenseKey("6b413f37-90a9-47ed-962d-80e6a3528036")
-                .setBdAddress(UUID.randomUUID().toString())
-                .setSecureElementId(UUID.randomUUID().toString())
-                .build();
-    }
-
 
     @Override
     public void init(Properties props) {
@@ -116,6 +91,95 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         }
     }
 
+    @Override
+    public void close() {
+        Log.d(TAG, "close not implemented");
+    }
+
+    @Override
+    public void connect() {
+        Log.d(TAG, "payment device connect requested.   current state: " + getState());
+
+        NotificationManager.getInstance().addListenerToCurrentThread(syncCompleteListener);
+
+        if (getState() == States.CONNECTED) {
+            return;
+        }
+
+        setStateWithDelay(CONFIG_CONNECTING_RESPONSE_TIME, States.CONNECTING)
+                .flatMap(x -> setStateWithDelay(CONFIG_CONNECTED_RESPONSE_TIME, States.CONNECTED))
+                .subscribe(
+                        x -> Log.d(TAG, "connect success"),
+                        throwable -> Log.d(TAG, "connect error:" + throwable.toString()),
+                        () -> {
+                            Log.d(TAG, "connect complete");
+                            readDeviceInfo();
+                        });
+    }
+
+    @Override
+    public void disconnect() {
+        Log.d(TAG, "payment device disconnect requested.  current state: " + getState());
+
+        if (null != syncCompleteListener) {
+            NotificationManager.getInstance().removeListener(syncCompleteListener);
+        }
+
+        setStateWithDelay(CONFIG_DISCONNECTING_RESPONSE_TIME, States.DISCONNECTING)
+                .flatMap(x -> setStateWithDelay(CONFIG_DISCONNECTED_RESPONSE_TIME, States.DISCONNECTED))
+                .subscribe(
+                        x -> Log.d(TAG, "disconnect success"),
+                        throwable -> Log.d(TAG, "disconnect error:" + throwable.toString()),
+                        () -> Log.d(TAG, "disconnect complete"));
+    }
+
+    @Override
+    public void readDeviceInfo() {
+        Log.d(TAG, "payment device readDeviceInfo requested");
+
+        getDelayObservable()
+                .map(o -> loadDefaultDevice())
+                .subscribe(deviceInfo -> {
+                    Log.d(TAG, "device info has been read.  device: " + deviceInfo);
+                    RxBus.getInstance().post(deviceInfo);
+                }, throwable -> Log.d(TAG, "read device info error:" + throwable.toString()));
+    }
+
+    @Override
+    public void readNFCState() {
+    }
+
+    @Override
+    public void setNFCState(@NFC.Action byte state) {
+    }
+
+    @Override
+    public void sendNotification(byte[] data) {
+    }
+
+    @Override
+    public void setSecureElementState(@SecureElement.Action byte state) {
+    }
+
+    @Override
+    public void executeApduPackage(ApduPackage apduPackage) {
+        ApduExecutionResult apduExecutionResult = new ApduExecutionResult(apduPackage.getPackageId());
+        apduExecutionResult.setExecutedTsEpoch(System.currentTimeMillis());
+
+        getDelayObservable()
+                .map(x -> true)
+                .subscribe(getApduObserver(apduPackage, apduExecutionResult, 0));
+    }
+
+    @Override
+    public void executeTopOfWallet(List<TopOfWallet> towPackage) {
+        getDelayObservable()
+                .subscribe(
+                        x -> Log.d(TAG, "execute TOW success"),
+                        throwable -> Log.d(TAG, "execute TOW error" + throwable.toString()),
+                        () -> Log.d(TAG, "execute TOW complete"));
+    }
+
     private int getIntValue(String value) {
         int intValue = delay;
         try {
@@ -126,7 +190,6 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         return intValue;
     }
 
-
     private int getTimeValueFromConfig(String key) {
         if (null == config || null == config.getProperty(key)) {
             return delay;
@@ -134,176 +197,43 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         return getIntValue(config.getProperty(key));
     }
 
-    @Override
-    public void close() {
-        Log.d(TAG, "close not implemented");
+    private Device loadDefaultDevice() {
+        return new Device.Builder()
+                .setDeviceType(DeviceTypes.WATCH)
+                .setManufacturerName("Fitpay")
+                .setDeviceName("PSPS")
+                .setSerialNumber("6e660ad5-7b06-4dec-ba4c-53b72a770f86")//(UUID.randomUUID().toString())
+                .setModelNumber("FB404")
+                .setHardwareRevision("1.0.0.0")
+                .setFirmwareRevision("1030.6408.1309.0001")
+                .setSoftwareRevision("2.0.242009.6")
+                .setSystemId("0x123456FFFE9ABCDE")
+                .setOSName("ANDROID")
+                .setLicenseKey("6b413f37-90a9-47ed-962d-80e6a3528036")
+                .setBdAddress("96c37b2c-7848-406f-97b7-16d995c5f5a3")//(UUID.randomUUID().toString())
+                .setSecureElementId("4691b9a0-45d6-4268-8b78-8708c5163019")//(UUID.randomUUID().toString())
+                .build();
     }
 
-    @Override
-    public void connect() {
-
-        Log.d(TAG, "payment device connect requested.   current state: " + getState());
-
-        if (getState() == States.CONNECTED) {
-            return;
-        }
-
-        int responseDelay = getTimeValueFromConfig(CONFIG_CONNECTING_RESPONSE_TIME);
-        if (responseDelay <= 0) {
-            return;
-        }
-
-        connectionSubscription = getAsyncSimulatingObservable(responseDelay)
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.newThread())
-                .subscribe(getConnectionObserver(States.CONNECTING));
+    private Observable<Object> getDelayObservable() {
+        return getDelayObservable(delay);
     }
 
-    private Observable<Boolean> getAsyncSimulatingObservable() {
-        return Observable.just(true).map(new Func1<Boolean, Boolean>() {
-            @Override
-            public Boolean call(Boolean aBoolean) {
-                delay(delay);
-                return aBoolean;
-            }
-        });
+    private Observable<Object> getDelayObservable(String timeValue) {
+        return getDelayObservable(getTimeValueFromConfig(timeValue));
     }
 
-    private Observable<Boolean> getAsyncSimulatingObservable(int responseDelay) {
-        return Observable.just(true).map(new Func1<Boolean, Boolean>() {
-            @Override
-            public Boolean call(Boolean aBoolean) {
-                delay(responseDelay);
-                return aBoolean;
-            }
-        });
+    private Observable<Object> getDelayObservable(int responseDelay) {
+        return Observable.timer(responseDelay, TimeUnit.MILLISECONDS)
+                .compose(RxBus.applySchedulersExecutorThread());
     }
 
-    private Observer<Boolean> getConnectionObserver(@Connection.State int targetState) {
-
-        return new Observer<Boolean>() {
-
-            private final int newState = targetState;
-
-            @Override
-            public void onCompleted() {
-                Log.d(TAG, "connection changed state.  new state: " + newState);
-                setState(newState);
-                if (newState == States.CONNECTING) {
-                    int responseDelay = getTimeValueFromConfig(CONFIG_CONNECTED_RESPONSE_TIME);
-                    if (responseDelay <= 0) {
-                        return;
-                    }
-                    connectionSubscription = getAsyncSimulatingObservable(responseDelay)
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(Schedulers.newThread())
-                            .subscribe(getConnectionObserver(States.CONNECTED));
-                } else if (newState == States.DISCONNECTING) {
-                    int responseDelay = getTimeValueFromConfig(CONFIG_DISCONNECTING_RESPONSE_TIME);
-                    if (responseDelay <= 0) {
-                        return;
-                    }
-                    connectionSubscription = getAsyncSimulatingObservable(responseDelay)
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(Schedulers.newThread())
-                            .subscribe(getConnectionObserver(States.DISCONNECTED));
-                }
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                Log.d(TAG, "connection observer error: " + e.getMessage());
-            }
-
-            @Override
-            public void onNext(Boolean bool) {
-                Log.d(TAG, "connection observer onNext: " + bool);
-            }
-        };
-    }
-
-
-    private Observer<Boolean> getDeviceInfoObserver(final Device deviceInfo) {
-
-        return new Observer<Boolean>() {
-
-            @Override
-            public void onCompleted() {
-                Log.d(TAG, "device info has been read.  device: " + deviceInfo);
-                if (null != deviceInfo) {
-                    RxBus.getInstance().post(deviceInfo);
-                } else {
-                    Log.e(TAG, "read device info returned null. This is a application defect");
-                }
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                Log.d(TAG, "deviceInfo observer error: " + e.getMessage());
-            }
-
-            @Override
-            public void onNext(Boolean bool) {
-                Log.d(TAG, "deviceInfo observer onNext: " + bool);
-            }
-        };
-    }
-
-    protected void delay(long delayInterval) {
-
-        try {
-            Thread.sleep(random.nextInt((int)delayInterval));
-        } catch (InterruptedException e) {
-            // carry on
-        }
-    }
-
-    @Override
-    public void disconnect() {
-        Log.d(TAG, "payment device disconnect requested.  current state: " + getState());
-
-        connectionSubscription = getAsyncSimulatingObservable()
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.newThread())
-                .subscribe(getConnectionObserver(States.DISCONNECTING));
-    }
-
-    @Override
-    public void readDeviceInfo() {
-
-        Log.d(TAG, "payment device readDeviceInfo requested");
-
-        deviceReadSubscription = getAsyncSimulatingObservable()
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.newThread())
-                .subscribe(getDeviceInfoObserver(device));
-    }
-
-    @Override
-    public void readNFCState() {
-
-    }
-
-    @Override
-    public void setNFCState(@NFC.Action byte state) {
-
-    }
-
-    @Override
-    public void executeApduPackage(ApduPackage apduPackage) {
-
-        ApduExecutionResult apduExecutionResult = new ApduExecutionResult(apduPackage.getPackageId());
-        apduExecutionResult.setExecutedTsEpoch(System.currentTimeMillis());
-
-        apduSubscription = getAsyncSimulatingObservable()
-                .subscribeOn(Schedulers.io())
-                .observeOn(Schedulers.newThread())
-                .subscribe(getApduObserver(apduPackage, apduExecutionResult, 0));
-
-    }
-
-    @Override
-    public void executeTopOfWallet(List<TopOfWallet> towPackage) {
+    private Observable<Object> setStateWithDelay(final String timeValue, final @Connection.State int targetState) {
+        return getDelayObservable(getTimeValueFromConfig(timeValue))
+                .map(x -> {
+                    setState(targetState);
+                    return Observable.just(null);
+                }).compose(RxBus.applySchedulersExecutorThread());
     }
 
     private Observer<Boolean> getApduObserver(final ApduPackage apduPackage, final ApduExecutionResult apduExecutionResult, int apduCommandNumber) {
@@ -325,11 +255,9 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                     Log.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
                     RxBus.getInstance().post(apduExecutionResult);
                 } else if (apduCommandNumber + 1 < apduPackage.getApduCommands().size()) {
-                    apduSubscription = getAsyncSimulatingObservable()
-                            .subscribeOn(Schedulers.io())
-                            .observeOn(Schedulers.newThread())
+                    getDelayObservable(100)
+                            .map(x -> true)
                             .subscribe(getApduObserver(apduPackage, apduExecutionResult, apduCommandNumber + 1));
-
                 } else {
                     Log.d(TAG, "apduExecutionResult: " + apduExecutionResult);
                     int duration = (int) ((System.currentTimeMillis() - apduExecutionResult.getExecutedTsEpoch()) / 1000);
@@ -357,21 +285,21 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         byte[] request = apduCommand.getCommand();
         // should we simulate an error?  if the first byte is 0x99 or 0x98, then the
         // next two represent the simulated error
-        if (request[0] == (byte)0x99) {
-            responseData = Hex.bytesToHexString(new byte[] { request[1], request[2] });
+        if (request[0] == (byte) 0x99) {
+            responseData = Hex.bytesToHexString(new byte[]{request[1], request[2]});
         }
 
-        if (request[0] == (byte)0x98) {
+        if (request[0] == (byte) 0x98) {
             byte[] val = new byte[request.length + 2];
             System.arraycopy(request, 0, val, 0, request.length);
-            System.arraycopy(new byte[] { request[1], request[2] }, 0, val, request.length, 2);
+            System.arraycopy(new byte[]{request[1], request[2]}, 0, val, request.length, 2);
             responseData = Hex.bytesToHexString(val);
         }
 
         String responseCode = responseData.substring(responseData.length() - 4);
 
         ApduCommandResult result = new ApduCommandResult.Builder()
-            .setCommandId(apduCommand.getCommandId())
+                .setCommandId(apduCommand.getCommandId())
                 .setResponseData(responseData)
                 .setResponseCode(responseCode)
                 .build();
@@ -379,27 +307,17 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
     }
 
 
-    @Override
-    public void sendNotification(byte[] data) {
-
-    }
-
-    @Override
-    public void setSecureElementState(@SecureElement.Action byte state) {
-
-    }
-
     public void updateWallet(CreditCardCommit card) {
         if (getWallet().containsKey(card.getCreditCardId())) {
-            Log.i(TAG, "Updating credit card in mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
+            Log.d(TAG, "Updating credit card in mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
         } else {
-            Log.i(TAG, "Adding credit card to mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
+            Log.d(TAG, "Adding credit card to mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
         }
         getWallet().put(card.getCreditCardId(), card);
     }
 
     public void removeCardFromWallet(String creditCardId) {
-        Log.i(TAG, "Credit card updated in mock wallet.  remove card: : " + creditCardId);
+        Log.d(TAG, "Credit card updated in mock wallet.  remove card: : " + creditCardId);
         getWallet().remove(creditCardId);
     }
 
@@ -413,13 +331,31 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         return creditCards;
     }
 
+    private class SyncCompleteListener extends Listener {
+
+        private SyncCompleteListener() {
+            mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
+        }
+
+        public void onSyncStateChanged(Sync syncEvent) {
+            Log.d(TAG, "received on sync state changed event: " + syncEvent);
+
+            switch (syncEvent.getState()) {
+                case States.COMPLETED:
+                    getTopOfWalletData();
+                    break;
+
+                case States.COMPLETED_NO_UPDATES:
+                    break;
+            }
+        }
+    }
 
     private class MockWalletDeleteCommitHandler implements CommitHandler {
 
         @Override
         public void processCommit(Commit commit) {
             Object payload = commit.getPayload();
-            Log.d(TAG, "commit payload: " + payload);
             if (!(payload instanceof CreditCardCommit)) {
                 Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
                 RxBus.getInstance().post(new CommitFailed.Builder()
@@ -431,35 +367,16 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 return;
             }
             // process with a delay to mock device response time
-            Subscription subscription = getAsyncSimulatingObservable()
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(Schedulers.newThread())
-                    .subscribe(getWalletObserver(commit));
-        }
-
-        private Observer<Boolean> getWalletObserver(final Commit commit) {
-
-            return new Observer<Boolean>() {
-
-                @Override
-                public void onCompleted() {
-                    CreditCardCommit card = (CreditCardCommit) commit.getPayload();
-                    Log.d(TAG, "Mock wallet has been updated. Card removed: " + card.getCreditCardId());
-                    removeCardFromWallet(card.getCreditCardId());
-                    // signal commit processing is complete
-                    RxBus.getInstance().post(new CommitSuccess(commit));
-                }
-
-                @Override
-                public void onError(Throwable e) {
-                    Log.d(TAG, "processCommit observer error: " + e.getMessage());
-                }
-
-                @Override
-                public void onNext(Boolean bool) {
-                    Log.d(TAG, "processCommit observer onNext: " + bool);
-                }
-            };
+            getDelayObservable(100).subscribe(
+                    o -> Log.d(TAG, "processCommit " + commit.getCommitType()),
+                    throwable -> Log.d(TAG, String.format("processCommit %s error:%s", commit.getCommitType(), throwable.toString())),
+                    () -> {
+                        CreditCardCommit card = (CreditCardCommit) commit.getPayload();
+                        Log.d(TAG, "Mock wallet has been updated. Card removed: " + card.getCreditCardId());
+                        removeCardFromWallet(card.getCreditCardId());
+                        RxBus.getInstance().post(new CommitSuccess(commit));
+                    }
+            );
         }
     }
 
@@ -468,7 +385,6 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         @Override
         public void processCommit(Commit commit) {
             Object payload = commit.getPayload();
-            Log.d(TAG, "commit payload: " + payload);
             if (!(payload instanceof CreditCardCommit)) {
                 Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
                 RxBus.getInstance().post(new CommitFailed.Builder()
@@ -478,39 +394,18 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                         .build());
                 return;
             }
+
             // process with a delay to mock device response time
-            Subscription subscription = getAsyncSimulatingObservable()
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(Schedulers.newThread())
-                    .subscribe(getWalletObserver(commit));
-        }
-
-        private Observer<Boolean> getWalletObserver(final Commit commit) {
-
-            return new Observer<Boolean>() {
-
-                @Override
-                public void onCompleted() {
-                    CreditCardCommit card = (CreditCardCommit) commit.getPayload();
-                    Log.d(TAG, "Mock wallet has been updated. Card updated: " + card.getCreditCardId());
-                    updateWallet(card);
-                    // signal commit processing is complete
-                    Log.d(TAG, "dropping CommitSuccess on the bus, commit type : " + commit.getCommitType());
-                    RxBus.getInstance().post(new CommitSuccess(commit));
-                }
-
-                @Override
-                public void onError(Throwable e) {
-                    Log.d(TAG, "processCommit observer error: " + e.getMessage());
-                }
-
-                @Override
-                public void onNext(Boolean bool) {
-                    Log.d(TAG, "processCommit observer onNext: " + bool);
-                }
-            };
+            getDelayObservable(100).subscribe(
+                    o -> Log.d(TAG, "processCommit " + commit.getCommitType()),
+                    throwable -> Log.d(TAG, String.format("processCommit %s error:%s", commit.getCommitType(), throwable.toString())),
+                    () -> {
+                        CreditCardCommit card = (CreditCardCommit) commit.getPayload();
+                        Log.d(TAG, "Mock wallet has been updated. Card updated: " + card.getCreditCardId());
+                        updateWallet(card);
+                        RxBus.getInstance().post(new CommitSuccess(commit));
+                    }
+            );
         }
     }
-
-
 }

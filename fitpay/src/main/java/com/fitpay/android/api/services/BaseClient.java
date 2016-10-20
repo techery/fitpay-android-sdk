@@ -22,7 +22,7 @@ public class BaseClient {
      * OKClientBuilder for untrusted ssl endpoints
      * DO NOT USE IN PRODUCTION
      */
-    protected static OkHttpClient.Builder getUnsafeOkHttpClient() {
+    public static OkHttpClient.Builder getUnsafeOkHttpClient() {
         try {
             // Create a trust manager that does not validate certificate chains
             final TrustManager[] trustAllCerts = new TrustManager[] {
