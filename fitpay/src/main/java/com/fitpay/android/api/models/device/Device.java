@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
 import rx.Subscriber;
@@ -161,7 +160,7 @@ public final class Device extends DeviceModel implements Parcelable {
 
                 if (result.hasNext()) {
                     String lastCommitId = result.getResults().get(result.getResults().size() - 1).commitId;
-                    getCommits(limit, result.getOffset(), lastCommitId, this);
+                    getCommits(limit, 0, lastCommitId, this);
                 } else {
                     callback.onSuccess(tempCommitsStorage);
                 }
@@ -206,7 +205,7 @@ public final class Device extends DeviceModel implements Parcelable {
                     }
                 });
             }
-        }).timeout(15000, TimeUnit.MILLISECONDS);
+        });
     }
 
     public static final class Builder {
