@@ -44,6 +44,7 @@ public class NotificationsTest {
     Integer testState;
 
     @BeforeClass
+    @SuppressWarnings("unchecked")
     public static void init() {
         RxAndroidPlugins.getInstance().reset();
 
@@ -62,6 +63,7 @@ public class NotificationsTest {
         };
 
         manager = NotificationManager.getInstance();
+
 
         listeners = (List<Listener>) getPrivateField(manager, "mListeners");
         subscriptions = (ConcurrentHashMap<Class, Subscription>) getPrivateField(manager, "mSubscriptions");
@@ -85,7 +87,8 @@ public class NotificationsTest {
     }
 
     @Test
-    @Ignore   // TODO determine why connection event is not being posted on the bus - this used to work
+    @Ignore
+    // TODO determine why connection event is not being posted on the bus - this used to work
     public void test03_checkNotification() throws InterruptedException {
         AtomicBoolean changed = new AtomicBoolean(false);
 
@@ -95,13 +98,15 @@ public class NotificationsTest {
             subscriber.onNext(null);
             subscriber.onCompleted();
         })
-        .observeOn(AndroidSchedulers.mainThread())
-        .toBlocking()
-        .subscribe(o -> {}, e -> {}, () -> {
-            if (testState != null && testState == States.CONNECTED) {
-                changed.set(true);
-            }
-        });
+                .observeOn(AndroidSchedulers.mainThread())
+                .toBlocking()
+                .subscribe(o -> {
+                }, e -> {
+                }, () -> {
+                    if (testState != null && testState == States.CONNECTED) {
+                        changed.set(true);
+                    }
+                });
 
         Assert.assertTrue("state was not changed", changed.get());
     }

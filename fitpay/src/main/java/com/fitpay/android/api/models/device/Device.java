@@ -160,7 +160,7 @@ public final class Device extends DeviceModel implements Parcelable {
 
                 if (result.hasNext()) {
                     String lastCommitId = result.getResults().get(result.getResults().size() - 1).commitId;
-                    getCommits(limit, result.getOffset(), lastCommitId, this);
+                    getCommits(limit, 0, lastCommitId, this);
                 } else {
                     callback.onSuccess(tempCommitsStorage);
                 }

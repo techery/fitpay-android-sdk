@@ -368,7 +368,6 @@ public final class DeviceService extends Service {
         DevicePreferenceData deviceData = DevicePreferenceData.load(this, devId);
 
         device.getAllCommits(deviceData.getLastCommitId())
-                .timeout(15000, TimeUnit.MILLISECONDS)
                 .compose(RxBus.applySchedulersExecutorThread())
                 .subscribe(
                         commitsCollection -> {
