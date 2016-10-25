@@ -16,12 +16,13 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import rx.Observable;
 import rx.Subscription;
+import rx.observers.TestSubscriber;
 import rx.schedulers.Schedulers;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -73,21 +74,31 @@ public class NotificationsTest {
 
     @Test
     public void test03_checkNotification() throws InterruptedException {
-        AtomicBoolean changed = new AtomicBoolean(false);
+        TestSubscriber<Boolean> testSubscriber = new TestSubscriber<>();
 
         Observable.defer(() -> {
             RxBus.getInstance().post(new Connection(States.CONNECTED));
-            return Observable.empty();
-        }).observeOn(Schedulers.immediate()).subscribeOn(Schedulers.immediate()).subscribe(
-                o -> {
-                }, e -> {
-                }, () -> {
-                    if (testState != null && testState == States.CONNECTED) {
-                        changed.set(true);
-                    }
-                });
+            return Observable.just(testState != null && testState == States.CONNECTED);
+        }).subscribeOn(Schedulers.immediate()).observeOn(Schedulers.immediate()).subscribe(testSubscriber);
 
-        Assert.assertTrue("state was not changed", changed.get());
+        testSubscriber.assertNoErrors();
+        testSubscriber.assertReceivedOnNext(Arrays.asList(true));
+
+//        AtomicBoolean changed = new AtomicBoolean(false);
+//
+//        Observable.defer(() -> {
+//            RxBus.getInstance().post(new Connection(States.CONNECTED));
+//            return Observable.empty();
+//        }).observeOn(Schedulers.immediate()).subscribeOn(Schedulers.immediate()).subscribe(
+//                o -> {
+//                }, e -> {
+//                }, () -> {
+//                    if (testState != null && testState == States.CONNECTED) {
+//                        changed.set(true);
+//                    }
+//                });
+//
+//        Assert.assertTrue("state was not changed", changed.get());
     }
 
     @Test
