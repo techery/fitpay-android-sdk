@@ -16,14 +16,17 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import rx.Observable;
 import rx.Subscription;
-import rx.observers.TestSubscriber;
 import rx.schedulers.Schedulers;
+
+import static com.fitpay.android.api.enums.ResultCode.TIMEOUT;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class NotificationsTest {
@@ -74,31 +77,22 @@ public class NotificationsTest {
 
     @Test
     public void test03_checkNotification() throws InterruptedException {
-        TestSubscriber<Boolean> testSubscriber = new TestSubscriber<>();
+        final CountDownLatch latch = new CountDownLatch(1);
+        AtomicBoolean changed = new AtomicBoolean(false);
 
         Observable.defer(() -> {
             RxBus.getInstance().post(new Connection(States.CONNECTED));
-            return Observable.just(testState != null && testState == States.CONNECTED);
-        }).subscribeOn(Schedulers.immediate()).observeOn(Schedulers.immediate()).subscribe(testSubscriber);
+            return Observable.empty();
+        }).observeOn(Schedulers.immediate()).subscribeOn(Schedulers.immediate()).subscribe(
+                o -> {
+                }, e -> latch.countDown(),
+                () -> {
+                    changed.set(testState != null && testState == States.CONNECTED);
+                    latch.countDown();
+                });
 
-        testSubscriber.assertNoErrors();
-        testSubscriber.assertReceivedOnNext(Arrays.asList(true));
-
-//        AtomicBoolean changed = new AtomicBoolean(false);
-//
-//        Observable.defer(() -> {
-//            RxBus.getInstance().post(new Connection(States.CONNECTED));
-//            return Observable.empty();
-//        }).observeOn(Schedulers.immediate()).subscribeOn(Schedulers.immediate()).subscribe(
-//                o -> {
-//                }, e -> {
-//                }, () -> {
-//                    if (testState != null && testState == States.CONNECTED) {
-//                        changed.set(true);
-//                    }
-//                });
-//
-//        Assert.assertTrue("state was not changed", changed.get());
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue("state was not changed", changed.get());
     }
 
     @Test
