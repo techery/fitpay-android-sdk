@@ -381,7 +381,7 @@ public class TestActions {
         final CountDownLatch latch = new CountDownLatch(1);
         ResultProvidingCallback<Collections.CommitsCollection> callback = new ResultProvidingCallback<>(latch);
         device.getAllCommits(lastCommitId, callback);
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        latch.await(TIMEOUT * 3, TimeUnit.SECONDS);
         assertEquals("get commits error code.  (message: " + callback.getErrorMessage() + ")", -1, callback.getErrorCode());
         return callback.getResult();
     }

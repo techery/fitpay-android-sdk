@@ -12,22 +12,21 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import rx.Observable;
-import rx.Scheduler;
 import rx.Subscription;
-import rx.android.plugins.RxAndroidPlugins;
-import rx.android.plugins.RxAndroidSchedulersHook;
-import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
+
+import static com.fitpay.android.api.enums.ResultCode.TIMEOUT;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class NotificationsTest {
@@ -46,15 +45,6 @@ public class NotificationsTest {
     @BeforeClass
     @SuppressWarnings("unchecked")
     public static void init() {
-        RxAndroidPlugins.getInstance().reset();
-
-        RxAndroidPlugins.getInstance().registerSchedulersHook(new RxAndroidSchedulersHook() {
-            @Override
-            public Scheduler getMainThreadScheduler() {
-                return Schedulers.immediate();
-            }
-        });
-
         listener = new ConnectionListener() {
             @Override
             public void onDeviceStateChanged(@Connection.State int state) {
@@ -63,7 +53,6 @@ public class NotificationsTest {
         };
 
         manager = NotificationManager.getInstance();
-
 
         listeners = (List<Listener>) getPrivateField(manager, "mListeners");
         subscriptions = (ConcurrentHashMap<Class, Subscription>) getPrivateField(manager, "mSubscriptions");
@@ -79,7 +68,7 @@ public class NotificationsTest {
 
     @Test
     public void test02_addListener() throws InterruptedException {
-        manager.addListener(listener);
+        manager.addListener(listener, Schedulers.immediate());
 
         Assert.assertEquals(1, listeners.size());
         Assert.assertEquals(1, subscriptions.size());
@@ -87,27 +76,22 @@ public class NotificationsTest {
     }
 
     @Test
-    @Ignore
-    // TODO determine why connection event is not being posted on the bus - this used to work
     public void test03_checkNotification() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean changed = new AtomicBoolean(false);
 
-        Observable.create(subscriber -> {
+        Observable.defer(() -> {
             RxBus.getInstance().post(new Connection(States.CONNECTED));
-
-            subscriber.onNext(null);
-            subscriber.onCompleted();
-        })
-                .observeOn(AndroidSchedulers.mainThread())
-                .toBlocking()
-                .subscribe(o -> {
-                }, e -> {
-                }, () -> {
-                    if (testState != null && testState == States.CONNECTED) {
-                        changed.set(true);
-                    }
+            return Observable.empty();
+        }).observeOn(Schedulers.immediate()).subscribeOn(Schedulers.immediate()).subscribe(
+                o -> {
+                }, e -> latch.countDown(),
+                () -> {
+                    changed.set(testState != null && testState == States.CONNECTED);
+                    latch.countDown();
                 });
 
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertTrue("state was not changed", changed.get());
     }
 
@@ -119,7 +103,6 @@ public class NotificationsTest {
         Assert.assertEquals(0, subscriptions.size());
         Assert.assertEquals(0, commands.size());
     }
-
 
     private static Object getPrivateField(Object from, String fieldName) {
         try {
@@ -135,7 +118,6 @@ public class NotificationsTest {
         return null;
     }
 
-
     @AfterClass
     public static void tearDown() throws Exception {
 
@@ -146,7 +128,5 @@ public class NotificationsTest {
         listeners = null;
         subscriptions = null;
         commands = null;
-
-        RxAndroidPlugins.getInstance().reset();
     }
 }
