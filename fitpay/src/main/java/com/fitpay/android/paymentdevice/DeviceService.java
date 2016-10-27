@@ -36,7 +36,6 @@ import java.io.StringReader;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.alexrs.prefs.lib.Prefs;
@@ -334,8 +333,9 @@ public final class DeviceService extends Service {
     }
 
     private void syncDevice() {
+        RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
 
-        if(paymentDeviceConnector.getState() == States.DISCONNECTED || paymentDeviceConnector.getState() == States.DISCONNECTING){
+        if (paymentDeviceConnector.getState() == States.DISCONNECTED || paymentDeviceConnector.getState() == States.DISCONNECTING) {
             RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.disconnected), DeviceStatusMessage.PENDING));
             RxBus.getInstance().post(new Sync(States.FAILED));
             return;
