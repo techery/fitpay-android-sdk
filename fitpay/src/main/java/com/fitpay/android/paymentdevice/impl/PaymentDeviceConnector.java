@@ -108,6 +108,11 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     @Override
     public void close() {
+        if (null != apduExecutionListener) {
+            NotificationManager.getInstance().removeListener(apduExecutionListener);
+            apduExecutionListener = null;
+        }
+
         disconnect();
     }
 

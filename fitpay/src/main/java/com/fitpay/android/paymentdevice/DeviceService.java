@@ -318,8 +318,7 @@ public final class DeviceService extends Service {
             throw new IllegalStateException("No payment device connection");
         }
 
-        if (mSyncEventState != null &&
-                (mSyncEventState == States.STARTED || mSyncEventState == States.IN_PROGRESS)) {
+        if (mSyncEventState != null && (mSyncEventState == States.STARTED || mSyncEventState == States.IN_PROGRESS)) {
             Logger.w("Sync already in progress. Try again later");
             throw new IllegalStateException("Another sync is currently active.  Please try again later");
         }
@@ -420,7 +419,13 @@ public final class DeviceService extends Service {
             mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
             mCommands.put(CommitFailed.class, data -> onCommitFailed((CommitFailed) data));
             mCommands.put(CommitSkipped.class, data -> onCommitSkipped((CommitSkipped) data));
-            mCommands.put(AppMessage.class, data -> syncData(user, device));
+            mCommands.put(AppMessage.class, data -> {
+                try {
+                    syncData(user, device);
+                } catch (Exception e){
+                    //don't remove try/catch. syncData can throw an exception when it busy.
+                }
+            });
         }
 
         @Override
@@ -433,6 +438,7 @@ public final class DeviceService extends Service {
                 //However, a listener should not unregister itself so we will leave it
                 //NotificationManager.getInstance().removeListener(mSyncListener);
                 Log.d(TAG, "sync has ended");
+                paymentDeviceConnector.syncComplete();
             }
 
             if (mSyncEventState == States.COMMIT_COMPLETED) {
