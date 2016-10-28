@@ -155,3 +155,10 @@ bintray {
     }
     configurations = ['archives']
 }
+
+// Test Logging
+tasks.withType(Test) {
+    testLogging {
+        events "started", "passed", "skipped", "failed", "standardError"
+    }
+}
