@@ -17,5 +17,5 @@ before_install:
 
 script:
   - ./gradlew clean
-  - ./gradlew testDebugUnitTestCoverage
+  - ./gradlew testReleaseUnitTestCoverage
   - ./upload_coverage.pl

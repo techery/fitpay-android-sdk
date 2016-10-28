@@ -159,6 +159,6 @@ bintray {
 // Test Logging
 tasks.withType(Test) {
     testLogging {
-        events "started", "passed", "skipped", "failed", "standardError"
+        events "started", "passed", "skipped", "failed"
     }
 }
