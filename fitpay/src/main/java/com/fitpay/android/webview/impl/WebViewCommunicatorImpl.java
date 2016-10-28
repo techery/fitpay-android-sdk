@@ -111,12 +111,18 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
             case "userData":
                 //params are only there for the userData action
-                String deviceId = obj.getJSONObject("data").getJSONObject("data").getString("deviceId");
-                String token = obj.getJSONObject("data").getJSONObject("data").getString("token");
-                String userId = obj.getJSONObject("data").getJSONObject("data").getString("userId");
+                String deviceId = null;
+                String token = null;
+                String userId = null;
 
-                if ((deviceId == null) || (token == null) || (userId == null))
+                try {
+                    deviceId = obj.getJSONObject("data").getJSONObject("data").getString("deviceId");
+                    token = obj.getJSONObject("data").getJSONObject("data").getString("token");
+                    userId = obj.getJSONObject("data").getJSONObject("data").getString("userId");
+                } catch (Exception e) {
                     throw new IllegalArgumentException("missing required message data");
+                }
+
                 sendUserData(callBackId, deviceId, token, userId);
                 break;
 
