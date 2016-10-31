@@ -95,11 +95,7 @@ public final class DeviceService extends Service {
     @Override
     public boolean onUnbind(Intent intent) {
         super.onUnbind(intent);
-
-        if (paymentDeviceConnector != null) {
-            paymentDeviceConnector.disconnect();
-        }
-
+        stopSelf();
         return true;
     }
 
@@ -110,20 +106,14 @@ public final class DeviceService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        int value = super.onStartCommand(intent, flags, startId);
-        Log.d(TAG, "onStartCommand.  intent: " + intent);
-        if (null == intent) {
-            configure(intent);
-        }
-
-        return value;
+        return super.onStartCommand(intent, flags, startId);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
 
-        if (paymentDeviceConnector != null) {
+        if (null != paymentDeviceConnector) {
             paymentDeviceConnector.close();
             paymentDeviceConnector = null;
         }
@@ -284,10 +274,10 @@ public final class DeviceService extends Service {
             Log.d(TAG, "Starting execution of disconnect");
             if (null != paymentDeviceConnector) {
                 paymentDeviceConnector.disconnect();
+                paymentDeviceConnector = null;
             }
             NotificationManager.getInstance().removeListener(mSyncListener);
         });
-
     }
 
     /**
@@ -422,7 +412,7 @@ public final class DeviceService extends Service {
             mCommands.put(AppMessage.class, data -> {
                 try {
                     syncData(user, device);
-                } catch (Exception e){
+                } catch (Exception e) {
                     //don't remove try/catch. syncData can throw an exception when it busy.
                 }
             });

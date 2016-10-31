@@ -48,6 +48,7 @@ public class NotificationsTest {
         listener = new ConnectionListener() {
             @Override
             public void onDeviceStateChanged(@Connection.State int state) {
+                log("checkNotification receive:" + state);
                 testState = state;
             }
         };
@@ -79,19 +80,27 @@ public class NotificationsTest {
     public void test03_checkNotification() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
         AtomicBoolean changed = new AtomicBoolean(false);
+        log("checkNotification start");
 
         Observable.defer(() -> {
+            log("checkNotification send state");
             RxBus.getInstance().post(new Connection(States.CONNECTED));
             return Observable.empty();
         }).observeOn(Schedulers.immediate()).subscribeOn(Schedulers.immediate()).subscribe(
                 o -> {
-                }, e -> latch.countDown(),
+                },
+                e -> {
+                    log("checkNotification error:" + e.getMessage());
+                    latch.countDown();
+                },
                 () -> {
+                    log("checkNotification complete");
                     changed.set(testState != null && testState == States.CONNECTED);
                     latch.countDown();
                 });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        log("checkNotification finish");
         Assert.assertTrue("state was not changed", changed.get());
     }
 
@@ -120,7 +129,6 @@ public class NotificationsTest {
 
     @AfterClass
     public static void tearDown() throws Exception {
-
         manager.removeListener(listener);
 
         listener = null;
@@ -128,5 +136,9 @@ public class NotificationsTest {
         listeners = null;
         subscriptions = null;
         commands = null;
+    }
+
+    private static void log(String str) {
+        System.out.println(str + " " + Thread.currentThread());
     }
 }
