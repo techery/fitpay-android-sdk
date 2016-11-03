@@ -26,6 +26,8 @@ import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.webview.WebViewCommunicator;
 import com.fitpay.android.webview.callback.OnTaskCompleted;
 import com.fitpay.android.webview.events.DeviceStatusMessage;
+import com.fitpay.android.webview.events.RtmMessage;
+import com.fitpay.android.webview.events.RtmMessageResponse;
 import com.fitpay.android.webview.events.UserReceived;
 import com.google.gson.Gson;
 
@@ -60,6 +62,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private DeviceStatusListener deviceStatusListener;
     private CustomListener listenerForAppCallbacks;
+    private RtmMessageListener rtmMessageListener;
 
     private WebView webView;
 
@@ -72,8 +75,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     public WebViewCommunicatorImpl(Activity ctx, int wId) {
         this.activity = ctx;
+
         deviceStatusListener = new DeviceStatusListener();
+        rtmMessageListener = new RtmMessageListener();
+
         NotificationManager.getInstance().addListener(deviceStatusListener);
+        NotificationManager.getInstance().addListener(rtmMessageListener);
 
         webView = (WebView) activity.findViewById(wId);
     }
@@ -84,8 +91,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     @Override
     public void logout() {
-        sendLogoutSignalToJs();
-
+        RxBus.getInstance().post(new RtmMessageResponse(null, null, "logout"));
         RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.connecting), DeviceStatusMessage.PENDING));
     }
 
@@ -96,50 +102,29 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         if (message == null) throw new IllegalArgumentException("invalid message");
 
         Log.d(TAG, "received message: " + message);
+
         JSONObject obj = new JSONObject(message);
 
         String callBackId = obj.getString("callBackId");
         if (callBackId == null)
+            throw new IllegalArgumentException("callBackId is missing in the message from the UI");
+
+//        JSONObject data = obj.getJSONObject("data");
+//        if (data == null)
+//            throw new IllegalArgumentException("data is missing in the message from the UI");
+
+        String type = obj.getString("type");
+        if (type == null)
             throw new IllegalArgumentException("action is missing in the message from the UI");
-        Log.d(TAG, "received callbackId: " + callBackId);
 
-        String action = obj.getJSONObject("data").getString("action");
-        if (action == null)
-            throw new IllegalArgumentException("action is missing in the message from the UI");
+        String dataStr = obj.has("data") ? obj.getString("data") : null;
 
-        switch (action) {
-
-            case "userData":
-                //params are only there for the userData action
-                String deviceId = null;
-                String token = null;
-                String userId = null;
-
-                try {
-                    deviceId = obj.getJSONObject("data").getJSONObject("data").getString("deviceId");
-                    token = obj.getJSONObject("data").getJSONObject("data").getString("token");
-                    userId = obj.getJSONObject("data").getJSONObject("data").getString("userId");
-                } catch (Exception e) {
-                    throw new IllegalArgumentException("missing required message data");
-                }
-
-                sendUserData(callBackId, deviceId, token, userId);
-                break;
-
-            case "sync":
-                sync(callBackId);
-                break;
-
-            default:
-                throw new IllegalArgumentException("unsupported action value in message");
-
-        }
+        RxBus.getInstance().post(new RtmMessage(callBackId, dataStr, type));
     }
 
     @Override
     @JavascriptInterface
     public String sync(String callbackId) {
-
         RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
 
         if (null == device) {
@@ -254,38 +239,16 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     public void close() {
         NotificationManager.getInstance().removeListener(deviceStatusListener);
         NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
+        NotificationManager.getInstance().removeListener(rtmMessageListener);
     }
 
-    public void sendMessageToJs(String callBackId, String success, String response) {
-
-        String responseMessage = "{ \"callBackId\" :" + callBackId + "," +
-                "\"success\" :" + success + "," +
-                "\"response\" :" + response + " }";
-
-        Log.d(TAG, "sending message to webview: " + responseMessage);
-
-        final String url = "javascript:window.RtmBridge.resolve('" + responseMessage + "');";
-        Log.d(TAG, "message url: " + url);
-
-        activity.runOnUiThread(() -> webView.loadUrl(url));
+    private void sendMessageToJs(String callBackId, String success, String response) {
+        String responseMessage = "{ \"success\" :" + success + "," + "\"response\" :" + response + " }";
+        RxBus.getInstance().post(new RtmMessageResponse(callBackId, responseMessage, "resolve"));
     }
 
-    public void sendDeviceStatusToJs(DeviceStatusMessage event) {
-
-        String responseMessage = "{\"message\":\"" + event.getMessage() + "\",\"type\":" + event.getType() + "}";
-
-        final String url = "javascript:window.RtmBridge.setDeviceStatus(" + responseMessage + ");";
-        Log.d(TAG, "message url: " + url);
-
-        activity.runOnUiThread(() -> webView.loadUrl(url));
-    }
-
-    public void sendLogoutSignalToJs() {
-        Log.d(TAG, "sending logout message to the webview");
-
-        final String jurl = "javascript:window.RtmBridge.forceLogout();";
-
-        activity.runOnUiThread(() -> webView.loadUrl(jurl));
+    private void sendDeviceStatusToJs(DeviceStatusMessage event) {
+        RxBus.getInstance().post(new RtmMessageResponse(null, event, "deviceStatus"));
     }
 
     private void getUserAndDevice(final String deviceId, final String callbackId) {
@@ -458,6 +421,48 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         }
 
+    }
+
+    private class RtmMessageListener extends Listener {
+        private RtmMessageListener() {
+            mCommands.put(RtmMessage.class, data -> {
+                RtmMessage msg = (RtmMessage) data;
+                String callbackId = msg.getCallbackId();
+
+                switch (msg.getType()) {
+                    case "userData":
+                        //params are only there for the userData action
+                        String deviceId = null;
+                        String token = null;
+                        String userId = null;
+
+                        try {
+                            JSONObject obj = new JSONObject(msg.getJsonData());
+                            deviceId = obj.getString("deviceId");
+                            token = obj.getString("token");
+                            userId = obj.getString("userId");
+                        } catch (Exception e) {
+                            throw new IllegalArgumentException("missing required message data");
+                        }
+
+                        sendUserData(callbackId, deviceId, token, userId);
+                        break;
+
+                    case "sync":
+                        sync(callbackId);
+                        break;
+
+                    default:
+                        throw new IllegalArgumentException("unsupported action value in message with callbackId:" + callbackId);
+                }
+            });
+            mCommands.put(RtmMessageResponse.class, data -> {
+                String str = data.toString();
+                Log.d(TAG, "sending message to webview: " + str);
+                final String url = "javascript:window.RtmBridge.resolve('" + str + "');";
+                activity.runOnUiThread(() -> webView.loadUrl(url));
+            });
+        }
     }
 
     private String buildAppCallbackPayload(String command, String status, String reason, long createdTs) {
