@@ -91,7 +91,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     @Override
     public void logout() {
-        RxBus.getInstance().post(new RtmMessageResponse(null, null, "logout"));
+        RxBus.getInstance().post(new RtmMessageResponse("logout"));
         RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.connecting), DeviceStatusMessage.PENDING));
     }
 
@@ -125,7 +125,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     @Override
     @JavascriptInterface
     public String sync(String callbackId) {
-        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
+//        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
 
         if (null == device) {
             SyncResponseModel response = new SyncResponseModel.Builder()
@@ -136,7 +136,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             Log.d(TAG, "sync can not be done.  No device has been specified.   response: " + response);
 
             if (null != callbackId) {
-                sendMessageToJs(callbackId, "false", gson.toJson(response));
+                sendMessageToJs(callbackId, false, response);
             }
             if (null != callback) {
                 callback.onTaskCompleted(RESPONSE_FAILURE);
@@ -156,7 +156,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             Log.d(TAG, "sync can not be done.  No device service configured.   response: " + response);
 
             if (null != callbackId) {
-                sendMessageToJs(callbackId, "false", gson.toJson(response));
+                sendMessageToJs(callbackId, false, response);
             }
             if (null != callback) {
                 callback.onTaskCompleted(RESPONSE_FAILURE);
@@ -183,7 +183,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             Log.d(TAG, "sync can not be done.  Reason: " + ex.getMessage() + ",  response: " + response);
 
             if (null != callbackId) {
-                sendMessageToJs(callbackId, "true", gson.toJson(response));
+                sendMessageToJs(callbackId, true, response);
             }
             if (null != callback) {
                 callback.onTaskCompleted(RESPONSE_FAILURE);
@@ -242,13 +242,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         NotificationManager.getInstance().removeListener(rtmMessageListener);
     }
 
-    private void sendMessageToJs(String callBackId, String success, String response) {
-        String responseMessage = "{ \"success\" :" + success + "," + "\"response\" :" + response + " }";
-        RxBus.getInstance().post(new RtmMessageResponse(callBackId, responseMessage, "resolve"));
+    private void sendMessageToJs(String callBackId, boolean success, Object response) {
+        RxBus.getInstance().post(new RtmMessageResponse(callBackId, success, response, "resolve"));
     }
 
     private void sendDeviceStatusToJs(DeviceStatusMessage event) {
-        RxBus.getInstance().post(new RtmMessageResponse(null, event, "deviceStatus"));
+        RxBus.getInstance().post(new RtmMessageResponse(event, "deviceStatus"));
     }
 
     private void getUserAndDevice(final String deviceId, final String callbackId) {
@@ -286,7 +285,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                                 .status(USER_DATA_STUB_RESPONSE)
                                 .build();
                         if (null != callbackId) {
-                            sendMessageToJs(callbackId, "true", gson.toJson(stubResponse));
+                            sendMessageToJs(callbackId, true, stubResponse);
                         }
                         if (null != callback) {
                             callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
@@ -351,7 +350,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                             .build();
 
                     if (null != callbackId) {
-                        sendMessageToJs(callbackId, "true", gson.toJson(stubResponse));
+                        sendMessageToJs(callbackId, true, stubResponse);
                     }
                     if (null != callback) {
                         callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
@@ -367,7 +366,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                             .reason("sync failure")
                             .build();
                     if (null != callbackId) {
-                        sendMessageToJs(callbackId, "false", gson.toJson(response));
+                        sendMessageToJs(callbackId, false, response);
                     }
                     if (null != callback) {
                         callback.onTaskCompleted(RESPONSE_FAILURE);
