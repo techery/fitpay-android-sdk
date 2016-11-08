@@ -52,9 +52,11 @@ public final class NotificationManager {
             Log.d(TAG, "subscribeTo doing put of class:  " + clazz + " from thread: " + Thread.currentThread());
             mSubscriptions.put(clazz, RxBus.getInstance().register(clazz, scheduler, object -> {
 //                Log.d("RxBus", "get event:\t\t" + object);
-                for (Command command : mCommands.get(clazz)) {
+                synchronized (this) {
+                    for (Command command : mCommands.get(clazz)) {
 //                    Log.d("RxBus", "has event:\t\t\t" + object);
-                    command.execute(object);
+                        command.execute(object);
+                    }
                 }
             }));
         }
