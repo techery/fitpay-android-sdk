@@ -8,10 +8,12 @@ import com.fitpay.android.utils.Hex;
 public final class ApduCommand {
 
     private String commandId;
+    private int groupId;
     private int sequence;
     private String command;
     private String type;
-    private String description;
+    private boolean injected;
+    private boolean continueOnFailure;
 
     private ApduCommand() {
     }
@@ -32,7 +34,15 @@ public final class ApduCommand {
         return type;
     }
 
-    public String getDescription() {
-        return description;
+    public int getGroupId() {
+        return groupId;
+    }
+
+    public boolean isInjected() {
+        return injected;
+    }
+
+    public boolean isContinueOnFailure() {
+        return continueOnFailure;
     }
 }

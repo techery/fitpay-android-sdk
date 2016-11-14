@@ -448,7 +448,10 @@ public final class DeviceService extends Service {
             DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSuccess.getCommitId());
             DevicePreferenceData.store(DeviceService.this, deviceData);
-            mCommits.remove(0);
+            //TODO: sometimes I caught IndexOfBoundException. Need to find why this happens
+            if(mCommits.size() > 0) {
+                mCommits.remove(0);
+            }
             processNextCommit();
         }
 
@@ -458,7 +461,9 @@ public final class DeviceService extends Service {
             DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSkipped.getCommitId());
             DevicePreferenceData.store(DeviceService.this, deviceData);
-            mCommits.remove(0);
+            if(mCommits.size() > 0) {
+                mCommits.remove(0);
+            }
             processNextCommit();
         }
     }
