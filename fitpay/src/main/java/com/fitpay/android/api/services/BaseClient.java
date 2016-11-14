@@ -22,7 +22,6 @@ import okhttp3.TlsVersion;
  * Created by tgs on 5/20/16.
  */
 public class BaseClient {
-
     protected static final String FP_KEY_ID = "fp-key-id";
 
     /*

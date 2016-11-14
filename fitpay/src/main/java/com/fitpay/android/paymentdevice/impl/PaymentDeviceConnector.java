@@ -1,7 +1,6 @@
 package com.fitpay.android.paymentdevice.impl;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.CommitTypes;
@@ -21,6 +20,7 @@ import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
+import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
@@ -96,7 +96,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     @Override
     public void setState(@Connection.State int state) {
-        Log.d(TAG, "connection state changed: " + state);
+        FPLog.d(TAG, "connection state changed: " + state);
         this.state = state;
         RxBus.getInstance().post(new Connection(state));
     }
@@ -144,7 +144,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     @Override
     public void processCommit(Commit commit) {
-        Log.d(TAG, "processing commit on Thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
+        FPLog.d(TAG, "processing commit on Thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
         currentCommit = commit;
         if (null == commitHandlers) {
             return;
@@ -153,7 +153,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         if (null != handler) {
             handler.processCommit(commit);
         } else {
-            Log.d(TAG, "No action taken for commit.  No handler defined for commit: " + commit);
+            FPLog.w(TAG, "No action taken for commit.  No handler defined for commit: " + commit);
             // still need to signal that processing of the commit has completed
             RxBus.getInstance().post(new CommitSuccess(commit));
         }
@@ -199,7 +199,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                         RxBus.getInstance().post(topOfWallets);
                     }
                 },
-                throwable -> Log.i(TAG, "Something goes wrong"));
+                throwable -> FPLog.e(TAG, "TOW execution error: " + throwable.getMessage()));
     }
 
     private class ApduCommitHandler implements CommitHandler {
@@ -224,7 +224,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                     RxBus.getInstance().post(result);
                 }
             } else {
-                Log.e(TAG, "ApduCommitHandler called for non-adpu commit.  THIS IS AN APPLICTION DEFECT " + commit);
+                FPLog.e(TAG, "ApduCommitHandler called for non-adpu commit. THIS IS AN APPLICATION DEFECT " + commit);
             }
         }
     }
@@ -307,7 +307,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                     // FitPay isn't really a commit failure, it's something that needs to be
                     // managed properly... i.e. the commit was applied, it was successful, it was
                     // the reporting to FitPay that wasn't, is that part of the commit?
-                    Log.e(TAG, "Could not post apduExecutionResult. " + errorCode + ": " + errorMessage);
+                    FPLog.e(TAG, "Could not post apduExecutionResult. " + errorCode + ": " + errorMessage);
                     RxBus.getInstance().post(new CommitFailed.Builder()
                             .commit(currentCommit)
                             .errorCode(errorCode)
@@ -316,7 +316,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                 }
             });
         } else {
-            Log.w(TAG, "Unexpected state - current commit is null but should be populated");
+            FPLog.e(TAG, "Unexpected state - current commit is null but should be populated");
         }
     }
 

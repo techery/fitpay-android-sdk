@@ -13,7 +13,6 @@ public class TestUtils {
         // static methods only
     }
 
-
     public static String getRandomLengthString(int minLength, int maxLength) {
         String chars = "abcdefghijklmnopqrstuvwxyz";
         int length = minLength;
@@ -23,7 +22,7 @@ public class TestUtils {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
             int pos = random.nextInt(chars.length());
-            sb.append(chars.substring(pos, pos+ 1));
+            sb.append(chars.substring(pos, pos + 1));
         }
         return sb.toString();
     }
@@ -37,9 +36,8 @@ public class TestUtils {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < length; i++) {
             int pos = random.nextInt(chars.length());
-            sb.append(chars.substring(pos, pos+ 1));
+            sb.append(chars.substring(pos, pos + 1));
         }
         return sb.toString();
     }
-
 }

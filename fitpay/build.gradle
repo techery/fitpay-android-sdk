@@ -78,7 +78,6 @@ android {
     testOptions {
         unitTests.returnDefaultValues = true
     }
-
 }
 
 ext {
@@ -94,8 +93,6 @@ dependencies {
     compile 'com.squareup.retrofit2:retrofit:2.1.0'
     compile 'com.squareup.retrofit2:converter-gson:2.1.0'
     compile 'com.squareup.okhttp3:logging-interceptor:3.4.1'
-
-    compile 'com.orhanobut:logger:1.15'
 
     compile 'io.reactivex:rxjava:1.2.0'
     compile 'io.reactivex:rxandroid:1.2.1'
@@ -150,7 +147,7 @@ bintray {
         vcsUrl = 'https://github.com/fitpay/fitpay-android-sdk.git'
 
         version {
-            name = '0.4.12'
+            name = '0.4.13'
         }
     }
     configurations = ['archives']

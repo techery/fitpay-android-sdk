@@ -4,7 +4,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
-import android.util.Log;
+
 
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.card.TopOfWallet;
@@ -13,9 +13,10 @@ import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
 import com.fitpay.android.paymentdevice.impl.ble.message.SecurityStateMessage;
 import com.fitpay.android.paymentdevice.impl.PaymentDeviceConnector;
+import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
-import com.orhanobut.logger.Logger;
+
 
 import java.util.List;
 
@@ -46,13 +47,13 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
         BluetoothManager mBluetoothManager = (BluetoothManager) mContext.getSystemService(Context.BLUETOOTH_SERVICE);
 
         if (mBluetoothManager == null) {
-            Logger.e("unable to initialize bluetooth manager");
+            FPLog.e(TAG, "unable to initialize bluetooth manager");
             return;
         }
 
         mBluetoothAdapter = mBluetoothManager.getAdapter();
         if (mBluetoothAdapter == null) {
-            Logger.e("unable to obtain bluetooth adapter");
+            FPLog.e(TAG, "unable to obtain bluetooth adapter");
             return;
         }
 
@@ -71,15 +72,15 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
      */
     @Override
     public void connect() {
-        Logger.d(TAG, "initiate connect to device: " + mAddress);
+        FPLog.d(TAG, "initiate connect to device: " + mAddress);
         if (mBluetoothAdapter == null || StringUtils.isEmpty(mAddress)) {
-            Logger.w("BluetoothAdapter not initialized or unspecified address.");
+            FPLog.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
             return;
         }
 
         final BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(mAddress);
         if (device == null) {
-            Logger.w("Device not found.  Unable to connect.");
+            FPLog.w(TAG, "Device not found.  Unable to connect.");
             return;
         }
 
@@ -90,11 +91,11 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
 
     @Override
     public void disconnect() {
-        Logger.d(TAG, "initiate disconnect from to device: " + mAddress);
+        FPLog.d(TAG, "initiate disconnect from to device: " + mAddress);
         if(mGattManager != null) {
             mGattManager.disconnect();
         } else {
-            Logger.w("GattManager is null");
+            FPLog.w(TAG, "GattManager is null");
         }
     }
 
@@ -103,7 +104,7 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
         if(mGattManager != null) {
             mGattManager.reconnect();
         } else {
-            Logger.w("GattManager is null");
+            FPLog.w(TAG, "GattManager is null");
         }
     }
 
@@ -119,14 +120,14 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
 
     @Override
     public void readDeviceInfo() {
-        Log.d(TAG, "initiate readDeviceInfo request");
+        FPLog.d(TAG, "initiate readDeviceInfo request");
         GattOperation readDeviceInfoOperation = new GattDeviceCharacteristicsOperation(mAddress);
         mGattManager.queue(readDeviceInfoOperation);
     }
 
     @Override
     public void readNFCState() {
-        Log.d(TAG, "initiate readNFCState request");
+        FPLog.d(TAG, "initiate readNFCState request");
         GattOperation getNFCOperation = new GattCharacteristicReadOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE,
@@ -136,7 +137,7 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
 
     @Override
     public void setNFCState(@NFC.Action byte state) {
-        Log.d(TAG, "initiate setNFCState request.  Target state: " + state);
+        FPLog.d(TAG, "initiate setNFCState request.  Target state: " + state);
         GattOperation setNFCOperation = new GattCharacteristicWriteOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_SECURITY_WRITE,
@@ -147,7 +148,7 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
 
     @Override
     public void executeApduPackage(ApduPackage apduPackage) {
-        Log.d(TAG, "initiate executeApduPackage request");
+        FPLog.d(TAG, "initiate executeApduPackage request");
         GattOperation sendApduOperation = new GattApduOperation(apduPackage);
         mGattManager.queue(sendApduOperation);
     }
@@ -158,7 +159,7 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
 
     @Override
     public void sendNotification(byte[] data) {
-        Log.d(TAG, "initiate sendNotification request.  data: " + data);
+        FPLog.d(TAG, "initiate sendNotification request.  data: " + data);
         GattOperation setTransactionOperation = new GattCharacteristicWriteOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_NOTIFICATION,
@@ -169,7 +170,7 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
 
     @Override
     public void setSecureElementState(@SecureElement.Action byte state) {
-        Log.d(TAG, "initiate setSecureElementState request.  Target state: " + state);
+        FPLog.d(TAG, "initiate setSecureElementState request.  Target state: " + state);
         GattOperation resetOperation = new GattCharacteristicWriteOperation(
                 PaymentServiceConstants.SERVICE_UUID,
                 PaymentServiceConstants.CHARACTERISTIC_DEVICE_RESET,

@@ -16,10 +16,9 @@ public class TimestampUtils {
      * Return combined date and time string for specified date/time
      *
      * @param time time in milliseconds
-     *
      * @return String with format "yyyy-MM-dd"
      */
-    public static String getReadableDate(long time){
+    public static String getReadableDate(long time) {
         SimpleDateFormat dateFormat = new SimpleDateFormat(Constants.DATE_FORMAT_SIMPLE, Locale.getDefault());
         return dateFormat.format(new Date(time));
     }
@@ -28,16 +27,15 @@ public class TimestampUtils {
      * Return a date for specified ISO 8601 time
      *
      * @param time time in ISO 8601 format "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
-     *
      * @return Date
      */
-    public static Date getDateForISO8601String(String time){
+    public static Date getDateForISO8601String(String time) {
         DateFormat dateFormat = new SimpleDateFormat(Constants.DATE_FORMAT, Locale.getDefault());
         Date date = null;
         try {
             date = dateFormat.parse(time.replaceAll("Z$", "+0000"));
         } catch (ParseException e) {
-            Constants.printError(e);
+            FPLog.e(e);
         }
         return date;
     }
@@ -46,7 +44,6 @@ public class TimestampUtils {
      * Return an ISO 8601 combined date and time string for specified date/time
      *
      * @param time time in milliseconds
-     *
      * @return String with format "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
      */
     public static String getISO8601StringForTime(long time) {

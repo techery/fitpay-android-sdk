@@ -1,7 +1,6 @@
 package com.fitpay.android.paymentdevice.impl.mock;
 
 import android.annotation.SuppressLint;
-import android.util.Log;
 
 import com.fitpay.android.api.enums.CommitTypes;
 import com.fitpay.android.api.enums.DeviceTypes;
@@ -23,6 +22,7 @@ import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.impl.PaymentDeviceConnector;
+import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Hex;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
@@ -94,12 +94,12 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
     @Override
     public void close() {
-        Log.d(TAG, "close not implemented");
+        FPLog.d(TAG, "close not implemented");
     }
 
     @Override
     public void connect() {
-        Log.d(TAG, "payment device connect requested.   current state: " + getState());
+        FPLog.d(TAG, "payment device connect requested.   current state: " + getState());
 
         NotificationManager.getInstance().addListenerToCurrentThread(syncCompleteListener);
 
@@ -110,17 +110,17 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         setStateWithDelay(CONFIG_CONNECTING_RESPONSE_TIME, States.CONNECTING)
                 .flatMap(x -> setStateWithDelay(CONFIG_CONNECTED_RESPONSE_TIME, States.CONNECTED))
                 .subscribe(
-                        x -> Log.d(TAG, "connect success"),
-                        throwable -> Log.d(TAG, "connect error:" + throwable.toString()),
+                        x -> FPLog.d(TAG, "connect success"),
+                        throwable -> FPLog.e(TAG, "connect error:" + throwable.toString()),
                         () -> {
-                            Log.d(TAG, "connect complete");
+                            FPLog.d(TAG, "connect complete");
                             readDeviceInfo();
                         });
     }
 
     @Override
     public void disconnect() {
-        Log.d(TAG, "payment device disconnect requested.  current state: " + getState());
+        FPLog.d(TAG, "payment device disconnect requested.  current state: " + getState());
 
         if (null != syncCompleteListener) {
             NotificationManager.getInstance().removeListener(syncCompleteListener);
@@ -129,21 +129,21 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         setStateWithDelay(CONFIG_DISCONNECTING_RESPONSE_TIME, States.DISCONNECTING)
                 .flatMap(x -> setStateWithDelay(CONFIG_DISCONNECTED_RESPONSE_TIME, States.DISCONNECTED))
                 .subscribe(
-                        x -> Log.d(TAG, "disconnect success"),
-                        throwable -> Log.d(TAG, "disconnect error:" + throwable.toString()),
-                        () -> Log.d(TAG, "disconnect complete"));
+                        x -> FPLog.d(TAG, "disconnect success"),
+                        throwable -> FPLog.e(TAG, "disconnect error:" + throwable.toString()),
+                        () -> FPLog.d(TAG, "disconnect complete"));
     }
 
     @Override
     public void readDeviceInfo() {
-        Log.d(TAG, "payment device readDeviceInfo requested");
+        FPLog.d(TAG, "payment device readDeviceInfo requested");
 
         getDelayObservable()
                 .map(o -> loadDefaultDevice())
                 .subscribe(deviceInfo -> {
-                    Log.d(TAG, "device info has been read.  device: " + deviceInfo);
+                    FPLog.d(TAG, "device info has been read.  device: " + deviceInfo);
                     RxBus.getInstance().post(deviceInfo);
-                }, throwable -> Log.d(TAG, "read device info error:" + throwable.toString()));
+                }, throwable -> FPLog.e(TAG, "read device info error:" + throwable.toString()));
     }
 
     @Override
@@ -176,9 +176,9 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
     public void executeTopOfWallet(List<TopOfWallet> towPackage) {
         getDelayObservable()
                 .subscribe(
-                        x -> Log.d(TAG, "execute TOW success"),
-                        throwable -> Log.d(TAG, "execute TOW error" + throwable.toString()),
-                        () -> Log.d(TAG, "execute TOW complete"));
+                        x -> FPLog.d(TAG, "execute TOW success"),
+                        throwable -> FPLog.e(TAG, "execute TOW error" + throwable.toString()),
+                        () -> FPLog.d(TAG, "execute TOW complete"));
     }
 
     private int getIntValue(String value) {
@@ -186,7 +186,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         try {
             intValue = Integer.parseInt(value);
         } catch (Exception ex) {
-            Log.d(TAG, "could not convert string to int: " + value);
+            FPLog.e(TAG, "could not convert string to int: " + value);
         }
         return intValue;
     }
@@ -245,39 +245,39 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
             @Override
             public void onCompleted() {
-                Log.d(TAG, "Get response for apduCommand: " + apduCommandNumber);
+                FPLog.d(TAG, "Get response for apduCommand: " + apduCommandNumber);
                 ApduCommand apduCommand = apduPackage.getApduCommands().get(apduCommandNumber);
                 ApduCommandResult apduCommandResult = getMockResultForApduCommand(apduCommand);
                 apduExecutionResult.addResponse(apduCommandResult);
-                Log.d(TAG, "apduExecutionResult: " + apduExecutionResult);
+                FPLog.d(TAG, "apduExecutionResult: " + apduExecutionResult);
 
                 if (!ResponseState.PROCESSED.equals(apduExecutionResult.getState())) {
-                    Log.d(TAG, "apduExecutionResult: " + apduExecutionResult);
+                    FPLog.d(TAG, "apduExecutionResult: " + apduExecutionResult);
                     int duration = (int) ((System.currentTimeMillis() - apduExecutionResult.getExecutedTsEpoch()) / 1000);
                     apduExecutionResult.setExecutedDuration(duration);
-                    Log.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
+                    FPLog.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
                     RxBus.getInstance().post(apduExecutionResult);
                 } else if (apduCommandNumber + 1 < apduPackage.getApduCommands().size()) {
                     getDelayObservable(100)
                             .map(x -> true)
                             .subscribe(getApduObserver(apduPackage, apduExecutionResult, apduCommandNumber + 1));
                 } else {
-                    Log.d(TAG, "apduExecutionResult: " + apduExecutionResult);
+                    FPLog.d(TAG, "apduExecutionResult: " + apduExecutionResult);
                     int duration = (int) ((System.currentTimeMillis() - apduExecutionResult.getExecutedTsEpoch()) / 1000);
                     apduExecutionResult.setExecutedDuration(duration);
-                    Log.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
+                    FPLog.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
                     RxBus.getInstance().post(apduExecutionResult);
                 }
             }
 
             @Override
             public void onError(Throwable e) {
-                Log.d(TAG, "apdu observer error: " + e.getMessage());
+                FPLog.e(TAG, "apdu observer error: " + e.getMessage());
             }
 
             @Override
             public void onNext(Boolean bool) {
-                Log.d(TAG, "apdu observer onNext: " + bool);
+                FPLog.d(TAG, "apdu observer onNext: " + bool);
             }
         };
     }
@@ -312,15 +312,15 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
     public void updateWallet(CreditCardCommit card) {
         if (getWallet().containsKey(card.getCreditCardId())) {
-            Log.d(TAG, "Updating credit card in mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
+            FPLog.d(TAG, "Updating credit card in mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
         } else {
-            Log.d(TAG, "Adding credit card to mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
+            FPLog.d(TAG, "Adding credit card to mock wallet.  Id: " + card.getCreditCardId() + ", pan: " + card.getPan());
         }
         getWallet().put(card.getCreditCardId(), card);
     }
 
     public void removeCardFromWallet(String creditCardId) {
-        Log.d(TAG, "Credit card updated in mock wallet.  remove card: : " + creditCardId);
+        FPLog.d(TAG, "Credit card updated in mock wallet.  remove card: : " + creditCardId);
         getWallet().remove(creditCardId);
     }
 
@@ -341,7 +341,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         }
 
         public void onSyncStateChanged(Sync syncEvent) {
-            Log.d(TAG, "received on sync state changed event: " + syncEvent);
+            FPLog.d(TAG, "received on sync state changed event: " + syncEvent);
 
             switch (syncEvent.getState()) {
                 case States.COMPLETED:
@@ -360,7 +360,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         public void processCommit(Commit commit) {
             Object payload = commit.getPayload();
             if (!(payload instanceof CreditCardCommit)) {
-                Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
+                FPLog.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
                 RxBus.getInstance().post(new CommitFailed.Builder()
                         .commit(commit)
                         .errorCode(999)
@@ -371,11 +371,11 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
             }
             // process with a delay to mock device response time
             getDelayObservable(100).subscribe(
-                    o -> Log.d(TAG, "processCommit " + commit.getCommitType()),
-                    throwable -> Log.d(TAG, String.format("processCommit %s error:%s", commit.getCommitType(), throwable.toString())),
+                    o -> FPLog.d(TAG, "processCommit " + commit.getCommitType()),
+                    throwable -> FPLog.e(TAG, String.format("processCommit %s error:%s", commit.getCommitType(), throwable.toString())),
                     () -> {
                         CreditCardCommit card = (CreditCardCommit) commit.getPayload();
-                        Log.d(TAG, "Mock wallet has been updated. Card removed: " + card.getCreditCardId());
+                        FPLog.d(TAG, "Mock wallet has been updated. Card removed: " + card.getCreditCardId());
                         removeCardFromWallet(card.getCreditCardId());
                         RxBus.getInstance().post(new CommitSuccess(commit));
                     }
@@ -389,7 +389,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
         public void processCommit(Commit commit) {
             Object payload = commit.getPayload();
             if (!(payload instanceof CreditCardCommit)) {
-                Log.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
+                FPLog.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
                 RxBus.getInstance().post(new CommitFailed.Builder()
                         .commit(commit)
                         .errorCode(999)
@@ -400,11 +400,11 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
             // process with a delay to mock device response time
             getDelayObservable(100).subscribe(
-                    o -> Log.d(TAG, "processCommit " + commit.getCommitType()),
-                    throwable -> Log.d(TAG, String.format("processCommit %s error:%s", commit.getCommitType(), throwable.toString())),
+                    o -> FPLog.d(TAG, "processCommit " + commit.getCommitType()),
+                    throwable -> FPLog.e(TAG, String.format("processCommit %s error:%s", commit.getCommitType(), throwable.toString())),
                     () -> {
                         CreditCardCommit card = (CreditCardCommit) commit.getPayload();
-                        Log.d(TAG, "Mock wallet has been updated. Card updated: " + card.getCreditCardId());
+                        FPLog.d(TAG, "Mock wallet has been updated. Card updated: " + card.getCreditCardId());
                         updateWallet(card);
                         RxBus.getInstance().post(new CommitSuccess(commit));
                     }
