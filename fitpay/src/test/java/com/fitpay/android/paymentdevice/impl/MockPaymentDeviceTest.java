@@ -1,7 +1,6 @@
 package com.fitpay.android.paymentdevice.impl;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.fitpay.android.TestActions;
 import com.fitpay.android.api.enums.ResponseState;
@@ -17,11 +16,9 @@ import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
-import com.orhanobut.logger.Logger;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,11 +47,6 @@ public class MockPaymentDeviceTest extends TestActions {
     private Listener listener;
 
     Context context;
-
-    @BeforeClass
-    public static void initLogger() {
-        Logger.init();
-    }
 
     @Before
     public void setUp() throws Exception {
@@ -206,7 +198,6 @@ public class MockPaymentDeviceTest extends TestActions {
 
         @Override
         public void onDeviceStateChanged(@Connection.State int state) {
-            Log.d(TAG, "status changed.  new status: " + state);
             this.state = state;
             if (States.CONNECTED == state) {
                 latch.countDown();
@@ -254,7 +245,6 @@ public class MockPaymentDeviceTest extends TestActions {
 
         @Override
         public void onDeviceStateChanged(@Connection.State int state) {
-            Log.d(TAG, "status changed.  new status: " + state);
             this.state = state;
         }
 
@@ -265,7 +255,6 @@ public class MockPaymentDeviceTest extends TestActions {
 
         @Override
         public void onDeviceInfoReceived(Device device) {
-            Log.d(TAG, "device info read.  Device: " + device);
             this.device = device;
             latch.countDown();
         }

@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;

@@ -15,7 +15,6 @@ import okhttp3.OkHttpClient;
  * Created by tgs on 5/20/16.
  */
 public class BaseClient {
-
     protected static final String FP_KEY_ID = "fp-key-id";
 
     /*
@@ -25,7 +24,7 @@ public class BaseClient {
     public static OkHttpClient.Builder getUnsafeOkHttpClient() {
         try {
             // Create a trust manager that does not validate certificate chains
-            final TrustManager[] trustAllCerts = new TrustManager[] {
+            final TrustManager[] trustAllCerts = new TrustManager[]{
                     new X509TrustManager() {
                         @Override
                         public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {
@@ -62,5 +61,4 @@ public class BaseClient {
             throw new RuntimeException(e);
         }
     }
-
 }

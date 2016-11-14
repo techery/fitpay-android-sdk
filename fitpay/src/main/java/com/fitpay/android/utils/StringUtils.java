@@ -22,7 +22,8 @@ public final class StringUtils {
 
     /**
      * Get encrypted string
-     * @param type key type
+     *
+     * @param type            key type
      * @param decryptedString decrypted string
      * @return encrypted string
      */
@@ -48,7 +49,7 @@ public final class StringUtils {
             JWEEncrypter encrypter = new AESEncrypter(KeysManager.getInstance().getSecretKey(type));
             jweObject.encrypt(encrypter);
         } catch (JOSEException e) {
-            Constants.printError(e);
+            FPLog.e(e);
         }
 
         return jweObject.serialize();
@@ -56,7 +57,8 @@ public final class StringUtils {
 
     /**
      * Get decrypted string
-     * @param type key type
+     *
+     * @param type            key type
      * @param encryptedString encrypted string
      * @return decrypted string
      */
@@ -66,12 +68,12 @@ public final class StringUtils {
         try {
             jweObject = JWEObject.parse(encryptedString);
             JWEHeader jweHeader = jweObject.getHeader();
-            if(jweHeader.getKeyID() == null || jweHeader.getKeyID().equals(KeysManager.getInstance().getKeyId(type))) {
+            if (jweHeader.getKeyID() == null || jweHeader.getKeyID().equals(KeysManager.getInstance().getKeyId(type))) {
                 jweObject.decrypt(new AESDecrypter(KeysManager.getInstance().getSecretKey(type)));
                 return jweObject.getPayload().toString();
             }
         } catch (ParseException | JOSEException e) {
-            Constants.printError(e);
+            FPLog.e(e);
         }
 
         return null;
@@ -79,10 +81,11 @@ public final class StringUtils {
 
     /**
      * Convert String to SHA1
+     *
      * @param inputString original string
      * @return converted string
      */
-    public static String toSHA1(String inputString){
+    public static String toSHA1(String inputString) {
         StringBuilder sb = new StringBuilder();
 
         try {
@@ -93,13 +96,13 @@ public final class StringUtils {
                 sb.append(String.format("%02X", b));
             }
         } catch (Exception e) {
-            Constants.printError(e);
+            FPLog.e(e);
         }
 
         return sb.toString().toLowerCase();
     }
 
-    public static String base64UrlEncode(String inputString){
+    public static String base64UrlEncode(String inputString) {
         return Base64URL.encode(inputString).toString();
     }
 
@@ -112,9 +115,9 @@ public final class StringUtils {
             return null;
         }
         StringBuilder output = new StringBuilder();
-        for (int i = 0; i < hex.length(); i+=2) {
-            String str = hex.substring(i, i+2);
-            output.append((char)Integer.parseInt(str, 16));
+        for (int i = 0; i < hex.length(); i += 2) {
+            String str = hex.substring(i, i + 2);
+            output.append((char) Integer.parseInt(str, 16));
         }
         return output.toString();
     }

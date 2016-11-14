@@ -1,7 +1,6 @@
 package com.fitpay.android.webview.impl;
 
 import android.app.Activity;
-import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
@@ -20,6 +19,7 @@ import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
+import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
@@ -35,6 +35,7 @@ import org.json.JSONObject;
 import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 
 /**
@@ -95,13 +96,13 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         if (message == null) throw new IllegalArgumentException("invalid message");
 
-        Log.d(TAG, "received message: " + message);
+        FPLog.d(TAG, "received message: " + message);
         JSONObject obj = new JSONObject(message);
 
         String callBackId = obj.getString("callBackId");
         if (callBackId == null)
             throw new IllegalArgumentException("action is missing in the message from the UI");
-        Log.d(TAG, "received callbackId: " + callBackId);
+        FPLog.d(TAG, "received callbackId: " + callBackId);
 
         String action = obj.getJSONObject("data").getString("action");
         if (action == null)
@@ -143,43 +144,11 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
 
         if (null == device) {
-            SyncResponseModel response = new SyncResponseModel.Builder()
-                    .status(RESPONSE_FAILURE)
-                    .reason("No device specified for sync operation")
-                    .build();
-
-            Log.d(TAG, "sync can not be done.  No device has been specified.   response: " + response);
-
-            if (null != callbackId) {
-                sendMessageToJs(callbackId, "false", gson.toJson(response));
-            }
-            if (null != callback) {
-                callback.onTaskCompleted(RESPONSE_FAILURE);
-            }
-
-            RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
-
-            return gson.toJson(response);
+            return onTaskError(callbackId, "No device specified for sync operation");
         }
 
         if (null == deviceService) {
-            SyncResponseModel response = new SyncResponseModel.Builder()
-                    .status(RESPONSE_FAILURE)
-                    .reason("No DeviceService has not been configured for sync operation")
-                    .build();
-
-            Log.d(TAG, "sync can not be done.  No device service configured.   response: " + response);
-
-            if (null != callbackId) {
-                sendMessageToJs(callbackId, "false", gson.toJson(response));
-            }
-            if (null != callback) {
-                callback.onTaskCompleted(RESPONSE_FAILURE);
-            }
-
-            RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
-
-            return gson.toJson(response);
+            return onTaskError(callbackId, "No DeviceService has not been configured for sync operation");
         }
 
         NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
@@ -190,28 +159,14 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         try {
             deviceService.syncData(user, device);
         } catch (IllegalStateException ex) {
-            SyncResponseModel response = new SyncResponseModel.Builder()
-                    .status(RESPONSE_FAILURE)
-                    .reason(ex.getMessage())
-                    .build();
-
-            Log.d(TAG, "sync can not be done.  Reason: " + ex.getMessage() + ",  response: " + response);
-
-            if (null != callbackId) {
-                sendMessageToJs(callbackId, "true", gson.toJson(response));
-            }
-            if (null != callback) {
-                callback.onTaskCompleted(RESPONSE_FAILURE);
-            }
-
-            RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
+            return onTaskError(callbackId, ex.getMessage());
         }
 
         AckResponseModel stubResponse = new AckResponseModel.Builder()
                 .status(USER_DATA_STUB_RESPONSE)
                 .build();
 
-        Log.d(TAG, "sync providing synchronous ack response: " + stubResponse);
+        FPLog.d(TAG, "sync providing synchronous ack response: " + stubResponse);
         return gson.toJson(stubResponse);
     }
 
@@ -219,7 +174,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     @JavascriptInterface
     public String sendUserData(String callbackId, String deviceId, String token, String userId) {
 
-        Log.d(TAG, "sendUserData received data: deviceId: " + deviceId + ", token: " + token + ", userId: " + userId);
+        FPLog.d(TAG, "sendUserData received data: deviceId: " + deviceId + ", token: " + token + ", userId: " + userId);
 
         OAuthToken oAuthToken = new OAuthToken.Builder()
                 .accessToken(token)
@@ -230,7 +185,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         // Get user and device asynchronously
 
-        Log.d(TAG, "sendUserData initiating asynchronous retrieval of user and device");
+        FPLog.d(TAG, "sendUserData initiating asynchronous retrieval of user and device");
         getUserAndDevice(deviceId, callbackId);
 
         // provide synchronous ack
@@ -239,7 +194,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 .status(USER_DATA_STUB_RESPONSE)
                 .build();
 
-        Log.d(TAG, "sendUserData providing synchronous ack response: " + stubResponse);
+        FPLog.d(TAG, "sendUserData providing synchronous ack response: " + stubResponse);
         return gson.toJson(stubResponse);
     }
 
@@ -262,10 +217,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 "\"success\" :" + success + "," +
                 "\"response\" :" + response + " }";
 
-        Log.d(TAG, "sending message to webview: " + responseMessage);
+        FPLog.d(TAG, "sending message to webview: " + responseMessage);
 
         final String url = "javascript:window.RtmBridge.resolve('" + responseMessage + "');";
-        Log.d(TAG, "message url: " + url);
+        FPLog.d(TAG, "message url: " + url);
 
         activity.runOnUiThread(() -> webView.loadUrl(url));
     }
@@ -275,13 +230,13 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         String responseMessage = "{\"message\":\"" + event.getMessage() + "\",\"type\":" + event.getType() + "}";
 
         final String url = "javascript:window.RtmBridge.setDeviceStatus(" + responseMessage + ");";
-        Log.d(TAG, "message url: " + url);
+        FPLog.d(TAG, "message url: " + url);
 
         activity.runOnUiThread(() -> webView.loadUrl(url));
     }
 
     public void sendLogoutSignalToJs() {
-        Log.d(TAG, "sending logout message to the webview");
+        FPLog.d(TAG, "sending logout message to the webview");
 
         final String jurl = "javascript:window.RtmBridge.forceLogout();";
 
@@ -314,7 +269,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
                                 @Override
                                 public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                                    Log.e(TAG, errorMessage);
+                                    FPLog.e(TAG, errorMessage);
                                 }
                             });
                         }
@@ -332,8 +287,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
                     @Override
                     public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                        Log.d(TAG, "getDevice failed " + errorMessage);
-                        //TODO handle failure and report back to WVC
+                        onTaskError(callbackId, "getDevice failed " + errorMessage);
                     }
                 });
 
@@ -341,11 +295,30 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                Log.d(TAG, "getUser failed " + errorMessage);
-                //TODO handle failure and report back to WVC
+                onTaskError(callbackId, "getUser failed " + errorMessage);
             }
         });
 
+    }
+
+    private String onTaskError(String callbackId, String errorMessage) {
+        SyncResponseModel response = new SyncResponseModel.Builder()
+                .status(RESPONSE_FAILURE)
+                .reason(errorMessage)
+                .build();
+
+        FPLog.e(TAG, errorMessage);
+
+        if (null != callbackId) {
+            sendMessageToJs(callbackId, "true", gson.toJson(response));
+        }
+        if (null != callback) {
+            callback.onTaskCompleted(RESPONSE_FAILURE);
+        }
+
+        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
+
+        return gson.toJson(response);
     }
 
     private class DeviceStatusListener extends Listener {
@@ -379,7 +352,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         @Override
         public void onSyncStateChanged(Sync syncEvent) {
-            Log.d(TAG, "received on sync state changed event: " + syncEvent);
             switch (syncEvent.getState()) {
                 case States.COMPLETED:
                 case States.COMPLETED_NO_UPDATES: {
@@ -399,22 +371,11 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     break;
                 }
                 case States.FAILED: {
-                    SyncResponseModel response = new SyncResponseModel.Builder()
-                            .status(RESPONSE_FAILURE)
-                            .reason("sync failure")
-                            .build();
-                    if (null != callbackId) {
-                        sendMessageToJs(callbackId, "false", gson.toJson(response));
-                    }
-                    if (null != callback) {
-                        callback.onTaskCompleted(RESPONSE_FAILURE);
-                    }
-
-                    RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
+                    onTaskError(callbackId, "sync failure");
                     break;
                 }
                 default: {
-                    Log.d(TAG, "skipping sync changed event: " + syncEvent);
+                    FPLog.d(TAG, "skipping sync changed event: " + syncEvent);
                     break;
                 }
             }
@@ -422,21 +383,16 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         @Override
         public void onCommitFailed(CommitFailed commitFailed) {
-            Log.d(TAG, "received commit failed event: " + commitFailed.getCommitId());
-
             if (callback != null)
                 callback.onTaskCompleted(buildAppCallbackPayload(
                         commitFailed.getCommitType(),
                         APP_CALLBACK_STATUS_FAILED,
                         commitFailed.getErrorMessage(),
                         commitFailed.getCreatedTs()));
-
         }
 
         @Override
         public void onCommitSuccess(CommitSuccess commitSuccess) {
-            Log.d(TAG, "Successful commit reported, type: " + commitSuccess.getCommitType() + ", id: " + commitSuccess.getCommitId());
-
             if (callback != null)
                 callback.onTaskCompleted(buildAppCallbackPayload(
                         commitSuccess.getCommitType(),
@@ -448,16 +404,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         @Override
         public void onCommitSkipped(CommitSkipped commitSkipped) {
-            Log.d(TAG, "Skipped commit reported, type: " + commitSkipped.getCommitType() + ", id: " + commitSkipped.getCommitId());
-
             callback.onTaskCompleted(buildAppCallbackPayload(
                     commitSkipped.getCommitType(),
                     APP_CALLBACK_STATUS_OK,
                     "",
                     commitSkipped.getCreatedTs()));
-
         }
-
     }
 
     private String buildAppCallbackPayload(String command, String status, String reason, long createdTs) {
@@ -465,7 +417,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         AppCallbackModel appCallbackPayload = new AppCallbackModel();
 
         Date date = new Date(createdTs);
-        Format format = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss.SSS");
+        Format format = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss.SSS", Locale.getDefault());
 
         appCallbackPayload.setTimestamp(format.format(date));
         appCallbackPayload.setCommand(command);
