@@ -6,6 +6,8 @@ import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.CommitTypes;
 import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.enums.ResultCode;
+import com.fitpay.android.api.models.apdu.ApduCommand;
+import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.card.CreditCard;
@@ -20,7 +22,10 @@ import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
+import com.fitpay.android.paymentdevice.utils.ApduExecException;
 import com.fitpay.android.utils.FPLog;
+import com.fitpay.android.utils.Hex;
+import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
@@ -32,6 +37,8 @@ import java.util.Map;
 import java.util.Properties;
 
 import rx.Observable;
+
+import static com.fitpay.android.paymentdevice.constants.ApduConstants.NORMAL_PROCESSING;
 
 /**
  * Base model for wearable payment device
@@ -48,10 +55,18 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     protected String mAddress;
     @Connection.State
     protected int state;
-    protected Map<String, CommitHandler> commitHandlers;
-    protected ApduExecutionListener apduExecutionListener;
-    protected Commit currentCommit;
+    private Map<String, CommitHandler> commitHandlers;
     private ErrorPair mErrorRepeats;
+
+    private ApduExecutionListener apduExecutionListener;
+    private ApduCommandListener apduCommandListener;
+
+    private Commit currentCommit;
+
+    private long curApduPgkNumber;
+    private ApduPackage curApduPackage;
+    private ApduCommand curApduCommand;
+    private ApduExecutionResult apduExecutionResult;
 
     protected User user;
 
@@ -162,7 +177,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     @Override
     public void syncInit() {
         if (null == apduExecutionListener) {
-            apduExecutionListener = getApduExecutionListener();
+            apduExecutionListener = new ApduPackageListener();
             NotificationManager.getInstance().addListenerToCurrentThread(this.apduExecutionListener);
         }
         mErrorRepeats = null;
@@ -181,7 +196,58 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         this.user = user;
     }
 
-    protected void getTopOfWalletData() {
+    @Override
+    public void executeApduPackage(ApduPackage apduPackage) {
+        if (curApduPackage != null) {
+            FPLog.w(TAG, "apduPackage processing is already in progress");
+            return;
+        }
+
+        apduExecutionResult = new ApduExecutionResult(apduPackage.getPackageId());
+        apduExecutionResult.setExecutedTsEpoch(System.currentTimeMillis());
+
+        curApduPackage = apduPackage;
+        curApduPgkNumber = System.currentTimeMillis();
+
+        apduCommandListener = new ApduCommandListener();
+        NotificationManager.getInstance().addListener(apduCommandListener);
+
+        executeNextApduCommand();
+    }
+
+    /**
+     * Execution has finished
+     */
+    private void completeApduPackageExecution() {
+        apduExecutionResult.setExecutedDurationTilNow();
+
+        curApduCommand = null;
+        curApduPackage = null;
+
+        NotificationManager.getInstance().removeListener(apduCommandListener);
+
+        RxBus.getInstance().post(apduExecutionResult);
+
+        apduExecutionResult = null;
+    }
+
+    /**
+     * get next apdu command
+     */
+    private void executeNextApduCommand() {
+        ApduCommand nextCommand = curApduPackage.getNextCommand(curApduCommand);
+        if (nextCommand != null) {
+            curApduCommand = nextCommand;
+            executeApduCommand(curApduPgkNumber, nextCommand);
+        } else {
+            completeApduPackageExecution();
+        }
+    }
+
+    /**
+     * Get TOW data from the server
+     */
+    protected final void getTopOfWalletData() {
         user.getAllCreditCards().flatMap(creditCardCollection -> {
             List<TopOfWallet> tow = new ArrayList<>();
             if (creditCardCollection.getResults() != null) {
@@ -201,70 +267,6 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                 },
                 throwable -> FPLog.e(TAG, "TOW execution error: " + throwable.getMessage()));
     }
-
-    private class ApduCommitHandler implements CommitHandler {
-
-        @Override
-        public void processCommit(Commit commit) {
-            Object payload = commit.getPayload();
-            if (payload instanceof ApduPackage) {
-                ApduPackage pkg = (ApduPackage) payload;
-
-                long validUntil = TimestampUtils.getDateForISO8601String(pkg.getValidUntil()).getTime();
-                long currentTime = System.currentTimeMillis();
-
-                if (validUntil > currentTime) {
-                    PaymentDeviceConnector.this.executeApduPackage(pkg);
-                } else {
-                    ApduExecutionResult result = new ApduExecutionResult(pkg.getPackageId());
-                    result.setExecutedDuration(0);
-                    result.setExecutedTsEpoch(currentTime);
-                    result.setState(ResponseState.EXPIRED);
-
-                    RxBus.getInstance().post(result);
-                }
-            } else {
-                FPLog.e(TAG, "ApduCommitHandler called for non-adpu commit. THIS IS AN APPLICATION DEFECT " + commit);
-            }
-        }
-    }
-
-    private ApduExecutionListener getApduExecutionListener() {
-        return new ApduExecutionListener() {
-
-            @Override
-            public void onApduPackageResultReceived(ApduExecutionResult result) {
-                sendApduExecutionResult(result);
-            }
-
-            @Override
-            public void onApduPackageErrorReceived(ApduExecutionResult result) {
-
-                final String id = result.getPackageId();
-
-                switch (result.getState()) {
-                    case ResponseState.EXPIRED:
-                        sendApduExecutionResult(result);
-                        break;
-
-                    default:  //retry error and failure
-                        if (mErrorRepeats == null || !mErrorRepeats.id.equals(id)) {
-                            mErrorRepeats = new ErrorPair(id, 0);
-                        }
-
-                        if (mErrorRepeats.count++ >= MAX_REPEATS) {
-                            sendApduExecutionResult(result);
-                        } else {
-                            // retry
-                            processCommit(currentCommit);
-                        }
-                        break;
-                }
-            }
-
-        };
-    }
-
 
     /**
      * Send apdu execution result to the server
@@ -320,6 +322,92 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         }
     }
 
+    private class ApduPackageListener extends ApduExecutionListener {
+
+        @Override
+        public void onApduPackageResultReceived(ApduExecutionResult result) {
+            sendApduExecutionResult(result);
+        }
+
+        @Override
+        public void onApduPackageErrorReceived(ApduExecutionResult result) {
+
+            final String id = result.getPackageId();
+
+            switch (result.getState()) {
+                case ResponseState.EXPIRED:
+                    sendApduExecutionResult(result);
+                    break;
+
+                default:  //retry error and failure
+                    if (mErrorRepeats == null || !mErrorRepeats.id.equals(id)) {
+                        mErrorRepeats = new ErrorPair(id, 0);
+                    }
+
+                    if (mErrorRepeats.count++ >= MAX_REPEATS) {
+                        sendApduExecutionResult(result);
+                    } else {
+                        // retry
+                        processCommit(currentCommit);
+                    }
+                    break;
+            }
+        }
+    }
+
+    private class ApduCommandListener extends Listener {
+        final String normalResponseCode = Hex.bytesToHexString(NORMAL_PROCESSING);
+
+        ApduCommandListener() {
+            super();
+            mCommands.put(ApduCommandResult.class, data -> onApduCommandReceived((ApduCommandResult) data));
+            mCommands.put(ApduExecException.class, data -> onApduExecErrorReceived((ApduExecException) data));
+        }
+
+        private void onApduCommandReceived(ApduCommandResult apduCommandResult) {
+            String responseCode = apduCommandResult.getResponseCode();
+            if (responseCode.equals(normalResponseCode) || curApduCommand.isContinueOnFailure()) {
+                apduExecutionResult.addResponse(apduCommandResult);
+                executeNextApduCommand();
+            } else {
+                ApduExecException execException = new ApduExecException(ResponseState.FAILED, "Device provided invalid response code: " + responseCode);
+                onApduExecErrorReceived(execException);
+            }
+        }
+
+        private void onApduExecErrorReceived(ApduExecException apduError) {
+            apduExecutionResult.setState(apduError.getResponseState());
+            apduExecutionResult.setErrorReason(apduError.getMessage());
+            completeApduPackageExecution();
+        }
+    }
+
+    private class ApduCommitHandler implements CommitHandler {
+
+        @Override
+        public void processCommit(Commit commit) {
+            Object payload = commit.getPayload();
+            if (payload instanceof ApduPackage) {
+                ApduPackage pkg = (ApduPackage) payload;
+
+                long validUntil = TimestampUtils.getDateForISO8601String(pkg.getValidUntil()).getTime();
+                long currentTime = System.currentTimeMillis();
+
+                if (validUntil > currentTime) {
+                    PaymentDeviceConnector.this.executeApduPackage(pkg);
+                } else {
+                    ApduExecutionResult result = new ApduExecutionResult(pkg.getPackageId());
+                    result.setExecutedDuration(0);
+                    result.setExecutedTsEpoch(currentTime);
+                    result.setState(ResponseState.EXPIRED);
+
+                    RxBus.getInstance().post(result);
+                }
+            } else {
+                FPLog.e(TAG, "ApduCommitHandler called for non-adpu commit. THIS IS AN APPLICATION DEFECT " + commit);
+            }
+        }
+    }
 
     private class ErrorPair {
         String id;

@@ -5,18 +5,17 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
 
-
+import com.fitpay.android.api.models.apdu.ApduCommand;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.card.TopOfWallet;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.NFC;
 import com.fitpay.android.paymentdevice.enums.SecureElement;
-import com.fitpay.android.paymentdevice.impl.ble.message.SecurityStateMessage;
 import com.fitpay.android.paymentdevice.impl.PaymentDeviceConnector;
+import com.fitpay.android.paymentdevice.impl.ble.message.SecurityStateMessage;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
-
 
 import java.util.List;
 
@@ -92,7 +91,7 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
     @Override
     public void disconnect() {
         FPLog.d(TAG, "initiate disconnect from to device: " + mAddress);
-        if(mGattManager != null) {
+        if (mGattManager != null) {
             mGattManager.disconnect();
         } else {
             FPLog.w(TAG, "GattManager is null");
@@ -101,7 +100,7 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
 
     @Override
     public void reconnect() {
-        if(mGattManager != null) {
+        if (mGattManager != null) {
             mGattManager.reconnect();
         } else {
             FPLog.w(TAG, "GattManager is null");
@@ -151,6 +150,10 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
         FPLog.d(TAG, "initiate executeApduPackage request");
         GattOperation sendApduOperation = new GattApduOperation(apduPackage);
         mGattManager.queue(sendApduOperation);
+    }
+
+    @Override
+    public void executeApduCommand(long apduPkgNumber, ApduCommand apduCommand) {
     }
 
     @Override
