@@ -63,6 +63,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     private Commit currentCommit;
 
+    private boolean apduExecutionInProgress = false;
     private long curApduPgkNumber;
     private ApduPackage curApduPackage;
     private ApduCommand curApduCommand;
@@ -198,10 +199,12 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     @Override
     public void executeApduPackage(ApduPackage apduPackage) {
-        if (curApduPackage != null) {
+        if (apduExecutionInProgress) {
             FPLog.w(TAG, "apduPackage processing is already in progress");
             return;
         }
+
+        apduExecutionInProgress = true;
 
         apduExecutionResult = new ApduExecutionResult(apduPackage.getPackageId());
         apduExecutionResult.setExecutedTsEpoch(System.currentTimeMillis());
@@ -212,35 +215,46 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         apduCommandListener = new ApduCommandListener();
         NotificationManager.getInstance().addListener(apduCommandListener);
 
+        onPreExecuteApdu();
+    }
+
+    @Override
+    public void onPreExecuteApdu() {
         executeNextApduCommand();
+    }
+
+    @Override
+    public void onPostExecuteApdu() {
+        completeApduPackageExecution();
     }
 
     /**
      * Execution has finished
      */
-    private void completeApduPackageExecution() {
-        apduExecutionResult.setExecutedDurationTilNow();
+    protected void completeApduPackageExecution() {
+        NotificationManager.getInstance().removeListener(apduCommandListener);
 
         curApduCommand = null;
         curApduPackage = null;
 
-        NotificationManager.getInstance().removeListener(apduCommandListener);
-
+        apduExecutionResult.setExecutedDurationTilNow();
         RxBus.getInstance().post(apduExecutionResult);
 
         apduExecutionResult = null;
+
+        apduExecutionInProgress = false;
     }
 
     /**
      * get next apdu command
      */
-    private void executeNextApduCommand() {
+    protected void executeNextApduCommand() {
         ApduCommand nextCommand = curApduPackage.getNextCommand(curApduCommand);
         if (nextCommand != null) {
             curApduCommand = nextCommand;
             executeApduCommand(curApduPgkNumber, nextCommand);
         } else {
-            completeApduPackageExecution();
+            onPostExecuteApdu();
         }
     }
 
@@ -378,7 +392,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         private void onApduExecErrorReceived(ApduExecException apduError) {
             apduExecutionResult.setState(apduError.getResponseState());
             apduExecutionResult.setErrorReason(apduError.getMessage());
-            completeApduPackageExecution();
+            onPostExecuteApdu();
         }
     }
 
@@ -394,7 +408,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                 long currentTime = System.currentTimeMillis();
 
                 if (validUntil > currentTime) {
-                    PaymentDeviceConnector.this.executeApduPackage(pkg);
+                    executeApduPackage(pkg);
                 } else {
                     ApduExecutionResult result = new ApduExecutionResult(pkg.getPackageId());
                     result.setExecutedDuration(0);

@@ -45,17 +45,22 @@ public interface IPaymentDeviceConnector extends CommitHandler {
 
     void close();
 
-    //TODO remove ?  since some devices do not have MacAddress and / or it is not of interest in getting connection
-    String getMacAddress();
-
     void readDeviceInfo();
 
+    //TODO remove ?  since some devices do not have MacAddress and / or it is not of interest in getting connection
+    @Deprecated
+    String getMacAddress();
+
+    @Deprecated
     void readNFCState();
 
+    @Deprecated
     void setNFCState(@NFC.Action byte state);
 
+    @Deprecated
     void sendNotification(byte[] data);
 
+    @Deprecated
     void setSecureElementState(@SecureElement.Action byte state);
 
     /**
@@ -70,6 +75,10 @@ public interface IPaymentDeviceConnector extends CommitHandler {
      * Typically used for device finalization or to unregister sync specific listeners
      */
     void syncComplete();
+
+    void onPreExecuteApdu();
+
+    void onPostExecuteApdu();
 
     void executeApduPackage(ApduPackage apduPackage);
 
