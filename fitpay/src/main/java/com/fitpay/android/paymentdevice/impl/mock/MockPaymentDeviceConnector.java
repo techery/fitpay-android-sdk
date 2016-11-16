@@ -174,6 +174,11 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
     }
 
     @Override
+    public void executeApduCommand(long apduPkgNumber, ApduCommand apduCommand) {
+
+    }
+
+    @Override
     public void executeTopOfWallet(List<TopOfWallet> towPackage) {
         getDelayObservable()
                 .subscribe(
