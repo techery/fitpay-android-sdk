@@ -1,10 +1,10 @@
 package com.fitpay.android;
 
+import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
-import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.api.enums.CardInitiators;
+import com.fitpay.android.api.enums.DeviceTypes;
 import com.fitpay.android.api.enums.ResultCode;
-import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.Relationship;
 import com.fitpay.android.api.models.card.Address;
 import com.fitpay.android.api.models.card.CreditCard;
@@ -13,9 +13,9 @@ import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
-import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 
@@ -685,7 +685,7 @@ public class Steps {
                 .setPairingTs(pairingTs)
                 .setSecureElementId(secureElementId)
                 .build();
-        final String[] errors = { "" };
+        final String[] errors = {""};
         final int[] errorCodes = {-1};
         currentUser.createDevice(newDevice, new ApiCallback<Device>() {
             @Override

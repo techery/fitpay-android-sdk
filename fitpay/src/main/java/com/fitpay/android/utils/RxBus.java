@@ -1,8 +1,8 @@
 package com.fitpay.android.utils;
 
-import android.util.Log;
 
-import com.orhanobut.logger.Logger;
+
+
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -46,11 +46,11 @@ public class RxBus {
                 .map(obj -> (T) obj)
                 .subscribeOn(Schedulers.from(Constants.getExecutor()))
                 .observeOn(scheduler)
-                .subscribe(onNext, throwable -> Logger.e(throwable.toString() + ", " + getStackTrace(throwable)));
+                .subscribe(onNext, throwable -> FPLog.e(throwable.toString() + ", " + getStackTrace(throwable)));
     }
 
     public void post(Object object) {
-        Log.d("RxBus", "post event: " + object);
+        FPLog.d("RxBus", "post event: " + object);
         mBus.onNext(object);
     }
 

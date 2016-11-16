@@ -2,6 +2,7 @@ package com.fitpay.android.api.services;
 
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.utils.Constants;
+import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.KeysManager;
 
 import java.io.IOException;
@@ -53,14 +54,17 @@ final public class FitPayService extends BaseClient {
             }
         };
 
-        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-
         //TODO remove once QA cert is issued
         OkHttpClient.Builder clientBuilder = getUnsafeOkHttpClient();
         //OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
         clientBuilder.addInterceptor(interceptor);
-        clientBuilder.addInterceptor(logging);
+
+        if (FPLog.showHttpLogs()) {
+            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+            clientBuilder.addInterceptor(logging);
+        }
+
         //add timeout modification here if needed - should be configurable
         //clientBuilder.readTimeout(<a value from config>, TimeUnit.SECONDS);
 

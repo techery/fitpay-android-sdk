@@ -8,7 +8,6 @@ import com.fitpay.android.api.models.user.UserAuthInfo;
 import com.fitpay.android.api.models.user.UserInfo;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.orhanobut.logger.Logger;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -44,12 +43,14 @@ public final class Constants {
         return gson;
     }
 
+    @Deprecated
     public static void printError(Throwable error) {
-        printError(error.toString());
+        FPLog.e(error);
     }
 
+    @Deprecated
     public static void printError(String error) {
-        Logger.t(FIT_PAY_TAG).e(error);
+        FPLog.e(error);
     }
 }
 
