@@ -47,9 +47,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private final String TAG = WebViewCommunicatorImpl.class.getSimpleName();
 
-    private static String USER_DATA_STUB_RESPONSE = "0";
-    private static String SYNC_STUB_RESPONSE = "0";
-    private static final String RESPONSE_FAILURE = "1";
+    private static final int RESPONSE_OK = 0;
+    private static final int RESPONSE_FAILURE = 1;
     private static final String APP_CALLBACK_STATUS_OK = "OK";
     private static final String APP_CALLBACK_STATUS_FAILED = "FAILED";
 
@@ -143,7 +142,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         }
 
         AckResponseModel stubResponse = new AckResponseModel.Builder()
-                .status(USER_DATA_STUB_RESPONSE)
+                .status(RESPONSE_OK)
                 .build();
 
         FPLog.d(TAG, "sync providing synchronous ack response: " + stubResponse);
@@ -171,7 +170,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         // provide synchronous ack
 
         AckResponseModel stubResponse = new AckResponseModel.Builder()
-                .status(USER_DATA_STUB_RESPONSE)
+                .status(RESPONSE_OK)
                 .build();
 
         FPLog.d(TAG, "sendUserData providing synchronous ack response: " + stubResponse);
@@ -216,29 +215,34 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                         String token = ApiManager.getPushToken();
                         String deviceToken = device.getNotificationToken();
 
+                        final Runnable onSuccess = () -> {
+                            AckResponseModel stubResponse = new AckResponseModel.Builder()
+                                    .status(RESPONSE_OK)
+                                    .build();
+                            if (null != callbackId) {
+                                sendMessageToJs(callbackId, true, stubResponse);
+                            }
+                            if (null != callback) {
+                                callback.onTaskCompleted(APP_CALLBACK_STATUS_OK);
+                            }
+                        };
+
                         if (deviceToken == null || !deviceToken.equals(token)) {
                             Device updatedDevice = new Device.Builder().setNotificationToken(token).build();
                             device.updateToken(updatedDevice, deviceToken == null, new ApiCallback<Device>() {
                                 @Override
                                 public void onSuccess(Device result) {
                                     WebViewCommunicatorImpl.this.device = result;
+                                    onSuccess.run();
                                 }
 
                                 @Override
                                 public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                                    FPLog.e(TAG, errorMessage);
+                                    onTaskError(callbackId, "update device failed:" + errorMessage);
                                 }
                             });
-                        }
-
-                        AckResponseModel stubResponse = new AckResponseModel.Builder()
-                                .status(USER_DATA_STUB_RESPONSE)
-                                .build();
-                        if (null != callbackId) {
-                            sendMessageToJs(callbackId, true, stubResponse);
-                        }
-                        if (null != callback) {
-                            callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
+                        } else {
+                            onSuccess.run();
                         }
                     }
 
@@ -268,7 +272,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             sendMessageToJs(callbackId, false, gson.toJson(response));
         }
         if (null != callback) {
-            callback.onTaskCompleted(RESPONSE_FAILURE);
+            callback.onTaskCompleted(APP_CALLBACK_STATUS_FAILED);
         }
 
         RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
@@ -313,14 +317,14 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 case States.COMPLETED:
                 case States.COMPLETED_NO_UPDATES: {
                     AckResponseModel stubResponse = new AckResponseModel.Builder()
-                            .status(USER_DATA_STUB_RESPONSE)
+                            .status(RESPONSE_OK)
                             .build();
 
                     if (null != callbackId) {
                         sendMessageToJs(callbackId, true, stubResponse);
                     }
                     if (null != callback) {
-                        callback.onTaskCompleted(USER_DATA_STUB_RESPONSE);
+                        callback.onTaskCompleted(APP_CALLBACK_STATUS_OK);
                     }
 
                     RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_finished), DeviceStatusMessage.SUCCESS));

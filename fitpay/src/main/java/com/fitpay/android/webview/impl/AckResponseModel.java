@@ -2,9 +2,9 @@ package com.fitpay.android.webview.impl;
 
 
 public class AckResponseModel {
-    private String status;
+    private int status;
 
-    public String getStatus() {
+    public int getStatus() {
         return status;
     }
 
@@ -16,9 +16,9 @@ public class AckResponseModel {
     }
 
     public static class Builder {
-        private String status;
+        private int status;
 
-        public Builder status(String status) {
+        public Builder status(int status) {
             this.status = status;
             return this;
         }
