@@ -94,6 +94,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
     @Override
     public void close() {
+        super.close();
         FPLog.d(TAG, "close not implemented");
     }
 

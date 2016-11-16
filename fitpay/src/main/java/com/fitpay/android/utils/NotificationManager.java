@@ -50,8 +50,10 @@ public final class NotificationManager {
         if (!mSubscriptions.containsKey(clazz)) {
             FPLog.d(TAG, "subscribeTo doing put of class:  " + clazz + " from thread: " + Thread.currentThread());
             mSubscriptions.put(clazz, RxBus.getInstance().register(clazz, scheduler, object -> {
-                for (Command command : mCommands.get(clazz)) {
-                    command.execute(object);
+                synchronized (this) {
+                    for (Command command : mCommands.get(clazz)) {
+                        command.execute(object);
+                    }
                 }
             }));
         }
