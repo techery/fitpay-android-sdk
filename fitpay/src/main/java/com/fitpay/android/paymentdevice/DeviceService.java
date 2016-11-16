@@ -154,7 +154,7 @@ public final class DeviceService extends Service {
                         break;
                     }
                     default: {
-                        FPLog.e(TAG, "payment service type is not one of the known types.  type: " + paymentDeviceConnectorType);
+                        FPLog.d(TAG, "payment service type is not one of the known types.  type: " + paymentDeviceConnectorType);
                     }
                 }
                 if (null == paymentDeviceConnector) {

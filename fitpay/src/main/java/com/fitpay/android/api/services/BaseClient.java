@@ -1,7 +1,8 @@
 package com.fitpay.android.api.services;
 
 import android.os.Build;
-import android.util.Log;
+
+import com.fitpay.android.utils.FPLog;
 
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
@@ -68,7 +69,8 @@ public class BaseClient {
 
                     builder.connectionSpecs(specs);
                 } catch (Exception exc) {
-                    Log.e("OkHttpTLSCompat", "Error while setting TLS 1.2", exc);
+                    //"Error while setting TLS 1.2",
+                    FPLog.e("OkHttpTLSCompat", exc);
                 }
             } else {
                 // Install the all-trusting trust manager

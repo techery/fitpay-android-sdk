@@ -249,7 +249,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             public void onSuccess(User result) {
                 WebViewCommunicatorImpl.this.user = result;
 
-                RxBus.getInstance().post(new UserReceived(user.getUsername()));
+                RxBus.getInstance().post(new UserReceived(user.getId(), user.getUsername()));
 
                 result.getDevice(deviceId, new ApiCallback<Device>() {
                     @Override
