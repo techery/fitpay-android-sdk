@@ -6,7 +6,7 @@ apply plugin: 'maven'
 apply from: '../jacoco.gradle'
 
 group = 'com.fitpay.android'
-version = '0.4.13'
+version = '0.4.14.3'
 archivesBaseName = "android_sdk"
 
 uploadArchives {
@@ -146,9 +146,9 @@ bintray {
         licenses = ['MIT']
         vcsUrl = 'https://github.com/fitpay/fitpay-android-sdk.git'
 
-        version {
-            name = '0.4.13'
-        }
+//        version {
+//            name = '0.4.13'
+//        }
     }
     configurations = ['archives']
 }
