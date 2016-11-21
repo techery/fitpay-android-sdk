@@ -266,7 +266,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 .reason(errorMessage)
                 .build();
 
-        FPLog.e(TAG, errorMessage);
+        FPLog.w(TAG, errorMessage);
 
         if (null != callbackId) {
             sendMessageToJs(callbackId, false, gson.toJson(response));

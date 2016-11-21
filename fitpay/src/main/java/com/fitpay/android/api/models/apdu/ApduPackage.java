@@ -29,7 +29,7 @@ public final class ApduPackage extends ApduPackageModel {
                 return commandList.get(0);
             }
             int nextIndex = commandList.indexOf(lastCommand) + 1;
-            if (commandList.size() < nextIndex) {
+            if (nextIndex < commandList.size()) {
                 return commandList.get(nextIndex);
             }
         }
