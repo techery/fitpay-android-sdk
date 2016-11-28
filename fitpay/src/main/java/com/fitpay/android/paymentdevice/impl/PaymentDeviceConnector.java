@@ -23,6 +23,7 @@ import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.utils.ApduExecException;
+import com.fitpay.android.utils.EventCallback;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Hex;
 import com.fitpay.android.utils.Listener;
@@ -288,6 +289,18 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      * @param result apdu execution result
      */
     private void sendApduExecutionResult(final ApduExecutionResult result) {
+
+        EventCallback.Builder builder = new EventCallback.Builder()
+                .setCommand(EventCallback.APDU_COMMANDS_SENT)
+                .setStatus(EventCallback.STATUS_OK)
+                .setTimestamp(result.getExecutedTsEpoch());
+
+        if (!result.getState().equals(ResponseState.PROCESSED)) {
+            builder.setReason(result.getErrorReason()).setStatus(EventCallback.STATUS_FAILED);
+        }
+
+        builder.build().send();
+
         if (null != currentCommit) {
             currentCommit.confirm(result, new ApiCallback<Void>() {
                 @Override

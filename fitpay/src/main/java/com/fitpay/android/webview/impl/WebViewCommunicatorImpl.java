@@ -8,23 +8,18 @@ import com.fitpay.android.R;
 import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
-import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.DeviceService;
-import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
-import com.fitpay.android.paymentdevice.events.CommitFailed;
-import com.fitpay.android.paymentdevice.events.CommitSkipped;
-import com.fitpay.android.paymentdevice.events.CommitSuccess;
+import com.fitpay.android.utils.EventCallback;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.webview.WebViewCommunicator;
-import com.fitpay.android.webview.callback.OnTaskCompleted;
 import com.fitpay.android.webview.events.DeviceStatusMessage;
 import com.fitpay.android.webview.events.RtmMessage;
 import com.fitpay.android.webview.events.RtmMessageResponse;
@@ -33,10 +28,6 @@ import com.google.gson.Gson;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.text.Format;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 
 /**
@@ -49,11 +40,9 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private static final int RESPONSE_OK = 0;
     private static final int RESPONSE_FAILURE = 1;
-    private static final String APP_CALLBACK_STATUS_OK = "OK";
-    private static final String APP_CALLBACK_STATUS_FAILED = "FAILED";
+    private static final int RESPONSE_IN_PROGRESS = 2;
 
     private final Activity activity;
-    private OnTaskCompleted callback;
     private DeviceService deviceService;
 
     private User user;
@@ -66,11 +55,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     private WebView webView;
 
     private final Gson gson = new Gson();
-
-    public WebViewCommunicatorImpl(Activity ctx, int wId, OnTaskCompleted callback) {
-        this(ctx, wId);
-        this.callback = callback;
-    }
 
     public WebViewCommunicatorImpl(Activity ctx, int wId) {
         this.activity = ctx;
@@ -119,15 +103,19 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     @Override
     @JavascriptInterface
-    public String sync(String callbackId) {
+    public void sync(String callbackId) {
+        FPLog.d(TAG, "sync received");
+
 //        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
 
         if (null == device) {
-            return onTaskError(callbackId, "No device specified for sync operation");
+            onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "No device specified for sync operation");
+            return;
         }
 
         if (null == deviceService) {
-            return onTaskError(callbackId, "No DeviceService has not been configured for sync operation");
+            onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "No DeviceService has not been configured for sync operation");
+            return;
         }
 
         NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
@@ -136,23 +124,21 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         NotificationManager.getInstance().addListener(listenerForAppCallbacks);
 
         try {
+            //sync data
             deviceService.syncData(user, device);
         } catch (IllegalStateException ex) {
-            return onTaskError(callbackId, ex.getMessage());
+            @Sync.State Integer state = deviceService != null ? deviceService.getSyncState() : null;
+            if (state != null && (state == States.STARTED || state == States.IN_PROGRESS)) {
+                onTaskSuccess(EventCallback.SYNC_COMPLETED, callbackId, RESPONSE_IN_PROGRESS);
+            } else {
+                onTaskError(EventCallback.SYNC_COMPLETED, callbackId, ex.getMessage());
+            }
         }
-
-        AckResponseModel stubResponse = new AckResponseModel.Builder()
-                .status(RESPONSE_OK)
-                .build();
-
-        FPLog.d(TAG, "sync providing synchronous ack response: " + stubResponse);
-        return gson.toJson(stubResponse);
     }
 
     @Override
     @JavascriptInterface
-    public String sendUserData(String callbackId, String deviceId, String token, String userId) {
-
+    public void sendUserData(String callbackId, String deviceId, String token, String userId) {
         FPLog.d(TAG, "sendUserData received data: deviceId: " + deviceId + ", token: " + token + ", userId: " + userId);
 
         OAuthToken oAuthToken = new OAuthToken.Builder()
@@ -163,18 +149,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         ApiManager.getInstance().setAuthToken(oAuthToken);
 
         // Get user and device asynchronously
-
         FPLog.d(TAG, "sendUserData initiating asynchronous retrieval of user and device");
         getUserAndDevice(deviceId, callbackId);
-
-        // provide synchronous ack
-
-        AckResponseModel stubResponse = new AckResponseModel.Builder()
-                .status(RESPONSE_OK)
-                .build();
-
-        FPLog.d(TAG, "sendUserData providing synchronous ack response: " + stubResponse);
-        return gson.toJson(stubResponse);
     }
 
     //not used by the first iteration of the webview
@@ -203,9 +179,20 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         ApiManager.getInstance().getUser(new ApiCallback<User>() {
             @Override
             public void onSuccess(User result) {
+                if (result == null) {
+                    onTaskError(EventCallback.USER_CREATED, callbackId, "getUser failed: result is null");
+                    return;
+                }
+
                 WebViewCommunicatorImpl.this.user = result;
 
                 RxBus.getInstance().post(new UserReceived(user.getId(), user.getUsername()));
+
+                EventCallback eventCallback = new EventCallback.Builder()
+                        .setCommand(EventCallback.USER_CREATED)
+                        .setStatus(EventCallback.STATUS_OK)
+                        .build();
+                eventCallback.send();
 
                 result.getDevice(deviceId, new ApiCallback<Device>() {
                     @Override
@@ -215,17 +202,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                         String token = ApiManager.getPushToken();
                         String deviceToken = device.getNotificationToken();
 
-                        final Runnable onSuccess = () -> {
-                            AckResponseModel stubResponse = new AckResponseModel.Builder()
-                                    .status(RESPONSE_OK)
-                                    .build();
-                            if (null != callbackId) {
-                                sendMessageToJs(callbackId, true, stubResponse);
-                            }
-                            if (null != callback) {
-                                callback.onTaskCompleted(APP_CALLBACK_STATUS_OK);
-                            }
-                        };
+                        final Runnable onSuccess = () -> onTaskSuccess(EventCallback.GET_USER_AND_DEVICE, callbackId);
 
                         if (deviceToken == null || !deviceToken.equals(token)) {
                             Device updatedDevice = new Device.Builder().setNotificationToken(token).build();
@@ -238,7 +215,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
                                 @Override
                                 public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                                    onTaskError(callbackId, "update device failed:" + errorMessage);
+                                    onTaskError(EventCallback.GET_USER_AND_DEVICE, callbackId, "update device failed:" + errorMessage);
                                 }
                             });
                         } else {
@@ -248,20 +225,40 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
                     @Override
                     public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                        onTaskError(callbackId, "getDevice failed " + errorMessage);
+                        onTaskError(EventCallback.GET_USER_AND_DEVICE, callbackId, "getDevice failed " + errorMessage);
                     }
                 });
             }
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                onTaskError(callbackId, "getUser failed " + errorMessage);
+                onTaskError(EventCallback.USER_CREATED, callbackId, "getUser failed " + errorMessage);
             }
         });
     }
 
-    private String onTaskError(String callbackId, String errorMessage) {
-        SyncResponseModel response = new SyncResponseModel.Builder()
+    private void onTaskSuccess(@EventCallback.Command String command, String callbackId) {
+        onTaskSuccess(command, callbackId, RESPONSE_OK);
+    }
+
+    private void onTaskSuccess(@EventCallback.Command String command, String callbackId, int response) {
+        AppResponseModel stubResponse = new AppResponseModel.Builder()
+                .status(response)
+                .build();
+
+        if (null != callbackId) {
+            sendMessageToJs(callbackId, true, stubResponse);
+        }
+
+        EventCallback eventCallback = new EventCallback.Builder()
+                .setCommand(command)
+                .setStatus(EventCallback.STATUS_OK)
+                .build();
+        eventCallback.send();
+    }
+
+    private void onTaskError(@EventCallback.Command String command, String callbackId, String errorMessage) {
+        AppResponseModel failedResponse = new AppResponseModel.Builder()
                 .status(RESPONSE_FAILURE)
                 .reason(errorMessage)
                 .build();
@@ -269,15 +266,17 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         FPLog.w(TAG, errorMessage);
 
         if (null != callbackId) {
-            sendMessageToJs(callbackId, false, gson.toJson(response));
-        }
-        if (null != callback) {
-            callback.onTaskCompleted(APP_CALLBACK_STATUS_FAILED);
+            sendMessageToJs(callbackId, false, gson.toJson(failedResponse));
         }
 
         RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
 
-        return gson.toJson(response);
+        EventCallback eventCallback = new EventCallback.Builder()
+                .setCommand(command)
+                .setStatus(EventCallback.STATUS_FAILED)
+                .setReason(errorMessage)
+                .build();
+        eventCallback.send();
     }
 
 
@@ -288,7 +287,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         }
     }
 
-    private class CustomListener extends Listener implements IListeners.ApduListener, IListeners.SyncListener {
+    private class CustomListener extends Listener {
 
         private String callbackId;
 
@@ -296,43 +295,19 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             super();
             this.callbackId = callbackId;
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
-            mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
-            mCommands.put(CommitFailed.class, data -> onCommitFailed((CommitFailed) data));
         }
 
-        @Override
-        public void onApduPackageResultReceived(ApduExecutionResult result) {
-
-        }
-
-        @Override
-        public void onApduPackageErrorReceived(ApduExecutionResult result) {
-
-        }
-
-        @Override
-        public void onSyncStateChanged(Sync syncEvent) {
+        private void onSyncStateChanged(Sync syncEvent) {
             FPLog.d(TAG, "received on sync state changed event: " + syncEvent);
             switch (syncEvent.getState()) {
                 case States.COMPLETED:
                 case States.COMPLETED_NO_UPDATES: {
-                    AckResponseModel stubResponse = new AckResponseModel.Builder()
-                            .status(RESPONSE_OK)
-                            .build();
-
-                    if (null != callbackId) {
-                        sendMessageToJs(callbackId, true, stubResponse);
-                    }
-                    if (null != callback) {
-                        callback.onTaskCompleted(APP_CALLBACK_STATUS_OK);
-                    }
-
+                    onTaskSuccess(EventCallback.SYNC_COMPLETED, callbackId);
                     RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_finished), DeviceStatusMessage.SUCCESS));
-
                     break;
                 }
                 case States.FAILED: {
-                    onTaskError(callbackId, "sync failure");
+                    onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "sync failure");
                     break;
                 }
                 default: {
@@ -340,43 +315,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     break;
                 }
             }
-        }
-
-        @Override
-        public void onCommitFailed(CommitFailed commitFailed) {
-            FPLog.d(TAG, "received commit failed event: " + commitFailed.getCommitId());
-
-            if (callback != null)
-                callback.onTaskCompleted(buildAppCallbackPayload(
-                        commitFailed.getCommitType(),
-                        APP_CALLBACK_STATUS_FAILED,
-                        commitFailed.getErrorMessage(),
-                        commitFailed.getCreatedTs()));
-
-        }
-
-        @Override
-        public void onCommitSuccess(CommitSuccess commitSuccess) {
-            FPLog.d(TAG, "Successful commit reported, type: " + commitSuccess.getCommitType() + ", id: " + commitSuccess.getCommitId());
-
-            if (callback != null)
-                callback.onTaskCompleted(buildAppCallbackPayload(
-                        commitSuccess.getCommitType(),
-                        APP_CALLBACK_STATUS_OK,
-                        "",
-                        commitSuccess.getCreatedTs()));
-
-        }
-
-        @Override
-        public void onCommitSkipped(CommitSkipped commitSkipped) {
-            FPLog.d(TAG, "Skipped commit reported, type: " + commitSkipped.getCommitType() + ", id: " + commitSkipped.getCommitId());
-
-            callback.onTaskCompleted(buildAppCallbackPayload(
-                    commitSkipped.getCommitType(),
-                    APP_CALLBACK_STATUS_OK,
-                    "",
-                    commitSkipped.getCreatedTs()));
         }
     }
 
@@ -420,21 +358,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 activity.runOnUiThread(() -> webView.loadUrl(url));
             });
         }
-    }
-
-    private String buildAppCallbackPayload(String command, String status, String reason, long createdTs) {
-
-        AppCallbackModel appCallbackPayload = new AppCallbackModel();
-
-        Date date = new Date(createdTs);
-        Format format = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss.SSS");
-
-        appCallbackPayload.setTimestamp(format.format(date));
-        appCallbackPayload.setCommand(command);
-        appCallbackPayload.setStatus(status);
-        appCallbackPayload.setReason(reason);
-
-        return new Gson().toJson(appCallbackPayload);
     }
 }
 

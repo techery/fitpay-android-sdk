@@ -1,9 +1,11 @@
 package com.fitpay.android.webview.impl;
 
+
+
 /**
  * Created by Ross on 5/13/2016.
  */
-public class SyncResponseModel {
+public class AppResponseModel{
     private int status;
     private String reason;
 
@@ -17,7 +19,7 @@ public class SyncResponseModel {
 
     @Override
     public String toString() {
-        return "SyncResponseModel{" +
+        return "AppResponseModel{" +
                 "reason='" + reason + '\'' +
                 ", status='" + status + '\'' +
                 '}';
@@ -37,8 +39,8 @@ public class SyncResponseModel {
             return this;
         }
 
-        public SyncResponseModel build() {
-            SyncResponseModel response = new SyncResponseModel();
+        public AppResponseModel build() {
+            AppResponseModel response = new AppResponseModel();
             response.status = this.status;
             response.reason = this.reason;
             return response;
