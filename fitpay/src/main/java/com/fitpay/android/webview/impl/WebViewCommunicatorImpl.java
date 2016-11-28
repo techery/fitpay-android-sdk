@@ -40,6 +40,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private static final int RESPONSE_OK = 0;
     private static final int RESPONSE_FAILURE = 1;
+    private static final int RESPONSE_IN_PROGRESS = 2;
 
     private final Activity activity;
     private DeviceService deviceService;
@@ -126,7 +127,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             //sync data
             deviceService.syncData(user, device);
         } catch (IllegalStateException ex) {
-            onTaskError(EventCallback.SYNC_COMPLETED, callbackId, ex.getMessage());
+            @Sync.State Integer state = deviceService != null ? deviceService.getSyncState() : null;
+            if (state != null && (state == States.STARTED || state == States.IN_PROGRESS)) {
+                onTaskSuccess(EventCallback.SYNC_COMPLETED, callbackId, RESPONSE_IN_PROGRESS);
+            } else {
+                onTaskError(EventCallback.SYNC_COMPLETED, callbackId, ex.getMessage());
+            }
         }
     }
 
@@ -173,7 +179,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         ApiManager.getInstance().getUser(new ApiCallback<User>() {
             @Override
             public void onSuccess(User result) {
-                if(result == null){
+                if (result == null) {
                     onTaskError(EventCallback.USER_CREATED, callbackId, "getUser failed: result is null");
                     return;
                 }
@@ -232,8 +238,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     }
 
     private void onTaskSuccess(@EventCallback.Command String command, String callbackId) {
+        onTaskSuccess(command, callbackId, RESPONSE_OK);
+    }
+
+    private void onTaskSuccess(@EventCallback.Command String command, String callbackId, int response) {
         AppResponseModel stubResponse = new AppResponseModel.Builder()
-                .status(RESPONSE_OK)
+                .status(response)
                 .build();
 
         if (null != callbackId) {

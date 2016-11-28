@@ -102,6 +102,8 @@ public final class DeviceService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        NotificationManager.getInstance().addListenerToCurrentThread(mSyncListener);
     }
 
     @Override
@@ -134,7 +136,6 @@ public final class DeviceService extends Service {
         }
         return paymentDeviceConnectorType;
     }
-
 
     protected void configure(Intent intent) {
         if (null == intent) {
@@ -271,7 +272,6 @@ public final class DeviceService extends Service {
                 paymentDeviceConnector.disconnect();
                 paymentDeviceConnector = null;
             }
-            NotificationManager.getInstance().removeListener(mSyncListener);
         });
     }
 
@@ -333,8 +333,6 @@ public final class DeviceService extends Service {
         syncProperties.put(SYNC_PROPERTY_DEVICE_ID, devId);
         paymentDeviceConnector.init(syncProperties);
         paymentDeviceConnector.syncInit();
-
-        NotificationManager.getInstance().addListenerToCurrentThread(mSyncListener);
 
         RxBus.getInstance().post(new Sync(States.STARTED));
 
@@ -511,5 +509,10 @@ public final class DeviceService extends Service {
             FPLog.e(TAG, "can not convert config to properties.  Reason: " + e.getMessage());
         }
         return props;
+    }
+
+    @Sync.State
+    public Integer getSyncState() {
+        return mSyncEventState;
     }
 }
