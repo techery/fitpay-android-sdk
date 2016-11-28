@@ -173,6 +173,11 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         ApiManager.getInstance().getUser(new ApiCallback<User>() {
             @Override
             public void onSuccess(User result) {
+                if(result == null){
+                    onTaskError(EventCallback.USER_CREATED, callbackId, "getUser failed: result is null");
+                    return;
+                }
+
                 WebViewCommunicatorImpl.this.user = result;
 
                 RxBus.getInstance().post(new UserReceived(user.getId(), user.getUsername()));
