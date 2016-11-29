@@ -45,4 +45,17 @@ public final class ApduCommand {
     public boolean isContinueOnFailure() {
         return continueOnFailure;
     }
+
+    @Override
+    public String toString() {
+        return "ApduCommand{" +
+                "commandId='" + commandId + '\'' +
+                ", groupId=" + groupId +
+                ", sequence=" + sequence +
+                ", command='" + command + '\'' +
+                ", type='" + type + '\'' +
+                ", injected=" + injected +
+                ", continueOnFailure=" + continueOnFailure +
+                '}';
+    }
 }
