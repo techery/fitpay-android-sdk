@@ -40,6 +40,7 @@ import java.util.Properties;
 import rx.Observable;
 
 import static com.fitpay.android.paymentdevice.constants.ApduConstants.NORMAL_PROCESSING;
+import static com.fitpay.android.utils.Constants.APDU_DATA;
 
 /**
  * Base model for wearable payment device
@@ -233,6 +234,8 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      * Execution has finished
      */
     protected void completeApduPackageExecution() {
+        FPLog.i(APDU_DATA, "\\ApduPackageResult\\: " + apduExecutionResult);
+
         NotificationManager.getInstance().removeListener(apduCommandListener);
 
         curApduCommand = null;
@@ -251,7 +254,10 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      */
     protected void executeNextApduCommand() {
         ApduCommand nextCommand = curApduPackage.getNextCommand(curApduCommand);
+
         if (nextCommand != null) {
+            FPLog.i(APDU_DATA, "\\ProcessNextCommand\\: " + nextCommand.toString());
+
             curApduCommand = nextCommand;
             executeApduCommand(curApduPgkNumber, nextCommand);
         } else {
@@ -392,6 +398,8 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         }
 
         private void onApduCommandReceived(ApduCommandResult apduCommandResult) {
+            FPLog.i(APDU_DATA, "\\CommandProcessed\\: " + apduCommandResult);
+
             String responseCode = apduCommandResult.getResponseCode();
             if (responseCode.equals(normalResponseCode) || curApduCommand.isContinueOnFailure()) {
                 apduExecutionResult.addResponse(apduCommandResult);
@@ -419,6 +427,8 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
                 long validUntil = TimestampUtils.getDateForISO8601String(pkg.getValidUntil()).getTime();
                 long currentTime = System.currentTimeMillis();
+
+                FPLog.i(APDU_DATA, "\\ApduPackage\\: " + pkg);
 
                 if (validUntil > currentTime) {
                     executeApduPackage(pkg);

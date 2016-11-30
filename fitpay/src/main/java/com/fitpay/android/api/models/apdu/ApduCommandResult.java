@@ -67,4 +67,14 @@ public class ApduCommandResult {
             return this;
         }
     }
+
+    @Override
+    public String toString() {
+        return "ApduCommandResult{" +
+                "commandId='" + commandId + '\'' +
+                ", responseCode='" + responseCode + '\'' +
+                ", responseData='" + responseData + '\'' +
+                ", continueOnFailure=" + continueOnFailure +
+                '}';
+    }
 }

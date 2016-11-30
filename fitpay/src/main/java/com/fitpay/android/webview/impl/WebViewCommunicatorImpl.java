@@ -29,6 +29,8 @@ import com.google.gson.Gson;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import static com.fitpay.android.utils.Constants.WV_DATA;
+
 
 /**
  * Created by Ross Gabay on 4/13/2016.
@@ -81,10 +83,9 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     @Override
     @JavascriptInterface
     public void dispatchMessage(String message) throws JSONException {
+        FPLog.i(WV_DATA, "\\Received\\: " + message);
 
         if (message == null) throw new IllegalArgumentException("invalid message");
-
-        FPLog.d(TAG, "received message: " + message);
 
         JSONObject obj = new JSONObject(message);
 
@@ -148,8 +149,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         ApiManager.getInstance().setAuthToken(oAuthToken);
 
-        // Get user and device asynchronously
-        FPLog.d(TAG, "sendUserData initiating asynchronous retrieval of user and device");
         getUserAndDevice(deviceId, callbackId);
     }
 
@@ -353,7 +352,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             });
             mCommands.put(RtmMessageResponse.class, data -> {
                 String str = data.toString();
-                FPLog.d(TAG, "sending message to webview: " + str);
+                FPLog.i(WV_DATA, "\\Response\\: " + str);
                 final String url = "javascript:window.RtmBridge.resolve('" + str + "');";
                 activity.runOnUiThread(() -> webView.loadUrl(url));
             });

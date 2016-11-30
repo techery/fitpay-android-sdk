@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.alexrs.prefs.lib.Prefs;
 
+import static com.fitpay.android.utils.Constants.SYNC_DATA;
 import static java.lang.Class.forName;
 
 /**
@@ -156,7 +157,7 @@ public final class DeviceService extends Service {
                         break;
                     }
                     default: {
-                        FPLog.d(TAG, "payment service type is not one of the known types.  type: " + paymentDeviceConnectorType);
+                        FPLog.w(TAG, "payment service type is not one of the known types.  type: " + paymentDeviceConnectorType);
                     }
                 }
                 if (null == paymentDeviceConnector) {
@@ -310,7 +311,7 @@ public final class DeviceService extends Service {
         paymentDeviceConnector.setUser(user);
 
         executor.execute(() -> {
-            FPLog.d(TAG, "Starting execution of syncDevice");
+            FPLog.i(SYNC_DATA, "\\StartSync\\");
             syncDevice();
         });
     }
@@ -354,8 +355,11 @@ public final class DeviceService extends Service {
                         commitsCollection -> {
                             mCommits = commitsCollection.getResults();
 
-                            if (mCommits != null && mCommits.size() > 0) {
-                                FPLog.d(TAG, "processing commits.  count: " + mCommits.size());
+                            int commitsSize = mCommits != null ? mCommits.size() : 0;
+
+                            FPLog.i(SYNC_DATA, "\\CommitsReceived\\: " + commitsSize);
+
+                            if (commitsSize > 0) {
                                 RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
                                 processNextCommit();
                             } else {
@@ -381,7 +385,9 @@ public final class DeviceService extends Service {
         if (mCommits != null && mCommits.size() > 0) {
             RxBus.getInstance().post(new Sync(States.INC_PROGRESS, mCommits.size()));
             Commit commit = mCommits.get(0);
-            FPLog.d(TAG, "process commit: " + commit + " on thread: " + Thread.currentThread());
+
+            FPLog.i(SYNC_DATA, "\\ProcessNextCommit\\: " + commit);
+
             paymentDeviceConnector.processCommit(commit);
             // expose the commit out to others who may want to take action
             RxBus.getInstance().post(commit);
@@ -412,14 +418,10 @@ public final class DeviceService extends Service {
 
         @Override
         public void onSyncStateChanged(Sync syncEvent) {
-            FPLog.d(TAG, "received on sync state changed event: " + syncEvent);
             mSyncEventState = syncEvent.getState();
 
             if (mSyncEventState == States.COMPLETED || mSyncEventState == States.FAILED || mSyncEventState == States.COMPLETED_NO_UPDATES) {
-                //At this time, the sync listener is no longer needed and can be unregisered.
-                //However, a listener should not unregister itself so we will leave it
-                //NotificationManager.getInstance().removeListener(mSyncListener);
-                FPLog.d(TAG, "sync has ended");
+                FPLog.i(SYNC_DATA, "\\EndSync\\: " + (mSyncEventState != States.FAILED ? "Success" : "Failed"));
                 paymentDeviceConnector.syncComplete();
             }
 
@@ -430,7 +432,7 @@ public final class DeviceService extends Service {
 
         @Override
         public void onCommitFailed(CommitFailed commitFailed) {
-            FPLog.w(TAG, "received commit failed event: " + commitFailed.getCommitId());
+            FPLog.w(SYNC_DATA, "\\CommitProcessed\\: " + commitFailed);
 
             RxBus.getInstance().post(new Sync(States.FAILED));
 
@@ -445,7 +447,7 @@ public final class DeviceService extends Service {
 
         @Override
         public void onCommitSuccess(CommitSuccess commitSuccess) {
-            FPLog.d(TAG, "received commit success event.  moving last commit pointer to: " + commitSuccess.getCommitId());
+            FPLog.i(SYNC_DATA, "\\CommitProcessed\\: " + commitSuccess);
 
             DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSuccess.getCommitId());
@@ -467,7 +469,7 @@ public final class DeviceService extends Service {
 
         @Override
         public void onCommitSkipped(CommitSkipped commitSkipped) {
-            FPLog.w(TAG, "received commit skipped event.  moving last commit pointer to: " + commitSkipped.getCommitId());
+            FPLog.i(SYNC_DATA, "\\CommitProcessed\\: " + commitSkipped);
 
             DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSkipped.getCommitId());

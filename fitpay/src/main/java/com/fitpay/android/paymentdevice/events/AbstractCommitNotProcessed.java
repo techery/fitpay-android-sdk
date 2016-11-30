@@ -40,4 +40,5 @@ public abstract class AbstractCommitNotProcessed {
     public int getErrorCode() {
         return errorCode;
     }
+
 }

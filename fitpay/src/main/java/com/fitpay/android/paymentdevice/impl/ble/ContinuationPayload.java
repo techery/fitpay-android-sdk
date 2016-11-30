@@ -29,7 +29,7 @@ class ContinuationPayload {
         }
 
         if (data.containsKey(message.getSortOrder())) {
-            FPLog.d("received duplicate continuation packet #" + message.getSortOrder());
+            FPLog.w("received duplicate continuation packet #" + message.getSortOrder());
         }
 
         FPLog.d("received packet #" + message.getSortOrder() + ": [" + Hex.bytesToHexString(message.getData()) + "]");
