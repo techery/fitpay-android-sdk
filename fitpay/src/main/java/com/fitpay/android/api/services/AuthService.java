@@ -1,6 +1,9 @@
 package com.fitpay.android.api.services;
 
+import android.support.compat.BuildConfig;
+
 import com.fitpay.android.utils.Constants;
+import com.fitpay.android.utils.FPLog;
 
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -24,14 +27,16 @@ final public class AuthService extends BaseClient {
             return chain.proceed(builder.build());
         };
 
-        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-
         //TODO remove unsafe once cert issues addressed
         OkHttpClient.Builder clientBuilder = getUnsafeOkHttpClient();
         //OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
         clientBuilder.addInterceptor(interceptor);
-        clientBuilder.addInterceptor(logging);
+
+        if (FPLog.showHttpLogs()) {
+            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+            clientBuilder.addInterceptor(logging);
+        }
 
         mAuthClient = constructClient(baseUrl, clientBuilder.build());
 

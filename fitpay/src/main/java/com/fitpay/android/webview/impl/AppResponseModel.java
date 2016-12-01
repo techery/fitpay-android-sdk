@@ -1,33 +1,35 @@
 package com.fitpay.android.webview.impl;
 
+
+
 /**
  * Created by Ross on 5/13/2016.
  */
-public class SyncResponseModel {
-    private String status;
+public class AppResponseModel{
+    private int status;
     private String reason;
 
     public String getReason() {
         return reason;
     }
 
-    public String getStatus() {
+    public int getStatus() {
         return status;
     }
 
     @Override
     public String toString() {
-        return "SyncResponseModel{" +
+        return "AppResponseModel{" +
                 "reason='" + reason + '\'' +
                 ", status='" + status + '\'' +
                 '}';
     }
 
     public static class Builder {
-        private String status;
+        private int status;
         private String reason;
 
-        public Builder status(String status) {
+        public Builder status(int status) {
             this.status = status;
             return this;
         }
@@ -37,8 +39,8 @@ public class SyncResponseModel {
             return this;
         }
 
-        public SyncResponseModel build() {
-            SyncResponseModel response = new SyncResponseModel();
+        public AppResponseModel build() {
+            AppResponseModel response = new AppResponseModel();
             response.status = this.status;
             response.reason = this.reason;
             return response;

@@ -1,8 +1,9 @@
 package com.fitpay.android.paymentdevice.impl.ble;
 
 import com.fitpay.android.paymentdevice.impl.ble.message.ContinuationPacketMessage;
+import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Hex;
-import com.orhanobut.logger.Logger;
+
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,10 +29,10 @@ class ContinuationPayload {
         }
 
         if (data.containsKey(message.getSortOrder())) {
-            Logger.d("received duplicate continuation packet #" + message.getSortOrder());
+            FPLog.w("received duplicate continuation packet #" + message.getSortOrder());
         }
 
-        Logger.d("received packet #" + message.getSortOrder() + ": [" + Hex.bytesToHexString(message.getData()) + "]");
+        FPLog.d("received packet #" + message.getSortOrder() + ": [" + Hex.bytesToHexString(message.getData()) + "]");
         data.put(message.getSortOrder(), message.getData());
     }
 

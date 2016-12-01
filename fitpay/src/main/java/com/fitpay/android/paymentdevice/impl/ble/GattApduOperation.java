@@ -11,12 +11,13 @@ import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.ApduExecutionError;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.interfaces.IApduMessage;
+import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Hex;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
-import com.orhanobut.logger.Logger;
+
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -132,7 +133,7 @@ class GattApduOperation extends GattOperation {
 
                     mSequencesMap.remove(sId);
 
-                    Logger.i(mSequencesMap.values().toString());
+                    FPLog.i(mSequencesMap.values().toString());
                 }
             });
 

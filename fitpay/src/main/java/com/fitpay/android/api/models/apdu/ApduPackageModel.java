@@ -53,4 +53,19 @@ abstract class ApduPackageModel extends BaseModel {
     public String getApduPackageUrl() {
         return apduPackageUrl;
     }
+
+    @Override
+    public String toString() {
+        return "ApduPackage{" +
+                "seIdType='" + seIdType + '\'' +
+                ", targetDeviceType='" + targetDeviceType + '\'' +
+                ", targetDeviceId='" + targetDeviceId + '\'' +
+                ", packageId='" + packageId + '\'' +
+                ", seId='" + seId + '\'' +
+                ", targetAid='" + targetAid + '\'' +
+                ", validUntil='" + validUntil + '\'' +
+                ", apduPackageUrl='" + apduPackageUrl + '\'' +
+                ", apduCommands=" + apduCommands +
+                '}';
+    }
 }

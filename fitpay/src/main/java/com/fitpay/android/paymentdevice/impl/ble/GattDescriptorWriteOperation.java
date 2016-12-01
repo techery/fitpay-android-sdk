@@ -3,7 +3,7 @@ package com.fitpay.android.paymentdevice.impl.ble;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattDescriptor;
 
-import com.orhanobut.logger.Logger;
+import com.fitpay.android.utils.FPLog;
 
 import java.util.UUID;
 
@@ -20,7 +20,7 @@ class GattDescriptorWriteOperation extends GattOperation {
 
     @Override
     public void execute(BluetoothGatt gatt) {
-        Logger.d("Writing to " + mDescriptor);
+        FPLog.d("Writing to " + mDescriptor);
         BluetoothGattDescriptor descriptor = gatt.getService(mService).getCharacteristic(mCharacteristic).getDescriptor(mDescriptor);
         gatt.writeDescriptor(descriptor);
     }

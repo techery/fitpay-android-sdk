@@ -8,7 +8,6 @@ import com.fitpay.android.api.models.user.UserAuthInfo;
 import com.fitpay.android.api.models.user.UserInfo;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.orhanobut.logger.Logger;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -16,6 +15,10 @@ import java.util.concurrent.Executors;
 public final class Constants {
 
     public static final String FIT_PAY_TAG = "FitPay";
+
+    public final static String SYNC_DATA = "SYNC_DATA";
+    public final static String APDU_DATA = "APDU_DATA";
+    public final static String WV_DATA = "WV_DATA";
 
     static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
     static final String DATE_FORMAT_ISO8601 = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
@@ -44,12 +47,14 @@ public final class Constants {
         return gson;
     }
 
+    @Deprecated
     public static void printError(Throwable error) {
-        printError(error.toString());
+        FPLog.e(error);
     }
 
+    @Deprecated
     public static void printError(String error) {
-        Logger.t(FIT_PAY_TAG).e(error);
+        FPLog.e(error);
     }
 }
 

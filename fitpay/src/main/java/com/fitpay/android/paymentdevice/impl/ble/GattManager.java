@@ -23,9 +23,9 @@ import com.fitpay.android.paymentdevice.impl.ble.message.SecurityStateMessage;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.interfaces.ISecureMessage;
 import com.fitpay.android.paymentdevice.utils.Crc32;
+import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Hex;
 import com.fitpay.android.utils.RxBus;
-import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -36,6 +36,8 @@ import rx.Observable;
  * Manager that works with Bluetooth GATT Profile.
  **/
 final class GattManager {
+
+    private static final String TAG = GattManager.class.getSimpleName();
 
     private IPaymentDeviceConnector paymentDeviceConnector;
 
@@ -88,24 +90,24 @@ final class GattManager {
     }
 
     public synchronized void cancelCurrentOperationBundle() {
-        Logger.w("Cancelling current operation. Queue size before: " + mQueue.size());
+        FPLog.w(TAG, "Cancelling current operation. Queue size before: " + mQueue.size());
         processError(ApduExecutionError.ON_TIMEOUT);
     }
 
     public synchronized void queue(GattOperation gattOperation) {
         mQueue.add(gattOperation);
-        Logger.i("Queueing Gatt operation, size will now become: " + mQueue.size());
+        FPLog.i(TAG, "Queueing Gatt operation, size will now become: " + mQueue.size());
         drive();
     }
 
     private synchronized void drive() {
         if (mCurrentOperation != null) {
-            Logger.e("tried to drive, but currentOperation was not null, " + mCurrentOperation);
+            FPLog.e(TAG, "tried to drive, but currentOperation was not null, " + mCurrentOperation);
             return;
         }
 
         if (mQueue.size() == 0) {
-            Logger.i("Queue empty, drive loop stopped.");
+            FPLog.i(TAG, "Queue empty, drive loop stopped.");
             mCurrentOperation = null;
             if (mCurrentOperationTimeout != null) {
                 mCurrentOperationTimeout.cancel(true);
@@ -136,7 +138,7 @@ final class GattManager {
                         case BluetoothProfile.STATE_CONNECTED:
                             paymentDeviceConnector.setState(States.CONNECTED);
 
-                            Logger.i("Gatt connected to device " + mDevice.getAddress());
+                            FPLog.i(TAG, "Gatt connected to device " + mDevice.getAddress());
 
                             mGatt = gatt;
                             mGatt.discoverServices();
@@ -145,7 +147,7 @@ final class GattManager {
                         case BluetoothProfile.STATE_DISCONNECTED:
                             paymentDeviceConnector.setState(States.DISCONNECTED);
 
-                            Logger.i("Disconnected from gatt server " + mDevice.getAddress() + ", newState: " + newState);
+                            FPLog.i(TAG, "Disconnected from gatt server " + mDevice.getAddress() + ", newState: " + newState);
 
                             setCurrentOperation(null);
 
@@ -173,7 +175,7 @@ final class GattManager {
                 public void onServicesDiscovered(BluetoothGatt gatt, int status) {
                     super.onServicesDiscovered(gatt, status);
 
-                    Logger.d("services discovered, status: " + status);
+                    FPLog.d(TAG, "services discovered, status: " + status);
                     execute(gatt, operation);
                 }
 
@@ -192,7 +194,7 @@ final class GattManager {
                 public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
                     super.onCharacteristicWrite(gatt, characteristic, status);
 
-                    Logger.d("Characteristic " + characteristic.getUuid() + "written to on device " + mDevice.getAddress());
+                    FPLog.d(TAG, "Characteristic " + characteristic.getUuid() + "written to on device " + mDevice.getAddress());
 
                     driveNext();
                 }
@@ -204,7 +206,7 @@ final class GattManager {
                     UUID uuid = characteristic.getUuid();
                     byte[] value = characteristic.getValue();
 
-                    Logger.d("Characteristic changed: " + uuid);
+                    FPLog.d(TAG, "Characteristic changed: " + uuid);
 
                     if (PaymentServiceConstants.CHARACTERISTIC_SECURITY_STATE.equals(uuid)) {
                         ISecureMessage securityStateMessage = new SecurityStateMessage().withData(value);
@@ -222,34 +224,34 @@ final class GattManager {
 //                            RxBus.getInstance().post(apduResultMessage);
 //                            driveNext();
                         } else {
-                            Logger.e("Wrong sequenceID. lastSequenceID:" + mLastApduSequenceId + " currentID:" + apduResultMessage.getSequenceId());
+                            FPLog.e(TAG, "Wrong sequenceID. lastSequenceID:" + mLastApduSequenceId + " currentID:" + apduResultMessage.getSequenceId());
                             processError(ApduExecutionError.WRONG_SEQUENCE);
                         }
                     } else if (PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_CONTROL.equals(uuid)) {
-                        Logger.d("continuation control write received [" + Hex.bytesToHexString(value) + "], length [" + value.length + "]");
+                        FPLog.d(TAG, "continuation control write received [" + Hex.bytesToHexString(value) + "], length [" + value.length + "]");
                         ContinuationControlMessage continuationControlMessage = ContinuationControlMessageFactory.withMessage(value);
-                        Logger.d("continuation control message: " + continuationControlMessage);
+                        FPLog.d(TAG, "continuation control message: " + continuationControlMessage);
 
                         // start continuation packet
                         if (continuationControlMessage instanceof ContinuationControlBeginMessage) {
                             if (mContinuationPayload != null) {
-                                Logger.d("continuation was previously started, resetting to blank");
+                                FPLog.d(TAG, "continuation was previously started, resetting to blank");
                             }
 
                             mContinuationPayload = new ContinuationPayload(((ContinuationControlBeginMessage) continuationControlMessage).getUuid());
 
-                            Logger.d("continuation start control received, ready to receive continuation data");
+                            FPLog.d(TAG, "continuation start control received, ready to receive continuation data");
                         } else if (continuationControlMessage instanceof ContinuationControlEndMessage) {
-                            Logger.d("continuation control end received.  process update to characteristic: " + mContinuationPayload.getTargetUuid());
+                            FPLog.d(TAG, "continuation control end received.  process update to characteristic: " + mContinuationPayload.getTargetUuid());
 
                             UUID targetUuid = mContinuationPayload.getTargetUuid();
                             byte[] payloadValue = null;
                             try {
                                 payloadValue = mContinuationPayload.getValue();
                                 mContinuationPayload = null;
-                                Logger.d("complete continuation data [" + Hex.bytesToHexString(payloadValue) + "]");
+                                FPLog.d(TAG, "complete continuation data [" + Hex.bytesToHexString(payloadValue) + "]");
                             } catch (IOException e) {
-                                Logger.e("error parsing continuation data", e);
+                                FPLog.e(TAG, "error parsing continuation data" + e.getMessage());
                                 processError(ApduExecutionError.CONTINUATION_ERROR);
                                 return;
                             }
@@ -258,7 +260,7 @@ final class GattManager {
                             long expectedChecksumValue = ((ContinuationControlEndMessage) continuationControlMessage).getChecksum();
 
                             if (checkSumValue != expectedChecksumValue) {
-                                Logger.e("Checksums not equal.  input data checksum: " + checkSumValue
+                                FPLog.e(TAG, "Checksums not equal.  input data checksum: " + checkSumValue
                                         + ", expected value as provided on continuation end: " + expectedChecksumValue);
 
                                 processError(ApduExecutionError.WRONG_CHECKSUM);
@@ -266,7 +268,7 @@ final class GattManager {
                             }
 
                             if (PaymentServiceConstants.CHARACTERISTIC_APDU_RESULT.equals(targetUuid)) {
-                                Logger.d("continuation is for APDU Result");
+                                FPLog.d(TAG, "continuation is for APDU Result");
 
                                 ApduResultMessage apduResultMessage = new ApduResultMessage().withMessage(payloadValue);
 //                                RxBus.getInstance().post(apduResultMessage);
@@ -276,18 +278,18 @@ final class GattManager {
                                 postMessage(apduResultMessage);
 
                             } else {
-                                Logger.w("Code does not handle continuation for characteristic: " + targetUuid);
+                                FPLog.w(TAG, "Code does not handle continuation for characteristic: " + targetUuid);
                                 processError(ApduExecutionError.CONTINUATION_ERROR);
                             }
                         }
                     } else if (PaymentServiceConstants.CHARACTERISTIC_CONTINUATION_PACKET.equals(uuid)) {
 
-                        Logger.d("continuation data packet received [" + Hex.bytesToHexString(value) + "]");
+                        FPLog.d(TAG, "continuation data packet received [" + Hex.bytesToHexString(value) + "]");
                         ContinuationPacketMessage continuationPacketMessage = new ContinuationPacketMessage().withMessage(value);
-                        Logger.d("parsed continuation packet message: " + continuationPacketMessage);
+                        FPLog.d(TAG, "parsed continuation packet message: " + continuationPacketMessage);
 
                         if (mContinuationPayload == null) {
-                            Logger.e("invalid continuation, no start received on control characteristic");
+                            FPLog.e(TAG, "invalid continuation, no start received on control characteristic");
                             processError(ApduExecutionError.CONTINUATION_ERROR);
                             return;
                         }
@@ -295,7 +297,7 @@ final class GattManager {
                         try {
                             mContinuationPayload.processPacket(continuationPacketMessage);
                         } catch (Exception e) {
-                            Logger.e("exception handling continuation packet", e);
+                            FPLog.e(TAG, "exception handling continuation packet:" + e.getMessage());
                             processError(ApduExecutionError.CONTINUATION_ERROR);
                         }
 
@@ -371,16 +373,16 @@ final class GattManager {
             @Override
             protected synchronized Void doInBackground(Void... voids) {
                 try {
-                    Logger.i("Starting to do a background timeout");
+                    FPLog.i(TAG, "Starting to do a background timeout");
                     wait(timeout);
                 } catch (InterruptedException e) {
-                    Logger.i("was interrupted out of the timeout");
+                    FPLog.i(TAG, "was interrupted out of the timeout");
                 }
                 if (isCancelled()) {
-                    Logger.i("The timeout was cancelled, so we do nothing.");
+                    FPLog.i(TAG, "The timeout was cancelled, so we do nothing.");
                     return null;
                 }
-                Logger.i("Timeout ran to completion, time to cancel the entire operation bundle. Abort, abort!");
+                FPLog.i(TAG, "Timeout ran to completion, time to cancel the entire operation bundle. Abort, abort!");
                 cancelCurrentOperationBundle();
                 return null;
             }

@@ -2,6 +2,7 @@ package com.fitpay.android.paymentdevice.interfaces;
 
 import android.content.Context;
 
+import com.fitpay.android.api.models.apdu.ApduCommand;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.card.TopOfWallet;
 import com.fitpay.android.api.models.user.User;
@@ -44,17 +45,22 @@ public interface IPaymentDeviceConnector extends CommitHandler {
 
     void close();
 
-    //TODO remove ?  since some devices do not have MacAddress and / or it is not of interest in getting connection
-    String getMacAddress();
-
     void readDeviceInfo();
 
+    //TODO remove ?  since some devices do not have MacAddress and / or it is not of interest in getting connection
+    @Deprecated
+    String getMacAddress();
+
+    @Deprecated
     void readNFCState();
 
+    @Deprecated
     void setNFCState(@NFC.Action byte state);
 
+    @Deprecated
     void sendNotification(byte[] data);
 
+    @Deprecated
     void setSecureElementState(@SecureElement.Action byte state);
 
     /**
@@ -70,7 +76,13 @@ public interface IPaymentDeviceConnector extends CommitHandler {
      */
     void syncComplete();
 
+    void onPreExecuteApdu();
+
+    void onPostExecuteApdu();
+
     void executeApduPackage(ApduPackage apduPackage);
+
+    void executeApduCommand(long apduPkgNumber, ApduCommand apduCommand);
 
     void executeTopOfWallet(List<TopOfWallet> towPackages);
 

@@ -16,7 +16,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.widget.Toast;
 
 import com.fitpay.android.R;
@@ -139,14 +138,10 @@ public abstract class BaseSearchBLEActivity extends AppCompatActivity {
 
                     @Override
                     public void onBatchScanResults(List<ScanResult> results) {
-                        for (ScanResult sr : results) {
-                            Log.i("ScanResult - Results", sr.toString());
-                        }
                     }
 
                     @Override
                     public void onScanFailed(int errorCode) {
-                        Log.e("Scan Failed", "Error Code: " + errorCode);
                     }
                 };
             }

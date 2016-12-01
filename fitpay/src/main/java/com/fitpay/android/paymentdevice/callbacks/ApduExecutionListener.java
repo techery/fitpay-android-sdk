@@ -13,14 +13,15 @@ public abstract class ApduExecutionListener extends Listener implements IListene
         mCommands.put(ApduExecutionResult.class, data -> {
             ApduExecutionResult result = (ApduExecutionResult) data;
 
-            switch (result.getState()){
+            switch (result.getState()) {
                 case ResponseState.PROCESSED:
                     onApduPackageResultReceived(result);
                     break;
 
                 default:
                     onApduPackageErrorReceived(result);
-                    break;            }
+                    break;
+            }
         });
     }
 }

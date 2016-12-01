@@ -1,5 +1,6 @@
 package com.fitpay.android.paymentdevice.events;
 
+import com.fitpay.android.api.enums.CommitTypes;
 import com.fitpay.android.api.models.device.Commit;
 
 /**
@@ -23,6 +24,7 @@ public abstract class AbstractCommitNotProcessed {
         return commit.getCommitId();
     }
 
+    @CommitTypes.Type
     public String getCommitType() {
         return commit.getCommitType();
     }
@@ -38,4 +40,5 @@ public abstract class AbstractCommitNotProcessed {
     public int getErrorCode() {
         return errorCode;
     }
+
 }
