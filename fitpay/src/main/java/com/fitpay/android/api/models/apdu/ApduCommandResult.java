@@ -8,8 +8,10 @@ public class ApduCommandResult {
     private String commandId;
     private String responseCode;
     private String responseData;
+    private transient boolean continueOnFailure;
 
-    private ApduCommandResult() {}
+    private ApduCommandResult() {
+    }
 
     public String getCommandId() {
         return commandId;
@@ -23,18 +25,25 @@ public class ApduCommandResult {
         return responseCode;
     }
 
+    public boolean canContinueOnFailure() {
+        return continueOnFailure;
+    }
+
     public static class Builder {
         private String commandId;
         private String responseCode;
         private String responseData;
+        private boolean continueOnFailure;
 
-        public Builder() {}
+        public Builder() {
+        }
 
         public ApduCommandResult build() {
             ApduCommandResult result = new ApduCommandResult();
             result.commandId = this.commandId;
             result.responseCode = this.responseCode;
             result.responseData = this.responseData;
+            result.continueOnFailure = this.continueOnFailure;
             return result;
         }
 
@@ -52,5 +61,20 @@ public class ApduCommandResult {
             this.responseData = responseData;
             return this;
         }
+
+        public Builder setContinueOnFailure(boolean continueOnFailure) {
+            this.continueOnFailure = continueOnFailure;
+            return this;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "ApduCommandResult{" +
+                "commandId='" + commandId + '\'' +
+                ", responseCode='" + responseCode + '\'' +
+                ", responseData='" + responseData + '\'' +
+                ", continueOnFailure=" + continueOnFailure +
+                '}';
     }
 }

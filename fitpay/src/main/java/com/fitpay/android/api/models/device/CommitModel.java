@@ -36,7 +36,7 @@ abstract class CommitModel extends BaseModel {
 
     @Override
     public String toString() {
-        return "CommitModel{" +
+        return "Commit{" +
                 "commitId='" + commitId + '\'' +
                 ", commitType='" + commitType + '\'' +
                 ", createdTs=" + createdTs +

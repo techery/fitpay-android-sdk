@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
 import com.fitpay.android.R;
 import com.fitpay.android.api.models.device.Commit;
@@ -24,12 +23,13 @@ import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.utils.DevicePreferenceData;
 import com.fitpay.android.utils.Constants;
+import com.fitpay.android.utils.EventCallback;
+import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
 import com.fitpay.android.webview.events.DeviceStatusMessage;
-import com.orhanobut.logger.Logger;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.alexrs.prefs.lib.Prefs;
 
+import static com.fitpay.android.utils.Constants.SYNC_DATA;
 import static java.lang.Class.forName;
 
 /**
@@ -102,6 +103,8 @@ public final class DeviceService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        NotificationManager.getInstance().addListenerToCurrentThread(mSyncListener);
     }
 
     @Override
@@ -135,10 +138,9 @@ public final class DeviceService extends Service {
         return paymentDeviceConnectorType;
     }
 
-
     protected void configure(Intent intent) {
         if (null == intent) {
-            Log.d(TAG, "DeviceService can not be configured with a null Intent.  Current connector: " + paymentDeviceConnector);
+            FPLog.e(TAG, "DeviceService can not be configured with a null Intent.  Current connector: " + paymentDeviceConnector);
             return;
         }
         if (null != intent.getExtras() && intent.hasExtra(EXTRA_PAYMENT_SERVICE_TYPE)) {
@@ -155,21 +157,16 @@ public final class DeviceService extends Service {
                         break;
                     }
                     default: {
-                        Log.d(TAG, "payment service type is not one of the known types.  type: " + paymentDeviceConnectorType);
+                        FPLog.w(TAG, "payment service type is not one of the known types.  type: " + paymentDeviceConnectorType);
                     }
                 }
                 if (null == paymentDeviceConnector) {
-
                     try {
                         Class paymentDeviceConnectorClass = forName(paymentDeviceConnectorType);
                         paymentDeviceConnector = (IPaymentDeviceConnector) paymentDeviceConnectorClass.newInstance();
                         paymentDeviceConnector.setContext(this);
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (InstantiationException e) {
-                        e.printStackTrace();
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
+                    } catch (Exception e) {
+                        FPLog.e(TAG, e);
                     }
                 }
             }
@@ -180,7 +177,7 @@ public final class DeviceService extends Service {
             try {
                 props = convertCommaSeparatedList(configParams);
             } catch (IOException e) {
-                Log.e(TAG, "unable to load properties.   Reason: " + e.getMessage());
+                FPLog.e(TAG, "unable to load properties. Reason: " + e.getMessage());
             }
             if (null != props) {
                 paymentDeviceConnector.init(props);
@@ -226,7 +223,7 @@ public final class DeviceService extends Service {
             throw new IllegalStateException("Payment device connector has not been configured");
         }
         executor.execute(() -> {
-            Log.d(TAG, "Starting execution of connectToDevice");
+            FPLog.d(TAG, "Starting execution of connectToDevice");
             switch (paymentDeviceConnector.getState()) {
                 case States.CONNECTED:
                     break;
@@ -241,7 +238,7 @@ public final class DeviceService extends Service {
 
                 default:
                     //TODO - why not let device decide if it can connect from this state?
-                    Logger.e("Can't connect to device.  Current device state does not support the connect operation.  State: " + paymentDeviceConnector.getState());
+                    FPLog.e(TAG, "Can't connect to device.  Current device state does not support the connect operation.  State: " + paymentDeviceConnector.getState());
                     break;
             }
         });
@@ -251,16 +248,16 @@ public final class DeviceService extends Service {
     public void readDeviceInfo() {
         if (null == paymentDeviceConnector) {
             //TODO post an error
-            Log.e(TAG, "payment device service is not defined.  Can not do operation: readDeviceInfo");
+            FPLog.e(TAG, "payment device service is not defined.  Can not do operation: readDeviceInfo");
             return;
         }
         if (States.CONNECTED != paymentDeviceConnector.getState()) {
             //TODO post an error
-            Log.e(TAG, "payment device service is not connected.  Can not do operation: readDeviceInfo");
+            FPLog.e(TAG, "payment device service is not connected.  Can not do operation: readDeviceInfo");
             return;
         }
         executor.execute(() -> {
-            Log.d(TAG, "Starting execution of readDeviceInfo");
+            FPLog.d(TAG, "Starting execution of readDeviceInfo");
             paymentDeviceConnector.readDeviceInfo();
         });
     }
@@ -271,12 +268,11 @@ public final class DeviceService extends Service {
      */
     public void disconnect() {
         executor.execute(() -> {
-            Log.d(TAG, "Starting execution of disconnect");
+            FPLog.d(TAG, "Starting execution of disconnect");
             if (null != paymentDeviceConnector) {
                 paymentDeviceConnector.disconnect();
                 paymentDeviceConnector = null;
             }
-            NotificationManager.getInstance().removeListener(mSyncListener);
         });
     }
 
@@ -289,34 +285,33 @@ public final class DeviceService extends Service {
      * @param device device object with hypermedia data
      */
     public void syncData(@NonNull User user, @NonNull Device device) {
-
-        Log.d(TAG, "starting device sync.  device: " + device.getDeviceIdentifier());
-        Log.d(TAG, "sync initiated from thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
+        FPLog.d(TAG, "starting device sync.  device: " + device.getDeviceIdentifier());
+        FPLog.d(TAG, "sync initiated from thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
 
         this.user = user;
         this.device = device;
 
         if (paymentDeviceConnector == null) {
             //throw new RuntimeException("You should pair with a payment device at first");
-            Logger.e("No payment device connector configured");
+            FPLog.e(TAG, "No payment device connector configured");
             throw new IllegalStateException("No payment device connector configured");
         }
 
         if (paymentDeviceConnector.getState() != States.CONNECTED) {
             //throw new RuntimeException("You should pair with a payment device at first");
-            Logger.e("No payment device connection");
+            FPLog.e(TAG, "No payment device connection");
             throw new IllegalStateException("No payment device connection");
         }
 
         if (mSyncEventState != null && (mSyncEventState == States.STARTED || mSyncEventState == States.IN_PROGRESS)) {
-            Logger.w("Sync already in progress. Try again later");
+            FPLog.w(TAG, "Sync already in progress. Try again later");
             throw new IllegalStateException("Another sync is currently active.  Please try again later");
         }
 
         paymentDeviceConnector.setUser(user);
 
         executor.execute(() -> {
-            Log.d(TAG, "Starting execution of syncDevice");
+            FPLog.i(SYNC_DATA, "\\StartSync\\");
             syncDevice();
         });
     }
@@ -330,7 +325,7 @@ public final class DeviceService extends Service {
             return;
         }
 
-        Log.d(TAG, "sync running on thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
+        FPLog.d(TAG, "sync running on thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
 
         String devId = device.getDeviceIdentifier();
 
@@ -339,8 +334,6 @@ public final class DeviceService extends Service {
         syncProperties.put(SYNC_PROPERTY_DEVICE_ID, devId);
         paymentDeviceConnector.init(syncProperties);
         paymentDeviceConnector.syncInit();
-
-        NotificationManager.getInstance().addListenerToCurrentThread(mSyncListener);
 
         RxBus.getInstance().post(new Sync(States.STARTED));
 
@@ -362,8 +355,11 @@ public final class DeviceService extends Service {
                         commitsCollection -> {
                             mCommits = commitsCollection.getResults();
 
-                            if (mCommits != null && mCommits.size() > 0) {
-                                Log.d(TAG, "processing commits.  count: " + mCommits.size());
+                            int commitsSize = mCommits != null ? mCommits.size() : 0;
+
+                            FPLog.i(SYNC_DATA, "\\CommitsReceived\\: " + commitsSize);
+
+                            if (commitsSize > 0) {
                                 RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
                                 processNextCommit();
                             } else {
@@ -373,9 +369,9 @@ public final class DeviceService extends Service {
                         throwable -> {
                             if (throwable instanceof DeviceOperationException) {
                                 DeviceOperationException doe = (DeviceOperationException) throwable;
-                                Log.e(TAG, "get commits failed.  reasonCode: " + doe.getErrorCode() + ",  " + doe.getMessage());
+                                FPLog.e(TAG, "get commits failed.  reasonCode: " + doe.getErrorCode() + ",  " + doe.getMessage());
                             } else {
-                                Log.e(TAG, "get commits failed. " + throwable.getMessage());
+                                FPLog.e(TAG, "get commits failed. " + throwable.getMessage());
                             }
 
                             RxBus.getInstance().post(new Sync(States.FAILED));
@@ -389,7 +385,9 @@ public final class DeviceService extends Service {
         if (mCommits != null && mCommits.size() > 0) {
             RxBus.getInstance().post(new Sync(States.INC_PROGRESS, mCommits.size()));
             Commit commit = mCommits.get(0);
-            Log.d(TAG, "process commit: " + commit + " on thread: " + Thread.currentThread());
+
+            FPLog.i(SYNC_DATA, "\\ProcessNextCommit\\: " + commit);
+
             paymentDeviceConnector.processCommit(commit);
             // expose the commit out to others who may want to take action
             RxBus.getInstance().post(commit);
@@ -420,14 +418,10 @@ public final class DeviceService extends Service {
 
         @Override
         public void onSyncStateChanged(Sync syncEvent) {
-            Log.d(TAG, "received on sync state changed event: " + syncEvent);
             mSyncEventState = syncEvent.getState();
 
             if (mSyncEventState == States.COMPLETED || mSyncEventState == States.FAILED || mSyncEventState == States.COMPLETED_NO_UPDATES) {
-                //At this time, the sync listener is no longer needed and can be unregisered.
-                //However, a listener should not unregister itself so we will leave it
-                //NotificationManager.getInstance().removeListener(mSyncListener);
-                Log.d(TAG, "sync has ended");
+                FPLog.i(SYNC_DATA, "\\EndSync\\: " + (mSyncEventState != States.FAILED ? "Success" : "Failed"));
                 paymentDeviceConnector.syncComplete();
             }
 
@@ -438,27 +432,59 @@ public final class DeviceService extends Service {
 
         @Override
         public void onCommitFailed(CommitFailed commitFailed) {
-            Log.d(TAG, "received commit failed event: " + commitFailed.getCommitId());
+            FPLog.w(SYNC_DATA, "\\CommitProcessed\\: " + commitFailed);
+
             RxBus.getInstance().post(new Sync(States.FAILED));
+
+            EventCallback eventCallback = new EventCallback.Builder()
+                    .setCommand(EventCallback.getCommandForCommit(commitFailed.getCommit()))
+                    .setReason(commitFailed.getErrorMessage())
+                    .setStatus(EventCallback.STATUS_FAILED)
+                    .setTimestamp(commitFailed.getCreatedTs())
+                    .build();
+            eventCallback.send();
         }
 
         @Override
         public void onCommitSuccess(CommitSuccess commitSuccess) {
-            Log.d(TAG, "received commit success event.  moving last commit pointer to: " + commitSuccess.getCommitId());
+            FPLog.i(SYNC_DATA, "\\CommitProcessed\\: " + commitSuccess);
+
             DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSuccess.getCommitId());
             DevicePreferenceData.store(DeviceService.this, deviceData);
-            mCommits.remove(0);
+
+            EventCallback eventCallback = new EventCallback.Builder()
+                    .setCommand(EventCallback.getCommandForCommit(commitSuccess.getCommit()))
+                    .setStatus(EventCallback.STATUS_OK)
+                    .setTimestamp(commitSuccess.getCreatedTs())
+                    .build();
+            eventCallback.send();
+
+            //TODO: sometimes I caught IndexOfBoundException. Need to find why this happens
+            if (mCommits.size() > 0) {
+                mCommits.remove(0);
+            }
             processNextCommit();
         }
 
         @Override
         public void onCommitSkipped(CommitSkipped commitSkipped) {
-            Log.d(TAG, "received commit skipped event.  moving last commit pointer to: " + commitSkipped.getCommitId());
+            FPLog.i(SYNC_DATA, "\\CommitProcessed\\: " + commitSkipped);
+
             DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSkipped.getCommitId());
             DevicePreferenceData.store(DeviceService.this, deviceData);
-            mCommits.remove(0);
+
+            EventCallback eventCallback = new EventCallback.Builder()
+                    .setCommand(EventCallback.getCommandForCommit(commitSkipped.getCommit()))
+                    .setStatus(EventCallback.STATUS_OK)
+                    .setTimestamp(commitSkipped.getCreatedTs())
+                    .build();
+            eventCallback.send();
+
+            if (mCommits.size() > 0) {
+                mCommits.remove(0);
+            }
             processNextCommit();
         }
     }
@@ -482,8 +508,13 @@ public final class DeviceService extends Service {
         try {
             convertCommaSeparatedList(configParams);
         } catch (IOException e) {
-            Log.e(TAG, "can not convert config to properties.  Reason: " + e.getMessage());
+            FPLog.e(TAG, "can not convert config to properties.  Reason: " + e.getMessage());
         }
         return props;
+    }
+
+    @Sync.State
+    public Integer getSyncState() {
+        return mSyncEventState;
     }
 }

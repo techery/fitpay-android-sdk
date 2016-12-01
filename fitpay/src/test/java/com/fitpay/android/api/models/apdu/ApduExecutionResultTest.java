@@ -18,8 +18,8 @@ public class ApduExecutionResultTest {
     @Test
     public void testIsSuccessResponseCode9000() {
         ApduExecutionResult result = new ApduExecutionResult(UUID.randomUUID().toString());
-        String value = "9000";
-        assertTrue("9000 should be success", result.isSuccessResponseCode("9000"));
+        ApduCommandResult cmdResult = new ApduCommandResult.Builder().setResponseCode("9000").build();
+        assertTrue("9000 should be success", result.isSuccessResponseCode(cmdResult));
     }
 
     @Test

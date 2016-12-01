@@ -9,4 +9,14 @@ public class CommitSkipped extends AbstractCommitNotProcessed {
     public CommitSkipped(Commit commit) {
         super(commit);
     }
+
+    @Override
+    public String toString() {
+        return "CommitSkipped{" +
+                "commitId='" + getCommitId() + '\'' +
+                ", commitType='" + getCommitType() + '\'' +
+                ", errorCode='" + getErrorCode() + '\'' +
+                ", errorMessage='" + getErrorMessage() + '\'' +
+                '}';
+    }
 }

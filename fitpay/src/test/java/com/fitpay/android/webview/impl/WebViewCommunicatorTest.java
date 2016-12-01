@@ -1,25 +1,31 @@
 package com.fitpay.android.webview.impl;
 
+import android.app.Activity;
+
 import com.fitpay.android.TestActions;
 import com.fitpay.android.TestUtils;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
+import com.fitpay.android.utils.Command;
+import com.fitpay.android.utils.EventCallback;
+import com.fitpay.android.utils.Listener;
+import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.webview.WebViewCommunicator;
-import com.fitpay.android.webview.callback.OnTaskCompleted;
 
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.Mockito;
 
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import rx.schedulers.Schedulers;
+
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
-
-//import com.fitpay.android.api.models.user.UserCreateRequest;
 
 /**
  * Created by tgs on 5/20/16.
@@ -48,45 +54,40 @@ public class WebViewCommunicatorTest extends TestActions {
         Device createdDevice = createDevice(this.user, device);
 
         assertNotNull("device", createdDevice);
-
     }
-
 
     @Test
     @Ignore  // can only be run manually since needs valid user token
     public void testSendUserData() throws Exception {
 
         final CountDownLatch latch = new CountDownLatch(1);
-        OnTaskCompleted callback = new BlockingOnTaskCompletedCallback(latch);
+        @EventCallback.Status String[] status = new String[1];
 
-        String deviceId = "458ba377-5b73-49f6-b284-1846793bb38c";
-        String token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhOTZlN2M0Yi0zMThkLTM4ZWItOTk3ZS05ZTgwZWMwNzUzZmEiLCJ1c2VyX25hbWUiOiJsZWpmZmdpb0B2amx1cGZ0b2wudGJha292enBoIiwiaXNzIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODBcL3VhYVwvb2F1dGhcL3Rva2VuIiwiY2xpZW50X2lkIjoicGFnYXJlIiwiYXVkIjpbInBhZ2FyZSIsInVzZXIiLCJ0cmFuc2FjdGlvbnMiLCJkZXZpY2VzIiwiY3JlZGl0Q2FyZHMiXSwiemlkIjoidWFhIiwidXNlcl9pZCI6ImE5NmU3YzRiLTMxOGQtMzhlYi05OTdlLTllODBlYzA3NTNmYSIsImF6cCI6InBhZ2FyZSIsInNjb3BlIjpbInVzZXIucmVhZCIsInVzZXIud3JpdGUiLCJ0cmFuc2FjdGlvbnMucmVhZCIsImRldmljZXMud3JpdGUiLCJkZXZpY2VzLnJlYWQiLCJjcmVkaXRDYXJkcy53cml0ZSIsImNyZWRpdENhcmRzLnJlYWQiXSwiZXhwIjoxNDYzNzczMjAyLCJpYXQiOjE0NjM3NzE0MDIsImp0aSI6IjFlYTljYzRiLWJkYzctNGRiOS1hOGMzLTUwZmI2NmMyZTllZCIsImVtYWlsIjoibGVqZmZnaW9AdmpsdXBmdG9sLnRiYWtvdnpwaCIsImNpZCI6InBhZ2FyZSJ9.5yphjJ1qFqAh4Af62xB5SwjdQLCRK1g5JvlJxmG2JxQ";
-        String userId = "a96e7c4b-318d-38eb-997e-9e80ec0753fa";
-        WebViewCommunicator wvc = new WebViewCommunicatorImpl(null, -1, callback);
-        String ack = wvc.sendUserData(null, deviceId, token, userId);
-        assertEquals("ack value", "{\"status\":\"OK\"}", ack);
-
-        boolean completed = latch.await(TIMEOUT, TimeUnit.SECONDS);
-        assertTrue("callback completed", completed);
-
-    }
-
-    public class BlockingOnTaskCompletedCallback implements OnTaskCompleted {
-
-        private CountDownLatch latch;
-
-        public BlockingOnTaskCompletedCallback() {}
-
-        public BlockingOnTaskCompletedCallback(CountDownLatch latch) {
-            this.latch = latch;
-        }
-
-        @Override
-        public void onTaskCompleted(String result) {
-            if (null != latch) {
-                latch.countDown();
+        final Listener callbackListener = new Listener() {
+            @Override
+            public Map<Class, Command> getCommands() {
+                mCommands.put(EventCallback.class, data -> {
+                    status[0] = ((EventCallback) data).getStatus();
+                    latch.countDown();
+                });
+                return super.getCommands();
             }
-        }
-    }
+        };
 
+        NotificationManager.getInstance().addListener(callbackListener, Schedulers.immediate());
+
+        String deviceId = "72f8f402-9afd-4856-9675-c6f2f54a6753";
+        String token = "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJjNDQ1MTY5OS00YWM1LTQ2ZWQtOTVhNy1iZTIyYTM5NTQ2Y2QiLCJzdWIiOiI1NzUwODY1ZC1iMGQ4LTQwYTYtOWQ4NS1mNmM4NjNmN2E2YzYiLCJzY29wZSI6WyJ1c2VyLnJlYWQiLCJ1c2VyLndyaXRlIiwidHJhbnNhY3Rpb25zLnJlYWQiLCJkZXZpY2VzLndyaXRlIiwiZGV2aWNlcy5yZWFkIiwiY3JlZGl0Q2FyZHMud3JpdGUiLCJjcmVkaXRDYXJkcy5yZWFkIl0sImNsaWVudF9pZCI6InBhZ2FyZSIsImNpZCI6InBhZ2FyZSIsImF6cCI6InBhZ2FyZSIsInVzZXJfaWQiOiI1NzUwODY1ZC1iMGQ4LTQwYTYtOWQ4NS1mNmM4NjNmN2E2YzYiLCJvcmlnaW4iOiJ1YWEiLCJ1c2VyX25hbWUiOiJwQHAuY29tIXBhZ2FyZSIsImVtYWlsIjoicEBwLmNvbSIsImF1dGhfdGltZSI6MTQ3OTk5NTI1MiwicmV2X3NpZyI6ImUwYjM5MDZiIiwiaWF0IjoxNDc5OTk1MjUyLCJleHAiOjE0Nzk5OTcwNTIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC91YWEvb2F1dGgvdG9rZW4iLCJ6aWQiOiJ1YWEiLCJhdWQiOlsicGFnYXJlIiwidXNlciIsInRyYW5zYWN0aW9ucyIsImRldmljZXMiLCJjcmVkaXRDYXJkcyJdfQ.kRwsY3AKZ-fF4sWZQylThbbwPmHiqmS9D2Xd24Ux3KY-N9S7ZfUOunPa1wMa2jcxzZfBJ5FSdFm61Gqci99x85-PvwD7rUOJBr6AoBSRukzqf6S1m2owVAcWVJLsH8meGbFX_L-NG7yMwJAYiJQ2AGqBUkwvfm3fizpM-jBoKfqrkAjFeUceBiqGdFKljpcqyxHIhjQGOLxlJKOdYNQcr_aMQHg4yh8d_k5LggrKz6XeS7X8-Zj9sylWK4qxgt016o6qyUxgPKZb0GMYsu-XBi9fCAg2yjzttHCQTvk3dhAtw0Yb-HHW4DP6X9EdRpyaXptbWYHOThxnfYE7g0k7rQ";
+        String userId = "5750865d-b0d8-40a6-9d85-f6c863f7a6c6";
+
+        Activity context = Mockito.mock(Activity.class);
+        WebViewCommunicator wvc = new WebViewCommunicatorImpl(context, -1);
+        wvc.sendUserData(null, deviceId, token, userId);
+
+        latch.await(60, TimeUnit.SECONDS);
+        assertNotNull("status value", status[0]);
+        assertEquals("status value", "OK", status[0]);
+
+        NotificationManager.getInstance().removeListener(callbackListener);
+    }
 }
