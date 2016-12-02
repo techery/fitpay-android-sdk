@@ -29,6 +29,8 @@ import com.google.gson.Gson;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Locale;
+
 import static com.fitpay.android.utils.Constants.WV_DATA;
 
 
@@ -83,19 +85,26 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     @Override
     @JavascriptInterface
     public void dispatchMessage(String message) throws JSONException {
-        FPLog.i(WV_DATA, "\\Received\\: " + message);
-
-        if (message == null) throw new IllegalArgumentException("invalid message");
+        if (message == null) {
+            FPLog.w(WV_DATA, "\\Received\\: invalid message");
+            throw new IllegalArgumentException("invalid message");
+        }
 
         JSONObject obj = new JSONObject(message);
 
         String callBackId = obj.getString("callBackId");
-        if (callBackId == null)
-            throw new IllegalArgumentException("callBackId is missing in the message from the UI");
+        if (callBackId == null) {
+            FPLog.w(WV_DATA, "\\Received\\: callBackId is missing in the message");
+            throw new IllegalArgumentException("callBackId is missing in the message");
+        }
 
         String type = obj.getString("type");
-        if (type == null)
-            throw new IllegalArgumentException("action is missing in the message from the UI");
+        if (type == null) {
+            FPLog.w(WV_DATA, "\\Received\\: type is missing in the message");
+            throw new IllegalArgumentException("type is missing in the message");
+        }
+
+        FPLog.i(WV_DATA, String.format(Locale.getDefault(), "\\Received\\: callbackId:%s type:%s", callBackId, type));
 
         String dataStr = obj.has("data") ? obj.getString("data") : null;
 
