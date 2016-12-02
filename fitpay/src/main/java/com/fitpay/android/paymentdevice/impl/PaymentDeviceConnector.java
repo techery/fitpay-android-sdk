@@ -400,12 +400,16 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         private void onApduCommandReceived(ApduCommandResult apduCommandResult) {
             FPLog.i(APDU_DATA, "\\CommandProcessed\\: " + apduCommandResult);
 
+            apduExecutionResult.addResponse(apduCommandResult);
+
             String responseCode = apduCommandResult.getResponseCode();
             if (responseCode.equals(normalResponseCode) || curApduCommand.isContinueOnFailure()) {
-                apduExecutionResult.addResponse(apduCommandResult);
                 executeNextApduCommand();
             } else {
-                ApduExecException execException = new ApduExecException(ResponseState.FAILED, "Device provided invalid response code: " + responseCode);
+                ApduExecException execException = new ApduExecException(
+                        ResponseState.FAILED,
+                        "Device provided invalid response code: " + responseCode,
+                        apduCommandResult.getCommandId());
                 onApduExecErrorReceived(execException);
             }
         }
