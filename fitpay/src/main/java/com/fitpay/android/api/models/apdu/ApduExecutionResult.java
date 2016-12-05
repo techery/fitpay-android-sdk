@@ -17,10 +17,10 @@ public final class ApduExecutionResult {
     @ResponseState.ApduState
     private String state;
     private long executedTsEpoch;
-    private int executedDuration;
+    private int executedDuration; //in seconds
     private List<ApduCommandResult> apduResponses;
     private String errorReason;
-    private Integer errorCode;
+    private String errorCode;
 
     public ApduExecutionResult(String packageId) {
         this.packageId = packageId;
@@ -84,11 +84,11 @@ public final class ApduExecutionResult {
         this.errorReason = errorReason;
     }
 
-    public Integer getErrorCode() {
+    public String getErrorCode() {
         return errorCode;
     }
 
-    public void setErrorCode(int errorCode) {
+    public void setErrorCode(String errorCode) {
         this.errorCode = errorCode;
     }
 
