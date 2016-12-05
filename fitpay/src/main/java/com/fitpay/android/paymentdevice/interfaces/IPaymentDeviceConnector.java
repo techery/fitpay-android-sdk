@@ -3,6 +3,7 @@ package com.fitpay.android.paymentdevice.interfaces;
 import android.content.Context;
 
 import com.fitpay.android.api.models.apdu.ApduCommand;
+import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.card.TopOfWallet;
 import com.fitpay.android.api.models.user.User;
@@ -83,6 +84,8 @@ public interface IPaymentDeviceConnector extends CommitHandler {
     void executeApduPackage(ApduPackage apduPackage);
 
     void executeApduCommand(long apduPkgNumber, ApduCommand apduCommand);
+
+    void sendApduExecutionResult(ApduExecutionResult apduExecutionResult);
 
     void executeTopOfWallet(List<TopOfWallet> towPackages);
 
