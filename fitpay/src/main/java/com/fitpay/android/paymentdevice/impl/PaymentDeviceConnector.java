@@ -242,7 +242,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         curApduPackage = null;
 
         apduExecutionResult.setExecutedDurationTilNow();
-        RxBus.getInstance().post(apduExecutionResult);
+        sendApduExecutionResult(apduExecutionResult);
 
         apduExecutionResult = null;
 
@@ -294,7 +294,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      *
      * @param result apdu execution result
      */
-    private void sendApduExecutionResult(final ApduExecutionResult result) {
+    public void sendApduExecutionResult(final ApduExecutionResult result) {
 
         EventCallback.Builder builder = new EventCallback.Builder()
                 .setCommand(EventCallback.APDU_COMMANDS_SENT)
@@ -409,7 +409,8 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                 ApduExecException execException = new ApduExecException(
                         ResponseState.FAILED,
                         "Device provided invalid response code: " + responseCode,
-                        apduCommandResult.getCommandId());
+                        apduCommandResult.getCommandId(),
+                        apduCommandResult.getResponseCode());
                 onApduExecErrorReceived(execException);
             }
         }
@@ -417,6 +418,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         private void onApduExecErrorReceived(ApduExecException apduError) {
             apduExecutionResult.setState(apduError.getResponseState());
             apduExecutionResult.setErrorReason(apduError.getMessage());
+            apduExecutionResult.setErrorCode(apduError.getResponseCode());
             onPostExecuteApdu();
         }
     }
@@ -442,7 +444,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                     result.setExecutedTsEpoch(currentTime);
                     result.setState(ResponseState.EXPIRED);
 
-                    RxBus.getInstance().post(result);
+                    sendApduExecutionResult(result);
                 }
             } else {
                 FPLog.e(TAG, "ApduCommitHandler called for non-adpu commit. THIS IS AN APPLICATION DEFECT " + commit);

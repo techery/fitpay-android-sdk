@@ -10,7 +10,7 @@ public class ApduExecException extends Exception {
 
     @ResponseState.ApduState
     private String responseState;
-
+    private String responseCode;
     private String commandId;
 
     public ApduExecException(@ResponseState.ApduState String state, String message) {
@@ -24,15 +24,32 @@ public class ApduExecException extends Exception {
         this.commandId = commandId;
     }
 
+    public ApduExecException(@ResponseState.ApduState String state, String message, String commandId, String responseCode) {
+        super(message);
+        responseState = state;
+        this.commandId = commandId;
+        this.responseCode = responseCode;
+    }
+
     @ResponseState.ApduState
     public String getResponseState() {
         return responseState;
     }
 
+    public String getResponseCode() {
+        return responseCode;
+    }
+
     @Override
     public String getMessage() {
         if (!StringUtils.isEmpty(commandId)) {
-            return "commandId:" + commandId + " " + super.getMessage();
+            StringBuilder sb = new StringBuilder();
+            sb.append("commandId:").append(commandId).append(" ");
+            if (!StringUtils.isEmpty(responseCode)) {
+                sb.append("responseCode:").append(responseCode).append(" ");
+            }
+            sb.append(super.getMessage());
+            return sb.toString();
         } else {
             return super.getMessage();
         }
