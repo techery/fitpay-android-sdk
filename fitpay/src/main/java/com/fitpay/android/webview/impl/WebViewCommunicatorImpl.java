@@ -327,6 +327,9 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         }
     }
 
+    /**
+     * Listen to sync status
+     */
     private class CustomListener extends Listener {
 
         private String callbackId;
@@ -358,6 +361,9 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         }
     }
 
+    /**
+     * Listen to RTM messages
+     */
     private class RtmMessageListener extends Listener {
         private RtmMessageListener() {
             mCommands.put(RtmMessage.class, data -> {

@@ -25,11 +25,12 @@ import java.util.List;
 public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnector {
 
     private final static String TAG = BluetoothPaymentDeviceConnector.class.getSimpleName();
-
     public final static String EXTRA_BLUETOOTH_ADDRESS = "BLUETOOTH_ADDRESS";
 
     private BluetoothAdapter mBluetoothAdapter;
     private GattManager mGattManager;
+
+    private String mAddress;
 
     public BluetoothPaymentDeviceConnector(Context context) {
         super(context);
@@ -37,7 +38,8 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
     }
 
     public BluetoothPaymentDeviceConnector(Context context, String deviceAddress) {
-        super(context, deviceAddress);
+        super(context);
+        mAddress = deviceAddress;
         initBluetooth();
     }
 
@@ -124,7 +126,6 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
         mGattManager.queue(readDeviceInfoOperation);
     }
 
-    @Override
     public void readNFCState() {
         FPLog.d(TAG, "initiate readNFCState request");
         GattOperation getNFCOperation = new GattCharacteristicReadOperation(
@@ -134,7 +135,6 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
         mGattManager.queue(getNFCOperation);
     }
 
-    @Override
     public void setNFCState(@NFC.Action byte state) {
         FPLog.d(TAG, "initiate setNFCState request.  Target state: " + state);
         GattOperation setNFCOperation = new GattCharacteristicWriteOperation(
@@ -160,7 +160,6 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
     public void executeTopOfWallet(List<TopOfWallet> towPackage) {
     }
 
-    @Override
     public void sendNotification(byte[] data) {
         FPLog.d(TAG, "initiate sendNotification request.  data: " + data);
         GattOperation setTransactionOperation = new GattCharacteristicWriteOperation(
@@ -171,7 +170,6 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
         mGattManager.queue(setTransactionOperation);
     }
 
-    @Override
     public void setSecureElementState(@SecureElement.Action byte state) {
         FPLog.d(TAG, "initiate setSecureElementState request.  Target state: " + state);
         GattOperation resetOperation = new GattCharacteristicWriteOperation(

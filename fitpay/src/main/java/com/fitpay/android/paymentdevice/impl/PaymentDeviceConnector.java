@@ -54,7 +54,6 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     private static final int MAX_REPEATS = 0;
 
     protected Context mContext;
-    protected String mAddress;
     @Connection.State
     protected int state;
     private Map<String, CommitHandler> commitHandlers;
@@ -81,11 +80,6 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     public PaymentDeviceConnector(Context context) {
         this();
         mContext = context;
-    }
-
-    public PaymentDeviceConnector(Context context, String address) {
-        this(context);
-        mAddress = address;
     }
 
     @Override
@@ -117,11 +111,6 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         FPLog.d(TAG, "connection state changed: " + state);
         this.state = state;
         RxBus.getInstance().post(new Connection(state));
-    }
-
-    @Override
-    public String getMacAddress() {
-        return mAddress;
     }
 
     @Override
@@ -355,6 +344,9 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         }
     }
 
+    /**
+     * Listen to the result of apdu package execution
+     */
     private class ApduPackageListener extends ApduExecutionListener {
 
         @Override
@@ -388,6 +380,9 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         }
     }
 
+    /**
+     * Listen to the result of apdu command execution
+     */
     private class ApduCommandListener extends Listener {
         final String normalResponseCode = Hex.bytesToHexString(NORMAL_PROCESSING);
 
@@ -423,6 +418,9 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         }
     }
 
+    /**
+     * Process apdu commit
+     */
     private class ApduCommitHandler implements CommitHandler {
 
         @Override

@@ -9,8 +9,6 @@ import com.fitpay.android.api.models.card.TopOfWallet;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.CommitHandler;
 import com.fitpay.android.paymentdevice.enums.Connection;
-import com.fitpay.android.paymentdevice.enums.NFC;
-import com.fitpay.android.paymentdevice.enums.SecureElement;
 
 import java.util.List;
 import java.util.Properties;
@@ -46,23 +44,10 @@ public interface IPaymentDeviceConnector extends CommitHandler {
 
     void close();
 
+    /**
+     * Read payment device info
+     */
     void readDeviceInfo();
-
-    //TODO remove ?  since some devices do not have MacAddress and / or it is not of interest in getting connection
-    @Deprecated
-    String getMacAddress();
-
-    @Deprecated
-    void readNFCState();
-
-    @Deprecated
-    void setNFCState(@NFC.Action byte state);
-
-    @Deprecated
-    void sendNotification(byte[] data);
-
-    @Deprecated
-    void setSecureElementState(@SecureElement.Action byte state);
 
     /**
      * Do any pre-sync preparation.
@@ -77,23 +62,60 @@ public interface IPaymentDeviceConnector extends CommitHandler {
      */
     void syncComplete();
 
+    /**
+     * do what you need before executing apdu package
+     */
     void onPreExecuteApdu();
 
+    /**
+     * do what you need after executiong apdu package
+     */
     void onPostExecuteApdu();
 
+    /**
+     * process apdu package
+     *
+     * @param apduPackage apdu package commit
+     */
     void executeApduPackage(ApduPackage apduPackage);
 
+    /**
+     * process single apdu command
+     *
+     * @param apduPkgNumber package number
+     * @param apduCommand   apdu command
+     */
     void executeApduCommand(long apduPkgNumber, ApduCommand apduCommand);
 
+    /**
+     * send apdu execution result to the server
+     *
+     * @param apduExecutionResult apdu execution result
+     */
     void sendApduExecutionResult(ApduExecutionResult apduExecutionResult);
 
+    /**
+     * send top of wallet to the payment device
+     *
+     * @param towPackages top of wallet package
+     */
     void executeTopOfWallet(List<TopOfWallet> towPackages);
 
+    /**
+     * Add commit type handler
+     *
+     * @param commitType type of commit
+     * @param handler    handler to process that commit
+     */
     void addCommitHandler(String commitType, CommitHandler handler);
 
+    /**
+     * Remove commit type handler
+     *
+     * @param commitType type of commit
+     */
     void removeCommitHandler(String commitType);
 
-    //TODO review - should this have a getState method?
     @Connection.State
     int getState();
 

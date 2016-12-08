@@ -245,6 +245,9 @@ public final class DeviceService extends Service {
 
     }
 
+    /**
+     * read info from your payment device
+     */
     public void readDeviceInfo() {
         if (null == paymentDeviceConnector) {
             //TODO post an error
@@ -397,7 +400,7 @@ public final class DeviceService extends Service {
     }
 
     /**
-     * Apdu and Sync callbacks
+     * Listen to Apdu and Sync callbacks
      */
     private class CustomListener extends Listener implements IListeners.SyncListener {
 

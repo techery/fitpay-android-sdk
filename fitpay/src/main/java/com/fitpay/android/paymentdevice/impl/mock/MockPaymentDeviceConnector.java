@@ -148,22 +148,6 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
     }
 
     @Override
-    public void readNFCState() {
-    }
-
-    @Override
-    public void setNFCState(@NFC.Action byte state) {
-    }
-
-    @Override
-    public void sendNotification(byte[] data) {
-    }
-
-    @Override
-    public void setSecureElementState(@SecureElement.Action byte state) {
-    }
-
-    @Override
     public void executeApduPackage(ApduPackage apduPackage) {
         ApduExecutionResult apduExecutionResult = new ApduExecutionResult(apduPackage.getPackageId());
         apduExecutionResult.setExecutedTsEpoch(System.currentTimeMillis());

@@ -1,9 +1,7 @@
 package com.fitpay.android.webview.impl;
 
-
-
 /**
- * Created by Ross on 5/13/2016.
+ * RTM model for JS response
  */
 public class AppResponseModel{
     private int status;
