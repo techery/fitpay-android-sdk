@@ -188,6 +188,24 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         this.user = user;
     }
 
+    /**
+     * If you want to process full apduPackage on your own,
+     * you must override this function and follow these steps:
+     * 1) create ApduExecutionResult
+     * 2) apduExecutionResult.setExecutedTsEpoch(currentTimestamp)
+     * 3) openGate (if required)
+     * 4) process each command in the package. apduExecutionResult.addResponse(apduCommandResult);
+     * 5) closeGate (if required)
+     * 6) apduExecutionResult.setExecutedDurationTilNow();
+     * 7) deviceConnector.sendApduExecutionResult(apduExecutionResult)
+     * <p>
+     * in case of error:
+     * 1) apduExecutionResult.setState(apduError.getResponseState());
+     * 2) apduExecutionResult.setErrorReason(apduError.getMessage());
+     * 3) apduExecutionResult.setErrorCode(apduError.getResponseCode());
+     * 4) apduExecutionResult.setExecutedDurationTilNow();
+     * 5) deviceConnector.sendApduExecutionResult(apduExecutionResult)
+     */
     @Override
     public void executeApduPackage(ApduPackage apduPackage) {
         if (apduExecutionInProgress) {
