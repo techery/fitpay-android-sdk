@@ -1,7 +1,6 @@
 package com.fitpay.android.webview.impl;
 
 import android.app.Activity;
-import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
@@ -392,7 +391,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                         token = obj.getString("token");
                         userId = obj.getString("userId");
                     } catch (Exception e) {
-                        Log.w(WV_DATA, e.getMessage());
+                        FPLog.e(WV_DATA, e);
                         throw new IllegalArgumentException("missing required message data");
                     }
 
@@ -407,7 +406,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     try {
                         webAppRtmVersion = Constants.getGson().fromJson(msg.getJsonData(), RtmVersion.class);
                     } catch (Exception e) {
-                        Log.w(WV_DATA, e.getMessage());
+                        FPLog.e(WV_DATA, e);
                         throw new IllegalArgumentException("missing required message data");
                     }
                     break;
