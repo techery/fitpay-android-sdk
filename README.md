@@ -85,7 +85,7 @@ Pre-built versions of the Android SDK are hosted on jcenter(). To use in your pr
     * or Gradle:
 
         ```groovy
-        compile 'com.squareup.retrofit2:retrofit:2.1.0'
+        compile 'com.fitpay.android:android_sdk:0.4.15'
         ```
 
 ## Using local version of the SDK as a dependency for your build:
