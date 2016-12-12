@@ -45,7 +45,7 @@ uploadArchives {
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "25.0.0"
+    buildToolsVersion "25.0.1"
 
     defaultConfig {
         minSdkVersion 19
@@ -81,7 +81,7 @@ android {
 }
 
 ext {
-    supportLib = "25.0.0"
+    supportLib = "25.0.1"
 }
 
 dependencies {
