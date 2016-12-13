@@ -14,6 +14,7 @@ import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.DeviceService;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
+import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.EventCallback;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
@@ -24,6 +25,7 @@ import com.fitpay.android.webview.events.DeviceStatusMessage;
 import com.fitpay.android.webview.events.RtmMessage;
 import com.fitpay.android.webview.events.RtmMessageResponse;
 import com.fitpay.android.webview.events.UserReceived;
+import com.fitpay.android.webview.models.RtmVersion;
 import com.google.gson.Gson;
 
 import org.json.JSONException;
@@ -46,6 +48,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     private static final int RESPONSE_FAILURE = 1;
     private static final int RESPONSE_IN_PROGRESS = 2;
 
+    private static final int RTM_VERSION = 2;
+
     private final Activity activity;
     private DeviceService deviceService;
 
@@ -57,6 +61,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     private RtmMessageListener rtmMessageListener;
 
     private WebView webView;
+
+    private RtmVersion webAppRtmVersion = new RtmVersion(RTM_VERSION);
 
     private final Gson gson = new Gson();
 
@@ -76,10 +82,42 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         this.deviceService = deviceService;
     }
 
-    @Override
+    /**
+     * this method should be called manually in {@link Activity#onDestroy()}
+     */
+    public void close() {
+        NotificationManager.getInstance().removeListener(deviceStatusListener);
+        NotificationManager.getInstance().removeListener(rtmMessageListener);
+        NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
+    }
+
+    /**
+     * send logout message to JS
+     */
     public void logout() {
         RxBus.getInstance().post(new RtmMessageResponse("logout"));
         RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.connecting), DeviceStatusMessage.PENDING));
+    }
+
+    /**
+     * call this function in {@link Activity#onBackPressed()}
+     */
+    public void onBack() {
+        RxBus.getInstance().post(new RtmMessageResponse("back"));
+    }
+
+    /**
+     * response for a {@link #onBack()} function.
+     */
+    public void onNoHistory() {
+        activity.finish();
+    }
+
+    /**
+     * call this function asap to retrieve webapp version of RTM
+     */
+    public void sendRtmVersion() {
+        RxBus.getInstance().post(new RtmMessageResponse(new RtmVersion(RTM_VERSION), "version"));
     }
 
     @Override
@@ -166,13 +204,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     @JavascriptInterface
     public String retrieveConfigJson() {
         throw new UnsupportedOperationException("method not supported in this iteration");
-    }
-
-    @Override
-    public void close() {
-        NotificationManager.getInstance().removeListener(deviceStatusListener);
-        NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
-        NotificationManager.getInstance().removeListener(rtmMessageListener);
     }
 
     private void sendMessageToJs(String callBackId, boolean success, Object response) {
@@ -330,33 +361,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         private RtmMessageListener() {
             mCommands.put(RtmMessage.class, data -> {
                 RtmMessage msg = (RtmMessage) data;
-                String callbackId = msg.getCallbackId();
-
-                switch (msg.getType()) {
-                    case "userData":
-                        //params are only there for the userData action
-                        String deviceId = null;
-                        String token = null;
-                        String userId = null;
-
-                        try {
-                            JSONObject obj = new JSONObject(msg.getJsonData());
-                            deviceId = obj.getString("deviceId");
-                            token = obj.getString("token");
-                            userId = obj.getString("userId");
-                        } catch (Exception e) {
-                            throw new IllegalArgumentException("missing required message data");
-                        }
-
-                        sendUserData(callbackId, deviceId, token, userId);
-                        break;
-
-                    case "sync":
-                        sync(callbackId);
-                        break;
-
+                switch (webAppRtmVersion.getVersion()) {
                     default:
-                        throw new IllegalArgumentException("unsupported action value in message with callbackId:" + callbackId);
+                        useDefaultParser(msg);
+                        break;
                 }
             });
             mCommands.put(RtmMessageResponse.class, data -> {
@@ -365,6 +373,50 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 final String url = "javascript:window.RtmBridge.resolve('" + str + "');";
                 activity.runOnUiThread(() -> webView.loadUrl(url));
             });
+        }
+
+        private void useDefaultParser(RtmMessage msg) {
+            String callbackId = msg.getCallbackId();
+
+            switch (msg.getType()) {
+                case "userData":
+                    //params are only there for the userData action
+                    String deviceId = null;
+                    String token = null;
+                    String userId = null;
+
+                    try {
+                        JSONObject obj = new JSONObject(msg.getJsonData());
+                        deviceId = obj.getString("deviceId");
+                        token = obj.getString("token");
+                        userId = obj.getString("userId");
+                    } catch (Exception e) {
+                        FPLog.e(WV_DATA, e);
+                        throw new IllegalArgumentException("missing required message data");
+                    }
+
+                    sendUserData(callbackId, deviceId, token, userId);
+                    break;
+
+                case "sync":
+                    sync(callbackId);
+                    break;
+
+                case "version":
+                    try {
+                        webAppRtmVersion = Constants.getGson().fromJson(msg.getJsonData(), RtmVersion.class);
+                    } catch (Exception e) {
+                        FPLog.e(WV_DATA, e);
+                        throw new IllegalArgumentException("missing required message data");
+                    }
+                    break;
+
+                case "noHistory":
+                    onNoHistory();
+
+                default:
+                    throw new IllegalArgumentException("unsupported action value in message with callbackId:" + callbackId);
+            }
         }
     }
 }
