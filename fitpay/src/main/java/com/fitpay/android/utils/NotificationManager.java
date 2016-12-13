@@ -44,6 +44,11 @@ public final class NotificationManager {
         mSubscriptions = new ConcurrentHashMap<>();
     }
 
+    /**
+     * Start listen to some events
+     * @param clazz type of event
+     * @param scheduler thread for result
+     */
     private void subscribeTo(final Class clazz, final Scheduler scheduler) {
         FPLog.d(TAG, "subscribeTo class: " + clazz + " from thread: " + Thread.currentThread());
 
@@ -62,6 +67,10 @@ public final class NotificationManager {
         }
     }
 
+    /**
+     * stop listen to events
+     * @param clazz
+     */
     private void unsubscribeFrom(Class clazz) {
         FPLog.d(TAG, "unsubscribeFrom class: " + clazz + " called from thread: " + Thread.currentThread());
         if (mSubscriptions.containsKey(clazz)) {

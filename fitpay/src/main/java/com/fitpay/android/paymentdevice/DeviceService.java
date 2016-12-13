@@ -196,10 +196,8 @@ public final class DeviceService extends Service {
     public void setPaymentDeviceConnector(IPaymentDeviceConnector paymentDeviceConnector) {
         // check to see if device has changed, if so close the existing connection
         //TODO should test on device config - more general than MacAddress which is BLE specific (or at least pertinent to Mac devices)
-        if (this.paymentDeviceConnector != null
-                && ((this.paymentDeviceConnector.getMacAddress() == null && paymentDeviceConnector.getMacAddress() != null)
-                || null != this.paymentDeviceConnector.getMacAddress() && !this.paymentDeviceConnector.getMacAddress().equals(paymentDeviceConnector.getMacAddress()))
-                && this.paymentDeviceConnector.getState() == States.CONNECTED) {
+        if (this.paymentDeviceConnector != null && this.paymentDeviceConnector.getState() == States.CONNECTED
+                && this.paymentDeviceConnector != paymentDeviceConnector) {
             this.paymentDeviceConnector.disconnect();
             this.paymentDeviceConnector.close();
             this.paymentDeviceConnector = null;
@@ -245,6 +243,9 @@ public final class DeviceService extends Service {
 
     }
 
+    /**
+     * read info from your payment device
+     */
     public void readDeviceInfo() {
         if (null == paymentDeviceConnector) {
             //TODO post an error
@@ -397,7 +398,7 @@ public final class DeviceService extends Service {
     }
 
     /**
-     * Apdu and Sync callbacks
+     * Listen to Apdu and Sync callbacks
      */
     private class CustomListener extends Listener implements IListeners.SyncListener {
 

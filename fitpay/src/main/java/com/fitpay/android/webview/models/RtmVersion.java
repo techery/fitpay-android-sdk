@@ -1,9 +1,8 @@
 package com.fitpay.android.webview.models;
 
 /**
- * Created by Vlad on 05.12.2016.
+ * RTM version.
  */
-
 public class RtmVersion {
     private int version;
 
