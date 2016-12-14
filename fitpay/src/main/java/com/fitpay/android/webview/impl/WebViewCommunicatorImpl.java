@@ -421,6 +421,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
                 case "noHistory":
                     onNoHistory();
+                    break;
 
                 default:
                     throw new IllegalArgumentException("unsupported action value in message with callbackId:" + callbackId);
