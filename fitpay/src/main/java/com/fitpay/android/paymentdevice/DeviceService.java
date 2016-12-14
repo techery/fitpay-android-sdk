@@ -435,6 +435,7 @@ public final class DeviceService extends Service {
         public void onCommitFailed(CommitFailed commitFailed) {
             FPLog.w(SYNC_DATA, "\\CommitProcessed\\: " + commitFailed);
 
+            mCommits.clear();
             RxBus.getInstance().post(new Sync(States.FAILED));
 
             EventCallback eventCallback = new EventCallback.Builder()
@@ -470,7 +471,7 @@ public final class DeviceService extends Service {
 
         @Override
         public void onCommitSkipped(CommitSkipped commitSkipped) {
-            FPLog.i(SYNC_DATA, "\\CommitProcessed\\: " + commitSkipped);
+            FPLog.i(SYNC_DATA, "\\CommitProcessedWithErrorsCommitProcessed\\: " + commitSkipped);
 
             DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSkipped.getCommitId());

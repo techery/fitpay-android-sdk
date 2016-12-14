@@ -299,46 +299,47 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     /**
      * Send apdu execution result to the server
      *
-     * @param result apdu execution result
+     * @param apduExecutionResult apdu execution result
      */
-    public void sendApduExecutionResult(final ApduExecutionResult result) {
+    public void sendApduExecutionResult(final ApduExecutionResult apduExecutionResult) {
 
         EventCallback.Builder builder = new EventCallback.Builder()
                 .setCommand(EventCallback.APDU_COMMANDS_SENT)
                 .setStatus(EventCallback.STATUS_OK)
-                .setTimestamp(result.getExecutedTsEpoch());
+                .setTimestamp(apduExecutionResult.getExecutedTsEpoch());
 
-        if (!result.getState().equals(ResponseState.PROCESSED)) {
-            builder.setReason(result.getErrorReason()).setStatus(EventCallback.STATUS_FAILED);
+        if (!apduExecutionResult.getState().equals(ResponseState.PROCESSED)) {
+            builder.setReason(apduExecutionResult.getErrorReason());
+            builder.setStatus(EventCallback.STATUS_FAILED);
         }
 
         builder.build().send();
 
+        if (apduExecutionResult.getState().equals(ResponseState.NOT_PROCESSED)) {
+            RxBus.getInstance().post(new CommitFailed.Builder()
+                    .commit(currentCommit)
+                    .errorCode(999)//TODO create enum for errors
+                    .errorMessage("apdu command doesn't executed")
+                    .build());
+
+            currentCommit = null;
+            return;
+        }
+
         if (null != currentCommit) {
-            currentCommit.confirm(result, new ApiCallback<Void>() {
+            currentCommit.confirm(apduExecutionResult, new ApiCallback<Void>() {
                 @Override
-                public void onSuccess(Void result2) {
-                    @ResponseState.ApduState String state = result.getState();
+                public void onSuccess(Void serverResult) {
+                    @ResponseState.ApduState String state = apduExecutionResult.getState();
 
                     switch (state) {
                         case ResponseState.PROCESSED:
                             RxBus.getInstance().post(new CommitSuccess(currentCommit));
                             break;
                         case ResponseState.EXPIRED:
-                            RxBus.getInstance().post(new CommitSkipped(currentCommit));
-                            break;
                         case ResponseState.FAILED:
-                            // TODO: determine if apdu package is retryable or not, right now the
-                            // FitPay API doesn't support this attribute, but it will!
-                            RxBus.getInstance().post(new CommitSkipped(currentCommit));
-                            break;
                         case ResponseState.ERROR:
-                            // TODO: determine what to do here, retry immediatly?
-                            RxBus.getInstance().post(new CommitFailed.Builder()
-                                    .commit(currentCommit)
-                                    .errorCode(999)         //TODO create enum for errors
-                                    .errorMessage("apdu command failure")
-                                    .build());
+                            RxBus.getInstance().post(new CommitSkipped(currentCommit));
                             break;
                     }
                 }
