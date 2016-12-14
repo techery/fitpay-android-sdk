@@ -17,8 +17,10 @@ public final class Sync {
     public @interface State {
     }
 
-    private @State int state;
+    @State
+    private int state;
     private int value;
+    private String message;
 
     public Sync(@State int state) {
         this.state = state;
@@ -29,13 +31,22 @@ public final class Sync {
         this.value = value;
     }
 
+    public Sync(@State int state, String message) {
+        this.state = state;
+        this.message = message;
+    }
+
     @Sync.State
     public int getState() {
         return state;
     }
 
-    public int getValue(){
+    public int getValue() {
         return value;
+    }
+
+    public String getMessage() {
+        return message;
     }
 
     public String toString() {
