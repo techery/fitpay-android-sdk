@@ -318,11 +318,10 @@ public final class DeviceService extends Service {
     }
 
     private void syncDevice() {
-        RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
+        RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.checking_wallet_updates), DeviceStatusMessage.SUCCESS));
 
         if (paymentDeviceConnector.getState() == States.DISCONNECTED || paymentDeviceConnector.getState() == States.DISCONNECTING) {
-            RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.disconnected), DeviceStatusMessage.PENDING));
-            RxBus.getInstance().post(new Sync(States.FAILED));
+            RxBus.getInstance().post(new Sync(States.FAILED, getString(R.string.disconnected)));
             return;
         }
 
@@ -361,9 +360,11 @@ public final class DeviceService extends Service {
                             FPLog.i(SYNC_DATA, "\\CommitsReceived\\: " + commitsSize);
 
                             if (commitsSize > 0) {
-                                RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
+                                RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.updates_available), DeviceStatusMessage.SUCCESS));
+                                RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
                                 processNextCommit();
                             } else {
+                                RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.no_pending_updates), DeviceStatusMessage.SUCCESS));
                                 RxBus.getInstance().post(new Sync(forceWalletUpdate.get() ? States.COMPLETED : States.COMPLETED_NO_UPDATES));
                             }
                         },
@@ -375,7 +376,7 @@ public final class DeviceService extends Service {
                                 FPLog.e(TAG, "get commits failed. " + throwable.getMessage());
                             }
 
-                            RxBus.getInstance().post(new Sync(States.FAILED));
+                            RxBus.getInstance().post(new Sync(States.FAILED, throwable.getMessage()));
                         });
     }
 
@@ -435,7 +436,11 @@ public final class DeviceService extends Service {
         public void onCommitFailed(CommitFailed commitFailed) {
             FPLog.w(SYNC_DATA, "\\CommitProcessed\\: " + commitFailed);
 
-            RxBus.getInstance().post(new Sync(States.FAILED));
+            DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
+            deviceData.setLastCommitId(commitFailed.getCommitId());
+            DevicePreferenceData.store(DeviceService.this, deviceData);
+
+            RxBus.getInstance().post(new Sync(States.FAILED, commitFailed.getErrorCode()));
 
             EventCallback eventCallback = new EventCallback.Builder()
                     .setCommand(EventCallback.getCommandForCommit(commitFailed.getCommit()))
