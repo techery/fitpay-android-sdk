@@ -20,6 +20,7 @@ import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
+import com.fitpay.android.utils.StringUtils;
 import com.fitpay.android.webview.WebViewCommunicator;
 import com.fitpay.android.webview.events.DeviceStatusMessage;
 import com.fitpay.android.webview.events.RtmMessage;
@@ -308,7 +309,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             sendMessageToJs(callbackId, false, gson.toJson(failedResponse));
         }
 
-        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed), DeviceStatusMessage.ERROR));
+        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed, errorMessage), DeviceStatusMessage.ERROR));
 
         EventCallback eventCallback = new EventCallback.Builder()
                 .setCommand(command)
@@ -349,7 +350,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     break;
                 }
                 case States.FAILED: {
-                    onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "sync failure");
+                    onTaskError(EventCallback.SYNC_COMPLETED, callbackId, !StringUtils.isEmpty(syncEvent.getMessage()) ? syncEvent.getMessage() : "sync failure");
                     break;
                 }
                 default: {
@@ -419,6 +420,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
                 case "noHistory":
                     onNoHistory();
+                    break;
 
                 default:
                     throw new IllegalArgumentException("unsupported action value in message with callbackId:" + callbackId);

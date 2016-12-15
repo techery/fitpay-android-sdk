@@ -66,6 +66,9 @@ public final class ApduConstants {
     public final static byte[] APDU_SUCCESS_CONTINUATION = new byte[]{(byte) 0x01};
     public final static byte[] APDU_ERROR_NO_CONTINUATION = new byte[]{(byte) 0x02};
     public final static byte[] APDU_ERROR_CONTINUATION = new byte[]{(byte) 0x03};
+    public final static byte[] APDU_ERROR_SEQUENCE_COUNTER_OFF = new byte[]{(byte) 0x69, (byte) 0x82};
+    public final static byte[] APDU_ERROR_FILE_NOT_FOUND = new byte[]{(byte) 0x6a, (byte) 0x82};
+    public final static byte[] APDU_ERROR_OUT_OF_MEMORY = new byte[]{(byte) 0x6a, (byte) 0x84};
     public final static byte[] APDU_PROTOCOL_ERROR = new byte[]{(byte) 0x10};
 
     public final static byte[] PROTOCOL_ERROR_DUPLICATE_SEQUENCE_NUMBER = new byte[]{0x00, 0x01};

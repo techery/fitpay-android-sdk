@@ -72,20 +72,20 @@ Pre-built versions of the Android SDK are hosted on jcenter(). To use in your pr
         }
     }
     ```
-* add the pre-built SDK dependency, for example to use v0.4.15 of the SDK: ```compile 'com.fitpay.android:android_sdk:0.4.15'``` dependency to the ```dependencies``` closure of the build.gradle file.
+* add the pre-built SDK dependency, for example to use v0.5.0 of the SDK: ```compile 'com.fitpay.android:android_sdk:0.4.15'``` dependency to the ```dependencies``` closure of the build.gradle file.
     * Grab via Maven:
 
         ```xml
         <dependency>
         <groupId>com.fitpay.android</groupId>
         <artifactId>android_sdk</artifactId>
-        <version>0.4.15</version>
+        <version>0.5.0</version>
         </dependency>
         ```
     * or Gradle:
 
         ```groovy
-        compile 'com.fitpay.android:android_sdk:0.4.15'
+        compile 'com.fitpay.android:android_sdk:0.5.0'
         ```
 
 ## Using local version of the SDK as a dependency for your build:
