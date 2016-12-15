@@ -5,9 +5,10 @@ package com.fitpay.android.paymentdevice.constants;
  */
 public final class ApduConstants {
     public final static byte[] NORMAL_PROCESSING = new byte[]{(byte) 0x90, (byte) 0x00};
-    public final static byte[] NORMAL_PROCESSING_WITH_DATA = new byte[]{(byte) 0x61, (byte) 0x00};
+    public final static byte[] NORMAL_PROCESSING_WITH_DATA = new byte[]{(byte) 0x61};
 
     public final static byte[] WARNING_MEMORY_UNCHANGED_NO_INFO = new byte[]{(byte) 0x62, (byte) 0x00};
+    public final static byte[] WARNING_MEMORY_UNCHANGED_NOT_CHANGED = new byte[]{(byte) 0x62, (byte) 0x01};
     public final static byte[] WARNING_MEMORY_UNCHANGED_DATA_MAY_BE_CORRUPTED = new byte[]{(byte) 0x62, (byte) 0x81};
     public final static byte[] WARNING_MEMORY_UNCHANGED_END_OF_FILE = new byte[]{(byte) 0x62, (byte) 0x82};
     public final static byte[] WARNING_MEMORY_UNCHANGED_FILE_INVALIDATED = new byte[]{(byte) 0x62, (byte) 0x83};
@@ -36,6 +37,7 @@ public final class ApduConstants {
             NORMAL_PROCESSING,
             NORMAL_PROCESSING_WITH_DATA,
             WARNING_MEMORY_UNCHANGED_NO_INFO,
+            WARNING_MEMORY_UNCHANGED_NOT_CHANGED,
             WARNING_MEMORY_UNCHANGED_DATA_MAY_BE_CORRUPTED,
             WARNING_MEMORY_UNCHANGED_END_OF_FILE,
             WARNING_MEMORY_UNCHANGED_FILE_INVALIDATED,
