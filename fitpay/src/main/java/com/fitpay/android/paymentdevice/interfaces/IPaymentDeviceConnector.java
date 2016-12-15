@@ -2,6 +2,7 @@ package com.fitpay.android.paymentdevice.interfaces;
 
 import android.content.Context;
 
+import com.fitpay.android.api.enums.CommitTypes;
 import com.fitpay.android.api.models.apdu.ApduCommand;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
@@ -100,6 +101,14 @@ public interface IPaymentDeviceConnector extends CommitHandler {
      * @param towPackages top of wallet package
      */
     void executeTopOfWallet(List<TopOfWallet> towPackages);
+
+    /**
+     * call after your commit has been processed
+     *
+     * @param type  commit execution result type
+     * @param error error
+     */
+    void commitProcessed(@CommitTypes.Type int type, Throwable error);
 
     /**
      * Add commit type handler

@@ -309,6 +309,8 @@ public final class DeviceService extends Service {
             throw new IllegalStateException("Another sync is currently active.  Please try again later");
         }
 
+        RxBus.getInstance().post(new Sync(States.STARTED));
+
         paymentDeviceConnector.setUser(user);
 
         executor.execute(() -> {
@@ -335,8 +337,6 @@ public final class DeviceService extends Service {
         syncProperties.put(SYNC_PROPERTY_DEVICE_ID, devId);
         paymentDeviceConnector.init(syncProperties);
         paymentDeviceConnector.syncInit();
-
-        RxBus.getInstance().post(new Sync(States.STARTED));
 
         /*
          * In case of another account force update our wallet
