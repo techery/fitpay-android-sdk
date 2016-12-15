@@ -309,6 +309,8 @@ public final class DeviceService extends Service {
             throw new IllegalStateException("Another sync is currently active.  Please try again later");
         }
 
+        RxBus.getInstance().post(new Sync(States.STARTED));
+
         paymentDeviceConnector.setUser(user);
 
         executor.execute(() -> {
@@ -334,8 +336,6 @@ public final class DeviceService extends Service {
         syncProperties.put(SYNC_PROPERTY_DEVICE_ID, devId);
         paymentDeviceConnector.init(syncProperties);
         paymentDeviceConnector.syncInit();
-
-        RxBus.getInstance().post(new Sync(States.STARTED));
 
         /*
          * In case of another account force update our wallet
@@ -436,9 +436,8 @@ public final class DeviceService extends Service {
         public void onCommitFailed(CommitFailed commitFailed) {
             FPLog.w(SYNC_DATA, "\\CommitProcessed\\: " + commitFailed);
 
-            DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
-            deviceData.setLastCommitId(commitFailed.getCommitId());
-            DevicePreferenceData.store(DeviceService.this, deviceData);
+            mCommits.clear();
+            RxBus.getInstance().post(new Sync(States.FAILED));
 
             RxBus.getInstance().post(new Sync(States.FAILED, commitFailed.getErrorCode()));
 
@@ -475,7 +474,7 @@ public final class DeviceService extends Service {
 
         @Override
         public void onCommitSkipped(CommitSkipped commitSkipped) {
-            FPLog.i(SYNC_DATA, "\\CommitProcessed\\: " + commitSkipped);
+            FPLog.i(SYNC_DATA, "\\CommitProcessedWithErrorsCommitProcessed\\: " + commitSkipped);
 
             DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSkipped.getCommitId());

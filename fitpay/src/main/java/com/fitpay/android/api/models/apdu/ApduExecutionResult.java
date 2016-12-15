@@ -5,7 +5,6 @@ import com.fitpay.android.paymentdevice.constants.ApduConstants;
 import com.fitpay.android.utils.Hex;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -110,7 +109,7 @@ public final class ApduExecutionResult {
     protected boolean isSuccessResponseCode(ApduCommandResult commandResult) {
         byte[] code = Hex.hexStringToBytes(commandResult.getResponseCode());
         for (int i = 0; i < ApduConstants.SUCCESS_RESULTS.length; i++) {
-            if (Arrays.equals(ApduConstants.SUCCESS_RESULTS[i], code)) {
+            if (equals(ApduConstants.SUCCESS_RESULTS[i], code)) {
                 return true;
             }
         }
@@ -127,5 +126,30 @@ public final class ApduExecutionResult {
                 ", executedDuration=" + executedDuration +
                 ", executedTsEpoch=" + executedTsEpoch +
                 '}';
+    }
+
+    private static boolean equals(byte[] a, byte[] a2) {
+        if (a == a2) {
+            return true;
+        }
+
+        if (a == null || a2 == null) {
+            return false;
+        }
+
+        if (a2.length > 2) {
+            return false;
+        }
+
+        if (a.length == 1) {
+            return a[0] == a2[0];
+        }
+
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != a2[i])
+                return false;
+        }
+
+        return true;
     }
 }
