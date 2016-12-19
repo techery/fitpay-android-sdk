@@ -190,8 +190,16 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
     private Device loadDefaultDevice() {
 
-        final String serialNumber = config.getProperty(CONFIG_DEVICE_SERIAL_NUMBER, UUID.randomUUID().toString());
-        final String seID = config.getProperty(CONFIG_DEVICE_SECURE_ELEMENT_ID, UUID.randomUUID().toString());
+        String serialNumber = null;
+        String seID = null;
+
+        if (config != null) {
+            serialNumber = config.getProperty(CONFIG_DEVICE_SERIAL_NUMBER, UUID.randomUUID().toString());
+            seID = config.getProperty(CONFIG_DEVICE_SECURE_ELEMENT_ID, UUID.randomUUID().toString());
+        } else {
+            serialNumber = UUID.randomUUID().toString();
+            seID = UUID.randomUUID().toString();
+        }
 
         return new Device.Builder()
                 .setDeviceIdentifier(UUID.randomUUID().toString())
