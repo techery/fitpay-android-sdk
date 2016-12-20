@@ -43,9 +43,9 @@ final public class UserService extends BaseClient {
         //OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
         clientBuilder.addInterceptor(interceptor);
 
-        clientBuilder.connectTimeout(30, TimeUnit.SECONDS);
-        clientBuilder.readTimeout(30, TimeUnit.SECONDS);
-        clientBuilder.writeTimeout(30, TimeUnit.SECONDS);
+        clientBuilder.connectTimeout(60, TimeUnit.SECONDS);
+        clientBuilder.readTimeout(60, TimeUnit.SECONDS);
+        clientBuilder.writeTimeout(60, TimeUnit.SECONDS);
 
         if (FPLog.showHttpLogs()) {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
