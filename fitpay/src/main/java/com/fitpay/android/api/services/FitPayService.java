@@ -6,6 +6,7 @@ import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.KeysManager;
 
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -58,6 +59,10 @@ final public class FitPayService extends BaseClient {
         OkHttpClient.Builder clientBuilder = getUnsafeOkHttpClient();
         //OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
         clientBuilder.addInterceptor(interceptor);
+
+        clientBuilder.connectTimeout(30, TimeUnit.SECONDS);
+        clientBuilder.readTimeout(30, TimeUnit.SECONDS);
+        clientBuilder.writeTimeout(30, TimeUnit.SECONDS);
 
         if (FPLog.showHttpLogs()) {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
