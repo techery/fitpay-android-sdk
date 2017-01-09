@@ -486,6 +486,10 @@ public final class Device extends DeviceModel implements Parcelable {
         dest.writeParcelable(this.links, flags);
         dest.writeString(this.notificationToken);
         dest.writeString(this.casd);
+        dest.writeString(this.deviceType);
+        dest.writeString(this.manufacturerName);
+        dest.writeString(this.deviceName);
+        dest.writeValue(this.secureElement);
     }
 
     public Device() {
@@ -510,6 +514,12 @@ public final class Device extends DeviceModel implements Parcelable {
         this.links = in.readParcelable(Links.class.getClassLoader());
         this.notificationToken = in.readString();
         this.casd = in.readString();
+        //noinspection ResourceType
+        this.deviceType = in.readString();
+        this.manufacturerName = in.readString();
+        this.deviceName = in.readString();
+        this.secureElement = (SecureElement)in.readValue(SecureElement.class.getClassLoader());
+
     }
 
     public static final Parcelable.Creator<Device> CREATOR = new Parcelable.Creator<Device>() {
