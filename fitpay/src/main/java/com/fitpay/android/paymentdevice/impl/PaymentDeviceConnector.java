@@ -290,6 +290,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                 if (error != null) {
                     builder.errorMessage(error.getMessage());
                 }
+                RxBus.getInstance().post(builder.build());
                 break;
         }
     }
