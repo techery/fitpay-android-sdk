@@ -489,7 +489,7 @@ public final class Device extends DeviceModel implements Parcelable {
         dest.writeString(this.deviceType);
         dest.writeString(this.manufacturerName);
         dest.writeString(this.deviceName);
-        dest.writeValue(this.secureElement);
+        dest.writeString(this.secureElement.secureElementId);
     }
 
     public Device() {
@@ -518,8 +518,7 @@ public final class Device extends DeviceModel implements Parcelable {
         this.deviceType = in.readString();
         this.manufacturerName = in.readString();
         this.deviceName = in.readString();
-        this.secureElement = (SecureElement)in.readValue(SecureElement.class.getClassLoader());
-
+        this.secureElement = new SecureElement(in.readString());
     }
 
     public static final Parcelable.Creator<Device> CREATOR = new Parcelable.Creator<Device>() {
