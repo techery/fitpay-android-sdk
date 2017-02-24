@@ -189,7 +189,7 @@ public class ApiManager {
      * @param identity data for login
      * @param callback result callback
      */
-    public void loginUser(LoginIdentity identity, final ApiCallback<Void> callback) {
+    public void loginUser(LoginIdentity identity, final ApiCallback<OAuthToken> callback) {
 
         CallbackWrapper<OAuthToken> updateTokenCallback = new CallbackWrapper<>(new ApiCallback<OAuthToken>() {
             @Override
@@ -199,7 +199,7 @@ public class ApiManager {
                     return;
                 }
                 apiService.updateToken(result);
-                callback.onSuccess(null);
+                callback.onSuccess(result);
             }
 
             @Override

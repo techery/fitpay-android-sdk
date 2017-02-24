@@ -3,12 +3,10 @@ package com.fitpay.android;
 import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.models.collection.Collections;
+import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
-import com.fitpay.android.api.models.user.UserCreateRequest;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -40,7 +38,7 @@ public class UserTest2 extends TestActions {
         LoginIdentity badCredentials = getTestLoginIdentity(userName, TestUtils.getRandomLengthNumber(4, 4));
 
         final CountDownLatch latch = new CountDownLatch(1);
-        ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
+        ResultProvidingCallback<OAuthToken> callback = new ResultProvidingCallback<>(latch);
         ApiManager.getInstance().loginUser(badCredentials, callback);
         boolean completed = latch.await(TIMEOUT, TimeUnit.SECONDS);
         assertTrue("login did not complete successfully", completed);

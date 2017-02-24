@@ -11,6 +11,7 @@ import com.fitpay.android.api.models.card.Reason;
 import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
@@ -20,7 +21,6 @@ import com.google.gson.Gson;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -85,7 +85,7 @@ public class TestActions {
 
     protected boolean doLogin(LoginIdentity loginIdentity) throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
-        ResultProvidingCallback<Void> callback = new ResultProvidingCallback<>(latch);
+        ResultProvidingCallback<OAuthToken> callback = new ResultProvidingCallback<>(latch);
         ApiManager.getInstance().loginUser(loginIdentity, callback);
         boolean completed = latch.await(TIMEOUT, TimeUnit.SECONDS);
         assertTrue("login did not complete successfully", completed);

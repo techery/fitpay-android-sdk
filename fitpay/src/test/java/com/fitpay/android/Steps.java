@@ -13,6 +13,7 @@ import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
@@ -110,9 +111,10 @@ public class Steps {
 
         Assert.assertNotNull(loginIdentity);
 
-        ApiManager.getInstance().loginUser(loginIdentity, new ApiCallback<Void>() {
+        ApiManager.getInstance().loginUser(loginIdentity, new ApiCallback<OAuthToken>() {
             @Override
-            public void onSuccess(Void result) {
+            public void onSuccess(OAuthToken result) {
+                Assert.assertNotNull("missing bearer token", result.getAccessToken());
                 isRequestSuccess[0] = true;
                 latch.countDown();
             }
