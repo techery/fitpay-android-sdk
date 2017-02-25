@@ -13,9 +13,11 @@ import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
+import com.fitpay.android.test.utils.SecureElementDataProvider;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 
@@ -28,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.fail;
 
 /***
  * Created by Vlad on 16.03.2016.
@@ -110,15 +113,17 @@ public class Steps {
 
         Assert.assertNotNull(loginIdentity);
 
-        ApiManager.getInstance().loginUser(loginIdentity, new ApiCallback<Void>() {
+        ApiManager.getInstance().loginUser(loginIdentity, new ApiCallback<OAuthToken>() {
             @Override
-            public void onSuccess(Void result) {
+            public void onSuccess(OAuthToken result) {
+                Assert.assertNotNull("missing bearer token", result.getAccessToken());
                 isRequestSuccess[0] = true;
                 latch.countDown();
             }
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                fail("unable to login: " + errorMessage);
                 latch.countDown();
             }
         });
@@ -668,7 +673,7 @@ public class Steps {
         String bdAddress = "bbbbbb-1111-1111-1111-111111111111";
         long pairingTs = System.currentTimeMillis();
         String stringTimestamp = TimestampUtils.getISO8601StringForTime(pairingTs);
-        String secureElementId = "cccccc-1111-1111-1111-1111111111";
+        String secureElementId = SecureElementDataProvider.generateRandomSecureElementId();
         Device newDevice = new Device.Builder()
                 .setDeviceType(DeviceTypes.ACTIVITY_TRACKER)
                 .setManufacturerName(manufacturerName)
