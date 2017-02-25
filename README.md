@@ -127,6 +127,20 @@ Now in your child project you should import the library from the local storage.
 ## Contributing to the SDK
 We welcome contributions to the SDK. For your first few contributions please fork the repo, make your changes and submit a pull request. Internally we branch off of develop, test, and PR-review the branch before merging to develop (moderately stable). Releases to Master happen less frequently, undergo more testing, and can be considered stable. For more information, please read:  [http://nvie.com/posts/a-successful-git-branching-model/](http://nvie.com/posts/a-successful-git-branching-model/)
 
+## Release Steps
+
+This instructions are for only those that have the credentials for pushing public FitPay Android SDK releases.
+
+* Create `release-X.X.X` branch.
+* Set release version in `fitpay/build.gradle`, commit/push the change.
+* Update `bintray.properties` with release credentials, **don't commit into git**.
+* Run `./gradlew bintrayUpload`.
+* Authenticate to bintray.com and publish the new artifact so it's publicly accessible.
+* Merge `release-X.X.X` branch into `develop` and `master`
+* Create tagged release on github with general release notes.
+* Delete `release-X.X.X` branch
+* Update `fitpay/build.gradle` with next development version and commit/push the change.
+
 ## License
 This code is licensed under the MIT license. More information can be found in the [LICENSE](LICENSE) file contained in this repository.
 
