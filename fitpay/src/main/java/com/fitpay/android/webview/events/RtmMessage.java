@@ -3,9 +3,8 @@ package com.fitpay.android.webview.events;
 import com.fitpay.android.utils.Constants;
 
 /**
- * Created by Vlad on 02.11.2016.
+ * RTM message from JS
  */
-
 public class RtmMessage {
     private String jsonData;
     private String type;

@@ -16,8 +16,6 @@ import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentdevice.CommitHandler;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Connection;
-import com.fitpay.android.paymentdevice.enums.NFC;
-import com.fitpay.android.paymentdevice.enums.SecureElement;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
@@ -52,6 +50,8 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
     public static final String CONFIG_CONNECTED_RESPONSE_TIME = "CONNECTED_RESPONSE_TIME";
     public static final String CONFIG_DISCONNECTING_RESPONSE_TIME = "DISCONNECTING_RESPONSE_TIME";
     public static final String CONFIG_DISCONNECTED_RESPONSE_TIME = "DISCONNECTED_RESPONSE_TIME";
+    public static final String CONFIG_DEVICE_SERIAL_NUMBER = "DEVICE_SERIAL_NUMBER";
+    public static final String CONFIG_DEVICE_SECURE_ELEMENT_ID = "DEVICE_SECURE_ELEMENT_ID";
     private static final int DEFAULT_DELAY = 2000;
 
     private int delay = DEFAULT_DELAY;
@@ -148,22 +148,6 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
     }
 
     @Override
-    public void readNFCState() {
-    }
-
-    @Override
-    public void setNFCState(@NFC.Action byte state) {
-    }
-
-    @Override
-    public void sendNotification(byte[] data) {
-    }
-
-    @Override
-    public void setSecureElementState(@SecureElement.Action byte state) {
-    }
-
-    @Override
     public void executeApduPackage(ApduPackage apduPackage) {
         ApduExecutionResult apduExecutionResult = new ApduExecutionResult(apduPackage.getPackageId());
         apduExecutionResult.setExecutedTsEpoch(System.currentTimeMillis());
@@ -206,12 +190,23 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
     private Device loadDefaultDevice() {
 
+        String serialNumber = null;
+        String seID = null;
+
+        if (config != null) {
+            serialNumber = config.getProperty(CONFIG_DEVICE_SERIAL_NUMBER, UUID.randomUUID().toString());
+            seID = config.getProperty(CONFIG_DEVICE_SECURE_ELEMENT_ID, UUID.randomUUID().toString());
+        } else {
+            serialNumber = UUID.randomUUID().toString();
+            seID = UUID.randomUUID().toString();
+        }
+
         return new Device.Builder()
                 .setDeviceIdentifier(UUID.randomUUID().toString())
                 .setDeviceType(DeviceTypes.WATCH)
                 .setManufacturerName("Fitpay")
                 .setDeviceName("PSPS")
-                .setSerialNumber("6e660ad5-7b06-4dec-ba4c-53b72a770f86")//(UUID.randomUUID().toString())
+                .setSerialNumber(serialNumber)//"6e660ad5-7b06-4dec-ba4c-53b72a770f86"
                 .setModelNumber("FB404")
                 .setHardwareRevision("1.0.0.0")
                 .setFirmwareRevision("1030.6408.1309.0001")
@@ -220,7 +215,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 .setOSName("ANDROID")
                 .setLicenseKey("6b413f37-90a9-47ed-962d-80e6a3528036")
                 .setBdAddress("96c37b2c-7848-406f-97b7-16d995c5f5a3")//(UUID.randomUUID().toString())
-                .setSecureElementId("4691b9a0-45d6-4268-8b78-8708c5163019")//(UUID.randomUUID().toString())
+                .setSecureElementId(seID)//"4691b9a0-45d6-4268-8b78-8708c5163019")
                 .build();
     }
 

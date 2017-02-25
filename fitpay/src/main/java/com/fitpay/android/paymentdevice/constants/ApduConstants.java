@@ -5,9 +5,10 @@ package com.fitpay.android.paymentdevice.constants;
  */
 public final class ApduConstants {
     public final static byte[] NORMAL_PROCESSING = new byte[]{(byte) 0x90, (byte) 0x00};
-    public final static byte[] NORMAL_PROCESSING_WITH_DATA = new byte[]{(byte) 0x61, (byte) 0x00};
+    public final static byte[] NORMAL_PROCESSING_WITH_DATA = new byte[]{(byte) 0x61};
 
     public final static byte[] WARNING_MEMORY_UNCHANGED_NO_INFO = new byte[]{(byte) 0x62, (byte) 0x00};
+    public final static byte[] WARNING_MEMORY_UNCHANGED_NOT_CHANGED = new byte[]{(byte) 0x62, (byte) 0x01};
     public final static byte[] WARNING_MEMORY_UNCHANGED_DATA_MAY_BE_CORRUPTED = new byte[]{(byte) 0x62, (byte) 0x81};
     public final static byte[] WARNING_MEMORY_UNCHANGED_END_OF_FILE = new byte[]{(byte) 0x62, (byte) 0x82};
     public final static byte[] WARNING_MEMORY_UNCHANGED_FILE_INVALIDATED = new byte[]{(byte) 0x62, (byte) 0x83};
@@ -36,6 +37,7 @@ public final class ApduConstants {
             NORMAL_PROCESSING,
             NORMAL_PROCESSING_WITH_DATA,
             WARNING_MEMORY_UNCHANGED_NO_INFO,
+            WARNING_MEMORY_UNCHANGED_NOT_CHANGED,
             WARNING_MEMORY_UNCHANGED_DATA_MAY_BE_CORRUPTED,
             WARNING_MEMORY_UNCHANGED_END_OF_FILE,
             WARNING_MEMORY_UNCHANGED_FILE_INVALIDATED,
@@ -62,11 +64,7 @@ public final class ApduConstants {
 
     public final static byte[] INVALID_REQUEST = new byte[]{(byte) 0x91, (byte) 0x7e};
 
-    public final static byte[] APDU_SUCCESS_NO_CONTINUATION = new byte[]{(byte) 0x00};
-    public final static byte[] APDU_SUCCESS_CONTINUATION = new byte[]{(byte) 0x01};
-    public final static byte[] APDU_ERROR_NO_CONTINUATION = new byte[]{(byte) 0x02};
-    public final static byte[] APDU_ERROR_CONTINUATION = new byte[]{(byte) 0x03};
-    public final static byte[] APDU_PROTOCOL_ERROR = new byte[]{(byte) 0x10};
-
-    public final static byte[] PROTOCOL_ERROR_DUPLICATE_SEQUENCE_NUMBER = new byte[]{0x00, 0x01};
+    public final static byte[] APDU_ERROR_SEQUENCE_COUNTER_OFF = new byte[]{(byte) 0x69, (byte) 0x82};
+    public final static byte[] APDU_ERROR_FILE_NOT_FOUND = new byte[]{(byte) 0x6a, (byte) 0x82};
+    public final static byte[] APDU_ERROR_OUT_OF_MEMORY = new byte[]{(byte) 0x6a, (byte) 0x84};
 }

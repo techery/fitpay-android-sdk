@@ -17,6 +17,7 @@ import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.CommitHandler;
 import com.fitpay.android.paymentdevice.callbacks.ApduExecutionListener;
 import com.fitpay.android.paymentdevice.constants.States;
+import com.fitpay.android.paymentdevice.enums.CommitResult;
 import com.fitpay.android.paymentdevice.enums.Connection;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSkipped;
@@ -31,6 +32,7 @@ import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
 
+import java.io.SyncFailedException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +56,6 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     private static final int MAX_REPEATS = 0;
 
     protected Context mContext;
-    protected String mAddress;
     @Connection.State
     protected int state;
     private Map<String, CommitHandler> commitHandlers;
@@ -81,11 +82,6 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     public PaymentDeviceConnector(Context context) {
         this();
         mContext = context;
-    }
-
-    public PaymentDeviceConnector(Context context, String address) {
-        this(context);
-        mAddress = address;
     }
 
     @Override
@@ -117,11 +113,6 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         FPLog.d(TAG, "connection state changed: " + state);
         this.state = state;
         RxBus.getInstance().post(new Connection(state));
-    }
-
-    @Override
-    public String getMacAddress() {
-        return mAddress;
     }
 
     @Override
@@ -173,7 +164,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         } else {
             FPLog.w(TAG, "No action taken for commit.  No handler defined for commit: " + commit);
             // still need to signal that processing of the commit has completed
-            RxBus.getInstance().post(new CommitSuccess(commit));
+            commitProcessed(CommitResult.SKIPPED, null);
         }
     }
 
@@ -199,6 +190,24 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         this.user = user;
     }
 
+    /**
+     * If you want to process full apduPackage on your own,
+     * you must override this function and follow these steps:
+     * 1) create ApduExecutionResult
+     * 2) apduExecutionResult.setExecutedTsEpoch(currentTimestamp)
+     * 3) openGate (if required)
+     * 4) process each command in the package. apduExecutionResult.addResponse(apduCommandResult);
+     * 5) closeGate (if required)
+     * 6) apduExecutionResult.setExecutedDurationTilNow();
+     * 7) deviceConnector.sendApduExecutionResult(apduExecutionResult)
+     * <p>
+     * in case of error:
+     * 1) apduExecutionResult.setState(apduError.getResponseState());
+     * 2) apduExecutionResult.setErrorReason(apduError.getMessage());
+     * 3) apduExecutionResult.setErrorCode(apduError.getResponseCode());
+     * 4) apduExecutionResult.setExecutedDurationTilNow();
+     * 5) deviceConnector.sendApduExecutionResult(apduExecutionResult)
+     */
     @Override
     public void executeApduPackage(ApduPackage apduPackage) {
         if (apduExecutionInProgress) {
@@ -242,7 +251,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         curApduPackage = null;
 
         apduExecutionResult.setExecutedDurationTilNow();
-        RxBus.getInstance().post(apduExecutionResult);
+        sendApduExecutionResult(apduExecutionResult);
 
         apduExecutionResult = null;
 
@@ -265,6 +274,27 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         }
     }
 
+    @Override
+    public void commitProcessed(@CommitResult.Type int type, Throwable error) {
+        switch (type) {
+            case CommitResult.SUCCESS:
+                RxBus.getInstance().post(new CommitSuccess(currentCommit));
+                break;
+
+            case CommitResult.SKIPPED:
+                RxBus.getInstance().post(new CommitSkipped(currentCommit));
+                break;
+
+            case CommitResult.FAILED:
+                CommitFailed.Builder builder = new CommitFailed.Builder().commit(currentCommit);
+                if (error != null) {
+                    builder.errorMessage(error.getMessage());
+                }
+                RxBus.getInstance().post(builder.build());
+                break;
+        }
+    }
+
     /**
      * Get TOW data from the server
      */
@@ -281,57 +311,57 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
             return Observable.just(tow);
         }).subscribe(
                 topOfWallets -> {
-                    if (topOfWallets.size() > 0) {
+                    if (topOfWallets != null && topOfWallets.size() > 0) {
                         executeTopOfWallet(topOfWallets);
                         RxBus.getInstance().post(topOfWallets);
+                    } else {
+                        commitProcessed(CommitResult.SUCCESS, null);
                     }
                 },
-                throwable -> FPLog.e(TAG, "TOW execution error: " + throwable.getMessage()));
+                throwable -> {
+                    FPLog.e(TAG, "TOW execution error: " + throwable.getMessage());
+                    commitProcessed(CommitResult.FAILED, throwable);
+                });
     }
 
     /**
      * Send apdu execution result to the server
      *
-     * @param result apdu execution result
+     * @param apduExecutionResult apdu execution result
      */
-    private void sendApduExecutionResult(final ApduExecutionResult result) {
+    public void sendApduExecutionResult(final ApduExecutionResult apduExecutionResult) {
 
         EventCallback.Builder builder = new EventCallback.Builder()
                 .setCommand(EventCallback.APDU_COMMANDS_SENT)
                 .setStatus(EventCallback.STATUS_OK)
-                .setTimestamp(result.getExecutedTsEpoch());
+                .setTimestamp(apduExecutionResult.getExecutedTsEpoch());
 
-        if (!result.getState().equals(ResponseState.PROCESSED)) {
-            builder.setReason(result.getErrorReason()).setStatus(EventCallback.STATUS_FAILED);
+        if (!apduExecutionResult.getState().equals(ResponseState.PROCESSED)) {
+            builder.setReason(apduExecutionResult.getErrorReason());
+            builder.setStatus(EventCallback.STATUS_FAILED);
         }
 
         builder.build().send();
 
+        if (apduExecutionResult.getState().equals(ResponseState.NOT_PROCESSED)) {
+            commitProcessed(CommitResult.FAILED, new Exception("apdu command doesn't executed"));
+            return;
+        }
+
         if (null != currentCommit) {
-            currentCommit.confirm(result, new ApiCallback<Void>() {
+            currentCommit.confirm(apduExecutionResult, new ApiCallback<Void>() {
                 @Override
-                public void onSuccess(Void result2) {
-                    @ResponseState.ApduState String state = result.getState();
+                public void onSuccess(Void serverResult) {
+                    @ResponseState.ApduState String state = apduExecutionResult.getState();
 
                     switch (state) {
                         case ResponseState.PROCESSED:
-                            RxBus.getInstance().post(new CommitSuccess(currentCommit));
+                            commitProcessed(CommitResult.SUCCESS, null);
                             break;
                         case ResponseState.EXPIRED:
-                            RxBus.getInstance().post(new CommitSkipped(currentCommit));
-                            break;
                         case ResponseState.FAILED:
-                            // TODO: determine if apdu package is retryable or not, right now the
-                            // FitPay API doesn't support this attribute, but it will!
-                            RxBus.getInstance().post(new CommitSkipped(currentCommit));
-                            break;
                         case ResponseState.ERROR:
-                            // TODO: determine what to do here, retry immediatly?
-                            RxBus.getInstance().post(new CommitFailed.Builder()
-                                    .commit(currentCommit)
-                                    .errorCode(999)         //TODO create enum for errors
-                                    .errorMessage("apdu command failure")
-                                    .build());
+                            commitProcessed(CommitResult.SKIPPED, null);
                             break;
                     }
                 }
@@ -343,11 +373,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                     // managed properly... i.e. the commit was applied, it was successful, it was
                     // the reporting to FitPay that wasn't, is that part of the commit?
                     FPLog.e(TAG, "Could not post apduExecutionResult. " + errorCode + ": " + errorMessage);
-                    RxBus.getInstance().post(new CommitFailed.Builder()
-                            .commit(currentCommit)
-                            .errorCode(errorCode)
-                            .errorMessage("Could not send adpu confirmation.  cause: " + errorMessage)
-                            .build());
+                    commitProcessed(CommitResult.FAILED, new SyncFailedException("Could not send adpu confirmation.  cause: " + errorMessage));
                 }
             });
         } else {
@@ -355,6 +381,9 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         }
     }
 
+    /**
+     * Listen to the result of apdu package execution
+     */
     private class ApduPackageListener extends ApduExecutionListener {
 
         @Override
@@ -388,6 +417,9 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         }
     }
 
+    /**
+     * Listen to the result of apdu command execution
+     */
     private class ApduCommandListener extends Listener {
         final String normalResponseCode = Hex.bytesToHexString(NORMAL_PROCESSING);
 
@@ -400,12 +432,17 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         private void onApduCommandReceived(ApduCommandResult apduCommandResult) {
             FPLog.i(APDU_DATA, "\\CommandProcessed\\: " + apduCommandResult);
 
+            apduExecutionResult.addResponse(apduCommandResult);
+
             String responseCode = apduCommandResult.getResponseCode();
             if (responseCode.equals(normalResponseCode) || curApduCommand.isContinueOnFailure()) {
-                apduExecutionResult.addResponse(apduCommandResult);
                 executeNextApduCommand();
             } else {
-                ApduExecException execException = new ApduExecException(ResponseState.FAILED, "Device provided invalid response code: " + responseCode);
+                ApduExecException execException = new ApduExecException(
+                        ResponseState.FAILED,
+                        "Device provided invalid response code: " + responseCode,
+                        apduCommandResult.getCommandId(),
+                        apduCommandResult.getResponseCode());
                 onApduExecErrorReceived(execException);
             }
         }
@@ -413,10 +450,14 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         private void onApduExecErrorReceived(ApduExecException apduError) {
             apduExecutionResult.setState(apduError.getResponseState());
             apduExecutionResult.setErrorReason(apduError.getMessage());
+            apduExecutionResult.setErrorCode(apduError.getResponseCode());
             onPostExecuteApdu();
         }
     }
 
+    /**
+     * Process apdu commit
+     */
     private class ApduCommitHandler implements CommitHandler {
 
         @Override
@@ -438,7 +479,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                     result.setExecutedTsEpoch(currentTime);
                     result.setState(ResponseState.EXPIRED);
 
-                    RxBus.getInstance().post(result);
+                    sendApduExecutionResult(result);
                 }
             } else {
                 FPLog.e(TAG, "ApduCommitHandler called for non-adpu commit. THIS IS AN APPLICATION DEFECT " + commit);

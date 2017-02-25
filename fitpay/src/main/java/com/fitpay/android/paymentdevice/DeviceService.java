@@ -196,10 +196,8 @@ public final class DeviceService extends Service {
     public void setPaymentDeviceConnector(IPaymentDeviceConnector paymentDeviceConnector) {
         // check to see if device has changed, if so close the existing connection
         //TODO should test on device config - more general than MacAddress which is BLE specific (or at least pertinent to Mac devices)
-        if (this.paymentDeviceConnector != null
-                && ((this.paymentDeviceConnector.getMacAddress() == null && paymentDeviceConnector.getMacAddress() != null)
-                || null != this.paymentDeviceConnector.getMacAddress() && !this.paymentDeviceConnector.getMacAddress().equals(paymentDeviceConnector.getMacAddress()))
-                && this.paymentDeviceConnector.getState() == States.CONNECTED) {
+        if (this.paymentDeviceConnector != null && this.paymentDeviceConnector.getState() == States.CONNECTED
+                && this.paymentDeviceConnector != paymentDeviceConnector) {
             this.paymentDeviceConnector.disconnect();
             this.paymentDeviceConnector.close();
             this.paymentDeviceConnector = null;
@@ -245,6 +243,9 @@ public final class DeviceService extends Service {
 
     }
 
+    /**
+     * read info from your payment device
+     */
     public void readDeviceInfo() {
         if (null == paymentDeviceConnector) {
             //TODO post an error
@@ -308,6 +309,8 @@ public final class DeviceService extends Service {
             throw new IllegalStateException("Another sync is currently active.  Please try again later");
         }
 
+        RxBus.getInstance().post(new Sync(States.STARTED));
+
         paymentDeviceConnector.setUser(user);
 
         executor.execute(() -> {
@@ -317,11 +320,10 @@ public final class DeviceService extends Service {
     }
 
     private void syncDevice() {
-        RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
+        RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.checking_wallet_updates), DeviceStatusMessage.SUCCESS));
 
         if (paymentDeviceConnector.getState() == States.DISCONNECTED || paymentDeviceConnector.getState() == States.DISCONNECTING) {
-            RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.disconnected), DeviceStatusMessage.PENDING));
-            RxBus.getInstance().post(new Sync(States.FAILED));
+            RxBus.getInstance().post(new Sync(States.FAILED, getString(R.string.disconnected)));
             return;
         }
 
@@ -334,8 +336,6 @@ public final class DeviceService extends Service {
         syncProperties.put(SYNC_PROPERTY_DEVICE_ID, devId);
         paymentDeviceConnector.init(syncProperties);
         paymentDeviceConnector.syncInit();
-
-        RxBus.getInstance().post(new Sync(States.STARTED));
 
         /*
          * In case of another account force update our wallet
@@ -360,9 +360,11 @@ public final class DeviceService extends Service {
                             FPLog.i(SYNC_DATA, "\\CommitsReceived\\: " + commitsSize);
 
                             if (commitsSize > 0) {
-                                RxBus.getInstance().post(new Sync(States.IN_PROGRESS, mCommits.size()));
+                                RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.updates_available), DeviceStatusMessage.SUCCESS));
+                                RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
                                 processNextCommit();
                             } else {
+                                RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.no_pending_updates), DeviceStatusMessage.SUCCESS));
                                 RxBus.getInstance().post(new Sync(forceWalletUpdate.get() ? States.COMPLETED : States.COMPLETED_NO_UPDATES));
                             }
                         },
@@ -374,7 +376,7 @@ public final class DeviceService extends Service {
                                 FPLog.e(TAG, "get commits failed. " + throwable.getMessage());
                             }
 
-                            RxBus.getInstance().post(new Sync(States.FAILED));
+                            RxBus.getInstance().post(new Sync(States.FAILED, throwable.getMessage()));
                         });
     }
 
@@ -397,7 +399,7 @@ public final class DeviceService extends Service {
     }
 
     /**
-     * Apdu and Sync callbacks
+     * Listen to Apdu and Sync callbacks
      */
     private class CustomListener extends Listener implements IListeners.SyncListener {
 
@@ -434,7 +436,10 @@ public final class DeviceService extends Service {
         public void onCommitFailed(CommitFailed commitFailed) {
             FPLog.w(SYNC_DATA, "\\CommitProcessed\\: " + commitFailed);
 
+            mCommits.clear();
             RxBus.getInstance().post(new Sync(States.FAILED));
+
+            RxBus.getInstance().post(new Sync(States.FAILED, commitFailed.getErrorCode()));
 
             EventCallback eventCallback = new EventCallback.Builder()
                     .setCommand(EventCallback.getCommandForCommit(commitFailed.getCommit()))
@@ -469,7 +474,7 @@ public final class DeviceService extends Service {
 
         @Override
         public void onCommitSkipped(CommitSkipped commitSkipped) {
-            FPLog.i(SYNC_DATA, "\\CommitProcessed\\: " + commitSkipped);
+            FPLog.i(SYNC_DATA, "\\CommitProcessedWithErrorsCommitProcessed\\: " + commitSkipped);
 
             DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
             deviceData.setLastCommitId(commitSkipped.getCommitId());

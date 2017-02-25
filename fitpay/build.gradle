@@ -6,7 +6,7 @@ apply plugin: 'maven'
 apply from: '../jacoco.gradle'
 
 group = 'com.fitpay.android'
-version = '0.4.15'
+version = '0.4.16'
 archivesBaseName = "android_sdk"
 
 uploadArchives {
@@ -45,7 +45,7 @@ uploadArchives {
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "25.0.0"
+    buildToolsVersion "25.0.1"
 
     defaultConfig {
         minSdkVersion 19
@@ -76,12 +76,19 @@ android {
     }
 
     testOptions {
+        unitTests.all {
+            testLogging {
+                events "passed", "skipped", "failed", "standardOut", "standardError"
+                outputs.upToDateWhen {false}
+                showStandardStreams = true
+            }
+        }
         unitTests.returnDefaultValues = true
     }
 }
 
 ext {
-    supportLib = "25.0.0"
+    supportLib = "25.0.1"
 }
 
 dependencies {

@@ -5,7 +5,16 @@
     <string name="connected">Ready to sync with device</string>
     <string name="disconnected">Device is disconnected</string>
     <string name="pairing">Pairing with device</string>
-    <string name="sync_started">Synchronizing with device</string>
-    <string name="sync_finished">Device is up to date</string>
-    <string name="sync_failed">Synchronizing failed</string>
+
+    <string name="sync_started">Syncing updates to device</string>
+    <string name="sync_finished">Sync complete - device up to date - no updates available</string>
+    <string name="sync_failed">Sync error - %1$s</string>
+
+    <string name="checking_wallet_updates">Checking for wallet updates</string>
+    <string name="no_pending_updates">No pending updates for device</string>
+    <string name="updates_available">Updates available for wallet - connecting to device</string>
+    <string name="updates_available_no_device">Updates available for wallet - unable to connect to device - check connection</string>
+    <string name="device_not_connected">Device not connected</string>
+    <string name="device_app_not_responding">Device App not responding</string>
+    <string name="device_app_out_of_date">Device App out of date</string>
 </resources>

@@ -1,6 +1,5 @@
 package com.fitpay.android.webview;
 
-import android.app.Activity;
 import android.webkit.JavascriptInterface;
 
 import com.fitpay.android.paymentdevice.DeviceService;
@@ -13,6 +12,7 @@ public interface WebViewCommunicator {
     /**
      * this method is called by the WV to initiate sync() or sendUserData() indirectly
      */
+    @JavascriptInterface
     void dispatchMessage(String message) throws JSONException;
 
     /**
@@ -41,14 +41,4 @@ public interface WebViewCommunicator {
      * @param deviceService
      */
     void setDeviceService(DeviceService deviceService);
-
-    /**
-     * send logout message to JS
-     */
-    void logout();
-
-    /**
-     * this method should be called manually in {@link Activity#onDestroy()}
-     */
-    void close();
 }
