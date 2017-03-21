@@ -15,6 +15,7 @@ import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
+import com.fitpay.android.test.utils.SecureElementDataProvider;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 import com.google.gson.Gson;
@@ -167,7 +168,7 @@ public class TestActions {
         String bdAddress = "bbbbbb-1111-1111-1111-111111111111";
         long pairingTs = System.currentTimeMillis();
         String stringTimestamp = TimestampUtils.getISO8601StringForTime(pairingTs);
-        String secureElementId = "cccccc-1111-1111-1111-1111111111";
+        String secureElementId = SecureElementDataProvider.generateRandomSecureElementId();
         Device newDevice = new Device.Builder()
                 .setDeviceType(DeviceTypes.ACTIVITY_TRACKER)
                 .setManufacturerName(manufacturerName)
