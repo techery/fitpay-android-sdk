@@ -343,14 +343,7 @@ public class CreditCardTest2 extends TestActions {
         selectedMethod = verifyVerificationMethod(selectedMethod, "12345");
         assertEquals("post verification state", "VERIFIED", selectedMethod.getState());
 
-        for (int x=0; x<20; x++) {
-            retrievedCard = getCreditCard(retrievedCard);
-            if ("ACTIVE".equals(retrievedCard.getState())) {
-                break;
-            }
-
-            Thread.sleep(1000);
-        }
+        retrievedCard = waitForActivation(retrievedCard);
 
         assertEquals("post verification card state", "ACTIVE", retrievedCard.getState());
 
@@ -390,6 +383,9 @@ public class CreditCardTest2 extends TestActions {
         assertEquals("card not in expected state", "ELIGIBLE", createdCard.getState());
 
         createdCard = acceptTerms(createdCard);
+
+        createdCard = waitForActivation(createdCard);
+
         assertEquals("post deactivation card state", "ACTIVE", createdCard.getState());
         assertTrue("should be default", createdCard.isDefault());
 
@@ -401,6 +397,8 @@ public class CreditCardTest2 extends TestActions {
         assertEquals("card not in expected state", "ELIGIBLE", secondCard.getState());
 
         secondCard = acceptTerms(secondCard);
+        secondCard = waitForActivation(secondCard);
+
         assertEquals("post deactivation card state", "ACTIVE", secondCard.getState());
         assertFalse("second card should not be default", secondCard.isDefault());
 
@@ -437,6 +435,8 @@ public class CreditCardTest2 extends TestActions {
         assertEquals("card not in expected state", "ELIGIBLE", createdCard.getState());
 
         createdCard = acceptTerms(createdCard);
+        createdCard = waitForActivation(createdCard);
+
         assertEquals("post deactivation card state", "ACTIVE", createdCard.getState());
         assertTrue("should be default", createdCard.isDefault());
 
@@ -450,4 +450,21 @@ public class CreditCardTest2 extends TestActions {
 
     }
 
+
+    private CreditCard waitForActivation(CreditCard card) throws Exception {
+        assertNotNull("no card to wait for activation on", card);
+
+        CreditCard retrievedCard = card;
+        for (int x=0; x<20; x++) {
+            retrievedCard = getCreditCard(retrievedCard);
+            if ("ACTIVE".equals(retrievedCard.getState())) {
+                break;
+            }
+
+            Thread.sleep(1000);
+        }
+
+        assertEquals("card never transitioned to ACTIVE state", "ACTIVE", retrievedCard.getState());
+        return retrievedCard;
+    }
 }
