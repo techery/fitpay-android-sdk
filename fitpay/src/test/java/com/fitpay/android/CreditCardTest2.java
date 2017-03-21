@@ -2,7 +2,7 @@ package com.fitpay.android;
 
 import android.media.Image;
 
-import com.fitpay.android.api.ApiManager;
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.enums.CardInitiators;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.card.CreditCard;
@@ -10,17 +10,10 @@ import com.fitpay.android.api.models.card.Reason;
 import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
-import com.fitpay.android.api.models.user.User;
-import com.fitpay.android.api.callbacks.ResultProvidingCallback;
-import com.fitpay.android.api.models.user.UserCreateRequest;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.security.Security;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -350,9 +343,15 @@ public class CreditCardTest2 extends TestActions {
         selectedMethod = verifyVerificationMethod(selectedMethod, "12345");
         assertEquals("post verification state", "VERIFIED", selectedMethod.getState());
 
-        TestConstants.waitSomeActionsOnServer();
+        for (int x=0; x<20; x++) {
+            retrievedCard = getCreditCard(retrievedCard);
+            if ("ACTIVE".equals(retrievedCard.getState())) {
+                break;
+            }
 
-        retrievedCard = getCreditCard(retrievedCard);
+            Thread.sleep(1000);
+        }
+
         assertEquals("post verification card state", "ACTIVE", retrievedCard.getState());
 
         Reason reason = new Reason();
