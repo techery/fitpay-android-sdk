@@ -528,4 +528,21 @@ public class TestActions {
     }
 
 
+    protected CreditCard waitForActivation(CreditCard card) throws Exception {
+        assertNotNull("no card to wait for activation on", card);
+
+        CreditCard retrievedCard = card;
+        for (int x=0; x<20; x++) {
+            retrievedCard = getCreditCard(retrievedCard);
+            if ("ACTIVE".equals(retrievedCard.getState())) {
+                break;
+            }
+
+            Thread.sleep(1000);
+        }
+
+        assertEquals("card never transitioned to ACTIVE state", "ACTIVE", retrievedCard.getState());
+        return retrievedCard;
+    }
+
 }
