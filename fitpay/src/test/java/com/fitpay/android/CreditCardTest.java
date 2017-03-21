@@ -60,7 +60,7 @@ public class CreditCardTest {
     @Test
     public void test07_verifyCard() throws InterruptedException {
         steps.verifyCard();
-        steps.selfCard();
+        steps.waitForActivation();
     }
 
     @Test
@@ -99,7 +99,7 @@ public class CreditCardTest {
     @Test
     public void test14_verifyCard() throws InterruptedException {
         steps.verifyCard();
-        steps.selfCard();
+        steps.waitForActivation();
     }
 
 
