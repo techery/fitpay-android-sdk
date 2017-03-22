@@ -35,9 +35,9 @@ cd fitpay-android-sdk
 ```
 ### Gotchas
 
-#### Use (retrolambda)[https://github.com/evant/android-retrolambda-lombok] over the (jack toolchain)[http://tools.android.com/tech-docs/jackandjill].
+#### Use [retrolambda](https://github.com/evant/android-retrolambda-lombok) over the [jack toolchain](http://tools.android.com/tech-docs/jackandjill).
 
-If you see an error similar to the following, it's due to the use of the use of the (jack toolchain)[http://tools.android.com/tech-docs/jackandjill] instead of (retrolambda)[https://github.com/evant/android-retrolambda-lombok].
+If you see an error similar to the following, it's due to the use of the use of the [jack toolchain](http://tools.android.com/tech-docs/jackandjill) instead of [retrolambda](https://github.com/evant/android-retrolambda-lombok).
 
 ```
 com.fitpay.android.api.ApiManager.com_fitpay_android_api_ApiManager_lambda$createUser$0(com.fitpay.android.api.models.user.UserCreateRequest, com.fitpay.android.api.callbacks.ApiCallback)' was expected to be of type direct but instead was found to be of type virtual
