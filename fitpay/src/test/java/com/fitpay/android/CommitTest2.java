@@ -33,13 +33,14 @@ public class CommitTest2 extends TestActions {
         assertNotNull("card not created", createdCard);
 
         createdCard = acceptTerms(createdCard);
+        waitForActivation(createdCard);
 
         pan = "9999504454545451";
         creditCard = getTestCreditCard(pan);
         createdCard = createCreditCard(user, creditCard);
         assertNotNull("card not created", createdCard);
 
-        createdCard = acceptTerms(createdCard);
+        acceptTerms(createdCard);
 
         Collections.CommitsCollection commits = getCommits(createdDevice, null);
         assertNotNull("commits collection", commits);
@@ -69,13 +70,14 @@ public class CommitTest2 extends TestActions {
         assertNotNull("card not created", createdCard);
 
         createdCard = acceptTerms(createdCard);
+        waitForActivation(createdCard);
 
         pan = "9999504454545451";
         creditCard = getTestCreditCard(pan);
         createdCard = createCreditCard(user, creditCard);
         assertNotNull("card not created", createdCard);
 
-        createdCard = acceptTerms(createdCard);
+        acceptTerms(createdCard);
 
         Collections.CommitsCollection commits = getCommits(createdDevice, null);
         assertNotNull("commits collection", commits);
@@ -100,13 +102,14 @@ public class CommitTest2 extends TestActions {
         assertNotNull("card not created", createdCard);
 
         createdCard = acceptTerms(createdCard);
+        waitForActivation(createdCard);
 
         pan = "9999504454545451";
         creditCard = getTestCreditCard(pan);
         createdCard = createCreditCard(user, creditCard);
         assertNotNull("card not created", createdCard);
 
-        createdCard = acceptTerms(createdCard);
+        acceptTerms(createdCard);
 
         Collections.CommitsCollection commits = getCommits(createdDevice, null);
         assertNotNull("commits collection", commits);
