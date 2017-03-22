@@ -532,7 +532,7 @@ public class TestActions {
         assertNotNull("no card to wait for activation on", card);
 
         CreditCard retrievedCard = card;
-        for (int x=0; x<20; x++) {
+        for (int x=0; x<30; x++) {
             retrievedCard = getCreditCard(retrievedCard);
             if ("ACTIVE".equals(retrievedCard.getState())) {
                 break;

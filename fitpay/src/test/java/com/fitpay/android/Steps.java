@@ -573,7 +573,7 @@ public class Steps {
     }
 
     public void waitForActivation() throws InterruptedException {
-        Assert.assertNotNull(currentCard);
+        Assert.assertNotNull("no currentCard is available to waitForActivation on", currentCard);
 
         final List<String> errors = new ArrayList<>();
         final boolean[] isCompleted = { false };
