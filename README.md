@@ -33,6 +33,17 @@ git clone git@github.com:fitpay/fitpay-android-sdk.git
 cd fitpay-android-sdk  
 ./gradlew clean build  
 ```
+### Gotchas
+
+#### Use (retrolambda)[https://github.com/evant/android-retrolambda-lombok] over the (jack toolchain)[http://tools.android.com/tech-docs/jackandjill].
+
+If you see an error similar to the following, it's due to the use of the use of the (jack toolchain)[http://tools.android.com/tech-docs/jackandjill] instead of (retrolambda)[https://github.com/evant/android-retrolambda-lombok].
+
+```
+com.fitpay.android.api.ApiManager.com_fitpay_android_api_ApiManager_lambda$createUser$0(com.fitpay.android.api.models.user.UserCreateRequest, com.fitpay.android.api.callbacks.ApiCallback)' was expected to be of type direct but instead was found to be of type virtual
+```
+
+Add `classpath 'me.tatarka.retrolambda.projectlombok:lombok.ast:0.2.3.a2'` to your dependencies and remove the jack toolchain.
 
 ### Running tests using Android Studio
 
