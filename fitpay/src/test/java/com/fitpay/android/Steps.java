@@ -25,11 +25,13 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 
 import java.security.Security;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 
 /***
@@ -461,6 +463,7 @@ public class Steps {
 
         final CountDownLatch latch = new CountDownLatch(1);
         final boolean[] isRequestSuccess = {false};
+        final List<String> errors = new ArrayList<>();
 
         Reason reason = new Reason();
         reason.setReason("lost");
@@ -476,12 +479,13 @@ public class Steps {
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                errors.add("error code: " + errorCode + ", message: " + errorMessage);
                 latch.countDown();
             }
         });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Assert.assertTrue(isRequestSuccess[0]);
+        Assert.assertTrue("failed deactivate request: " + errors, isRequestSuccess[0]);
         Assert.assertNotNull(currentCard);
     }
 
@@ -490,6 +494,7 @@ public class Steps {
 
         final CountDownLatch latch = new CountDownLatch(1);
         final boolean[] isRequestSuccess = {false};
+        final List<String> errors = new ArrayList<>();
 
         Reason reason = new Reason();
         reason.setReason("found");
@@ -505,13 +510,14 @@ public class Steps {
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                errors.add("error code: " + errorCode + ", message: " + errorMessage);
                 latch.countDown();
             }
         });
 
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertTrue("failed reactivate request: " + errors, isRequestSuccess[0]);
         Assert.assertNotNull(currentCard);
-        Assert.assertTrue(isRequestSuccess[0]);
     }
 
     public void makeDefault() throws InterruptedException {
@@ -564,6 +570,45 @@ public class Steps {
         latch.await(TIMEOUT, TimeUnit.SECONDS);
         Assert.assertTrue(isRequestSuccess[0]);
         Assert.assertNotNull(currentCard);
+    }
+
+    public void waitForActivation() throws InterruptedException {
+        Assert.assertNotNull("no currentCard is available to waitForActivation on", currentCard);
+
+        final List<String> errors = new ArrayList<>();
+        final boolean[] isCompleted = { false };
+
+        for (int x=0; x<20; x++) {
+            final CountDownLatch latch = new CountDownLatch(1);
+
+            currentCard.self(new ApiCallback<CreditCard>() {
+                @Override
+                public void onSuccess(CreditCard result) {
+                    currentCard = result;
+                    if ("ACTIVE".equals(result.getState())) {
+                        isCompleted[0] = true;
+                    }
+                    latch.countDown();
+                }
+
+                @Override
+                public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                    errors.add("error code: " + errorCode + ", message: " + errorMessage);
+                    latch.countDown();
+                }
+            });
+
+            latch.await(TIMEOUT, TimeUnit.SECONDS);
+            assertTrue("error waiting on activation: " + errors, errors.size() == 0);
+
+            if (isCompleted[0]) {
+                return;
+            } else {
+                Thread.sleep(1000);
+            }
+        }
+
+        fail(currentCard + " never transitioned to ACTIVE");
     }
 
     public void getCards() throws InterruptedException {

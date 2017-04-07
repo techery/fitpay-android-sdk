@@ -2,7 +2,7 @@ package com.fitpay.android;
 
 import android.media.Image;
 
-import com.fitpay.android.api.ApiManager;
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.enums.CardInitiators;
 import com.fitpay.android.api.models.Transaction;
 import com.fitpay.android.api.models.card.CreditCard;
@@ -10,17 +10,10 @@ import com.fitpay.android.api.models.card.Reason;
 import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
-import com.fitpay.android.api.models.user.User;
-import com.fitpay.android.api.callbacks.ResultProvidingCallback;
-import com.fitpay.android.api.models.user.UserCreateRequest;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.security.Security;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -350,9 +343,8 @@ public class CreditCardTest2 extends TestActions {
         selectedMethod = verifyVerificationMethod(selectedMethod, "12345");
         assertEquals("post verification state", "VERIFIED", selectedMethod.getState());
 
-        TestConstants.waitSomeActionsOnServer();
+        retrievedCard = waitForActivation(retrievedCard);
 
-        retrievedCard = getCreditCard(retrievedCard);
         assertEquals("post verification card state", "ACTIVE", retrievedCard.getState());
 
         Reason reason = new Reason();
@@ -391,6 +383,9 @@ public class CreditCardTest2 extends TestActions {
         assertEquals("card not in expected state", "ELIGIBLE", createdCard.getState());
 
         createdCard = acceptTerms(createdCard);
+
+        createdCard = waitForActivation(createdCard);
+
         assertEquals("post deactivation card state", "ACTIVE", createdCard.getState());
         assertTrue("should be default", createdCard.isDefault());
 
@@ -402,6 +397,8 @@ public class CreditCardTest2 extends TestActions {
         assertEquals("card not in expected state", "ELIGIBLE", secondCard.getState());
 
         secondCard = acceptTerms(secondCard);
+        secondCard = waitForActivation(secondCard);
+
         assertEquals("post deactivation card state", "ACTIVE", secondCard.getState());
         assertFalse("second card should not be default", secondCard.isDefault());
 
@@ -438,6 +435,8 @@ public class CreditCardTest2 extends TestActions {
         assertEquals("card not in expected state", "ELIGIBLE", createdCard.getState());
 
         createdCard = acceptTerms(createdCard);
+        createdCard = waitForActivation(createdCard);
+
         assertEquals("post deactivation card state", "ACTIVE", createdCard.getState());
         assertTrue("should be default", createdCard.isDefault());
 
@@ -450,5 +449,4 @@ public class CreditCardTest2 extends TestActions {
         assertEquals("should be the same transaction", transaction.getTransactionId(), retreivedTransaction.getTransactionId());
 
     }
-
 }

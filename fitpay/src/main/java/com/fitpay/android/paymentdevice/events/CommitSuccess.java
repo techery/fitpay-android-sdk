@@ -18,21 +18,34 @@ public class CommitSuccess {
     }
 
     public String getCommitId() {
-        return commit.getCommitId();
+        if (commit != null) {
+            return commit.getCommitId();
+        }
+
+        return null;
     }
 
     public String getCommitType() {
-        return commit.getCommitType();
+        if (commit != null) {
+            return commit.getCommitType();
+        }
+
+        return null;
     }
 
     public long getCreatedTs() {
-        return commit.getCreatedTs();
+        if (commit != null) {
+            return commit.getCreatedTs();
+        }
+
+        return -1;
     }
 
     @Override
     public String toString() {
         return "CommitSuccess{" +
                 "commitId='" + getCommitId() + '\'' +
+                ", createdTs='" + getCreatedTs() + '\'' +
                 ", commitType='" + getCommitType() + '\'' +
                 '}';
     }

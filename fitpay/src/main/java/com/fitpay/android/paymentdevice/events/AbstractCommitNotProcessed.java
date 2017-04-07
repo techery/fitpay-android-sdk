@@ -21,16 +21,28 @@ public abstract class AbstractCommitNotProcessed {
     }
 
     public String getCommitId() {
-        return commit.getCommitId();
+        if (commit != null) {
+            return commit.getCommitId();
+        }
+
+        return null;
     }
 
     @CommitTypes.Type
     public String getCommitType() {
-        return commit.getCommitType();
+        if (commit != null) {
+            return commit.getCommitType();
+        }
+
+        return null;
     }
 
     public long getCreatedTs() {
-        return commit.getCreatedTs();
+        if (commit != null) {
+            return commit.getCreatedTs();
+        }
+
+        return -1;
     }
 
     public String getErrorMessage() {
