@@ -27,15 +27,19 @@ import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import rx.Observable;
 import rx.Observer;
+
+import static org.bouncycastle.asn1.x500.style.RFC4519Style.c;
 
 /**
  * Created by tgs on 5/3/16.
@@ -346,7 +350,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
             switch (syncEvent.getState()) {
                 case States.COMPLETED:
-                    getTopOfWalletData();
+                    getTopOfWalletData(new ArrayList(getWallet().keySet()));
                     break;
 
                 case States.COMPLETED_NO_UPDATES:

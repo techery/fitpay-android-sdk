@@ -298,14 +298,22 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     /**
      * Get TOW data from the server
      */
-    protected final void getTopOfWalletData() {
+    protected final void getTopOfWalletData(List<String> cardOrder) {
+        Map<String, TopOfWallet> cardMap = new HashMap<String, TopOfWallet>();
+        List<TopOfWallet> tow = new ArrayList<>();
         user.getAllCreditCards().flatMap(creditCardCollection -> {
-            List<TopOfWallet> tow = new ArrayList<>();
             if (creditCardCollection.getResults() != null) {
-                for (CreditCard card : creditCardCollection.getResults()) {
+                creditCardCollection.getResults().forEach(card -> {
                     if (card.getTOW() != null) {
-                        tow.add(card.getTOW());
+                        cardMap.put(card.getCreditCardId(), card.getTOW());
                     }
+                });
+                if (!cardMap.isEmpty()) {
+                    cardOrder.forEach(cardId -> {
+                        if (cardMap.containsKey(cardId)) {
+                            tow.add(cardMap.get(cardId));
+                        }
+                    });
                 }
             }
             return Observable.just(tow);
