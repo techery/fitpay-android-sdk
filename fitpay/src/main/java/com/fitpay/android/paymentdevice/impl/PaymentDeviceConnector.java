@@ -153,6 +153,11 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     @Override
     public void processCommit(Commit commit) {
+        // Don't switch the current commit until we are ready to execute the new one. PGR-1240
+        if (apduExecutionInProgress && currentCommit.getPayload() instanceof ApduPackage) {
+            FPLog.w(TAG, "apduPackage processing is already in progress");
+            return;
+        }
         FPLog.d(TAG, "processing commit on Thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
         currentCommit = commit;
         if (null == commitHandlers) {
