@@ -1,11 +1,13 @@
 package com.fitpay.android.webview.events;
 
 import com.fitpay.android.utils.Constants;
+import com.fitpay.android.webview.enums.RtmType;
 
 /**
  * RTM message from JS
  */
 public class RtmMessage {
+
     private String jsonData;
     private String type;
     private String callbackId;
@@ -26,6 +28,7 @@ public class RtmMessage {
         return jsonData;
     }
 
+    @RtmType.Request
     public String getType() {
         return type;
     }
