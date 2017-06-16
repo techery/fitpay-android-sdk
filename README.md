@@ -100,21 +100,24 @@ Pre-built versions of the Android SDK are hosted on jcenter(). To use in your pr
         ```
 
 ## Using local version of the SDK as a dependency for your build:
-You can build and use SDK from the local repository. The first step is to build the local repository from the FitPay Android SDK by using a Gradle task included in the SDK. After running this task, a compiled version of the SDK will be outputted to a predefined folder on your machine ("LocalRepository") and will be available for use in your project.
+In order to use a local version of the SDK in your project, you need to first build the local repository by using the Gradle task ```uploadArchives``` that's included in the FitPay Android SDK. After running this task, the compiled SDK will be outputted to a local folder on your computer ("LocalRepository") and will be available for use in your project.
 
-You can build the repository from Android Studio or by using the commandline.
+You can run the Gradle task and build the repository from Android Studio or from the commandline.
 
 * Build using Android Studio
 
     ```
-    Open an existing Android Studio project
+    Open the FitPay Android SDK in Android Studio
+
     /home/yourname/fitpay/fitpay-android-sdk
+
     Click on Gradle (topright), select fitpay-android->Tasks->upload, uploadArchives - right click and select "Run fitpay-android[uploadArchives]"
     ```
 
 * Build from the commandline
     ```
-    Open an existing Android Studio project
+    Open the FitPay Android SDK in your commandline
+
     cd fitpay-android-sdk
     ./gradlew clean uploadArchives
     ```
