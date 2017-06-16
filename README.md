@@ -121,14 +121,14 @@ You can build the repository from Android Studio or by using the commandline.
 
 Now that you've built the repository, you need to tell your Android project where it is located and that it needs to be included in your project. Open your Android project, and do the following:
 
-* 1. Add the local repository's location to the top-level build.gradle file
+1. Add the local repository's location to the top-level build.gradle file
     ```
     def localMavenRepository = 'file://' + new File(System.getProperty('user.home'), 'LocalRepository').absolutePath
     def String pbwURL = 'http://'
     def String metaDataURL = 'http://artifactory.fpctrl.com:8080/artifactory/repo/fitpay/pagare/maven-metadata.xml'
     ```
 
-* 2. Include ```localMavenRepository()``` in the ```repositories``` closure of the same top-level build.gradle file.
+2. Include ```localMavenRepository()``` in the ```repositories``` closure of the same top-level build.gradle file.
     ```
     allprojects {
         repositories {
@@ -136,7 +136,7 @@ Now that you've built the repository, you need to tell your Android project wher
         }
     }
      ```
-* 3. Add the repository as a dependency to the module-level build.gradle file of your project.
+3. Add the repository as a dependency to the module-level build.gradle file of your project.
     ```
     dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
