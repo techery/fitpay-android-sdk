@@ -56,9 +56,11 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private User user;
     private Device device;
+    private String deviceId = null;
 
     private DeviceStatusListener deviceStatusListener;
-    private CustomListener listenerForAppCallbacks;
+    private DeviceSyncListener listenerForAppCallbacks;
+
     private RtmMessageListener rtmMessageListener;
 
     private WebView webView;
@@ -97,7 +99,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
      */
     public void logout() {
         RxBus.getInstance().post(new RtmMessageResponse("logout"));
-        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.connecting), DeviceStatusMessage.PENDING));
+        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.connecting), deviceId, DeviceStatusMessage.PENDING));
     }
 
     /**
@@ -169,25 +171,17 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
 
-        listenerForAppCallbacks = new CustomListener(callbackId);
+        listenerForAppCallbacks = new DeviceSyncListener(callbackId);
         NotificationManager.getInstance().addListener(listenerForAppCallbacks);
 
-        try {
-            //sync data
-            deviceService.syncData(user, device);
-        } catch (IllegalStateException ex) {
-            @Sync.State Integer state = deviceService != null ? deviceService.getSyncState() : null;
-            if (state != null && (state == States.STARTED || state == States.IN_PROGRESS)) {
-                onTaskSuccess(EventCallback.SYNC_COMPLETED, callbackId, RESPONSE_IN_PROGRESS);
-            } else {
-                onTaskError(EventCallback.SYNC_COMPLETED, callbackId, ex.getMessage());
-            }
-        }
+        deviceService.syncData(user, device);
     }
 
     @Override
     @JavascriptInterface
     public void sendUserData(String callbackId, String deviceId, String token, String userId) {
+        this.deviceId = deviceId;
+
         FPLog.d(TAG, "sendUserData received data: deviceId: " + deviceId + ", token: " + token + ", userId: " + userId);
 
         OAuthToken oAuthToken = new OAuthToken.Builder()
@@ -309,7 +303,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             sendMessageToJs(callbackId, false, gson.toJson(failedResponse));
         }
 
-        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed, errorMessage), DeviceStatusMessage.ERROR));
+        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed, errorMessage), deviceId, DeviceStatusMessage.ERROR));
 
         EventCallback eventCallback = new EventCallback.Builder()
                 .setCommand(command)
@@ -323,18 +317,22 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     private class DeviceStatusListener extends Listener {
         private DeviceStatusListener() {
             super();
-            mCommands.put(DeviceStatusMessage.class, data -> sendDeviceStatusToJs((DeviceStatusMessage) data));
+            mCommands.put(DeviceStatusMessage.class, data -> {
+                if (deviceId == null || deviceId.equals(((DeviceStatusMessage) data).getDeviceId())) {
+                    sendDeviceStatusToJs((DeviceStatusMessage) data);
+                }
+            });
         }
     }
 
     /**
      * Listen to sync status
      */
-    private class CustomListener extends Listener {
+    private class DeviceSyncListener extends Listener {
 
         private String callbackId;
 
-        private CustomListener(String callbackId) {
+        private DeviceSyncListener(String callbackId) {
             super();
             this.callbackId = callbackId;
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
@@ -346,11 +344,13 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 case States.COMPLETED:
                 case States.COMPLETED_NO_UPDATES: {
                     onTaskSuccess(EventCallback.SYNC_COMPLETED, callbackId);
-                    RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_finished), DeviceStatusMessage.SUCCESS));
+                    RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_finished), deviceId, DeviceStatusMessage.SUCCESS));
+                    NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
                     break;
                 }
                 case States.FAILED: {
                     onTaskError(EventCallback.SYNC_COMPLETED, callbackId, !StringUtils.isEmpty(syncEvent.getMessage()) ? syncEvent.getMessage() : "sync failure");
+                    NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
                     break;
                 }
                 default: {
