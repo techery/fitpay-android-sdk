@@ -83,7 +83,7 @@ Pre-built versions of the Android SDK are hosted on jcenter(). To use in your pr
         }
     }
     ```
-* add the pre-built SDK dependency, for example to use v0.5.0 of the SDK: ```compile 'com.fitpay.android:android_sdk:0.4.15'``` dependency to the ```dependencies``` closure of the build.gradle file.
+* add the pre-built SDK dependency, for example to use v0.5.0 of the SDK: ```compile 'com.fitpay.android:android_sdk:0.5.0'``` dependency to the ```dependencies``` closure of the build.gradle file.
     * Grab via Maven:
 
         ```xml
@@ -100,33 +100,38 @@ Pre-built versions of the Android SDK are hosted on jcenter(). To use in your pr
         ```
 
 ## Using local version of the SDK as a dependency for your build:
-You can build and use SDK from the local repository. So there are few ways how to do that:
+In order to use a local version of the SDK in your project, you need to first build the local repository by using the Gradle task ```uploadArchives``` that's included in the FitPay Android SDK. After running this task, the compiled SDK will be outputted to a local folder on your computer ("LocalRepository") and will be available for use in your project.
 
-* Uploading using Android Studio
+You can run the Gradle task and build the repository from Android Studio or from the commandline.
+
+* Build using Android Studio
 
     ```
-    Open an existing Android Studio project
+    Open the FitPay Android SDK in Android Studio
+
     /home/yourname/fitpay/fitpay-android-sdk
+
     Click on Gradle (topright), select fitpay-android->Tasks->upload, uploadArchives - right click and select "Run fitpay-android[uploadArchives]"
     ```
 
-* Uploading from from the commandline
+* Build from the commandline
     ```
-    Open an existing Android Studio project
+    Open the FitPay Android SDK in your commandline
+
     cd fitpay-android-sdk
     ./gradlew clean uploadArchives
     ```
 
-Now in your child project you should import the library from the local storage.
+Now that you've built the repository, you need to tell your Android project where it is located and that it needs to be included in your project. Open your Android project, and do the following:
 
-* First step. Add local repository to the top-level build.gradle
+1. Add the local repository's location to the top-level build.gradle file
     ```
     def localMavenRepository = 'file://' + new File(System.getProperty('user.home'), 'LocalRepository').absolutePath
     def String pbwURL = 'http://'
     def String metaDataURL = 'http://artifactory.fpctrl.com:8080/artifactory/repo/fitpay/pagare/maven-metadata.xml'
     ```
 
-* Second step. Make sure localMavenRepository() is listed in the ```repositories``` closure of your application's build.gradle file.
+2. Include ```localMavenRepository()``` in the ```repositories``` closure of the same top-level build.gradle file.
     ```
     allprojects {
         repositories {
@@ -134,6 +139,15 @@ Now in your child project you should import the library from the local storage.
         }
     }
      ```
+3. Add the repository as a dependency to the module-level build.gradle file of your project.
+    ```
+    dependencies {
+        compile fileTree(dir: 'libs', include: ['*.jar'])
+        compile 'com.fitpay.android:android_sdk:0.4.20'
+    }
+    ```
+
+That's it! You are now able to build from your local repository.
 
 ## Contributing to the SDK
 We welcome contributions to the SDK. For your first few contributions please fork the repo, make your changes and submit a pull request. Internally we branch off of develop, test, and PR-review the branch before merging to develop (moderately stable). Releases to Master happen less frequently, undergo more testing, and can be considered stable. For more information, please read:  [http://nvie.com/posts/a-successful-git-branching-model/](http://nvie.com/posts/a-successful-git-branching-model/)
@@ -157,4 +171,3 @@ This code is licensed under the MIT license. More information can be found in th
 
 ## Questions? Comments? Concerns?
 Please contact the team via a github issue, OR, feel free to email us: sdk@fit-pay.com
-
