@@ -139,8 +139,9 @@ Now that you've built the repository, you need to tell your Android project wher
 3. Add the repository as a dependency to the module-level build.gradle file of your project.
     ```
     dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile 'com.fitpay.android:android_sdk:0.4.20'
+        compile fileTree(dir: 'libs', include: ['*.jar'])
+        compile 'com.fitpay.android:android_sdk:0.4.20'
+    }
     ```
 
 That's it! You are now able to build from your local repository.
