@@ -149,6 +149,44 @@ Now that you've built the repository, you need to tell your Android project wher
 
 That's it! You are now able to build from your local repository.
 
+## Logging
+
+In order to remain flexible with the various mobile logging strategies, the SDK provides a mechanism to utilize custom logging implementations.  Providing an implementation of the `com.fitpay.android.utils.FPLog$ILog` interface to `com.fitpay.android.utils.FPLog` will allow tailoring logging output from the SDK.
+
+Example implementation using standard Android logging:
+```
+FPLog.addLogImpl(new FPLog.ILog() {
+    @Override
+    public void d(String tag, String text) {
+        Log.d(tag, text);
+    }
+
+    @Override
+    public void i(String tag, String text) {
+        Log.i(tag, text);
+    }
+
+    @Override
+    public void w(String tag, String text) {
+        Log.w(tag, text);
+    }
+
+    @Override
+    public void e(String tag, Throwable throwable) {
+        Log.e(tag, throwable.getMessage());
+    }
+
+    @Override
+    public int logLevel() {
+        return 0;
+    }
+});
+```
+
+### Logging HTTP Traffic
+
+HTTP traffic originating from the SDK can be logged by calling `FPLog.showHttpLogs(true);`
+
 ## Contributing to the SDK
 We welcome contributions to the SDK. For your first few contributions please fork the repo, make your changes and submit a pull request. Internally we branch off of develop, test, and PR-review the branch before merging to develop (moderately stable). Releases to Master happen less frequently, undergo more testing, and can be considered stable. For more information, please read:  [http://nvie.com/posts/a-successful-git-branching-model/](http://nvie.com/posts/a-successful-git-branching-model/)
 
