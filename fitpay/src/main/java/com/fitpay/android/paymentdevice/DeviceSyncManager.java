@@ -82,14 +82,12 @@ class DeviceSyncManager {
     }
 
     private void sync() {
-        RxBus.getInstance().post(new Sync(States.STARTED));
-
         if (currentRequest == null) {
-            FPLog.e(TAG, "Request is empty");
-            RxBus.getInstance().post(new Sync(States.FAILED, "Request is empty"));
-            finishSync();
+            FPLog.i(TAG, "No more requests");
             return;
         }
+
+        RxBus.getInstance().post(new Sync(States.STARTED));
 
         if (currentRequest.getUser() == null) {
             FPLog.e(TAG, "No user");
