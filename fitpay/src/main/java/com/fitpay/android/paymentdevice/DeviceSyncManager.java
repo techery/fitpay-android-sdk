@@ -82,10 +82,14 @@ class DeviceSyncManager {
     }
 
     private void sync() {
-        FPLog.d(TAG, "starting device sync.  device: " + currentRequest.getDevice().getDeviceIdentifier());
-        FPLog.d(TAG, "sync initiated from thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
-
         RxBus.getInstance().post(new Sync(States.STARTED));
+
+        if (currentRequest == null) {
+            FPLog.e(TAG, "Request is empty");
+            RxBus.getInstance().post(new Sync(States.FAILED, "Request is empty"));
+            finishSync();
+            return;
+        }
 
         if (currentRequest.getUser() == null) {
             FPLog.e(TAG, "No user");
@@ -115,6 +119,9 @@ class DeviceSyncManager {
             finishSync();
             return;
         }
+
+        FPLog.d(TAG, "starting device sync.  device: " + currentRequest.getDevice().getDeviceIdentifier());
+        FPLog.d(TAG, "sync initiated from thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
 
         currentRequest.getConnector().setUser(currentRequest.getUser());
 
