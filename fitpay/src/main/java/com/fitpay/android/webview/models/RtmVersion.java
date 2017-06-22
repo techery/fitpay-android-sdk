@@ -4,6 +4,7 @@ package com.fitpay.android.webview.models;
  * RTM version.
  */
 public class RtmVersion {
+
     private int version;
 
     public RtmVersion(int version) {

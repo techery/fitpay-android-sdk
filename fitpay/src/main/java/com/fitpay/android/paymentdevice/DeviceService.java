@@ -7,40 +7,24 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 
-import com.fitpay.android.R;
-import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
-import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.AppMessage;
-import com.fitpay.android.paymentdevice.enums.Sync;
-import com.fitpay.android.paymentdevice.events.CommitFailed;
-import com.fitpay.android.paymentdevice.events.CommitSkipped;
-import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.impl.ble.BluetoothPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
-import com.fitpay.android.paymentdevice.utils.DevicePreferenceData;
+import com.fitpay.android.paymentdevice.models.SyncRequest;
 import com.fitpay.android.utils.Constants;
-import com.fitpay.android.utils.EventCallback;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
-import com.fitpay.android.utils.RxBus;
-import com.fitpay.android.utils.StringUtils;
-import com.fitpay.android.webview.events.DeviceStatusMessage;
 
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
 
-import me.alexrs.prefs.lib.Prefs;
-
-import static com.fitpay.android.utils.Constants.SYNC_DATA;
 import static java.lang.Class.forName;
 
 /**
@@ -59,23 +43,21 @@ public final class DeviceService extends Service {
 
     public final static String SYNC_PROPERTY_DEVICE_ID = "syncDeviceId";
 
+    private User user;
+    private Device device;
+
     private IPaymentDeviceConnector paymentDeviceConnector;
     private String paymentDeviceConnectorType;
 
     private String configParams;
 
-    @Sync.State
-    private Integer mSyncEventState;
-
-    private List<Commit> mCommits;
-    private Device device;
-    private User user;
-
     private Executor executor = Constants.getExecutor();
 
-    private CustomListener mSyncListener = new CustomListener();
+    private DeviceSyncManager syncManager;
 
     private final IBinder mBinder = new LocalBinder();
+
+    private MessageListener mSyncListener = new MessageListener();
 
     public static void run(Context context) {
         context.startService(new Intent(context, DeviceService.class));
@@ -104,6 +86,8 @@ public final class DeviceService extends Service {
     public void onCreate() {
         super.onCreate();
 
+        syncManager = new DeviceSyncManager(this, executor);
+        syncManager.onCreate();
         NotificationManager.getInstance().addListenerToCurrentThread(mSyncListener);
     }
 
@@ -121,6 +105,7 @@ public final class DeviceService extends Service {
             paymentDeviceConnector = null;
         }
 
+        syncManager.onDestroy();
         NotificationManager.getInstance().removeListener(mSyncListener);
     }
 
@@ -286,212 +271,27 @@ public final class DeviceService extends Service {
      * @param device device object with hypermedia data
      */
     public void syncData(@NonNull User user, @NonNull Device device) {
-        FPLog.d(TAG, "starting device sync.  device: " + device.getDeviceIdentifier());
-        FPLog.d(TAG, "sync initiated from thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
-
         this.user = user;
         this.device = device;
-
-        if (paymentDeviceConnector == null) {
-            //throw new RuntimeException("You should pair with a payment device at first");
-            FPLog.e(TAG, "No payment device connector configured");
-            throw new IllegalStateException("No payment device connector configured");
-        }
-
-        if (paymentDeviceConnector.getState() != States.CONNECTED) {
-            //throw new RuntimeException("You should pair with a payment device at first");
-            FPLog.e(TAG, "No payment device connection");
-            throw new IllegalStateException("No payment device connection");
-        }
-
-        if (mSyncEventState != null && (mSyncEventState == States.STARTED || mSyncEventState == States.IN_PROGRESS)) {
-            FPLog.w(TAG, "Sync already in progress. Try again later");
-            throw new IllegalStateException("Another sync is currently active.  Please try again later");
-        }
-
-        RxBus.getInstance().post(new Sync(States.STARTED));
-
-        paymentDeviceConnector.setUser(user);
-
-        executor.execute(() -> {
-            FPLog.i(SYNC_DATA, "\\StartSync\\");
-            syncDevice();
-        });
-    }
-
-    private void syncDevice() {
-        RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.checking_wallet_updates), DeviceStatusMessage.SUCCESS));
-
-        if (paymentDeviceConnector.getState() == States.DISCONNECTED || paymentDeviceConnector.getState() == States.DISCONNECTING) {
-            RxBus.getInstance().post(new Sync(States.FAILED, getString(R.string.disconnected)));
-            return;
-        }
-
-        FPLog.d(TAG, "sync running on thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
-
-        String devId = device.getDeviceIdentifier();
-
-        // provide sync specific data to device connector
-        Properties syncProperties = new Properties();
-        syncProperties.put(SYNC_PROPERTY_DEVICE_ID, devId);
-        paymentDeviceConnector.init(syncProperties);
-        paymentDeviceConnector.syncInit();
-
-        /*
-         * In case of another account force update our wallet
-         */
-        final AtomicBoolean forceWalletUpdate = new AtomicBoolean(false);
-        final String prevDeviceId = Prefs.with(this).getString(SYNC_PROPERTY_DEVICE_ID, null);
-        if (StringUtils.isEmpty(prevDeviceId) || !prevDeviceId.equals(devId)) {
-            Prefs.with(this).save(SYNC_PROPERTY_DEVICE_ID, devId);
-            forceWalletUpdate.set(true);
-        }
-
-        DevicePreferenceData deviceData = DevicePreferenceData.load(this, devId);
-
-        device.getAllCommits(deviceData.getLastCommitId())
-                .compose(RxBus.applySchedulersExecutorThread())
-                .subscribe(
-                        commitsCollection -> {
-                            mCommits = commitsCollection.getResults();
-
-                            int commitsSize = mCommits != null ? mCommits.size() : 0;
-
-                            FPLog.i(SYNC_DATA, "\\CommitsReceived\\: " + commitsSize);
-
-                            if (commitsSize > 0) {
-                                RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.updates_available), DeviceStatusMessage.SUCCESS));
-                                RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
-                                processNextCommit();
-                            } else {
-                                RxBus.getInstance().post(new DeviceStatusMessage(getString(R.string.no_pending_updates), DeviceStatusMessage.SUCCESS));
-                                RxBus.getInstance().post(new Sync(forceWalletUpdate.get() ? States.COMPLETED : States.COMPLETED_NO_UPDATES));
-                            }
-                        },
-                        throwable -> {
-                            if (throwable instanceof DeviceOperationException) {
-                                DeviceOperationException doe = (DeviceOperationException) throwable;
-                                FPLog.e(TAG, "get commits failed.  reasonCode: " + doe.getErrorCode() + ",  " + doe.getMessage());
-                            } else {
-                                FPLog.e(TAG, "get commits failed. " + throwable.getMessage());
-                            }
-
-                            RxBus.getInstance().post(new Sync(States.FAILED, throwable.getMessage()));
-                        });
+        syncData(user, device, paymentDeviceConnector);
     }
 
     /**
-     * process next commit
+     * Sync data between FitPay server and payment device
+     * <p>
+     * This is an asynchronous operation.
+     *
+     * @param user      current user with hypermedia data
+     * @param device    device object with hypermedia data
+     * @param connector payment device connector
      */
-    private void processNextCommit() {
-        if (mCommits != null && mCommits.size() > 0) {
-            RxBus.getInstance().post(new Sync(States.INC_PROGRESS, mCommits.size()));
-            Commit commit = mCommits.get(0);
-
-            FPLog.i(SYNC_DATA, "\\ProcessNextCommit\\: " + commit);
-
-            paymentDeviceConnector.processCommit(commit);
-            // expose the commit out to others who may want to take action
-            RxBus.getInstance().post(commit);
-        } else {
-            RxBus.getInstance().post(new Sync(States.COMPLETED));
-        }
-    }
-
-    /**
-     * Listen to Apdu and Sync callbacks
-     */
-    private class CustomListener extends Listener implements IListeners.SyncListener {
-
-        private CustomListener() {
-            super();
-            mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
-            mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
-            mCommands.put(CommitFailed.class, data -> onCommitFailed((CommitFailed) data));
-            mCommands.put(CommitSkipped.class, data -> onCommitSkipped((CommitSkipped) data));
-            mCommands.put(AppMessage.class, data -> {
-                try {
-                    syncData(user, device);
-                } catch (Exception e) {
-                    //don't remove try/catch. syncData can throw an exception when it busy.
-                }
-            });
-        }
-
-        @Override
-        public void onSyncStateChanged(Sync syncEvent) {
-            mSyncEventState = syncEvent.getState();
-
-            if (mSyncEventState == States.COMPLETED || mSyncEventState == States.FAILED || mSyncEventState == States.COMPLETED_NO_UPDATES) {
-                FPLog.i(SYNC_DATA, "\\EndSync\\: " + (mSyncEventState != States.FAILED ? "Success" : "Failed"));
-                paymentDeviceConnector.syncComplete();
-            }
-
-            if (mSyncEventState == States.COMMIT_COMPLETED) {
-                processNextCommit();
-            }
-        }
-
-        @Override
-        public void onCommitFailed(CommitFailed commitFailed) {
-            FPLog.w(SYNC_DATA, "\\CommitProcessed\\: " + commitFailed);
-
-            mCommits.clear();
-            RxBus.getInstance().post(new Sync(States.FAILED));
-
-            RxBus.getInstance().post(new Sync(States.FAILED, commitFailed.getErrorCode()));
-
-            EventCallback eventCallback = new EventCallback.Builder()
-                    .setCommand(EventCallback.getCommandForCommit(commitFailed.getCommit()))
-                    .setReason(commitFailed.getErrorMessage())
-                    .setStatus(EventCallback.STATUS_FAILED)
-                    .setTimestamp(commitFailed.getCreatedTs())
-                    .build();
-            eventCallback.send();
-        }
-
-        @Override
-        public void onCommitSuccess(CommitSuccess commitSuccess) {
-            FPLog.i(SYNC_DATA, "\\CommitProcessed\\: " + commitSuccess);
-
-            DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
-            deviceData.setLastCommitId(commitSuccess.getCommitId());
-            DevicePreferenceData.store(DeviceService.this, deviceData);
-
-            EventCallback eventCallback = new EventCallback.Builder()
-                    .setCommand(EventCallback.getCommandForCommit(commitSuccess.getCommit()))
-                    .setStatus(EventCallback.STATUS_OK)
-                    .setTimestamp(commitSuccess.getCreatedTs())
-                    .build();
-            eventCallback.send();
-
-            //TODO: sometimes I caught IndexOfBoundException. Need to find why this happens
-            if (mCommits.size() > 0) {
-                mCommits.remove(0);
-            }
-            processNextCommit();
-        }
-
-        @Override
-        public void onCommitSkipped(CommitSkipped commitSkipped) {
-            FPLog.i(SYNC_DATA, "\\CommitProcessedWithErrorsCommitProcessed\\: " + commitSkipped);
-
-            DevicePreferenceData deviceData = DevicePreferenceData.load(DeviceService.this, DeviceService.this.device.getDeviceIdentifier());
-            deviceData.setLastCommitId(commitSkipped.getCommitId());
-            DevicePreferenceData.store(DeviceService.this, deviceData);
-
-            EventCallback eventCallback = new EventCallback.Builder()
-                    .setCommand(EventCallback.getCommandForCommit(commitSkipped.getCommit()))
-                    .setStatus(EventCallback.STATUS_OK)
-                    .setTimestamp(commitSkipped.getCreatedTs())
-                    .build();
-            eventCallback.send();
-
-            if (mCommits.size() > 0) {
-                mCommits.remove(0);
-            }
-            processNextCommit();
-        }
+    public void syncData(@NonNull User user, @NonNull Device device, @NonNull IPaymentDeviceConnector connector) {
+        SyncRequest request = new SyncRequest.Builder()
+                .setUser(user)
+                .setDevice(device)
+                .setConnector(connector)
+                .build();
+        syncManager.add(request);
     }
 
     private Properties convertCommaSeparatedList(String input) throws IOException {
@@ -518,8 +318,15 @@ public final class DeviceService extends Service {
         return props;
     }
 
-    @Sync.State
-    public Integer getSyncState() {
-        return mSyncEventState;
+    /**
+     * Listen to Apdu and Sync callbacks
+     */
+    private class MessageListener extends Listener {
+
+        private MessageListener() {
+            super();
+            mCommands.put(SyncRequest.class, data -> syncManager.add((SyncRequest) data));
+            mCommands.put(AppMessage.class, data -> syncData(user, device, paymentDeviceConnector));
+        }
     }
 }
