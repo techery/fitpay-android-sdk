@@ -9,9 +9,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Issuer data (supported countries, card networks, issuers)
+ * Issuers data (supported countries, card networks, issuers)
  */
-public class Issuer extends BaseModel implements Parcelable {
+public class Issuers extends BaseModel implements Parcelable {
 
     private Map<String, Country> countries;
 
@@ -37,10 +37,10 @@ public class Issuer extends BaseModel implements Parcelable {
         }
     }
 
-    public Issuer() {
+    public Issuers() {
     }
 
-    protected Issuer(Parcel in) {
+    protected Issuers(Parcel in) {
         int countriesSize = in.readInt();
         this.countries = new HashMap<String, Country>(countriesSize);
         for (int i = 0; i < countriesSize; i++) {
@@ -50,15 +50,15 @@ public class Issuer extends BaseModel implements Parcelable {
         }
     }
 
-    public static final Creator<Issuer> CREATOR = new Creator<Issuer>() {
+    public static final Creator<Issuers> CREATOR = new Creator<Issuers>() {
         @Override
-        public Issuer createFromParcel(Parcel source) {
-            return new Issuer(source);
+        public Issuers createFromParcel(Parcel source) {
+            return new Issuers(source);
         }
 
         @Override
-        public Issuer[] newArray(int size) {
-            return new Issuer[size];
+        public Issuers[] newArray(int size) {
+            return new Issuers[size];
         }
     };
 }

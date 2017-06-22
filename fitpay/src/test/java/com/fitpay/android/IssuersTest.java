@@ -9,7 +9,7 @@ import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class IssuerTest {
+public class IssuersTest {
 
     private static Steps steps = null;
 
@@ -30,8 +30,8 @@ public class IssuerTest {
     }
 
     @Test
-    public void test03_getIssuer() throws InterruptedException {
-        steps.getIssuer();
+    public void test03_getIssuers() throws InterruptedException {
+        steps.getIssuers();
     }
 
     @AfterClass

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Issuer Card network
+ * Issuers Card network
  */
 public class CardNetwork implements Parcelable {
 

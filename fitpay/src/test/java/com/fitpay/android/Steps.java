@@ -13,7 +13,7 @@ import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
-import com.fitpay.android.api.models.issuer.Issuer;
+import com.fitpay.android.api.models.issuer.Issuers;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
@@ -52,7 +52,7 @@ public class Steps {
     private CreditCard currentCard;
     private Device currentDevice;
     private Commit currentCommit;
-    private Issuer currentIssuer;
+    private Issuers currentIssuer;
 
     protected Steps() {
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
@@ -996,12 +996,12 @@ public class Steps {
         Assert.assertNotNull(currentCommit);
     }
 
-    public Issuer getIssuer() throws InterruptedException {
+    public Issuers getIssuers() throws InterruptedException {
         final CountDownLatch latch = new CountDownLatch(1);
 
-        ApiManager.getInstance().getIssuer(new ApiCallback<Issuer>() {
+        ApiManager.getInstance().getIssuers(new ApiCallback<Issuers>() {
             @Override
-            public void onSuccess(Issuer result) {
+            public void onSuccess(Issuers result) {
                 currentIssuer = result;
                 resetErrorFields();
                 latch.countDown();

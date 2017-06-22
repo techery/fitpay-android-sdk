@@ -7,7 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Issuer country
+ * Issuers country
  */
 public class Country implements Parcelable {
 

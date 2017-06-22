@@ -1,7 +1,7 @@
 package com.fitpay.android.api.services;
 
 import com.fitpay.android.api.models.Relationship;
-import com.fitpay.android.api.models.issuer.Issuer;
+import com.fitpay.android.api.models.issuer.Issuers;
 import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.fitpay.android.api.models.user.User;
 import com.google.gson.JsonElement;
@@ -93,7 +93,7 @@ public interface FitPayClient {
      * Retrieve issuers
      */
     @GET("issuers")
-    Call<Issuer> getIssuer();
+    Call<Issuers> getIssuers();
 
     @GET
     Call<JsonElement> get(@Url String url);
