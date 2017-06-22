@@ -6,6 +6,7 @@ import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.Relationship;
+import com.fitpay.android.api.models.issuer.Issuer;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
@@ -263,6 +264,27 @@ public class ApiManager {
         if (isAuthorized(callback)) {
             Call<Relationship> createRelationshipCall = getClient().createRelationship(userId, creditCardId, deviceId);
             createRelationshipCall.enqueue(new CallbackWrapper<>(callback));
+        }
+    }
+
+    /**
+     * Retrieves the details of an existing user.
+     * You need only supply the unique user identifier that was returned upon user creation.
+     *
+     * @param callback result callback
+     */
+    public void getIssuer(final ApiCallback<Issuer> callback) {
+        if (isAuthorized(callback)) {
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+                    Call<Issuer> getIssuerCall = getClient().getIssuer();
+                    getIssuerCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
         }
     }
 

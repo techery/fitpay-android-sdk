@@ -13,6 +13,7 @@ import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.issuer.Issuer;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
@@ -51,6 +52,7 @@ public class Steps {
     private CreditCard currentCard;
     private Device currentDevice;
     private Commit currentCommit;
+    private Issuer currentIssuer;
 
     protected Steps() {
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
@@ -576,9 +578,9 @@ public class Steps {
         Assert.assertNotNull("no currentCard is available to waitForActivation on", currentCard);
 
         final List<String> errors = new ArrayList<>();
-        final boolean[] isCompleted = { false };
+        final boolean[] isCompleted = {false};
 
-        for (int x=0; x<20; x++) {
+        for (int x = 0; x < 20; x++) {
             final CountDownLatch latch = new CountDownLatch(1);
 
             currentCard.self(new ApiCallback<CreditCard>() {
@@ -994,4 +996,28 @@ public class Steps {
         Assert.assertNotNull(currentCommit);
     }
 
+    public Issuer getIssuer() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        ApiManager.getInstance().getIssuer(new ApiCallback<Issuer>() {
+            @Override
+            public void onSuccess(Issuer result) {
+                currentIssuer = result;
+                resetErrorFields();
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                currentErrorCode = errorCode;
+                currentErrorMessage = errorMessage;
+                latch.countDown();
+            }
+        });
+
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertNotNull(currentIssuer);
+        Assert.assertNotNull(currentIssuer.getCountries());
+        return currentIssuer;
+    }
 }
