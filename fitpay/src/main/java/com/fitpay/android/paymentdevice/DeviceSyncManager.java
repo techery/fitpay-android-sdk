@@ -82,8 +82,10 @@ class DeviceSyncManager {
     }
 
     private void sync() {
-        FPLog.d(TAG, "starting device sync.  device: " + currentRequest.getDevice().getDeviceIdentifier());
-        FPLog.d(TAG, "sync initiated from thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
+        if (currentRequest == null) {
+            FPLog.i(TAG, "No more requests");
+            return;
+        }
 
         RxBus.getInstance().post(new Sync(States.STARTED));
 
@@ -115,6 +117,9 @@ class DeviceSyncManager {
             finishSync();
             return;
         }
+
+        FPLog.d(TAG, "starting device sync.  device: " + currentRequest.getDevice().getDeviceIdentifier());
+        FPLog.d(TAG, "sync initiated from thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
 
         currentRequest.getConnector().setUser(currentRequest.getUser());
 
