@@ -2,6 +2,7 @@ package com.fitpay.android.webview.impl;
 
 import android.app.Activity;
 import android.support.annotation.NonNull;
+import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
@@ -445,7 +446,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     break;
 
                 default:
-                    throw new IllegalArgumentException("unsupported action value in message with callbackId:" + callbackId);
+                    Log.i(TAG, "unsupported action value " + msg.getType() + " in message with callbackId:" + callbackId);
             }
         }
     }
