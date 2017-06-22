@@ -25,6 +25,10 @@ public class DeviceStatusMessage {
     @Code
     private int type;
 
+    public DeviceStatusMessage(String status, @Code int type) {
+        this(status, null, type);
+    }
+
     public DeviceStatusMessage(String status, String deviceId, @Code int type) {
         this.message = status;
         this.deviceId = deviceId;

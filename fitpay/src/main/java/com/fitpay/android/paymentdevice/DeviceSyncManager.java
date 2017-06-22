@@ -85,30 +85,38 @@ class DeviceSyncManager {
         FPLog.d(TAG, "starting device sync.  device: " + currentRequest.getDevice().getDeviceIdentifier());
         FPLog.d(TAG, "sync initiated from thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
 
+        RxBus.getInstance().post(new Sync(States.STARTED));
+
         if (currentRequest.getUser() == null) {
             FPLog.e(TAG, "No user");
-            throw new IllegalStateException("No user provided");
+            RxBus.getInstance().post(new Sync(States.FAILED, "No user provided"));
+            finishSync();
+            return;
         }
 
         if (currentRequest.getDevice() == null) {
             FPLog.e(TAG, "No payment device connector configured");
-            throw new IllegalStateException("No device provided");
+            RxBus.getInstance().post(new Sync(States.FAILED, "No device provided"));
+            finishSync();
+            return;
         }
 
         if (currentRequest.getConnector() == null) {
             FPLog.e(TAG, "No payment device connector configured");
-            throw new IllegalStateException("No payment device connector configured");
+            RxBus.getInstance().post(new Sync(States.FAILED, "No payment device connector configured"));
+            finishSync();
+            return;
         }
 
         if (currentRequest.getConnector().getState() != States.CONNECTED) {
             //throw new RuntimeException("You should pair with a payment device at first");
             FPLog.e(TAG, "No payment device connection");
-            throw new IllegalStateException("No payment device connection");
+            RxBus.getInstance().post(new Sync(States.FAILED, "No payment device connection"));
+            finishSync();
+            return;
         }
 
         currentRequest.getConnector().setUser(currentRequest.getUser());
-
-        RxBus.getInstance().post(new Sync(States.STARTED));
 
         syncDevice();
     }
