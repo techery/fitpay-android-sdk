@@ -48,6 +48,7 @@ public class Steps {
     private String currentErrorMessage;
     private Collections.CreditCardCollection cardsCollection;
     private Collections.DeviceCollection devicesCollection;
+    private Device paymentDevice;
     private CreditCard currentCard;
     private Device currentDevice;
     private Commit currentCommit;
@@ -794,6 +795,28 @@ public class Steps {
         if (currentDevice == null && devicesCollection.getTotalResults() > 0) {
             currentDevice = devicesCollection.getResults().get(0);
         }
+    }
+
+    public void getPaymentDevice() throws InterruptedException {
+        Assert.assertNotNull(currentUser);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        currentUser.getPaymentDevice(new ApiCallback<Device>() {
+            @Override
+            public void onSuccess(Device result) {
+                paymentDevice = result;
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                latch.countDown();
+            }
+        });
+
+        latch.await(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertNotNull("paymentDevice should not be null", paymentDevice);
     }
 
     public void selfDevice() throws InterruptedException {

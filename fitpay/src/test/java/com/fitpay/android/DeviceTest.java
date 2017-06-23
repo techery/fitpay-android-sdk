@@ -60,9 +60,15 @@ public class DeviceTest {
     }
 
     @Test
-    public void test08_deleteDevices() throws InterruptedException {
+    public void test08_getPaymentDevice() throws InterruptedException {
+        steps.getPaymentDevice();
+    }
+
+    @Test
+    public void test09_deleteDevices() throws InterruptedException {
         steps.deleteTestDevices();
     }
+
 
     @AfterClass
     public static void tearDown() throws Exception {

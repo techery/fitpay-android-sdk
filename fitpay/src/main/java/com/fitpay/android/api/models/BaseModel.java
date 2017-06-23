@@ -31,6 +31,14 @@ public class BaseModel {
         makeGetCall(SELF, null, getClass(), callback);
     }
 
+    public String getLinkUrl(String key) {
+        if (null == links) {
+            return null;
+        }
+
+        return links.getLink(key);
+    }
+
     private <T> String getLink(String key, ApiCallback<T> callback) {
         if (null == links) {
             callback.onFailure(ResultCode.NOT_FOUND, "API endpoint is not available");
@@ -103,7 +111,7 @@ public class BaseModel {
         }
     }
 
-    protected boolean hasLink(String key) {
+    public boolean hasLink(String key) {
         return links.getLink(key) != null;
     }
 

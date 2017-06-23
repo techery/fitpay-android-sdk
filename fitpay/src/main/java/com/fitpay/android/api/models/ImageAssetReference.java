@@ -6,7 +6,7 @@ import android.os.Parcelable;
 /**
  * Image asset reference
  */
-public final class ImageAssetReference extends AssetReference implements Parcelable {
+public class ImageAssetReference extends AssetReference implements Parcelable {
     private int width;
     private int height;
 

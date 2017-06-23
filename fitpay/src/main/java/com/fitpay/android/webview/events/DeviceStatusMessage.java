@@ -16,20 +16,31 @@ public class DeviceStatusMessage {
     public static final int PENDING = 3;
 
     @Retention(RetentionPolicy.CLASS)
-    @IntDef({ ERROR, SUCCESS, PROGRESS, PENDING})
-    public @interface Code{}
+    @IntDef({ERROR, SUCCESS, PROGRESS, PENDING})
+    public @interface Code {
+    }
 
     private String message;
+    private transient String deviceId;
     @Code
     private int type;
 
     public DeviceStatusMessage(String status, @Code int type) {
+        this(status, null, type);
+    }
+
+    public DeviceStatusMessage(String status, String deviceId, @Code int type) {
         this.message = status;
+        this.deviceId = deviceId;
         this.type = type;
     }
 
     public String getMessage() {
         return message;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
     }
 
     public int getType() {

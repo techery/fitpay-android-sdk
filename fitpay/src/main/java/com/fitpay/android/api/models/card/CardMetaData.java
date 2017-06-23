@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.fitpay.android.api.models.ImageAssetReference;
+import com.fitpay.android.api.models.ImageAssetWithOptionsReference;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,7 +22,7 @@ public final class CardMetaData implements Parcelable {
     private String privacyPolicyUrl;
     private List<ImageAssetReference> brandLogo;
     private List<ImageAssetReference> cardBackground;
-    private List<ImageAssetReference> cardBackgroundCombined;
+    private List<ImageAssetWithOptionsReference> cardBackgroundCombined;
 
     //TODO: check values
     private List<ImageAssetReference> icon;
@@ -115,11 +116,11 @@ public final class CardMetaData implements Parcelable {
         this.cardBackground = cardBackground;
     }
 
-    public List<ImageAssetReference> getCardBackgroundCombined() {
+    public List<ImageAssetWithOptionsReference> getCardBackgroundCombined() {
         return cardBackgroundCombined;
     }
 
-    public void setCardBackgroundCombined(List<ImageAssetReference> cardBackgroundCombined) {
+    public void setCardBackgroundCombined(List<ImageAssetWithOptionsReference> cardBackgroundCombined) {
         this.cardBackgroundCombined = cardBackgroundCombined;
     }
 
@@ -180,7 +181,7 @@ public final class CardMetaData implements Parcelable {
         this.cardBackground = new ArrayList<>();
         in.readList(this.cardBackground, ImageAssetReference.class.getClassLoader());
         this.cardBackgroundCombined = new ArrayList<>();
-        in.readList(this.cardBackgroundCombined, ImageAssetReference.class.getClassLoader());
+        in.readList(this.cardBackgroundCombined, ImageAssetWithOptionsReference.class.getClassLoader());
         this.icon = new ArrayList<>();
         in.readList(this.icon, ImageAssetReference.class.getClassLoader());
         this.issuerLogo = new ArrayList<>();
