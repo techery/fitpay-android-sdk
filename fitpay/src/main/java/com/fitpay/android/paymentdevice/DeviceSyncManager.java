@@ -229,8 +229,12 @@ class DeviceSyncManager {
             mSyncEventState = syncEvent.getState();
 
             if (mSyncEventState == States.COMPLETED || mSyncEventState == States.FAILED || mSyncEventState == States.COMPLETED_NO_UPDATES) {
-                FPLog.i(SYNC_DATA, "\\EndSync\\: " + (mSyncEventState != States.FAILED ? "Success" : "Failed"));
-                currentRequest.getConnector().syncComplete();
+                if (null == currentRequest) {
+                    FPLog.i(TAG, "No current sync requests on sync event: " + syncEvent.getMessage() + " with state: " + mSyncEventState);
+                } else {
+                    FPLog.i(SYNC_DATA, "\\EndSync\\: " + (mSyncEventState != States.FAILED ? "Success" : "Failed"));
+                    currentRequest.getConnector().syncComplete();
+                }
             }
 
             if (mSyncEventState == States.COMMIT_COMPLETED) {
