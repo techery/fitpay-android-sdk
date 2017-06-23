@@ -4,6 +4,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
+import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.Links;
@@ -192,6 +193,39 @@ public final class User extends UserModel implements Parcelable {
      */
     public void getDevice(String deviceId, @NonNull ApiCallback<Device> callback) {
         makeGetCall(GET_DEVICES, deviceId, null, Device.class, callback);
+    }
+
+    /**
+     * retrieve the user's current payment enabled device, if not found a null will be returned
+     *
+     * @param callback result callback
+     */
+    public void getPaymentDevice(@NonNull ApiCallback<Device> callback) {
+        getDevices(1, 0, new ApiCallback<Collections.DeviceCollection>() {
+            @Override
+            public void onSuccess(Collections.DeviceCollection result) {
+                if (result.hasLink("paymentDevice")) {
+                    ApiManager.getInstance().get(result.getLinkUrl("paymentDevice"), null, Device.class, new ApiCallback<Device>() {
+                        @Override
+                        public void onSuccess(Device result) {
+                            callback.onSuccess(result);
+                        }
+
+                        @Override
+                        public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                            callback.onFailure(errorCode, errorMessage);
+                        }
+                    });
+                } else {
+                    callback.onSuccess(null);
+                }
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                callback.onFailure(errorCode, errorMessage);
+            }
+        });
     }
 
     /**
