@@ -41,13 +41,14 @@ public class BaseModel {
 
     private <T> String getLink(String key, ApiCallback<T> callback) {
         if (null == links) {
-            callback.onFailure(ResultCode.NOT_FOUND, "API endpoint is not available");
+            callback.onFailure(ResultCode.NOT_FOUND, "The hypermedia link relationship [" + key + "] was not found, no links available for: " + this);
             return null;
         }
+
         String url = links.getLink(key);
 
         if (StringUtils.isEmpty(url)) {
-            callback.onFailure(ResultCode.NOT_FOUND, "API endpoint is not available. You can use: " + links.getReadableKeys());
+            callback.onFailure(ResultCode.NOT_FOUND, "The hypermedia link relationship [" + key + "] was not found, available links are:" + links.getReadableKeys());
             url = null;
         }
 
@@ -112,7 +113,10 @@ public class BaseModel {
     }
 
     public boolean hasLink(String key) {
-        return links.getLink(key) != null;
-    }
+        if (links == null) {
+            return false;
+        }
 
+        return !StringUtils.isEmpty(links.getLink(key));
+    }
 }
