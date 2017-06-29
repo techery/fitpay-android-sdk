@@ -97,7 +97,7 @@ class DeviceSyncManager {
         }
 
         if (currentRequest.getDevice() == null) {
-            FPLog.e(TAG, "No payment device connector configured");
+            FPLog.e(TAG, "No payment device configured");
             RxBus.getInstance().post(new Sync(States.FAILED, "No device provided"));
             finishSync();
             return;
