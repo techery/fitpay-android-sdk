@@ -117,7 +117,9 @@ class GattApduOperation extends GattOperation {
 
                 if (mSequencesMap.containsKey(sId)) {
 
-                    RxBus.getInstance().post(new Sync(States.INC_PROGRESS));
+                    RxBus.getInstance().post(Sync.builder()
+                            .state(States.INC_PROGRESS)
+                            .build());
 
                     byte[] apduData = apduMessage.getData();
                     String responseCode = Hex.bytesToHexString(Arrays.copyOfRange(apduData, apduData.length - 2, apduData.length));
