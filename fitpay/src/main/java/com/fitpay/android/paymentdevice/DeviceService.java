@@ -86,8 +86,9 @@ public final class DeviceService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        syncManager = new DeviceSyncManager(this, executor);
+        syncManager = new DeviceSyncManager(this);
         syncManager.onCreate();
+
         NotificationManager.getInstance().addListenerToCurrentThread(mSyncListener);
     }
 
@@ -106,6 +107,8 @@ public final class DeviceService extends Service {
         }
 
         syncManager.onDestroy();
+        syncManager = null;
+
         NotificationManager.getInstance().removeListener(mSyncListener);
     }
 

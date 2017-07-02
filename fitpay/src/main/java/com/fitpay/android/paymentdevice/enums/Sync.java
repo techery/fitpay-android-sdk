@@ -13,26 +13,20 @@ import java.lang.annotation.RetentionPolicy;
 public final class Sync {
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({States.STARTED, States.IN_PROGRESS, States.COMPLETED, States.FAILED, States.INC_PROGRESS, States.COMMIT_COMPLETED, States.COMPLETED_NO_UPDATES})
+    @IntDef({States.STARTED, States.IN_PROGRESS, States.COMPLETED, States.FAILED, States.SKIPPED, States.INC_PROGRESS, States.COMMIT_COMPLETED, States.COMPLETED_NO_UPDATES})
     public @interface State {
     }
 
     @State
-    private int state;
-    private int value;
-    private String message;
+    private final int state;
+    private final String syncId;
+    private final int value;
+    private final String message;
 
-    public Sync(@State int state) {
+    private Sync(int state, String syncId, int value, String message) {
         this.state = state;
-    }
-
-    public Sync(@State int state, int value) {
-        this.state = state;
+        this.syncId = syncId;
         this.value = value;
-    }
-
-    public Sync(@State int state, String message) {
-        this.state = state;
         this.message = message;
     }
 
@@ -49,14 +43,49 @@ public final class Sync {
         return message;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    @Override
     public String toString() {
-        return new StringBuilder()
-                .append("Sync(")
-                .append("state=")
-                .append(state)
-                .append(", value=")
-                .append(value)
-                .append(")")
-                .toString();
+        return "Sync{" +
+                "state=" + state +
+                ", syncId='" + syncId + '\'' +
+                ", value=" + value +
+                ", message='" + message + '\'' +
+                '}';
+    }
+
+    public static class Builder {
+        @State
+        private int state;
+        private String syncId;
+        private int value;
+        private String message;
+
+        public Builder state(int state) {
+            this.state = state;
+            return this;
+        }
+
+        public Builder syncId(String syncId) {
+            this.syncId = syncId;
+            return this;
+        }
+
+        public Builder value(int value) {
+            this.value = value;
+            return this;
+        }
+
+        public Builder message(String message) {
+            this.message = message;
+            return this;
+        }
+
+        public Sync build() {
+            return new Sync(state, syncId, value, message);
+        }
     }
 }
