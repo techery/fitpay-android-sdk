@@ -106,8 +106,10 @@ public final class DeviceService extends Service {
             paymentDeviceConnector = null;
         }
 
-        syncManager.onDestroy();
-        syncManager = null;
+        if (syncManager != null) {
+            syncManager.onDestroy();
+            syncManager = null;
+        }
 
         NotificationManager.getInstance().removeListener(mSyncListener);
     }

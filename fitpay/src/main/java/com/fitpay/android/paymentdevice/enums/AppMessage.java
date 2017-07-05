@@ -2,8 +2,6 @@ package com.fitpay.android.paymentdevice.enums;
 
 import android.support.annotation.StringDef;
 
-import com.fitpay.android.paymentdevice.models.SyncRequest;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -25,8 +23,6 @@ public final class AppMessage {
 
     @Type
     private String type;
-
-    private SyncRequest syncRequest;
 
     public AppMessage(@Type String type) {
         this.type = type;
