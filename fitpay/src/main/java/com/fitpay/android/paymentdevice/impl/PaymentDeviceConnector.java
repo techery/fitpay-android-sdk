@@ -41,6 +41,7 @@ import java.util.Properties;
 
 import rx.Observable;
 
+import static com.fitpay.android.paymentdevice.constants.ApduConstants.APDU_CONTINUE_COMMAND_DATA;
 import static com.fitpay.android.paymentdevice.constants.ApduConstants.NORMAL_PROCESSING;
 import static com.fitpay.android.utils.Constants.APDU_DATA;
 
@@ -435,6 +436,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      */
     private class ApduCommandListener extends Listener {
         final String normalResponseCode = Hex.bytesToHexString(NORMAL_PROCESSING);
+        final StringBuilder longApduResponseStr = new StringBuilder();
 
         ApduCommandListener() {
             super();
@@ -444,6 +446,37 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
         private void onApduCommandReceived(ApduCommandResult apduCommandResult) {
             FPLog.i(APDU_DATA, "\\CommandProcessed\\: " + apduCommandResult);
+
+            if (apduCommandResult.isLongResponse()) {
+                longApduResponseStr.append(apduCommandResult.getResponseData());
+
+                ApduCommand apduContinueCommand = new ApduCommand.Builder()
+                        .setCommand(Hex.bytesToHexString(APDU_CONTINUE_COMMAND_DATA) + apduCommandResult.getResponseData())
+                        .setCommandId(curApduCommand.getCommandId())
+                        .setContinueOnFailure(curApduCommand.isContinueOnFailure())
+                        .setGroupId(curApduCommand.getGroupId())
+                        .setInjected(curApduCommand.isInjected())
+                        .setSequence(curApduCommand.getSequence())
+                        .setType(curApduCommand.getType())
+                        .build();
+
+                executeApduCommand(curApduPgkNumber, apduContinueCommand);
+
+                return;
+            }
+
+            if (longApduResponseStr.length() > 0) {
+                longApduResponseStr.append(apduCommandResult.getResponseData());
+
+                apduCommandResult = new ApduCommandResult.Builder()
+                        .setCommandId(apduCommandResult.getCommandId())
+                        .setContinueOnFailure(apduCommandResult.canContinueOnFailure())
+                        .setResponseCode(longApduResponseStr.toString())
+                        .setResponseData(apduCommandResult.getResponseCode())
+                        .build();
+
+                longApduResponseStr.setLength(0);
+            }
 
             apduExecutionResult.addResponse(apduCommandResult);
 
