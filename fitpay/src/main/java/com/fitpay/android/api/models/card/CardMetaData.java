@@ -23,6 +23,7 @@ public final class CardMetaData implements Parcelable {
     private List<ImageAssetReference> brandLogo;
     private List<ImageAssetReference> cardBackground;
     private List<ImageAssetWithOptionsReference> cardBackgroundCombined;
+    private List<ImageAssetWithOptionsReference> cardBackgroundCombinedEmbossed;
 
     //TODO: check values
     private List<ImageAssetReference> icon;
@@ -124,6 +125,14 @@ public final class CardMetaData implements Parcelable {
         this.cardBackgroundCombined = cardBackgroundCombined;
     }
 
+    public List<ImageAssetWithOptionsReference> getCardBackgroundCombinedEmbossed() {
+        return cardBackgroundCombinedEmbossed;
+    }
+
+    public void setCardBackgroundCombinedEmbossed(List<ImageAssetWithOptionsReference> cardBackgroundCombinedEmbossed) {
+        this.cardBackgroundCombinedEmbossed = cardBackgroundCombinedEmbossed;
+    }
+
     public List<ImageAssetReference> getIcon() {
         return icon;
     }
@@ -159,6 +168,7 @@ public final class CardMetaData implements Parcelable {
         dest.writeList(this.brandLogo);
         dest.writeList(this.cardBackground);
         dest.writeList(this.cardBackgroundCombined);
+        dest.writeList(this.cardBackgroundCombinedEmbossed);
         dest.writeList(this.icon);
         dest.writeList(this.issuerLogo);
     }
@@ -182,6 +192,8 @@ public final class CardMetaData implements Parcelable {
         in.readList(this.cardBackground, ImageAssetReference.class.getClassLoader());
         this.cardBackgroundCombined = new ArrayList<>();
         in.readList(this.cardBackgroundCombined, ImageAssetWithOptionsReference.class.getClassLoader());
+        this.cardBackgroundCombinedEmbossed = new ArrayList<>();
+        in.readList(this.cardBackgroundCombinedEmbossed, ImageAssetWithOptionsReference.class.getClassLoader());
         this.icon = new ArrayList<>();
         in.readList(this.icon, ImageAssetReference.class.getClassLoader());
         this.issuerLogo = new ArrayList<>();
