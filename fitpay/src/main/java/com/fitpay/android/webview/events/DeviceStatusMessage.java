@@ -46,4 +46,13 @@ public class DeviceStatusMessage {
     public int getType() {
         return type;
     }
+
+    @Override
+    public String toString() {
+        return "DeviceStatusMessage{" +
+                "message='" + message + '\'' +
+                ", deviceId='" + deviceId + '\'' +
+                ", type=" + type +
+                '}';
+    }
 }

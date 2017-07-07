@@ -88,6 +88,14 @@ public final class Sync {
         return new Builder();
     }
 
+    public String getSyncId() {
+        return syncId;
+    }
+
+    public String getSyncEventId() {
+        return syncEventId;
+    }
+
     @Override
     public String toString() {
         return "Sync{" +

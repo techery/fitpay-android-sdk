@@ -26,6 +26,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.fitpay.android.utils.Constants.SYNC_DATA;
 
@@ -37,24 +38,28 @@ public class DeviceSyncManager {
 
     private final Context mContext;
     private final BlockingQueue<SyncRequest> requests;
-    private final Executor mExecutor;
 
     private SyncWorkerThread worker = null;
 
     /**
+     * @deprecated executor is no longer utilized
+     *
      * @param context
      * @param executor
      */
     public DeviceSyncManager(Context context, Executor executor) {
+        this(context);
+    }
+
+    public DeviceSyncManager(Context context) {
         this.mContext = context;
-        this.mExecutor = executor;
 
         int queueSize = Integer.parseInt(ApiManager.getConfig().get(ApiManager.PROPERTY_SYNC_QUEUE_SIZE));
         requests = new ArrayBlockingQueue<>(queueSize);
     }
 
     public void onCreate() {
-        worker = new SyncWorkerThread(mContext, mExecutor, requests);
+        worker = new SyncWorkerThread(mContext, requests);
         worker.setName("DeviceSyncManagerWorkerThread");
         worker.setPriority(Thread.MIN_PRIORITY);
         worker.start();
@@ -116,6 +121,7 @@ public class DeviceSyncManager {
             SyncListener listener = new SyncListener();
             NotificationManager.getInstance().addListenerToCurrentThread(listener);
 
+            Exception err = null;
             try {
                 sync();
 
@@ -124,24 +130,34 @@ public class DeviceSyncManager {
                 // tell the connector we're done
                 syncRequest.getConnector().syncComplete();
 
-                if (callback != null) {
-                    callback.onSuccess();
-                }
+                FPLog.d(SYNC_DATA, "task completed for syncRequest: "
+                        + syncRequest
+                        + ", commitSuccess: "
+                        + listener.getCommitSuccessCount()
+                        + ", commitFailed: "
+                        + listener.getCommitFailedCount()
+                        + ", commitSkipped: "
+                        + listener.getCommitSkippedCount());
             } catch (Exception e) {
                 FPLog.e(TAG, e);
-
-                if (callback != null) {
-                    callback.onFailure(e);
-                }
-
+                err = e;
             } finally {
                 NotificationManager.getInstance().removeListener(listener);
+                listener = null;
+            }
+
+            if (callback != null) {
+                if (err == null) {
+                    callback.onSuccess();
+                } else {
+                    callback.onFailure(err);
+                }
             }
         }
 
-        private void sync() {
+        public void sync() {
             if (syncRequest == null) {
-                FPLog.d("sync skipped, syncRequst is null");
+                FPLog.d("sync skipped, syncRequest is null");
                 return;
             }
 
@@ -275,6 +291,18 @@ public class DeviceSyncManager {
         }
 
         private void processNextCommit() {
+            // make sure the device is still connected
+            switch (syncRequest.getConnector().getState()) {
+                case States.DISCONNECTED:
+                case States.DISCONNECTING:
+                    RxBus.getInstance().post(Sync.builder()
+                            .syncId(syncRequest.getSyncId())
+                            .state(States.FAILED)
+                            .message("Error processing next commit, device is disconnected or disconnecting")
+                            .build());
+                    return;
+            }
+
             if (commits.size() > 0) {
 
                 RxBus.getInstance().post(Sync.builder()
@@ -300,6 +328,10 @@ public class DeviceSyncManager {
         }
 
         private class SyncListener extends Listener implements IListeners.SyncListener {
+            private final AtomicInteger commitSuccessCounter = new AtomicInteger();
+            private final AtomicInteger commitSkippedCounter = new AtomicInteger();
+            private final AtomicInteger commitFailedCounter = new AtomicInteger();
+
             private SyncListener() {
                 super();
 
@@ -317,6 +349,7 @@ public class DeviceSyncManager {
                     case States.COMPLETED:
                     case States.COMPLETED_NO_UPDATES:
                     case States.FAILED:
+                    case States.SKIPPED:
                         if (syncRequest == null) {
                             FPLog.i(TAG, "no current sync request on sync event: " + syncEvent);
                         }
@@ -326,11 +359,11 @@ public class DeviceSyncManager {
                         break;
 
                     case States.COMMIT_COMPLETED:
-                        processNextCommit();
+                        processNextCommit();atu
                         break;
 
                     default:
-                        FPLog.w(TAG, "unrecognized/handled syncEvent: " + syncEvent);
+                        FPLog.d(TAG, "unrecognized/handled syncEvent: " + syncEvent);
                         break;
 
                 }
@@ -339,6 +372,7 @@ public class DeviceSyncManager {
             @Override
             public void onCommitSuccess(CommitSuccess commitSuccess) {
                 FPLog.i(SYNC_DATA, "Commit Success: " + commitSuccess);
+                commitSuccessCounter.incrementAndGet();
 
                 moveLastCommitPointer(commitSuccess.getCommitId());
 
@@ -356,13 +390,9 @@ public class DeviceSyncManager {
             @Override
             public void onCommitFailed(CommitFailed commitFailed) {
                 FPLog.w(SYNC_DATA, "Commit Failed: " + commitFailed);
+                commitFailedCounter.incrementAndGet();
 
                 commits.clear();
-
-                RxBus.getInstance().post(Sync.builder()
-                        .syncId(syncRequest.getSyncId())
-                        .state(States.FAILED)
-                        .build());
 
                 RxBus.getInstance().post(Sync.builder()
                         .syncId(syncRequest.getSyncId())
@@ -383,6 +413,7 @@ public class DeviceSyncManager {
             @Override
             public void onCommitSkipped(CommitSkipped commitSkipped) {
                 FPLog.i(SYNC_DATA, "Commit Skipped: " + commitSkipped);
+                commitSkippedCounter.incrementAndGet();
 
                 moveLastCommitPointer(commitSkipped.getCommitId());
 
@@ -411,6 +442,18 @@ public class DeviceSyncManager {
 
                 DevicePreferenceData.store(mContext, deviceData);
             }
+
+            public int getCommitSuccessCount() {
+                return commitSuccessCounter.get();
+            }
+
+            public int getCommitSkippedCount() {
+                return commitSkippedCounter.get();
+            }
+
+            public int getCommitFailedCount() {
+                return commitFailedCounter.get();
+            }
         }
     }
 
@@ -420,21 +463,19 @@ public class DeviceSyncManager {
      */
     private static class SyncWorkerThread extends Thread {
         private final Context mContext;
-        private final Executor mExecutor;
 
         private final BlockingQueue<SyncRequest> requests;
         private volatile boolean running = true;
 
-        public SyncWorkerThread(Context mContext, Executor mExecutor, BlockingQueue<SyncRequest> requests) {
+        public SyncWorkerThread(Context mContext, BlockingQueue<SyncRequest> requests) {
             this.requests = requests;
             this.mContext = mContext;
-            this.mExecutor = mExecutor;
         }
 
         public void run() {
             while (running) {
                 try {
-                    FPLog.d(TAG, "waiting for sync request");
+                    FPLog.d(TAG, "waiting for new sync request");
                     SyncRequest syncRequest = requests.take();
 
                     FPLog.d(TAG, "sync request received, launching sync task: " + syncRequest);
@@ -444,22 +485,25 @@ public class DeviceSyncManager {
                     SyncWorkerTask task = new SyncWorkerTask(mContext, syncRequest, new SyncWorkerCallback() {
                         @Override
                         public void onSuccess() {
-                            FPLog.d(TAG, "sync task processed successfully in " + (System.currentTimeMillis() - startTime) + "ms");
+                            FPLog.d(TAG, "sync task " + syncRequest + " processed successfully in " + (System.currentTimeMillis() - startTime) + "ms");
 
                             completedLatch.countDown();
                         }
 
                         @Override
                         public void onFailure(Throwable t) {
-                            FPLog.e(TAG, t);
-                            FPLog.e(TAG, "sync task failed, processing time " + (System.currentTimeMillis() - startTime) + "ms");
+                            if (t != null) {
+                                FPLog.e(TAG, t);
+                            }
+
+                            FPLog.w(TAG, "sync task " + syncRequest + " failed, processing time " + (System.currentTimeMillis() - startTime) + "ms");
 
                             completedLatch.countDown();
                         }
                     });
-                    mExecutor.execute(task);
+                    task.run();
 
-                    FPLog.d(TAG, "sync task has been launched, waiting for completion");
+                    FPLog.d(TAG, "sync task " + syncRequest + " has been launched, waiting for completion");
                     completedLatch.await();
                 } catch (InterruptedException e) {
                     FPLog.d("sync worker thread interrupted, shutting down");

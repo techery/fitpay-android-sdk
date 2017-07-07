@@ -304,8 +304,14 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      * Get TOW data from the server
      */
     protected final void getTopOfWalletData(List<String> cardOrder) {
+        if (user == null) {
+            FPLog.w(TAG, "skipping getTopOfWalletData() handling, no user present in device");
+            return;
+        }
+
         Map<String, TopOfWallet> cardMap = new HashMap<String, TopOfWallet>();
         List<TopOfWallet> tow = new ArrayList<>();
+
         user.getAllCreditCards().flatMap(creditCardCollection -> {
             if (creditCardCollection.getResults() != null) {
                 for (CreditCard card : creditCardCollection.getResults()) {
@@ -327,13 +333,10 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                     if (topOfWallets != null && topOfWallets.size() > 0) {
                         executeTopOfWallet(topOfWallets);
                         RxBus.getInstance().post(topOfWallets);
-                    } else {
-                        commitProcessed(CommitResult.SUCCESS, null);
                     }
                 },
                 throwable -> {
                     FPLog.e(TAG, "TOW execution error: " + throwable.getMessage());
-                    commitProcessed(CommitResult.FAILED, throwable);
                 });
     }
 

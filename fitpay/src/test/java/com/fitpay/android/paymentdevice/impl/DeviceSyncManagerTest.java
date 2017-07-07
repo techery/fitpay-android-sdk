@@ -9,16 +9,12 @@ import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.UserCreateRequest;
 import com.fitpay.android.paymentdevice.DeviceSyncManager;
-import com.fitpay.android.paymentdevice.callbacks.PaymentDeviceListener;
 import com.fitpay.android.paymentdevice.constants.States;
-import com.fitpay.android.paymentdevice.enums.Connection;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
-import com.fitpay.android.paymentdevice.events.PaymentDeviceOperationFailed;
 import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.models.SyncRequest;
-import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 
@@ -27,15 +23,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import rx.schedulers.Schedulers;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
@@ -57,22 +52,39 @@ public class DeviceSyncManagerTest extends TestActions {
 
     private SyncCompleteListener listener;
     private CountDownLatch executionLatch;
-    private CountDownLatch connectionLatch;
+
+    private String lastCommitId = null;
 
     @Before
     @Override
     public void testActionsSetup() throws Exception {
         SharedPreferences sp = Mockito.mock(SharedPreferences.class);
         Mockito.when(sp.getAll()).thenReturn(Collections.emptyMap());
+        Mockito.when(sp.getString(Matchers.eq("lastCommitId"), (String)Matchers.isNull())).then(new Answer<String>() {
+            @Override
+            public String answer(InvocationOnMock invocation) throws Throwable {
+                return lastCommitId;
+            }
+        });
 
         SharedPreferences.Editor spEditor = Mockito.mock(SharedPreferences.Editor.class);
+
         Mockito.when(sp.edit()).thenReturn(spEditor);
+        Mockito.when(spEditor.putString(Matchers.eq("lastCommitId"), Matchers.anyString())).thenAnswer(new Answer<Object>() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                lastCommitId = (String)invocation.getArguments()[1];
+
+                return spEditor;
+            }
+        });
+
         Mockito.when(spEditor.commit()).thenReturn(true);
 
         mContext = Mockito.mock(Context.class);
         Mockito.when(mContext.getSharedPreferences(Matchers.anyString(), Matchers.eq(Context.MODE_PRIVATE))).thenReturn(sp);
 
-        syncManager = new DeviceSyncManager(mContext, Constants.getExecutor());
+        syncManager = new DeviceSyncManager(mContext);
         syncManager.onCreate();
 
         mockPaymentDevice = new MockPaymentDeviceConnector();
@@ -99,55 +111,18 @@ public class DeviceSyncManagerTest extends TestActions {
 
         assertEquals("payment service is not initialized", States.INITIALIZED, mockPaymentDevice.getState());
 
-        connectionLatch = new CountDownLatch(1);
-
-        NotificationManager.getInstance().addListenerToCurrentThread(new PaymentDeviceListener() {
-             @Override
-             public void onDeviceInfoReceived(Device device) {
-
-             }
-
-             @Override
-             public void onDeviceOperationFailed(PaymentDeviceOperationFailed failure) {
-
-             }
-
-             @Override
-             public void onNFCStateReceived(boolean isEnabled, byte errorCode) {
-
-             }
-
-             @Override
-             public void onNotificationReceived(byte[] data) {
-
-             }
-
-             @Override
-             public void onApplicationControlReceived(byte[] data) {
-
-             }
-
-             @Override
-             public void onDeviceStateChanged(@Connection.State int state) {
-                 if (States.CONNECTED == state) {
-                     connectionLatch.countDown();
-                 }
-             }
-         });
-
         mockPaymentDevice.connect();
 
-        try {
-            connectionLatch.await(20, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            fail(e.getMessage());
+        int count = 0;
+        while (mockPaymentDevice.getState() != States.CONNECTED || ++count < 5) {
+            Thread.sleep(500);
         }
 
         assertEquals("payment service should be connected", States.CONNECTED, mockPaymentDevice.getState());
 
-        this.executionLatch = new CountDownLatch(4);
-        this.listener = new SyncCompleteListener(executionLatch);
-        NotificationManager.getInstance().addListener(this.listener, Schedulers.from(Constants.getExecutor()));
+        this.executionLatch = new CountDownLatch(1);
+        this.listener = new SyncCompleteListener();
+        NotificationManager.getInstance().addListenerToCurrentThread(this.listener);
     }
 
     @After
@@ -162,48 +137,149 @@ public class DeviceSyncManagerTest extends TestActions {
     }
 
     @Test
-    public void happyPathSyncTest() throws Exception {
-        SyncRequest request = SyncRequest.builder()
+    public void missingUserSyncRequestIsSkipped() throws Exception {
+        syncManager.add(SyncRequest.builder()
+                .setConnector(mockPaymentDevice)
+                .setDevice(device)
+                .build());
+
+        executionLatch.await();
+
+        assertEquals(1, listener.getSyncEvents().stream()
+                .filter(syncEvent -> syncEvent.getState() == States.SKIPPED)
+                .count());
+        assertEquals(0, listener.getCommits().size());
+    }
+
+    @Test
+    public void missingDeviceSyncRequestIsSkipped() throws Exception {
+        syncManager.add(SyncRequest.builder()
+                .setConnector(mockPaymentDevice)
+                .setUser(user)
+                .build());
+
+        executionLatch.await();
+
+        assertEquals(1, listener.getSyncEvents().stream()
+                .filter(syncEvent -> syncEvent.getState() == States.SKIPPED)
+                .count());
+        assertEquals(0, listener.getCommits().size());
+    }
+
+    @Test
+    public void missingConnectorSyncRequestIsSkipped() throws Exception {
+        syncManager.add(SyncRequest.builder()
+                .setUser(user)
+                .setDevice(device)
+                .build());
+
+        executionLatch.await();
+
+        assertEquals(1, listener.getSyncEvents().stream()
+                .filter(syncEvent -> syncEvent.getState() == States.SKIPPED)
+                .count());
+        assertEquals(0, listener.getCommits().size());
+    }
+
+    @Test
+    public void notConnectedDeviceSyncRequestIsSkipped() throws Exception {
+        mockPaymentDevice.disconnect();
+
+        while (mockPaymentDevice.getState() != States.DISCONNECTED) {
+            Thread.sleep(500);
+        }
+
+        syncManager.add(SyncRequest.builder()
                 .setConnector(mockPaymentDevice)
                 .setUser(user)
                 .setDevice(device)
-                .build();
+                .build());
 
-        syncManager.add(request);
+        executionLatch.await();
 
-//        executionLatch.await();
-//
-//        assertTrue(listener.getSyncEvents().size() > 0);
-//        assertEquals(3, listener.getCommits().size());
+        assertEquals(1, listener.getSyncEvents().stream()
+                .filter(syncEvent -> syncEvent.getState() == States.SKIPPED)
+                .count());
+        assertEquals(0, listener.getCommits().size());
+    }
 
-        Thread.sleep(30000);
+    @Test
+    public void happyPathSyncTest() throws Exception {
+        int syncCount = 10;
+
+        for (int i=0; i<syncCount; i++) {
+            syncManager.add(SyncRequest.builder()
+                    .setConnector(mockPaymentDevice)
+                    .setUser(user)
+                    .setDevice(device)
+                    .build());
+
+            executionLatch.await();
+            executionLatch = new CountDownLatch(1);
+
+            System.out.println("sync #" + (i+1) + " of " + syncCount + " completed");
+
+            /*
+                This test will emit three APDU packages for the newly boarded SE, therefore there should be 3 commits that show up... before
+                we run the next sync(), let's wait for new commits to show up
+             */
+            if (listener.getCommits().size() < 3) {
+                final CountDownLatch waitForCommitsLatch = new CountDownLatch(1);
+                do {
+                    device.getAllCommits(lastCommitId)
+                            .subscribe(commits -> {
+                                        System.out.println("commits found from " + lastCommitId + ": " + commits.getTotalResults());
+
+                                        if (commits.getTotalResults() > 0) {
+                                            waitForCommitsLatch.countDown();
+                                        }
+                                    },
+                                    throwable -> {
+                                        throwable.printStackTrace();
+                                        fail(throwable.getMessage());
+                                    });
+
+                    Thread.sleep(500);
+                } while (waitForCommitsLatch.getCount() > 0);
+            }
+        }
+
+        mockPaymentDevice.disconnect();
+
+        assertEquals(syncCount,
+                listener.getSyncEvents().stream()
+                    .filter(syncEvent -> syncEvent.getState() == States.COMPLETED_NO_UPDATES || syncEvent.getState() == States.COMPLETED)
+                    .count());
+
+        assertEquals(3,
+                listener.getCommits().stream()
+                    .filter(commit -> commit.getCommitType().equals("APDU_PACKAGE"))
+                    .count());
     }
 
     private class SyncCompleteListener extends Listener {
         private final List<Sync> syncEvents = new ArrayList<>();
         private final List<CommitSuccess> commits = new ArrayList<>();
-        private final CountDownLatch executionLatch;
 
-        private SyncCompleteListener(CountDownLatch latch) {
-            this.executionLatch = latch;
+        private SyncCompleteListener() {
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
             mCommands.put(CommitSuccess.class, data -> onCommitSuccess((CommitSuccess) data));
         }
 
         public void onSyncStateChanged(Sync syncEvent) {
-            System.out.println("SYNC EVENT: " + syncEvent);
             syncEvents.add(syncEvent);
 
-            if (executionLatch != null && syncEvent.getState() == States.COMPLETED) {
-                executionLatch.countDown();
+            switch (syncEvent.getState()) {
+                case States.COMPLETED:
+                case States.COMPLETED_NO_UPDATES:
+                case States.SKIPPED:
+                    executionLatch.countDown();
+                    break;
             }
         }
 
         public void onCommitSuccess(CommitSuccess commit) {
-            System.out.println("COMMIT SUCCESS: " + commit);
             commits.add(commit);
-
-            executionLatch.countDown();
         }
 
         public List<Sync> getSyncEvents() {
