@@ -185,7 +185,7 @@ FPLog.addLogImpl(new FPLog.ILog() {
 
 ### Logging HTTP Traffic
 
-HTTP traffic originating from the SDK can be logged by calling `FPLog.showHttpLogs(true);`
+HTTP traffic originating from the SDK can be logged by calling `FPLog.setShowHTTPLogs(true);`
 
 ## Contributing to the SDK
 We welcome contributions to the SDK. For your first few contributions please fork the repo, make your changes and submit a pull request. Internally we branch off of develop, test, and PR-review the branch before merging to develop (moderately stable). Releases to Master happen less frequently, undergo more testing, and can be considered stable. For more information, please read:  [http://nvie.com/posts/a-successful-git-branching-model/](http://nvie.com/posts/a-successful-git-branching-model/)

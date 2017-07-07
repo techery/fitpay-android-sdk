@@ -6,6 +6,7 @@ import com.fitpay.android.paymentdevice.constants.States;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.UUID;
 
 /**
  * Data sync states enum
@@ -22,6 +23,7 @@ public final class Sync {
     private final String syncId;
     private final int value;
     private final String message;
+    private final String syncEventId = UUID.randomUUID().toString();
 
     private Sync(int state, String syncId, int value, String message) {
         this.state = state;
@@ -93,6 +95,7 @@ public final class Sync {
                 ", syncId='" + syncId + '\'' +
                 ", value=" + value +
                 ", message='" + message + '\'' +
+                ", syncEventId='" + syncEventId + '\'' +
                 '}';
     }
 

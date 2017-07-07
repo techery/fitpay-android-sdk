@@ -40,11 +40,13 @@ public class ApiManager {
     public static final String PROPERTY_CLIENT_ID = "clientId";
     public static final String PROPERTY_TIMEOUT = "timeout";
     public static final String PROPERTY_REDIRECT_URI = "redirectUri";
+    public static final String PROPERTY_SYNC_QUEUE_SIZE = "deviceSyncRequestQueueSize";
 
     private static Map<String, String> config = new HashMap<>();
 
     static {
         config.put(PROPERTY_TIMEOUT, "10");
+        config.put(PROPERTY_SYNC_QUEUE_SIZE, "10");
     }
 
     private static ApiManager sInstance;
@@ -87,6 +89,10 @@ public class ApiManager {
 
     public static void init(Map<String, String> props) {
         config.putAll(props);
+    }
+
+    public static Map<String, String> getConfig() {
+        return config;
     }
 
     public void setAuthToken(OAuthToken token) {

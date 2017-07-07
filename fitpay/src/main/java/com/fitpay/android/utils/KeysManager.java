@@ -40,6 +40,7 @@ import retrofit2.Call;
  * KeysManager is designed to create and manage @ECCKeyPair object.
  */
 final public class KeysManager {
+    private static final String TAG = KeysManager.class.getName();
 
     public static final int KEY_API = 0;
     public static final int KEY_WV = KEY_API + 1;
@@ -66,6 +67,7 @@ final public class KeysManager {
             provider = new BouncyCastleProvider();
             Security.insertProviderAt(provider, 1);
         } catch (Exception e) {
+            FPLog.e(TAG, e);
         }
     }
 
@@ -149,7 +151,7 @@ final public class KeysManager {
 
             return keyAgreement.generateSecret(KEY_TYPE);
         } catch (Exception e) {
-            Constants.printError("error generating shared secret:" + e.toString());
+            FPLog.e(TAG, e);
             return null;
         }
     }
@@ -201,6 +203,8 @@ final public class KeysManager {
             getKeyCall.enqueue(new CallbackWrapper<>(apiCallback));
 
         } catch (Exception e) {
+            FPLog.e(TAG, e);
+
             callback.onFailure(ResultCode.REQUEST_FAILED, e.toString());
         }
     }
