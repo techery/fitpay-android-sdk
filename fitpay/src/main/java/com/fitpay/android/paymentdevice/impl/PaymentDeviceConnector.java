@@ -448,10 +448,13 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
             FPLog.i(APDU_DATA, "\\CommandProcessed\\: " + apduCommandResult);
 
             if (apduCommandResult.isLongResponse()) {
-                longApduResponseStr.append(apduCommandResult.getResponseData());
+                String responseStr = apduCommandResult.getResponseData().substring(0, apduCommandResult.getResponseData().length() - 4);
+                longApduResponseStr.append(responseStr);
+
+                String commandStr = Hex.bytesToHexString(APDU_CONTINUE_COMMAND_DATA) + apduCommandResult.getResponseCode().substring(2);
 
                 ApduCommand apduContinueCommand = new ApduCommand.Builder()
-                        .setCommand(Hex.bytesToHexString(APDU_CONTINUE_COMMAND_DATA) + apduCommandResult.getResponseData())
+                        .setCommand(commandStr)
                         .setCommandId(curApduCommand.getCommandId())
                         .setContinueOnFailure(curApduCommand.isContinueOnFailure())
                         .setGroupId(curApduCommand.getGroupId())
@@ -471,8 +474,8 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                 apduCommandResult = new ApduCommandResult.Builder()
                         .setCommandId(apduCommandResult.getCommandId())
                         .setContinueOnFailure(apduCommandResult.canContinueOnFailure())
-                        .setResponseCode(longApduResponseStr.toString())
-                        .setResponseData(apduCommandResult.getResponseCode())
+                        .setResponseData(longApduResponseStr.toString())
+                        .setResponseCode(apduCommandResult.getResponseCode())
                         .build();
 
                 longApduResponseStr.setLength(0);
