@@ -359,7 +359,7 @@ public class DeviceSyncManager {
                         break;
 
                     case States.COMMIT_COMPLETED:
-                        processNextCommit();atu
+                        processNextCommit();
                         break;
 
                     default:
