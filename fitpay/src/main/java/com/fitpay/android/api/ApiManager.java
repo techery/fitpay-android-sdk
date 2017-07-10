@@ -41,6 +41,7 @@ public class ApiManager {
     public static final String PROPERTY_TIMEOUT = "timeout";
     public static final String PROPERTY_REDIRECT_URI = "redirectUri";
     public static final String PROPERTY_SYNC_QUEUE_SIZE = "deviceSyncRequestQueueSize";
+    public static final String PROPERTY_COMMIT_TIMERS_ENABLED = "commitTimers";
     public static final String PROPERTY_COMMIT_WARNING_TIMEOUT = "commitWarningTimeout";
     public static final String PROPERTY_COMMIT_ERROR_TIMEOUT = "commitErrorTimeout";
 
@@ -51,6 +52,7 @@ public class ApiManager {
         config.put(PROPERTY_SYNC_QUEUE_SIZE, "10");
         config.put(PROPERTY_COMMIT_WARNING_TIMEOUT, "5000");
         config.put(PROPERTY_COMMIT_ERROR_TIMEOUT, "30000");
+        config.put(PROPERTY_COMMIT_TIMERS_ENABLED, "true");
     }
 
     private static ApiManager sInstance;

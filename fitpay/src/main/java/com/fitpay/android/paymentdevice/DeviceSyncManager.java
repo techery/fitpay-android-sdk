@@ -341,30 +341,34 @@ public class DeviceSyncManager {
 
                 // start the watching timers, this first timer is responsible for producing a warning
                 // if a commit isn't responded to in a timely manner
-                commitWarningTimer = timeoutWatcherExecutor.schedule(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        FPLog.w(TAG, "warning, commit " + commit + " has not returned within " + commitWarningTimer + "ms");
+                if (ApiManager.getConfig().getOrDefault(ApiManager.PROPERTY_COMMIT_TIMERS_ENABLED, "true").equals("true")) {
+                    commitWarningTimer = timeoutWatcherExecutor.schedule(new Callable<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            FPLog.w(TAG, "warning, commit " + commit + " has not returned within " + commitWarningTimer + "ms");
 
-                        return null;
-                    }
-                }, commitWarningTimeout, TimeUnit.MILLISECONDS);
+                            return null;
+                        }
+                    }, commitWarningTimeout, TimeUnit.MILLISECONDS);
 
-                // this is the timeout timer that'll basically kill the sync if a commit isn't responded too
-                commitTimeoutTimer = timeoutWatcherExecutor.schedule(new Callable<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        FPLog.e(TAG, "error, commit timeout " + commit + " has not returned within " + commitErrorTimeout + "ms");
+                    // this is the timeout timer that'll basically kill the sync if a commit isn't responded too
+                    commitTimeoutTimer = timeoutWatcherExecutor.schedule(new Callable<Void>() {
+                        @Override
+                        public Void call() throws Exception {
+                            FPLog.e(TAG, "error, commit timeout " + commit + " has not returned within " + commitErrorTimeout + "ms");
 
-                        RxBus.getInstance().post(Sync.builder()
-                                .syncId(syncRequest.getSyncId())
-                                .state(States.TIMEOUT)
-                                .message("sync timeout, this is typically due to a commit event being sent to the payment device connector and a commit event not being pushed to RxBus")
-                                .build());
+                            RxBus.getInstance().post(Sync.builder()
+                                    .syncId(syncRequest.getSyncId())
+                                    .state(States.TIMEOUT)
+                                    .message("sync timeout, this is typically due to a commit event being sent to the payment device connector and a commit event not being pushed to RxBus")
+                                    .build());
 
-                        return null;
-                    }
-                }, commitErrorTimeout, TimeUnit.MILLISECONDS);
+                            return null;
+                        }
+                    }, commitErrorTimeout, TimeUnit.MILLISECONDS);
+                } else {
+                    FPLog.d(TAG, "skipped commit timers, they're turned off in ApiManager configuration");
+                }
 
                 // call the payment connector
                 syncRequest.getConnector().processCommit(commit);
