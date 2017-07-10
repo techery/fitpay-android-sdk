@@ -161,6 +161,8 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         FPLog.d(TAG, "processing commit on Thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
         currentCommit = commit;
         if (null == commitHandlers) {
+            FPLog.w(TAG, "No action taken for commit.  No handlers defined for commit: " + commit);
+            commitProcessed(CommitResult.SKIPPED, null);
             return;
         }
         CommitHandler handler = commitHandlers.get(commit.getCommitType());
@@ -333,10 +335,13 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                     if (topOfWallets != null && topOfWallets.size() > 0) {
                         executeTopOfWallet(topOfWallets);
                         RxBus.getInstance().post(topOfWallets);
+                    } else {
+                        commitProcessed(CommitResult.SUCCESS, null);
                     }
                 },
                 throwable -> {
                     FPLog.e(TAG, "TOW execution error: " + throwable.getMessage());
+                    commitProcessed(CommitResult.FAILED, throwable);
                 });
     }
 
