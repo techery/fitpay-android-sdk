@@ -27,5 +27,6 @@ public final class States {
     public static final int COMMIT_COMPLETED = 5;
     public static final int COMPLETED_NO_UPDATES = 6;
     public static final int SKIPPED = 7;
+    public static final int TIMEOUT = 8;
 
 }

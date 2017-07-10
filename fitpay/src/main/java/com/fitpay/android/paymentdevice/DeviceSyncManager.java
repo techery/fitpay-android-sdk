@@ -24,8 +24,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.fitpay.android.utils.Constants.SYNC_DATA;
@@ -86,8 +91,9 @@ public class DeviceSyncManager {
         }
 
         try {
-            FPLog.d("adding sync request to queue for processing, current queue size [" + requests.size() + "]:" + request);
             requests.put(request);
+
+            FPLog.d("added sync request to queue for processing, current queue size [" + requests.size() + "]: " + request);
         } catch (InterruptedException e) {
             FPLog.w("interrupted exception while waiting to add sync request to processing queue");
         }
@@ -107,14 +113,22 @@ public class DeviceSyncManager {
         private final Context mContext;
         private final SyncRequest syncRequest;
         private final SyncWorkerCallback callback;
+        private final ScheduledExecutorService timeoutWatcherExecutor;
 
         private List<Commit> commits;
         private final CountDownLatch completionLatch = new CountDownLatch(1);
 
-        public SyncWorkerTask(Context mContext, SyncRequest syncRequest, SyncWorkerCallback callback) {
+        private ScheduledFuture<Void> commitWarningTimer;
+        private ScheduledFuture<Void> commitTimeoutTimer;
+
+        private final int commitWarningTimeout = Integer.parseInt(ApiManager.getConfig().get(ApiManager.PROPERTY_COMMIT_WARNING_TIMEOUT));
+        private final int commitErrorTimeout = Integer.parseInt(ApiManager.getConfig().get(ApiManager.PROPERTY_COMMIT_ERROR_TIMEOUT));
+
+        public SyncWorkerTask(Context mContext, ScheduledExecutorService timeoutWatcherExecutor, SyncRequest syncRequest, SyncWorkerCallback callback) {
             this.mContext = mContext;
             this.syncRequest = syncRequest;
             this.callback = callback;
+            this.timeoutWatcherExecutor = timeoutWatcherExecutor;
         }
 
         public void run() {
@@ -291,6 +305,17 @@ public class DeviceSyncManager {
         }
 
         private void processNextCommit() {
+            // cancel the current timers if they're set, this shouldn't occur... but just in case
+            if (commitWarningTimer != null) {
+                boolean result = commitWarningTimer.cancel(true);
+                FPLog.d(TAG, "commitWarningTimer cancel: " + result);
+            }
+
+            if (commitTimeoutTimer != null) {
+                boolean result = commitTimeoutTimer.cancel(true);
+                FPLog.d(TAG, "commitTimeoutTimer cancel: " + result);
+            }
+
             // make sure the device is still connected
             switch (syncRequest.getConnector().getState()) {
                 case States.DISCONNECTED:
@@ -313,6 +338,33 @@ public class DeviceSyncManager {
                 Commit commit = commits.remove(0);
 
                 FPLog.i(SYNC_DATA, "Process Next Commit: " + commit);
+
+                // start the watching timers, this first timer is responsible for producing a warning
+                // if a commit isn't responded to in a timely manner
+                commitWarningTimer = timeoutWatcherExecutor.schedule(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        FPLog.w(TAG, "warning, commit " + commit + " has not returned within " + commitWarningTimer + "ms");
+
+                        return null;
+                    }
+                }, commitWarningTimeout, TimeUnit.MILLISECONDS);
+
+                // this is the timeout timer that'll basically kill the sync if a commit isn't responded too
+                commitTimeoutTimer = timeoutWatcherExecutor.schedule(new Callable<Void>() {
+                    @Override
+                    public Void call() throws Exception {
+                        FPLog.e(TAG, "error, commit timeout " + commit + " has not returned within " + commitErrorTimeout + "ms");
+
+                        RxBus.getInstance().post(Sync.builder()
+                                .syncId(syncRequest.getSyncId())
+                                .state(States.TIMEOUT)
+                                .message("sync timeout, this is typically due to a commit event being sent to the payment device connector and a commit event not being pushed to RxBus")
+                                .build());
+
+                        return null;
+                    }
+                }, commitErrorTimeout, TimeUnit.MILLISECONDS);
 
                 // call the payment connector
                 syncRequest.getConnector().processCommit(commit);
@@ -346,10 +398,15 @@ public class DeviceSyncManager {
                 FPLog.d(SYNC_DATA, "onSyncStateChanged: " + syncEvent);
 
                 switch (syncEvent.getState()) {
+                    case States.STARTED:
+                        FPLog.d(TAG, "sync started: " + syncEvent);
+                        break;
+
                     case States.COMPLETED:
                     case States.COMPLETED_NO_UPDATES:
                     case States.FAILED:
                     case States.SKIPPED:
+                    case States.TIMEOUT:
                         if (syncRequest == null) {
                             FPLog.i(TAG, "no current sync request on sync event: " + syncEvent);
                         }
@@ -374,6 +431,8 @@ public class DeviceSyncManager {
                 FPLog.i(SYNC_DATA, "Commit Success: " + commitSuccess);
                 commitSuccessCounter.incrementAndGet();
 
+                cancelCommitTimers();
+
                 moveLastCommitPointer(commitSuccess.getCommitId());
 
                 EventCallback eventCallback = new EventCallback.Builder()
@@ -391,6 +450,8 @@ public class DeviceSyncManager {
             public void onCommitFailed(CommitFailed commitFailed) {
                 FPLog.w(SYNC_DATA, "Commit Failed: " + commitFailed);
                 commitFailedCounter.incrementAndGet();
+
+                cancelCommitTimers();
 
                 commits.clear();
 
@@ -414,6 +475,8 @@ public class DeviceSyncManager {
             public void onCommitSkipped(CommitSkipped commitSkipped) {
                 FPLog.i(SYNC_DATA, "Commit Skipped: " + commitSkipped);
                 commitSkippedCounter.incrementAndGet();
+
+                cancelCommitTimers();
 
                 moveLastCommitPointer(commitSkipped.getCommitId());
 
@@ -443,6 +506,22 @@ public class DeviceSyncManager {
                 DevicePreferenceData.store(mContext, deviceData);
             }
 
+            private void cancelCommitTimers() {
+                if (commitWarningTimer != null) {
+                    boolean result = commitWarningTimer.cancel(true);
+                    commitWarningTimer = null;
+
+                    FPLog.d(TAG, "canceled commitWarningTimer: " + result);
+                }
+
+                if (commitTimeoutTimer != null) {
+                    boolean result = commitTimeoutTimer.cancel(true);
+                    commitTimeoutTimer = null;
+
+                    FPLog.d(TAG, "canceled commitTimeoutTimer: " + result);
+                }
+            }
+
             public int getCommitSuccessCount() {
                 return commitSuccessCounter.get();
             }
@@ -463,6 +542,7 @@ public class DeviceSyncManager {
      */
     private static class SyncWorkerThread extends Thread {
         private final Context mContext;
+        private final ScheduledExecutorService timeoutWatcherExecutor;
 
         private final BlockingQueue<SyncRequest> requests;
         private volatile boolean running = true;
@@ -470,6 +550,7 @@ public class DeviceSyncManager {
         public SyncWorkerThread(Context mContext, BlockingQueue<SyncRequest> requests) {
             this.requests = requests;
             this.mContext = mContext;
+            this.timeoutWatcherExecutor = Executors.newScheduledThreadPool(1);
         }
 
         public void run() {
@@ -482,7 +563,7 @@ public class DeviceSyncManager {
                     CountDownLatch completedLatch = new CountDownLatch(1);
 
                     final long startTime = System.currentTimeMillis();
-                    SyncWorkerTask task = new SyncWorkerTask(mContext, syncRequest, new SyncWorkerCallback() {
+                    SyncWorkerTask task = new SyncWorkerTask(mContext, timeoutWatcherExecutor, syncRequest, new SyncWorkerCallback() {
                         @Override
                         public void onSuccess() {
                             FPLog.d(TAG, "sync task " + syncRequest + " processed successfully in " + (System.currentTimeMillis() - startTime) + "ms");
