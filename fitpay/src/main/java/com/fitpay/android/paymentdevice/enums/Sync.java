@@ -25,7 +25,7 @@ public final class Sync {
     private final String message;
     private final String syncEventId = UUID.randomUUID().toString();
 
-    private Sync(int state, String syncId, int value, String message) {
+    private Sync(@State int state, String syncId, int value, String message) {
         this.state = state;
         this.syncId = syncId;
         this.value = value;
@@ -114,7 +114,7 @@ public final class Sync {
         private int value;
         private String message;
 
-        public Builder state(int state) {
+        public Builder state(@State int state) {
             this.state = state;
             return this;
         }
