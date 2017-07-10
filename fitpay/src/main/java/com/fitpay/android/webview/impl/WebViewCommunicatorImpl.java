@@ -238,34 +238,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
                 WebViewCommunicatorImpl.this.user = result;
 
-//                user.getDevices(10, 0, new ApiCallback<Collections.DeviceCollection>() {
-//                    @Override
-//                    public void onSuccess(Collections.DeviceCollection result) {
-//                        Log.i("----", "size:" + String.valueOf(result.getResults().size()));
-//                        for(Device device : result.getResults()){
-//                            device.deleteDevice(new ApiCallback<Void>() {
-//                                @Override
-//                                public void onSuccess(Void result) {
-//                                    Log.i("----", "deleted");
-//                                }
-//
-//                                @Override
-//                                public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-//                                    Log.i("----", "failed:" + errorMessage);
-//                                }
-//                            });
-//                        }
-//                    }
-//
-//                    @Override
-//                    public void onFailure(int errorCode, String errorMessage) {
-//
-//                    }
-//                });
-//
-//                if(true)
-//                    return;
-
                 RxBus.getInstance().post(new UserReceived(user.getId(), user.getUsername()));
 
                 EventCallback eventCallback = new EventCallback.Builder()
