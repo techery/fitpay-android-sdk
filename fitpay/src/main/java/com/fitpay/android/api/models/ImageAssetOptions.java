@@ -9,13 +9,12 @@ public class ImageAssetOptions {
         WIDTH("w"),
         HEIGHT("h"),
         EMBOSSED_TEXT("embossedText"),
-        FOREGROUND("foregroundColor"),
-        FONT_SCALE("fontScale"),
-        TEXT_POSITION_X_SCALE("textPositionXScale"),
-        TEXT_POSITION_Y_SCALE("textPositionYScale"),
-        FONT_NAME("fontName"),
-        FONT_BOLD("fontBold"),
-        ;
+        EMBOSSED_TEXT_FOREGROUND("embossedForegroundColor"),
+        FONT_SCALE("fs"),
+        TEXT_POSITION_X_SCALE("txs"),
+        TEXT_POSITION_Y_SCALE("tys"),
+        FONT_NAME("fn"),
+        FONT_BOLD("fb");
 
         public String value;
 
@@ -192,7 +191,7 @@ public class ImageAssetOptions {
         if (null != this.embossedText)
             paramToValueMap.put(ImageAssetParams.EMBOSSED_TEXT.value, this.embossedText);
         if (null != this.foregroundColor)
-            paramToValueMap.put(ImageAssetParams.FOREGROUND.value, this.foregroundColor);
+            paramToValueMap.put(ImageAssetParams.EMBOSSED_TEXT_FOREGROUND.value, this.foregroundColor);
         if (null != this.fontScale)
             paramToValueMap.put(ImageAssetParams.FONT_SCALE.value, String.valueOf(this.fontScale));
         if (null != this.textPositionXScale)
