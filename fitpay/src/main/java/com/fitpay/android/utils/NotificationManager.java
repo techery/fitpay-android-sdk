@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import rx.Scheduler;
 import rx.Subscription;
@@ -39,7 +40,7 @@ public final class NotificationManager {
     }
 
     private NotificationManager() {
-        mListeners = Collections.synchronizedList(new ArrayList<>());
+        mListeners = new CopyOnWriteArrayList();
         mCommands = new ConcurrentHashMap<>();
         mSubscriptions = new ConcurrentHashMap<>();
     }
@@ -120,7 +121,7 @@ public final class NotificationManager {
                     subscribeTo(clazz, observerScheduler);
 
                     if (!mCommands.containsKey(clazz)) {
-                        mCommands.put(clazz, Collections.synchronizedList(new ArrayList<>()));
+                        mCommands.put(clazz, new CopyOnWriteArrayList());
                     }
 
                     mCommands.get(clazz).add(map.getValue());
