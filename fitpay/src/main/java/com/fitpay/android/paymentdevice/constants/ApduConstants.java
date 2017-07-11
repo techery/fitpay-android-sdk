@@ -67,4 +67,31 @@ public final class ApduConstants {
     public final static byte[] APDU_ERROR_SEQUENCE_COUNTER_OFF = new byte[]{(byte) 0x69, (byte) 0x82};
     public final static byte[] APDU_ERROR_FILE_NOT_FOUND = new byte[]{(byte) 0x6a, (byte) 0x82};
     public final static byte[] APDU_ERROR_OUT_OF_MEMORY = new byte[]{(byte) 0x6a, (byte) 0x84};
+
+    public final static byte[] APDU_CONTINUE_COMMAND_DATA = new byte[]{(byte) 0x00, (byte) 0xc0, (byte) 0x00, (byte) 0x00};
+
+    public static boolean equals(byte[] a, byte[] a2) {
+        if (a == a2) {
+            return true;
+        }
+
+        if (a == null || a2 == null) {
+            return false;
+        }
+
+        if (a2.length > 2) {
+            return false;
+        }
+
+        if (a.length == 1) {
+            return a[0] == a2[0];
+        }
+
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != a2[i])
+                return false;
+        }
+
+        return true;
+    }
 }
