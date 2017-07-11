@@ -10,6 +10,7 @@ import com.fitpay.android.R;
 import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
+import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.User;

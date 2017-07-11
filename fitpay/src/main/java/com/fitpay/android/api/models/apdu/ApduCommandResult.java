@@ -1,5 +1,8 @@
 package com.fitpay.android.api.models.apdu;
 
+import com.fitpay.android.paymentdevice.constants.ApduConstants;
+import com.fitpay.android.utils.Hex;
+
 /**
  * Single apdu command execution result
  */
@@ -27,6 +30,11 @@ public class ApduCommandResult {
 
     public boolean canContinueOnFailure() {
         return continueOnFailure;
+    }
+
+    public boolean isLongResponse() {
+        byte[] code = Hex.hexStringToBytes(responseCode);
+        return ApduConstants.equals(ApduConstants.NORMAL_PROCESSING_WITH_DATA, code);
     }
 
     public static class Builder {
