@@ -10,7 +10,6 @@ import com.fitpay.android.api.models.apdu.ApduCommand;
 import com.fitpay.android.api.models.apdu.ApduCommandResult;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
-import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.card.TopOfWallet;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.user.User;
@@ -33,13 +32,10 @@ import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
 
 import java.io.SyncFailedException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-
-import rx.Observable;
 
 import static com.fitpay.android.paymentdevice.constants.ApduConstants.NORMAL_PROCESSING;
 import static com.fitpay.android.utils.Constants.APDU_DATA;
@@ -303,46 +299,22 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
     /**
+     * @deprecated the SDK handling have TOW as commits is no longer supported, TOW data can still be pulled
+     * from the CreditCard API resource when needed.
+     *
      * Get TOW data from the server
      */
     protected final void getTopOfWalletData(List<String> cardOrder) {
-        if (user == null) {
-            FPLog.w(TAG, "skipping getTopOfWalletData() handling, no user present in device");
-            return;
-        }
+     }
 
-        Map<String, TopOfWallet> cardMap = new HashMap<String, TopOfWallet>();
-        List<TopOfWallet> tow = new ArrayList<>();
-
-        user.getAllCreditCards().flatMap(creditCardCollection -> {
-            if (creditCardCollection.getResults() != null) {
-                for (CreditCard card : creditCardCollection.getResults()) {
-                    if (card.getTOW() != null) {
-                        cardMap.put(card.getCreditCardId(), card.getTOW());
-                    }
-                }
-                if (!cardMap.isEmpty()) {
-                    for (String cardId : cardOrder) {
-                        if (cardMap.containsKey(cardId)) {
-                            tow.add(cardMap.get(cardId));
-                        }
-                    }
-                }
-            }
-            return Observable.just(tow);
-        }).subscribe(
-                topOfWallets -> {
-                    if (topOfWallets != null && topOfWallets.size() > 0) {
-                        executeTopOfWallet(topOfWallets);
-                        RxBus.getInstance().post(topOfWallets);
-                    } else {
-                        commitProcessed(CommitResult.SUCCESS, null);
-                    }
-                },
-                throwable -> {
-                    FPLog.e(TAG, "TOW execution error: " + throwable.getMessage());
-                    commitProcessed(CommitResult.FAILED, throwable);
-                });
+    /**
+     * @deprecated See {@link IPaymentDeviceConnector} - providing a do-nothing implementation to help clean up OEM integrations
+     *
+     * @param towPackages
+     */
+    @Override
+    public void executeTopOfWallet(List<TopOfWallet> towPackages) {
+        FPLog.w(TAG, "deprecated executeTopOfWallet() still being called, please refactor to remove usage of PaymentDeviceConnect#executeTopOfWallet()");
     }
 
     /**

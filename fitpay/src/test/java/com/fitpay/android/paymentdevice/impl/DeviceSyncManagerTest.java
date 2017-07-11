@@ -285,11 +285,7 @@ public class DeviceSyncManagerTest extends TestActions {
                     .filter(syncEvent -> syncEvent.getState() == States.COMPLETED_NO_UPDATES || syncEvent.getState() == States.COMPLETED)
                     .count());
 
-        /**
-         * Why 6 commits vs. only the 3 that the system emits?   The android sdk for some reason is running TOW commands and emitting
-         * commitsuccess events
-         */
-        assertEquals(6,
+        assertEquals(3,
                 listener.getCommits().stream()
                     .filter(commit -> commit.getCommitType().equals("APDU_PACKAGE"))
                     .count());
