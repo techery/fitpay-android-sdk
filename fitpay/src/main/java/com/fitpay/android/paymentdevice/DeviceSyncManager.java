@@ -2,6 +2,7 @@ package com.fitpay.android.paymentdevice;
 
 import android.content.Context;
 
+import com.fitpay.android.R;
 import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.paymentdevice.callbacks.IListeners;
