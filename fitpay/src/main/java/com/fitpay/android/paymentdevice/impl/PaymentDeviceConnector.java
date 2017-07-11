@@ -162,6 +162,8 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         FPLog.d(TAG, "processing commit on Thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName());
         currentCommit = commit;
         if (null == commitHandlers) {
+            FPLog.w(TAG, "No action taken for commit.  No handlers defined for commit: " + commit);
+            commitProcessed(CommitResult.SKIPPED, null);
             return;
         }
         CommitHandler handler = commitHandlers.get(commit.getCommitType());
@@ -305,8 +307,14 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      * Get TOW data from the server
      */
     protected final void getTopOfWalletData(List<String> cardOrder) {
+        if (user == null) {
+            FPLog.w(TAG, "skipping getTopOfWalletData() handling, no user present in device");
+            return;
+        }
+
         Map<String, TopOfWallet> cardMap = new HashMap<String, TopOfWallet>();
         List<TopOfWallet> tow = new ArrayList<>();
+
         user.getAllCreditCards().flatMap(creditCardCollection -> {
             if (creditCardCollection.getResults() != null) {
                 for (CreditCard card : creditCardCollection.getResults()) {

@@ -100,7 +100,7 @@ Pre-built versions of the Android SDK are hosted on jcenter(). To use in your pr
         ```
 
 ## Using local version of the SDK as a dependency for your build:
-In order to use a local version of the SDK in your project, you need to first build the local repository by using the Gradle task ```uploadArchives``` that's included in the FitPay Android SDK. After running this task, the compiled SDK will be outputted to a local folder on your computer ("LocalRepository") and will be available for use in your project.
+In order to use a local version of the SDK in your project, you need to first build the local repository by using the Gradle task ```uploadArchives``` that's included in the FitPay Android SDK. After running this task, the compiled SDK will be outputted to a local folder on your computer ("LocalRepository") and will be available for use in your project. Note that you may have to clear gradles cached version of the SDK, usually found in $HOME/.gradle/caches/.
 
 You can run the Gradle task and build the repository from Android Studio or from the commandline.
 
@@ -185,7 +185,7 @@ FPLog.addLogImpl(new FPLog.ILog() {
 
 ### Logging HTTP Traffic
 
-HTTP traffic originating from the SDK can be logged by calling `FPLog.showHttpLogs(true);`
+HTTP traffic originating from the SDK can be logged by calling `FPLog.setShowHTTPLogs(true);`
 
 ## Contributing to the SDK
 We welcome contributions to the SDK. For your first few contributions please fork the repo, make your changes and submit a pull request. Internally we branch off of develop, test, and PR-review the branch before merging to develop (moderately stable). Releases to Master happen less frequently, undergo more testing, and can be considered stable. For more information, please read:  [http://nvie.com/posts/a-successful-git-branching-model/](http://nvie.com/posts/a-successful-git-branching-model/)
@@ -194,8 +194,8 @@ We welcome contributions to the SDK. For your first few contributions please for
 
 This instructions are for only those that have the credentials for pushing public FitPay Android SDK releases.
 
-* Create `release-X.X.X` branch.
-* Set release version in `fitpay/build.gradle`, commit/push the change.
+* Create `release-X.X.X` branch, ensuring the release version used has been properly incremented from the last release.
+* If the release was not set at the end of the previous release, set the version in `fitpay/build.gradle` and commit/push the change.
 * Update `bintray.properties` with release credentials, **don't commit into git**.
 * Run `./gradlew bintrayUpload`.
 * Authenticate to bintray.com and publish the new artifact so it's publicly accessible.

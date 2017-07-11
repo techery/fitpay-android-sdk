@@ -6,6 +6,7 @@ import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.callbacks.CallbackWrapper;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.Relationship;
+import com.fitpay.android.api.models.issuer.Issuers;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
@@ -40,11 +41,19 @@ public class ApiManager {
     public static final String PROPERTY_CLIENT_ID = "clientId";
     public static final String PROPERTY_TIMEOUT = "timeout";
     public static final String PROPERTY_REDIRECT_URI = "redirectUri";
+    public static final String PROPERTY_SYNC_QUEUE_SIZE = "deviceSyncRequestQueueSize";
+    public static final String PROPERTY_COMMIT_TIMERS_ENABLED = "commitTimers";
+    public static final String PROPERTY_COMMIT_WARNING_TIMEOUT = "commitWarningTimeout";
+    public static final String PROPERTY_COMMIT_ERROR_TIMEOUT = "commitErrorTimeout";
 
     private static Map<String, String> config = new HashMap<>();
 
     static {
         config.put(PROPERTY_TIMEOUT, "10");
+        config.put(PROPERTY_SYNC_QUEUE_SIZE, "10");
+        config.put(PROPERTY_COMMIT_WARNING_TIMEOUT, "5000");
+        config.put(PROPERTY_COMMIT_ERROR_TIMEOUT, "30000");
+        config.put(PROPERTY_COMMIT_TIMERS_ENABLED, "true");
     }
 
     private static ApiManager sInstance;
@@ -87,6 +96,10 @@ public class ApiManager {
 
     public static void init(Map<String, String> props) {
         config.putAll(props);
+    }
+
+    public static Map<String, String> getConfig() {
+        return config;
     }
 
     public void setAuthToken(OAuthToken token) {
@@ -263,6 +276,27 @@ public class ApiManager {
         if (isAuthorized(callback)) {
             Call<Relationship> createRelationshipCall = getClient().createRelationship(userId, creditCardId, deviceId);
             createRelationshipCall.enqueue(new CallbackWrapper<>(callback));
+        }
+    }
+
+    /**
+     * Retrieves the details of an existing user.
+     * You need only supply the unique user identifier that was returned upon user creation.
+     *
+     * @param callback result callback
+     */
+    public void getIssuers(final ApiCallback<Issuers> callback) {
+        if (isAuthorized(callback)) {
+
+            Runnable onSuccess = new Runnable() {
+                @Override
+                public void run() {
+                    Call<Issuers> getIssuersCall = getClient().getIssuers();
+                    getIssuersCall.enqueue(new CallbackWrapper<>(callback));
+                }
+            };
+
+            checkKeyAndMakeCall(onSuccess, callback);
         }
     }
 

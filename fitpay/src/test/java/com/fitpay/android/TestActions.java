@@ -16,6 +16,7 @@ import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
 import com.fitpay.android.test.utils.SecureElementDataProvider;
+import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 import com.google.gson.Gson;
@@ -36,7 +37,7 @@ import static junit.framework.Assert.assertTrue;
 
 public class TestActions {
 
-    protected final int TIMEOUT = 10;
+    protected final int TIMEOUT = 30;
 
     protected String userName = null;
     protected String pin = null;
@@ -46,12 +47,44 @@ public class TestActions {
 
     @BeforeClass
     public static void init() {
+        FPLog.addLogImpl(new FPLog.ILog() {
+            @Override
+            public void d(String tag, String text) {
+                System.out.println(tag + " DEBUG (" + Thread.currentThread().getName() + "): " + text);
+            }
+
+            @Override
+            public void i(String tag, String text) {
+                System.out.println(tag + " INFO(" + Thread.currentThread().getName() + "): " + text);
+            }
+
+            @Override
+            public void w(String tag, String text) {
+                System.out.println(tag + " WARN(" + Thread.currentThread().getName() + "): " + text);
+            }
+
+            @Override
+            public void e(String tag, Throwable throwable) {
+                System.out.println(tag + " ERROR (" + Thread.currentThread().getName() + "): " + tag);
+
+                if (throwable != null) {
+                    throwable.printStackTrace();
+                }
+            }
+
+            @Override
+            public int logLevel() {
+                return FPLog.DEBUG;
+            }
+        });
+        FPLog.setShowHTTPLogs(false);
+
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
         ApiManager.init(TestConstants.getConfig());
     }
 
     @Before
-    public void setup() throws Exception {
+    public void testActionsSetup() throws Exception {
         userName = TestUtils.getRandomLengthString(5, 10) + "@"
                 + TestUtils.getRandomLengthString(5, 10) + "." + TestUtils.getRandomLengthString(4, 10);
         pin = TestUtils.getRandomLengthNumber(4, 4);
@@ -243,6 +276,7 @@ public class TestActions {
         ResultProvidingCallback<Device> callback = new ResultProvidingCallback<>(latch);
         user.createDevice(device, callback);
         latch.await(TIMEOUT, TimeUnit.SECONDS);
+
         return callback.getResult();
     }
 

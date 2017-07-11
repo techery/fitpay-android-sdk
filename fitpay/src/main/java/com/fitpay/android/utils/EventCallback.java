@@ -100,6 +100,16 @@ public class EventCallback {
         return timestamp;
     }
 
+    @Override
+    public String toString() {
+        return "EventCallback{" +
+                "command='" + command + '\'' +
+                ", status='" + status + '\'' +
+                ", reason='" + reason + '\'' +
+                ", timestamp='" + timestamp + '\'' +
+                '}';
+    }
+
     public static class Builder {
         @Command
         private String command;

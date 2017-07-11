@@ -6,6 +6,7 @@ import com.fitpay.android.paymentdevice.constants.States;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.UUID;
 
 /**
  * Data sync states enum
@@ -13,27 +14,71 @@ import java.lang.annotation.RetentionPolicy;
 public final class Sync {
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({States.STARTED, States.IN_PROGRESS, States.COMPLETED, States.FAILED, States.INC_PROGRESS, States.COMMIT_COMPLETED, States.COMPLETED_NO_UPDATES})
+    @IntDef({
+            States.STARTED,
+            States.IN_PROGRESS,
+            States.COMPLETED,
+            States.FAILED,
+            States.SKIPPED,
+            States.TIMEOUT,
+            States.INC_PROGRESS,
+            States.COMMIT_COMPLETED,
+            States.COMPLETED_NO_UPDATES
+    })
     public @interface State {
     }
 
     @State
-    private int state;
-    private int value;
-    private String message;
+    private final int state;
+    private final String syncId;
+    private final int value;
+    private final String message;
+    private final String syncEventId = UUID.randomUUID().toString();
 
-    public Sync(@State int state) {
+    private Sync(@State int state, String syncId, int value, String message) {
         this.state = state;
+        this.syncId = syncId;
+        this.value = value;
+        this.message = message;
     }
 
-    public Sync(@State int state, int value) {
+    /**
+     * @deprecated  switch to new builder please :)
+     *
+     * @param syncId
+     * @param state
+     */
+    public Sync(String syncId, @State int state) {
+        this.state = state;
+        this.syncId = syncId;
+        this.message = null;
+        this.value = -1;
+    }
+
+    /**
+     * @deprecated  switch to new builder please :)
+     *
+     * @param syncId
+     * @param state
+     */
+    public Sync(String syncId, @State int state, int value) {
         this.state = state;
         this.value = value;
+        this.syncId = syncId;
+        this.message = null;
     }
 
-    public Sync(@State int state, String message) {
+    /**
+     * @deprecated  switch to new builder please :)
+     *
+     * @param syncId
+     * @param state
+     */
+    public Sync(String syncId, @State int state, String message) {
         this.state = state;
         this.message = message;
+        this.syncId = syncId;
+        this.value = -1;
     }
 
     @Sync.State
@@ -49,14 +94,58 @@ public final class Sync {
         return message;
     }
 
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public String getSyncId() {
+        return syncId;
+    }
+
+    public String getSyncEventId() {
+        return syncEventId;
+    }
+
+    @Override
     public String toString() {
-        return new StringBuilder()
-                .append("Sync(")
-                .append("state=")
-                .append(state)
-                .append(", value=")
-                .append(value)
-                .append(")")
-                .toString();
+        return "Sync{" +
+                "state=" + state + ", " + States.toSyncString(state) +
+                ", syncId='" + syncId + '\'' +
+                ", value=" + value +
+                ", message='" + message + '\'' +
+                ", syncEventId='" + syncEventId + '\'' +
+                '}';
+    }
+
+    public static class Builder {
+        @State
+        private int state;
+        private String syncId;
+        private int value;
+        private String message;
+
+        public Builder state(@State int state) {
+            this.state = state;
+            return this;
+        }
+
+        public Builder syncId(String syncId) {
+            this.syncId = syncId;
+            return this;
+        }
+
+        public Builder value(int value) {
+            this.value = value;
+            return this;
+        }
+
+        public Builder message(String message) {
+            this.message = message;
+            return this;
+        }
+
+        public Sync build() {
+            return new Sync(state, syncId, value, message);
+        }
     }
 }
