@@ -1,14 +1,10 @@
 package com.fitpay.android.utils;
 
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import rx.Scheduler;
 import rx.Subscription;
@@ -123,7 +119,11 @@ public final class NotificationManager {
                     subscribeTo(clazz, observerScheduler);
 
                     if (!mCommands.containsKey(clazz)) {
+<<<<<<< HEAD
                         mCommands.put(clazz, new CopyOnWriteArrayList<>());
+=======
+                        mCommands.put(clazz, new CopyOnWriteArrayList());
+>>>>>>> develop
                     }
 
                     mCommands.get(clazz).add(map.getValue());
