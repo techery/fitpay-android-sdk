@@ -119,11 +119,7 @@ public final class NotificationManager {
                     subscribeTo(clazz, observerScheduler);
 
                     if (!mCommands.containsKey(clazz)) {
-<<<<<<< HEAD
                         mCommands.put(clazz, new CopyOnWriteArrayList<>());
-=======
-                        mCommands.put(clazz, new CopyOnWriteArrayList());
->>>>>>> develop
                     }
 
                     mCommands.get(clazz).add(map.getValue());
