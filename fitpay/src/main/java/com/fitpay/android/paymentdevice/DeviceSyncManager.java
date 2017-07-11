@@ -20,6 +20,7 @@ import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.webview.events.DeviceStatusMessage;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -46,6 +47,8 @@ public class DeviceSyncManager {
 
     private SyncWorkerThread worker = null;
 
+    private List<DeviceSyncManagerCallback> syncManagerCallbacks = new ArrayList<>();
+
     /**
      * @deprecated executor is no longer utilized
      *
@@ -61,6 +64,17 @@ public class DeviceSyncManager {
 
         int queueSize = Integer.parseInt(ApiManager.getConfig().get(ApiManager.PROPERTY_SYNC_QUEUE_SIZE));
         requests = new ArrayBlockingQueue<>(queueSize);
+    }
+
+    /**
+     * This interface is more about testing and allowing unit tests to inject hooks into the process making this
+     * class more testable.
+     */
+    public interface DeviceSyncManagerCallback {
+        void syncRequestAdded(SyncRequest request);
+        void syncTaskStarting(SyncRequest request);
+        void syncTaskStarted(SyncRequest request);
+        void syncTaskCompleted(SyncRequest request);
     }
 
     public void onCreate() {
@@ -85,7 +99,7 @@ public class DeviceSyncManager {
         }
     }
 
-    public void add(SyncRequest request) {
+    public void add(final SyncRequest request) {
         if (request == null) {
             return;
         }
@@ -94,14 +108,27 @@ public class DeviceSyncManager {
             requests.put(request);
 
             FPLog.d("added sync request to queue for processing, current queue size [" + requests.size() + "]: " + request);
+
+            syncManagerCallbacks.forEach(callback -> callback.syncRequestAdded(request));
         } catch (InterruptedException e) {
             FPLog.w("interrupted exception while waiting to add sync request to processing queue");
         }
     }
 
-    private interface SyncWorkerCallback {
-        void onSuccess();
-        void onFailure(Throwable t);
+    public void removeDeviceSyncManagerCallback(DeviceSyncManagerCallback syncManagerCallback) {
+        if (syncManagerCallback == null) {
+            return;
+        }
+
+        syncManagerCallbacks.remove(syncManagerCallback);
+    }
+
+    public void registerDeviceSyncManagerCallback(DeviceSyncManagerCallback syncManagerCallback) {
+        if (syncManagerCallback == null) {
+            return;
+        }
+
+        syncManagerCallbacks.add(syncManagerCallback);
     }
 
     /**
@@ -109,10 +136,9 @@ public class DeviceSyncManager {
      * where it will establish a listener, kick off the sync, and orchastrate it's flow through a listener receiving events
      * back for each commit in the sync workflow.
      */
-    private static class SyncWorkerTask implements Runnable {
+    private class SyncWorkerTask implements Runnable {
         private final Context mContext;
         private final SyncRequest syncRequest;
-        private final SyncWorkerCallback callback;
         private final ScheduledExecutorService timeoutWatcherExecutor;
 
         private List<Commit> commits;
@@ -124,10 +150,11 @@ public class DeviceSyncManager {
         private final int commitWarningTimeout = Integer.parseInt(ApiManager.getConfig().get(ApiManager.PROPERTY_COMMIT_WARNING_TIMEOUT));
         private final int commitErrorTimeout = Integer.parseInt(ApiManager.getConfig().get(ApiManager.PROPERTY_COMMIT_ERROR_TIMEOUT));
 
-        public SyncWorkerTask(Context mContext, ScheduledExecutorService timeoutWatcherExecutor, SyncRequest syncRequest, SyncWorkerCallback callback) {
+        private String pendingCommitId;
+
+        public SyncWorkerTask(Context mContext, ScheduledExecutorService timeoutWatcherExecutor, SyncRequest syncRequest) {
             this.mContext = mContext;
             this.syncRequest = syncRequest;
-            this.callback = callback;
             this.timeoutWatcherExecutor = timeoutWatcherExecutor;
         }
 
@@ -137,6 +164,8 @@ public class DeviceSyncManager {
 
             Exception err = null;
             try {
+                syncManagerCallbacks.forEach(callback -> callback.syncTaskStarted(syncRequest));
+
                 sync();
 
                 completionLatch.await();
@@ -157,15 +186,6 @@ public class DeviceSyncManager {
                 err = e;
             } finally {
                 NotificationManager.getInstance().removeListener(listener);
-                listener = null;
-            }
-
-            if (callback != null) {
-                if (err == null) {
-                    callback.onSuccess();
-                } else {
-                    callback.onFailure(err);
-                }
             }
         }
 
@@ -251,7 +271,7 @@ public class DeviceSyncManager {
             DevicePreferenceData deviceData = DevicePreferenceData.load(mContext, deviceId);
 
             // get all the new commits from the last commit pointer processed
-            FPLog.d(TAG, "retrieving commits from the lastCommitId: " + deviceData.getLastCommitId());
+            FPLog.d(TAG, "retrieving commits from the lastCommitId: " + deviceData.getLastCommitId() + ", for syncRequest: " + syncRequest);
             syncRequest.getDevice().getAllCommits(deviceData.getLastCommitId())
                     .compose(RxBus.applySchedulersExecutorThread())
                     .subscribe(
@@ -338,6 +358,8 @@ public class DeviceSyncManager {
                 Commit commit = commits.remove(0);
 
                 FPLog.i(SYNC_DATA, "Process Next Commit: " + commit);
+
+                pendingCommitId = commit.getCommitId();
 
                 // start the watching timers, this first timer is responsible for producing a warning
                 // if a commit isn't responded to in a timely manner
@@ -432,6 +454,11 @@ public class DeviceSyncManager {
 
             @Override
             public void onCommitSuccess(CommitSuccess commitSuccess) {
+                if (!commitSuccess.getCommitId().equals(pendingCommitId)) {
+                    FPLog.w(SYNC_DATA, "Unexpected CommitSuccess " + commitSuccess + " received, expected commitId " + pendingCommitId);
+                    return;
+                }
+
                 FPLog.i(SYNC_DATA, "Commit Success: " + commitSuccess);
                 commitSuccessCounter.incrementAndGet();
 
@@ -452,6 +479,11 @@ public class DeviceSyncManager {
 
             @Override
             public void onCommitFailed(CommitFailed commitFailed) {
+                if (!commitFailed.getCommitId().equals(pendingCommitId)) {
+                    FPLog.w(SYNC_DATA, "Unexpected CommitFailed " + commitFailed + " received, expected commitId " + pendingCommitId);
+                    return;
+                }
+
                 FPLog.w(SYNC_DATA, "Commit Failed: " + commitFailed);
                 commitFailedCounter.incrementAndGet();
 
@@ -477,6 +509,10 @@ public class DeviceSyncManager {
 
             @Override
             public void onCommitSkipped(CommitSkipped commitSkipped) {
+                if (!commitSkipped.getCommitId().equals(pendingCommitId)) {
+                    FPLog.w(SYNC_DATA, "Unexpected CommitSkipped " + commitSkipped + " received, expected commitId " + pendingCommitId);
+                    return;
+                }
                 FPLog.i(SYNC_DATA, "Commit Skipped: " + commitSkipped);
                 commitSkippedCounter.incrementAndGet();
 
@@ -544,7 +580,7 @@ public class DeviceSyncManager {
      * This thread is responsible for listening for requests to sync, then launching a {@link SyncWorkerTask} to perform the
      * actual work of one individual sync.
      */
-    private static class SyncWorkerThread extends Thread {
+    private class SyncWorkerThread extends Thread {
         private final Context mContext;
         private final ScheduledExecutorService timeoutWatcherExecutor;
 
@@ -564,32 +600,15 @@ public class DeviceSyncManager {
                     SyncRequest syncRequest = requests.take();
 
                     FPLog.d(TAG, "sync request received, launching sync task: " + syncRequest);
-                    CountDownLatch completedLatch = new CountDownLatch(1);
+
+                    syncManagerCallbacks.forEach(callback -> callback.syncTaskStarting(syncRequest));
 
                     final long startTime = System.currentTimeMillis();
-                    SyncWorkerTask task = new SyncWorkerTask(mContext, timeoutWatcherExecutor, syncRequest, new SyncWorkerCallback() {
-                        @Override
-                        public void onSuccess() {
-                            FPLog.d(TAG, "sync task " + syncRequest + " processed successfully in " + (System.currentTimeMillis() - startTime) + "ms");
-
-                            completedLatch.countDown();
-                        }
-
-                        @Override
-                        public void onFailure(Throwable t) {
-                            if (t != null) {
-                                FPLog.e(TAG, t);
-                            }
-
-                            FPLog.w(TAG, "sync task " + syncRequest + " failed, processing time " + (System.currentTimeMillis() - startTime) + "ms");
-
-                            completedLatch.countDown();
-                        }
-                    });
+                    SyncWorkerTask task = new SyncWorkerTask(mContext, timeoutWatcherExecutor, syncRequest);
                     task.run();
 
-                    FPLog.d(TAG, "sync task " + syncRequest + " has been launched, waiting for completion");
-                    completedLatch.await();
+                    FPLog.i("syncRequest: " + syncRequest + " completed in " + (System.currentTimeMillis() - startTime) + "ms");
+                    syncManagerCallbacks.forEach(callback -> callback.syncTaskCompleted(syncRequest));
                 } catch (InterruptedException e) {
                     FPLog.d("sync worker thread interrupted, shutting down");
                     running = false;

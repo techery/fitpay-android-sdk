@@ -14,7 +14,17 @@ import java.util.UUID;
 public final class Sync {
 
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({States.STARTED, States.IN_PROGRESS, States.COMPLETED, States.FAILED, States.SKIPPED, States.TIMEOUT, States.INC_PROGRESS, States.COMMIT_COMPLETED, States.COMPLETED_NO_UPDATES})
+    @IntDef({
+            States.STARTED,
+            States.IN_PROGRESS,
+            States.COMPLETED,
+            States.FAILED,
+            States.SKIPPED,
+            States.TIMEOUT,
+            States.INC_PROGRESS,
+            States.COMMIT_COMPLETED,
+            States.COMPLETED_NO_UPDATES
+    })
     public @interface State {
     }
 
@@ -99,7 +109,7 @@ public final class Sync {
     @Override
     public String toString() {
         return "Sync{" +
-                "state=" + state +
+                "state=" + state + ", " + States.toSyncString(state) +
                 ", syncId='" + syncId + '\'' +
                 ", value=" + value +
                 ", message='" + message + '\'' +
