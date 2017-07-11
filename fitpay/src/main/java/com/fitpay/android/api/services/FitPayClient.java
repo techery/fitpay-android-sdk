@@ -1,6 +1,7 @@
 package com.fitpay.android.api.services;
 
 import com.fitpay.android.api.models.Relationship;
+import com.fitpay.android.api.models.issuer.Issuers;
 import com.fitpay.android.api.models.security.ECCKeyPair;
 import com.fitpay.android.api.models.user.User;
 import com.google.gson.JsonElement;
@@ -87,6 +88,12 @@ public interface FitPayClient {
      */
     @DELETE("config/webhook")
     Call<Object> removeWebhook(@Body String webhookURL);
+
+    /**
+     * Retrieve issuers
+     */
+    @GET("issuers")
+    Call<Issuers> getIssuers();
 
     @GET
     Call<JsonElement> get(@Url String url);
