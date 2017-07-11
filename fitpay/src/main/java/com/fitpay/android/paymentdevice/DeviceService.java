@@ -88,6 +88,7 @@ public final class DeviceService extends Service {
 
         syncManager = new DeviceSyncManager(this, executor);
         syncManager.onCreate();
+
         NotificationManager.getInstance().addListenerToCurrentThread(mSyncListener);
     }
 
@@ -105,7 +106,11 @@ public final class DeviceService extends Service {
             paymentDeviceConnector = null;
         }
 
-        syncManager.onDestroy();
+        if (syncManager != null) {
+            syncManager.onDestroy();
+            syncManager = null;
+        }
+
         NotificationManager.getInstance().removeListener(mSyncListener);
     }
 

@@ -19,7 +19,6 @@ import com.fitpay.android.utils.NotificationManager;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -58,7 +57,7 @@ public class MockPaymentDeviceTest extends TestActions {
     }
 
     @Override
-    public void setup() throws Exception {
+    public void testActionsSetup() throws Exception {
     }
 
     @After
@@ -90,7 +89,6 @@ public class MockPaymentDeviceTest extends TestActions {
     }
 
     @Test
-    @Ignore // timeout is not yet implemented
     public void canDetectConnectTimeout() {
         Properties props = new Properties();
         props.put(MockPaymentDeviceConnector.CONFIG_CONNECTED_RESPONSE_TIME, "0");
