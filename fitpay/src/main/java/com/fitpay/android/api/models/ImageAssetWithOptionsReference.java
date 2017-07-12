@@ -3,7 +3,6 @@ package com.fitpay.android.api.models;
 import android.net.Uri;
 import android.os.Parcel;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -20,12 +19,13 @@ public final class ImageAssetWithOptionsReference extends ImageAssetReference {
         final Uri.Builder newUri = uri.buildUpon().clearQuery();
 
         Map<String, String> paramsMap = options.getParamToValueMap();
-        Arrays.asList(ImageAssetOptions.ImageAssetParams.values()).forEach(p -> {
+
+        for (ImageAssetOptions.ImageAssetParams p : ImageAssetOptions.ImageAssetParams.values()) {
             oldParams.remove(p.value);
             if (null != paramsMap.get(p.value)) {
                 newUri.appendQueryParameter(p.value, paramsMap.get(p.value));
             }
-        });
+        }
 
         for (String param : oldParams) {
             newUri.appendQueryParameter(param, uri.getQueryParameter(param));
