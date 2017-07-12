@@ -50,10 +50,9 @@ public class DeviceSyncManager {
     private List<DeviceSyncManagerCallback> syncManagerCallbacks = new ArrayList<>();
 
     /**
-     * @deprecated executor is no longer utilized
-     *
      * @param context
      * @param executor
+     * @deprecated executor is no longer utilized
      */
     public DeviceSyncManager(Context context, Executor executor) {
         this(context);
@@ -72,8 +71,11 @@ public class DeviceSyncManager {
      */
     public interface DeviceSyncManagerCallback {
         void syncRequestAdded(SyncRequest request);
+
         void syncTaskStarting(SyncRequest request);
+
         void syncTaskStarted(SyncRequest request);
+
         void syncTaskCompleted(SyncRequest request);
     }
 
@@ -109,7 +111,9 @@ public class DeviceSyncManager {
 
             FPLog.d("added sync request to queue for processing, current queue size [" + requests.size() + "]: " + request);
 
-            syncManagerCallbacks.forEach(callback -> callback.syncRequestAdded(request));
+            for (DeviceSyncManagerCallback callback : syncManagerCallbacks) {
+                callback.syncRequestAdded(request);
+            }
         } catch (InterruptedException e) {
             FPLog.w("interrupted exception while waiting to add sync request to processing queue");
         }
@@ -164,7 +168,9 @@ public class DeviceSyncManager {
 
             Exception err = null;
             try {
-                syncManagerCallbacks.forEach(callback -> callback.syncTaskStarted(syncRequest));
+                for (DeviceSyncManagerCallback callback : syncManagerCallbacks) {
+                    callback.syncTaskStarted(syncRequest);
+                }
 
                 sync();
 
@@ -601,14 +607,19 @@ public class DeviceSyncManager {
 
                     FPLog.d(TAG, "sync request received, launching sync task: " + syncRequest);
 
-                    syncManagerCallbacks.forEach(callback -> callback.syncTaskStarting(syncRequest));
+                    for (DeviceSyncManagerCallback callback : syncManagerCallbacks) {
+                        callback.syncTaskStarting(syncRequest);
+                    }
 
                     final long startTime = System.currentTimeMillis();
                     SyncWorkerTask task = new SyncWorkerTask(mContext, timeoutWatcherExecutor, syncRequest);
                     task.run();
 
                     FPLog.i("syncRequest: " + syncRequest + " completed in " + (System.currentTimeMillis() - startTime) + "ms");
-                    syncManagerCallbacks.forEach(callback -> callback.syncTaskCompleted(syncRequest));
+
+                    for (DeviceSyncManagerCallback callback : syncManagerCallbacks) {
+                        callback.syncTaskCompleted(syncRequest);
+                    }
                 } catch (InterruptedException e) {
                     FPLog.d("sync worker thread interrupted, shutting down");
                     running = false;
