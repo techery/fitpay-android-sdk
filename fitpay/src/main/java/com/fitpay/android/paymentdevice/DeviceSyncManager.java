@@ -369,7 +369,12 @@ public class DeviceSyncManager {
 
                 // start the watching timers, this first timer is responsible for producing a warning
                 // if a commit isn't responded to in a timely manner
-                if (ApiManager.getConfig().getOrDefault(ApiManager.PROPERTY_COMMIT_TIMERS_ENABLED, "true").equals("true")) {
+                boolean commitTimersEnabled = true;
+                if (ApiManager.getConfig().containsKey(ApiManager.PROPERTY_COMMIT_TIMERS_ENABLED)) {
+                    commitTimersEnabled = "true".equals(ApiManager.getConfig().get(ApiManager.PROPERTY_COMMIT_TIMERS_ENABLED));
+                }
+
+                if (commitTimersEnabled) {
                     commitWarningTimer = timeoutWatcherExecutor.schedule(new Callable<Void>() {
                         @Override
                         public Void call() throws Exception {
