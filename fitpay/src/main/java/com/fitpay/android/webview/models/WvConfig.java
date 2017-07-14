@@ -28,7 +28,7 @@ public class WvConfig {
         private HashMap<String, Object> data = new HashMap<>();
 
         public Builder accountExist(boolean value) {
-            data.put("accountExist", value);
+            data.put("account", value);
             return this;
         }
 
@@ -43,7 +43,7 @@ public class WvConfig {
         }
 
         public Builder email(String email) {
-            data.put("email", email);
+            data.put("userEmail", email);
             return this;
         }
 
