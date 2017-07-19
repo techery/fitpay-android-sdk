@@ -2,7 +2,6 @@ package com.fitpay.android.webview.impl;
 
 import android.app.Activity;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebView;
 
@@ -10,7 +9,6 @@ import com.fitpay.android.R;
 import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
-import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.User;
@@ -19,7 +17,6 @@ import com.fitpay.android.cardscanner.ScannedCardInfo;
 import com.fitpay.android.paymentdevice.DeviceService;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
-import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.EventCallback;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
@@ -93,6 +90,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     /**
      * set custom card scanner instead of Jumio
+     *
      * @param cardScanner custom card scanner
      */
     public void setCardScanner(IFitPayCardScanner cardScanner) {
@@ -379,6 +377,16 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         }
     }
 
+    public void setWebAppRtmVersion(RtmVersion version) {
+        webAppRtmVersion = version;
+    }
+
+    public void startScan() {
+        if (cardScanner != null) {
+            cardScanner.startScan();
+        }
+    }
+
     /**
      * Listen to RTM messages
      */
@@ -386,10 +394,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         private RtmMessageListener() {
             mCommands.put(RtmMessage.class, data -> {
                 RtmMessage msg = (RtmMessage) data;
-                switch (webAppRtmVersion.getVersion()) {
-                    default:
-                        useDefaultParser(msg);
-                        break;
+                try {
+                    RtmParserImpl.parse(WebViewCommunicatorImpl.this, webAppRtmVersion.getVersion(), msg);
+                } catch (Exception e) {
+                    onTaskError(EventCallback.DATA_PARSED, msg.getCallbackId(), e.getMessage());
                 }
             });
             mCommands.put(RtmMessageResponse.class, data -> {
@@ -398,57 +406,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 final String url = "javascript:window.RtmBridge.resolve('" + str + "');";
                 activity.runOnUiThread(() -> webView.loadUrl(url));
             });
-        }
-
-        private void useDefaultParser(RtmMessage msg) {
-            String callbackId = msg.getCallbackId();
-
-            switch (msg.getType()) {
-                case RtmType.USER_DATA:
-                    //params are only there for the userData action
-                    String deviceId = null;
-                    String token = null;
-                    String userId = null;
-
-                    try {
-                        JSONObject obj = new JSONObject(msg.getJsonData());
-                        deviceId = obj.getString("deviceId");
-                        token = obj.getString("token");
-                        userId = obj.getString("userId");
-                    } catch (Exception e) {
-                        FPLog.e(WV_DATA, e);
-                        throw new IllegalArgumentException("missing required message data");
-                    }
-
-                    sendUserData(callbackId, deviceId, token, userId);
-                    break;
-
-                case RtmType.SYNC:
-                    sync(callbackId);
-                    break;
-
-                case RtmType.VERSION:
-                    try {
-                        webAppRtmVersion = Constants.getGson().fromJson(msg.getJsonData(), RtmVersion.class);
-                    } catch (Exception e) {
-                        FPLog.e(WV_DATA, e);
-                        throw new IllegalArgumentException("missing required message data");
-                    }
-                    break;
-
-                case RtmType.NO_HISTORY:
-                    onNoHistory();
-                    break;
-
-                case RtmType.CARD_SCANNED:
-                    if (cardScanner != null) {
-                        cardScanner.startScan();
-                    }
-                    break;
-
-                default:
-                    Log.i(TAG, "unsupported action value " + msg.getType() + " in message with callbackId:" + callbackId);
-            }
         }
     }
 }

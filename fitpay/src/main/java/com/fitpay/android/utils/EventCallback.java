@@ -36,6 +36,7 @@ public class EventCallback {
     public static final String GET_USER_AND_DEVICE = "GET_USER_AND_DEVICE";
     public static final String APDU_COMMANDS_SENT = "APDU_COMMANDS_SENT";
     public static final String SYNC_COMPLETED = "SYNC_COMPLETED";
+    public static final String DATA_PARSED = "DATA_PARSED";
 
     @Retention(RetentionPolicy.SOURCE)
     @StringDef({
@@ -54,6 +55,7 @@ public class EventCallback {
             GET_USER_AND_DEVICE,
             APDU_COMMANDS_SENT,
             SYNC_COMPLETED,
+            DATA_PARSED
     })
     public @interface Command {
     }
