@@ -13,9 +13,10 @@ public class RtmType {
     public static final String SYNC = "sync";
     public static final String USER_DATA = "userData";
     public static final String NO_HISTORY = "noHistory";
+    public static final String SCAN_REQUEST = "scanRequest";
     public static final String CARD_SCANNED = "cardScanned";
 
-    @StringDef({VERSION, SYNC, USER_DATA, NO_HISTORY, CARD_SCANNED})
+    @StringDef({VERSION, SYNC, USER_DATA, NO_HISTORY, SCAN_REQUEST})
     public @interface Request {
     }
 

@@ -16,7 +16,7 @@ public class RtmParserV3 extends RtmParserV2 {
     @Override
     public void parseMessage(RtmMessage msg) {
         switch (msg.getType()) {
-            case RtmType.CARD_SCANNED:
+            case RtmType.SCAN_REQUEST:
                 impl.startScan();
                 break;
 
