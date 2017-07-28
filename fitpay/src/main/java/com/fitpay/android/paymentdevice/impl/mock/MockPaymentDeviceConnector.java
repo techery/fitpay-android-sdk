@@ -65,9 +65,13 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
      */
     private Map<String, CreditCardCommit> creditCards;
 
-    private SyncCompleteListener syncCompleteListener = new SyncCompleteListener();
+    private final SyncCompleteListener syncCompleteListener;
 
     public MockPaymentDeviceConnector() {
+        super();
+
+        syncCompleteListener = new SyncCompleteListener(id());
+
         state = States.INITIALIZED;
 
         // configure commit handlers
@@ -337,7 +341,8 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
 
     private class SyncCompleteListener extends Listener {
 
-        private SyncCompleteListener() {
+        private SyncCompleteListener(String connectorId) {
+            super(connectorId);
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
         }
 
@@ -377,7 +382,8 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                         CreditCardCommit card = (CreditCardCommit) commit.getPayload();
                         FPLog.d(TAG, "Mock wallet has been updated. Card removed: " + card.getCreditCardId());
                         removeCardFromWallet(card.getCreditCardId());
-                        RxBus.getInstance().post(new CommitSuccess(commit));
+                        RxBus.getInstance().post(new CommitSuccess.Builder()
+                                .commit(commit).build());
                     }
             );
         }
@@ -406,7 +412,8 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                         CreditCardCommit card = (CreditCardCommit) commit.getPayload();
                         FPLog.d(TAG, "Mock wallet has been updated. Card updated: " + card.getCreditCardId());
                         updateWallet(card);
-                        RxBus.getInstance().post(new CommitSuccess(commit));
+                        RxBus.getInstance().post(new CommitSuccess.Builder()
+                                .commit(commit).build());
                     }
             );
         }

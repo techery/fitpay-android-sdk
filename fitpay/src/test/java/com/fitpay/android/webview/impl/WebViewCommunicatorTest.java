@@ -7,6 +7,7 @@ import com.fitpay.android.TestUtils;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
+import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
 import com.fitpay.android.utils.Command;
 import com.fitpay.android.utils.EventCallback;
 import com.fitpay.android.utils.Listener;
@@ -81,7 +82,7 @@ public class WebViewCommunicatorTest extends TestActions {
         String userId = "5750865d-b0d8-40a6-9d85-f6c863f7a6c6";
 
         Activity context = Mockito.mock(Activity.class);
-        WebViewCommunicator wvc = new WebViewCommunicatorImpl(context, -1);
+        WebViewCommunicator wvc = new WebViewCommunicatorImpl(context, new MockPaymentDeviceConnector(), -1);
         wvc.sendUserData(null, deviceId, token, userId);
 
         latch.await(60, TimeUnit.SECONDS);

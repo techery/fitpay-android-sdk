@@ -2,8 +2,6 @@ package com.fitpay.android.webview;
 
 import android.webkit.JavascriptInterface;
 
-import com.fitpay.android.paymentdevice.DeviceService;
-
 import org.json.JSONException;
 
 
@@ -33,12 +31,4 @@ public interface WebViewCommunicator {
      */
     @JavascriptInterface
     String retrieveConfigJson();
-
-    /**
-     * Provide a configured DeviceService to the communicator to support operations that require interaction with the payment device
-     * One example is sync.
-     *
-     * @param deviceService
-     */
-    void setDeviceService(DeviceService deviceService);
 }

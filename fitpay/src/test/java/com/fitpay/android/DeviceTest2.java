@@ -30,7 +30,7 @@ public class DeviceTest2 extends TestActions {
         Device createdDevice = createDevice(user, device);
 
         assertNotNull("device", createdDevice);
-        assertNotNull("device id", createdDevice.getDeviceIdentifier());
+        assertNotNull("device connectorId", createdDevice.getDeviceIdentifier());
         assertEquals("device name", device.getDeviceName(), createdDevice.getDeviceName());
         assertEquals("device type", device.getDeviceType(), createdDevice.getDeviceType());
         assertEquals("firmware version", device.getFirmwareRevision(), createdDevice.getFirmwareRevision());
@@ -79,7 +79,7 @@ public class DeviceTest2 extends TestActions {
         Device retrievedDevice = callback.getResult();
 
         assertNotNull("retrieved device", retrievedDevice);
-        assertEquals("device id", createdDevice.getDeviceIdentifier(), retrievedDevice.getDeviceIdentifier());
+        assertEquals("device connectorId", createdDevice.getDeviceIdentifier(), retrievedDevice.getDeviceIdentifier());
 
     }
     @Test
@@ -97,7 +97,7 @@ public class DeviceTest2 extends TestActions {
         Device retrievedDevice = callback.getResult();
 
         assertNotNull("device should have been retrieved", retrievedDevice);
-        assertEquals("device id", createdDevice.getDeviceIdentifier(), retrievedDevice.getDeviceIdentifier());
+        assertEquals("device connectorId", createdDevice.getDeviceIdentifier(), retrievedDevice.getDeviceIdentifier());
 
     }
 
@@ -116,7 +116,7 @@ public class DeviceTest2 extends TestActions {
 
         Device firstDevice = devices.getResults().get(0);
         assertNotNull("first device", firstDevice);
-        assertEquals("device id", createdDevice.getDeviceIdentifier(), firstDevice.getDeviceIdentifier());
+        assertEquals("device connectorId", createdDevice.getDeviceIdentifier(), firstDevice.getDeviceIdentifier());
 
     }
 
@@ -142,7 +142,7 @@ public class DeviceTest2 extends TestActions {
         Device retrievedDevice = callback4.getResult();
 
         assertNotNull("retrieved device", retrievedDevice);
-        assertEquals("device id", firstDevice.getDeviceIdentifier(), retrievedDevice.getDeviceIdentifier());
+        assertEquals("device connectorId", firstDevice.getDeviceIdentifier(), retrievedDevice.getDeviceIdentifier());
     }
 
 
@@ -163,7 +163,7 @@ public class DeviceTest2 extends TestActions {
 
         Device firstDevice = devices.getResults().get(0);
         assertNotNull("first device", firstDevice);
-        assertEquals("device id", createdDevice.getDeviceIdentifier(), firstDevice.getDeviceIdentifier());
+        assertEquals("device connectorId", createdDevice.getDeviceIdentifier(), firstDevice.getDeviceIdentifier());
 
         Device secondDevice = devices.getResults().get(1);
         assertNotNull("second device", secondDevice);

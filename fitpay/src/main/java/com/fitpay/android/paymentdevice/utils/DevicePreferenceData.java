@@ -3,7 +3,6 @@ package com.fitpay.android.paymentdevice.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.fitpay.android.paymentdevice.DeviceService;
 import com.fitpay.android.utils.StringUtils;
 
 import java.util.Arrays;
@@ -52,14 +51,15 @@ public class DevicePreferenceData {
      * Remove current device prefs.
      * Call this method when watch app was deleted and you need to resync the data.
      *
-     * @param context Context
+     * @param context  Context
+     * @param deviceId device ID
      */
-    public static void clearCurrentData(Context context) {
+    public static void clearCurrentData(Context context, String deviceId) {
         Prefs prefs = Prefs.with(context);
-        String devId = prefs.getString(DeviceService.SYNC_PROPERTY_DEVICE_ID, null);
+        String devId = prefs.getString(deviceId, null);
         if (!StringUtils.isEmpty(devId)) {
             getPreferences(context, devId).edit().clear().apply();
-            prefs.save(DeviceService.SYNC_PROPERTY_DEVICE_ID, "");
+            prefs.save(deviceId, "");
         }
     }
 

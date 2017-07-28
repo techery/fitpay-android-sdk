@@ -42,6 +42,7 @@ public class ApiManager {
     public static final String PROPERTY_TIMEOUT = "timeout";
     public static final String PROPERTY_REDIRECT_URI = "redirectUri";
     public static final String PROPERTY_SYNC_QUEUE_SIZE = "deviceSyncRequestQueueSize";
+    public static final String PROPERTY_SYNC_THREADS_COUNT = "deviceSyncRequestThreadsCount";
     public static final String PROPERTY_COMMIT_TIMERS_ENABLED = "commitTimers";
     public static final String PROPERTY_COMMIT_WARNING_TIMEOUT = "commitWarningTimeout";
     public static final String PROPERTY_COMMIT_ERROR_TIMEOUT = "commitErrorTimeout";

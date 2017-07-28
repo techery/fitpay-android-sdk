@@ -18,7 +18,6 @@ import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
 
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +35,7 @@ class GattApduOperation extends GattOperation {
     private long validUntil;
     private long mStartTime;
 
-    public GattApduOperation(ApduPackage apduPackage) {
+    public GattApduOperation(String connectorId, ApduPackage apduPackage) {
 
         mResult = new ApduExecutionResult(apduPackage.getPackageId());
         validUntil = TimestampUtils.getDateForISO8601String(apduPackage.getValidUntil()).getTime();
@@ -48,7 +47,7 @@ class GattApduOperation extends GattOperation {
             public void execute(BluetoothGatt bluetoothGatt) {
                 mStartTime = System.currentTimeMillis();
 
-                mNotificationListener = new ApduNotificationListener();
+                mNotificationListener = new ApduNotificationListener(connectorId);
                 NotificationManager.getInstance().addListener(mNotificationListener);
             }
 
@@ -106,8 +105,8 @@ class GattApduOperation extends GattOperation {
     }
 
     private class ApduNotificationListener extends Listener {
-        public ApduNotificationListener() {
-            super();
+        public ApduNotificationListener(String connectorId) {
+            super(connectorId);
 
             mCommands.put(IApduMessage.class, data -> {
 

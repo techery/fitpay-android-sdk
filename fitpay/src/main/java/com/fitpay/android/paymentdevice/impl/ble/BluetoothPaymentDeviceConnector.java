@@ -63,6 +63,11 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
         }
     }
 
+    @Override
+    public String id() {
+        return null;
+    }
+
     /**
      * Connects to the GATT server hosted on the Bluetooth LE device.
      *
@@ -148,7 +153,7 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
     @Override
     public void executeApduPackage(ApduPackage apduPackage) {
         FPLog.d(TAG, "initiate executeApduPackage request");
-        GattOperation sendApduOperation = new GattApduOperation(apduPackage);
+        GattOperation sendApduOperation = new GattApduOperation(id(), apduPackage);
         mGattManager.queue(sendApduOperation);
     }
 

@@ -76,10 +76,15 @@ public class EventCallback {
     private String timestamp;
 
     private EventCallback() {
+        super();
     }
 
     public void send() {
         RxBus.getInstance().post(this);
+    }
+
+    public void send(String connectorId) {
+        RxBus.getInstance().post(connectorId, this);
     }
 
     @Command
