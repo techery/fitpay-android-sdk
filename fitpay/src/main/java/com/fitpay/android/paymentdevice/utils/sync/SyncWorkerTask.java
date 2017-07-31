@@ -270,6 +270,7 @@ public final class SyncWorkerTask implements Runnable {
             RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                     .syncId(syncRequest.getSyncId())
                     .value(commits.size())
+                    .state(States.IN_PROGRESS)
                     .build());
 
             Commit commit = commits.remove(0);

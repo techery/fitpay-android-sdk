@@ -59,7 +59,7 @@ public final class DeviceService extends Service {
         syncManager = new DeviceSyncManager(this);
         syncManager.onCreate();
 
-        NotificationManager.getInstance().addListenerToCurrentThread(mSyncListener);
+        NotificationManager.getInstance().addListener(mSyncListener);
     }
 
     @Override
