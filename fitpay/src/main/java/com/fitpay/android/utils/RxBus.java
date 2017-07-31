@@ -58,7 +58,11 @@ public class RxBus {
     }
 
     public <T> void post(String filter, T object) {
-        post(new Wrapper<T>(filter, object));
+        if (filter != null) {
+            post(new Wrapper<T>(filter, object));
+        } else {
+            post(object);
+        }
     }
 
     private String getStackTrace(Throwable t) {

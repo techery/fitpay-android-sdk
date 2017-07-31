@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.fitpay.android.utils.Constants.SYNC_DATA;
 
 /**
- * This is the real work horse of sync, it's launched by the {@link SyncWorkerThread} for an individual {@link SyncRequest}
+ * This is the real work horse of sync, it's launched by the {@link SyncThreadExecutor} for an individual {@link SyncRequest}
  * where it will establish a listener, kick off the sync, and orchastrate it's flow through a listener receiving events
  * back for each commit in the sync workflow.
  */
@@ -43,8 +43,10 @@ public final class SyncWorkerTask implements Runnable {
     private final static String TAG = SyncWorkerTask.class.getSimpleName();
 
     private final Context mContext;
-    public final SyncRequest syncRequest;
+    private final SyncRequest syncRequest;
     private final ScheduledExecutorService timeoutWatcherExecutor;
+
+    private final String connectorIdFilter;
 
     private List<Commit> commits;
     private final CountDownLatch completionLatch = new CountDownLatch(1);
@@ -57,13 +59,18 @@ public final class SyncWorkerTask implements Runnable {
 
     private String pendingCommitId;
 
-    private List<DeviceSyncManager.DeviceSyncManagerCallback> syncManagerCallbacks;
+    private final List<DeviceSyncManager.DeviceSyncManagerCallback> syncManagerCallbacks;
 
     public SyncWorkerTask(Context mContext, List<DeviceSyncManager.DeviceSyncManagerCallback> syncManagerCallbacks, SyncRequest syncRequest) {
         this.mContext = mContext;
         this.syncRequest = syncRequest;
         this.syncManagerCallbacks = syncManagerCallbacks;
         this.timeoutWatcherExecutor = Executors.newScheduledThreadPool(1);
+        this.connectorIdFilter = syncRequest.getConnector().id();
+    }
+
+    public SyncRequest getSyncRequest() {
+        return syncRequest;
     }
 
     @Override
@@ -106,7 +113,7 @@ public final class SyncWorkerTask implements Runnable {
             return;
         }
 
-        RxBus.getInstance().post(Sync.builder()
+        RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                 .syncId(syncRequest.getSyncId())
                 .state(States.STARTED)
                 .build());
@@ -114,7 +121,7 @@ public final class SyncWorkerTask implements Runnable {
         if (syncRequest.getUser() == null) {
             FPLog.w(TAG, "No user provided in syncRequest: " + syncRequest);
 
-            RxBus.getInstance().post(Sync.builder()
+            RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                     .syncId(syncRequest.getSyncId())
                     .state(States.SKIPPED)
                     .message("No user provided in current syncRequest: " + syncRequest)
@@ -126,7 +133,7 @@ public final class SyncWorkerTask implements Runnable {
         if (syncRequest.getDevice() == null) {
             FPLog.w(TAG, "No payment device connector configured in syncRequest: " + syncRequest);
 
-            RxBus.getInstance().post(Sync.builder()
+            RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                     .syncId(syncRequest.getSyncId())
                     .state(States.SKIPPED)
                     .message("No payment device provided in current syncRequest: " + syncRequest)
@@ -138,7 +145,7 @@ public final class SyncWorkerTask implements Runnable {
         if (syncRequest.getConnector() == null) {
             FPLog.w(TAG, "No payment device connector configured in syncRequest: " + syncRequest);
 
-            RxBus.getInstance().post(Sync.builder()
+            RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                     .syncId(syncRequest.getSyncId())
                     .state(States.SKIPPED)
                     .message("No payment device provided in current syncRequest: " + syncRequest)
@@ -149,7 +156,7 @@ public final class SyncWorkerTask implements Runnable {
         if (syncRequest.getConnector().getState() != States.CONNECTED) {
             FPLog.w(TAG, "Payment device is not in a CONNECTED state, syncRequest: " + syncRequest);
 
-            RxBus.getInstance().post(Sync.builder()
+            RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                     .syncId(syncRequest.getSyncId())
                     .state(States.SKIPPED)
                     .message("Payment device is not currently connected (" + syncRequest.getConnector().getState() + ": " + syncRequest)
@@ -166,13 +173,13 @@ public final class SyncWorkerTask implements Runnable {
     }
 
     private void syncDevice() {
+        String connectorIdFilter = syncRequest.getConnector().id();
         String deviceId = syncRequest.getDevice().getDeviceIdentifier();
 
-        RxBus.getInstance().post(
-                new DeviceStatusMessage(
-                        mContext.getString(R.string.checking_wallet_updates),
-                        deviceId,
-                        DeviceStatusMessage.SUCCESS));
+        RxBus.getInstance().post(connectorIdFilter, new DeviceStatusMessage(
+                mContext.getString(R.string.checking_wallet_updates),
+                deviceId,
+                DeviceStatusMessage.SUCCESS));
 
 
         // tell connector the sync is starting so it can perform an pre-init work
@@ -193,24 +200,24 @@ public final class SyncWorkerTask implements Runnable {
                             FPLog.i(SYNC_DATA, "Commits Received: " + commits.size());
 
                             if (commits.size() > 0) {
-                                RxBus.getInstance().post(new DeviceStatusMessage(
+                                RxBus.getInstance().post(connectorIdFilter, new DeviceStatusMessage(
                                         mContext.getString(R.string.updates_available),
                                         deviceId,
                                         DeviceStatusMessage.SUCCESS));
 
-                                RxBus.getInstance().post(new DeviceStatusMessage(
+                                RxBus.getInstance().post(connectorIdFilter, new DeviceStatusMessage(
                                         mContext.getString(R.string.sync_started),
                                         deviceId,
                                         DeviceStatusMessage.PROGRESS));
 
                                 processNextCommit();
                             } else {
-                                RxBus.getInstance().post(new DeviceStatusMessage(
+                                RxBus.getInstance().post(connectorIdFilter, new DeviceStatusMessage(
                                         mContext.getString(R.string.no_pending_updates),
                                         deviceId,
                                         DeviceStatusMessage.SUCCESS));
 
-                                RxBus.getInstance().post(Sync.builder()
+                                RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                                         .syncId(syncRequest.getSyncId())
                                         .state(States.COMPLETED_NO_UPDATES)
                                         .build());
@@ -227,7 +234,7 @@ public final class SyncWorkerTask implements Runnable {
                                 FPLog.e(TAG, "get commits failed. " + throwable.getMessage());
                             }
 
-                            RxBus.getInstance().post(Sync.builder()
+                            RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                                     .syncId(syncRequest.getSyncId())
                                     .state(States.FAILED)
                                     .message(throwable.getMessage())
@@ -251,7 +258,7 @@ public final class SyncWorkerTask implements Runnable {
         switch (syncRequest.getConnector().getState()) {
             case States.DISCONNECTED:
             case States.DISCONNECTING:
-                RxBus.getInstance().post(Sync.builder()
+                RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                         .syncId(syncRequest.getSyncId())
                         .state(States.FAILED)
                         .message("Error processing next commit, device is disconnected or disconnecting")
@@ -260,8 +267,7 @@ public final class SyncWorkerTask implements Runnable {
         }
 
         if (commits.size() > 0) {
-
-            RxBus.getInstance().post(Sync.builder()
+            RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                     .syncId(syncRequest.getSyncId())
                     .value(commits.size())
                     .build());
@@ -295,7 +301,7 @@ public final class SyncWorkerTask implements Runnable {
                     public Void call() throws Exception {
                         FPLog.e(TAG, "error, commit timeout " + commit + " has not returned within " + commitErrorTimeout + "ms");
 
-                        RxBus.getInstance().post(Sync.builder()
+                        RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                                 .syncId(syncRequest.getSyncId())
                                 .state(States.TIMEOUT)
                                 .message("sync timeout, this is typically due to a commit event being sent to the payment device connector and a commit event not being pushed to RxBus")
@@ -312,9 +318,9 @@ public final class SyncWorkerTask implements Runnable {
             syncRequest.getConnector().processCommit(commit);
 
             // expose the commit out to others who may want to take action
-            RxBus.getInstance().post(commit);
+            RxBus.getInstance().post(connectorIdFilter, commit);
         } else {
-            RxBus.getInstance().post(Sync.builder()
+            RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                     .syncId(syncRequest.getSyncId())
                     .state(States.COMPLETED)
                     .build());
@@ -387,7 +393,7 @@ public final class SyncWorkerTask implements Runnable {
                     .setStatus(EventCallback.STATUS_OK)
                     .setTimestamp(commitSuccess.getCreatedTs())
                     .build();
-            eventCallback.send();
+            eventCallback.send(syncRequest.getConnector().id());
 
             // move onto the next commit
             processNextCommit();
@@ -407,7 +413,7 @@ public final class SyncWorkerTask implements Runnable {
 
             commits.clear();
 
-            RxBus.getInstance().post(Sync.builder()
+            RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                     .syncId(syncRequest.getSyncId())
                     .state(States.FAILED)
                     .message(commitFailed.getErrorMessage())
@@ -420,7 +426,7 @@ public final class SyncWorkerTask implements Runnable {
                     .setTimestamp(commitFailed.getCreatedTs())
                     .build();
 
-            eventCallback.send();
+            eventCallback.send(syncRequest.getConnector().id());
         }
 
         @Override
@@ -441,7 +447,7 @@ public final class SyncWorkerTask implements Runnable {
                     .setStatus(EventCallback.STATUS_OK)
                     .setTimestamp(commitSkipped.getCreatedTs())
                     .build();
-            eventCallback.send();
+            eventCallback.send(syncRequest.getConnector().id());
 
             processNextCommit();
         }

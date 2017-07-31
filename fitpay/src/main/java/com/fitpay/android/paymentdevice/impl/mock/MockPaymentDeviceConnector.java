@@ -147,7 +147,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 .map(o -> loadDefaultDevice())
                 .subscribe(deviceInfo -> {
                     FPLog.d(TAG, "device info has been read.  device: " + deviceInfo);
-                    RxBus.getInstance().post(deviceInfo);
+                    RxBus.getInstance().post(connectorId, deviceInfo);
                 }, throwable -> FPLog.e(TAG, "read device info error:" + throwable.toString()));
     }
 
@@ -261,7 +261,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                     int duration = (int) ((System.currentTimeMillis() - apduExecutionResult.getExecutedTsEpoch()) / 1000);
                     apduExecutionResult.setExecutedDuration(duration);
                     FPLog.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
-                    RxBus.getInstance().post(apduExecutionResult);
+                    RxBus.getInstance().post(connectorId, apduExecutionResult);
                 } else if (apduCommandNumber + 1 < apduPackage.getApduCommands().size()) {
                     getDelayObservable(100)
                             .map(x -> true)
@@ -271,7 +271,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                     int duration = (int) ((System.currentTimeMillis() - apduExecutionResult.getExecutedTsEpoch()) / 1000);
                     apduExecutionResult.setExecutedDuration(duration);
                     FPLog.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
-                    RxBus.getInstance().post(apduExecutionResult);
+                    RxBus.getInstance().post(connectorId, apduExecutionResult);
                 }
             }
 

@@ -8,7 +8,6 @@ import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
 import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
-import com.fitpay.android.utils.Command;
 import com.fitpay.android.utils.EventCallback;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
@@ -19,7 +18,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -64,14 +62,11 @@ public class WebViewCommunicatorTest extends TestActions {
         final CountDownLatch latch = new CountDownLatch(1);
         @EventCallback.Status String[] status = new String[1];
 
-        final Listener callbackListener = new Listener() {
+        final Listener callbackListener = new EventCallbackListener() {
             @Override
-            public Map<Class, Command> getCommands() {
-                mCommands.put(EventCallback.class, data -> {
-                    status[0] = ((EventCallback) data).getStatus();
-                    latch.countDown();
-                });
-                return super.getCommands();
+            void onEvent(EventCallback callback) {
+                status[0] = callback.getStatus();
+                latch.countDown();
             }
         };
 
@@ -90,5 +85,13 @@ public class WebViewCommunicatorTest extends TestActions {
         assertEquals("status value", "OK", status[0]);
 
         NotificationManager.getInstance().removeListener(callbackListener);
+    }
+
+    private abstract class EventCallbackListener extends Listener {
+        EventCallbackListener() {
+            mCommands.put(EventCallback.class, data -> onEvent(((EventCallback) data)));
+        }
+
+        abstract void onEvent(EventCallback callback);
     }
 }

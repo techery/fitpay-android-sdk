@@ -52,6 +52,7 @@ public class ApiManager {
     static {
         config.put(PROPERTY_TIMEOUT, "10");
         config.put(PROPERTY_SYNC_QUEUE_SIZE, "10");
+        config.put(PROPERTY_SYNC_THREADS_COUNT, "4");
         config.put(PROPERTY_COMMIT_WARNING_TIMEOUT, "5000");
         config.put(PROPERTY_COMMIT_ERROR_TIMEOUT, "30000");
         config.put(PROPERTY_COMMIT_TIMERS_ENABLED, "true");

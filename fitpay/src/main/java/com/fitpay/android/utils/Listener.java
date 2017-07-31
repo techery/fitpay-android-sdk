@@ -8,9 +8,10 @@ import java.util.Map;
  */
 public abstract class Listener {
 
-    private String filter;
+    protected Map<Class, Command> mCommands;
 
-    public Map<Class, Command> mCommands;
+    private String filter;
+    private boolean filterApplied = false;
 
     public Listener() {
         mCommands = new HashMap<>();
@@ -21,15 +22,13 @@ public abstract class Listener {
         this.filter = filter;
     }
 
-    public void setFilter(String filter) {
-        this.filter = filter;
-    }
+    Map<Class, Command> getCommands() {
+        if (!StringUtils.isEmpty(filter) && !filterApplied) {
+            filterApplied = true;
 
-    public Map<Class, Command> getCommands() {
-        if (!StringUtils.isEmpty(filter)) {
-            for (Command command : mCommands.values()) {
-                Command finalCommand = command;
-                command = new FilterCommand() {
+            Map<Class, Command> filterCommands = new HashMap<>(mCommands.size());
+            for (Map.Entry<Class, Command> pair : mCommands.entrySet()) {
+                filterCommands.put(pair.getKey(), new FilterCommand() {
                     @Override
                     public String filter() {
                         return filter;
@@ -37,10 +36,12 @@ public abstract class Listener {
 
                     @Override
                     public void execute(Object data) {
-                        finalCommand.execute(data);
+                        pair.getValue().execute(data);
                     }
-                };
+                });
             }
+
+            mCommands = filterCommands;
         }
 
         return mCommands;

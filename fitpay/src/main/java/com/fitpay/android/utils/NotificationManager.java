@@ -59,12 +59,16 @@ public final class NotificationManager {
                 mSubscriptions.put(clazz, RxBus.getInstance().register(clazz, scheduler, object -> {
                     synchronized (this) {
                         for (Command command : mCommands.get(clazz)) {
-                            if (object instanceof Wrapper && command instanceof FilterCommand) {
-                                String filter = ((FilterCommand) command).filter();
-                                if (filter != null && filter.equals(((Wrapper) object).getFilter())) {
-                                    command.execute(object);
+                            if (object instanceof Wrapper) {
+                                if (command instanceof FilterCommand) {
+                                    String filter = ((FilterCommand) command).filter();
+                                    if (filter != null && filter.equals(((Wrapper) object).getFilter())) {
+                                        command.execute(((Wrapper) object).getObject());
+                                    }
+                                } else {
+                                    command.execute(((Wrapper) object).getObject());
                                 }
-                            } else {
+                            } else if (!(command instanceof FilterCommand)) {
                                 command.execute(object);
                             }
                         }

@@ -180,6 +180,11 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
 //        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
 
+        if (null == user) {
+            onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "No user specified for sync operation");
+            return;
+        }
+
         if (null == device) {
             onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "No device specified for sync operation");
             return;
