@@ -37,8 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import rx.Observable;
-
 import static com.fitpay.android.paymentdevice.constants.ApduConstants.APDU_CONTINUE_COMMAND_DATA;
 import static com.fitpay.android.paymentdevice.constants.ApduConstants.NORMAL_PROCESSING;
 import static com.fitpay.android.utils.Constants.APDU_DATA;
@@ -188,6 +186,11 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         if (null != apduExecutionListener) {
             NotificationManager.getInstance().removeListener(this.apduExecutionListener);
             apduExecutionListener = null;
+        }
+
+        if (apduExecutionInProgress) {
+            FPLog.w("syncComplete() called with apduExecutionInProgress still set to true, this is unexpected and implies a potential integration issue handling APDU commits");
+            apduExecutionInProgress = false;
         }
     }
 
