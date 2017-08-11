@@ -187,6 +187,13 @@ FPLog.addLogImpl(new FPLog.ILog() {
 
 HTTP traffic originating from the SDK can be logged by calling `FPLog.setShowHTTPLogs(true);`
 
+## Card Scanning
+
+By default the FitPay WebView utilizes a web based card scanning service which is currently being EOL'ed, that means
+the ability to scan a card during card entry no must be handled natively by the SDK implementation.  The SDK provides
+an interface `IFitPayCardScanner` where a scanning implementation can be provided.   An full working example using the
+[Card.IO](https://www.card.io/) utility can be seen in our [reference implementation](https://github.com/fitpay/Pagare_Android_WV/commit/d3d9267154b20e5a6cdb4e6e5c7a9ce5e5d87727).
+
 ## Contributing to the SDK
 We welcome contributions to the SDK. For your first few contributions please fork the repo, make your changes and submit a pull request. Internally we branch off of develop, test, and PR-review the branch before merging to develop (moderately stable). Releases to Master happen less frequently, undergo more testing, and can be considered stable. For more information, please read:  [http://nvie.com/posts/a-successful-git-branching-model/](http://nvie.com/posts/a-successful-git-branching-model/)
 
