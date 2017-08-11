@@ -1,6 +1,5 @@
 package com.fitpay.android.webview.impl.parser;
 
-import com.fitpay.android.webview.enums.RtmType;
 import com.fitpay.android.webview.events.RtmMessage;
 import com.fitpay.android.webview.impl.WebViewCommunicatorImpl;
 
@@ -15,13 +14,6 @@ public class RtmParserV3 extends RtmParserV2 {
 
     @Override
     public void parseMessage(RtmMessage msg) {
-        switch (msg.getType()) {
-            case RtmType.SCAN_REQUEST:
-                impl.startScan();
-                break;
-
-            default:
-                super.parseMessage(msg);
-        }
+        super.parseMessage(msg);
     }
 }
