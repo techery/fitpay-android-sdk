@@ -97,6 +97,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         this.cardScanner = cardScanner;
     }
 
+    public IFitPayCardScanner getCardScanner() {
+        return this.cardScanner;
+    }
+
     /**
      * this method should be called manually in {@link Activity#onDestroy()}
      */
@@ -381,9 +385,13 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         webAppRtmVersion = version;
     }
 
+    @Override
     public void startScan() {
         if (cardScanner != null) {
+            FPLog.d("cardScan requested");
             cardScanner.startScan();
+        } else {
+            FPLog.e("cardScan requested, however there is no cardScanner implementation provided");
         }
     }
 
