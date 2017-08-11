@@ -72,6 +72,11 @@ public class WvConfig {
             return this;
         }
 
+        public Builder useWebCardScanner(boolean value) {
+            data.put("useWebCardScanner", value);
+            return this;
+        }
+
         public Builder addKeyValue(String key, Object value) {
             data.put(key, value);
             return this;

@@ -2,6 +2,7 @@ package com.fitpay.android.webview;
 
 import android.webkit.JavascriptInterface;
 
+import com.fitpay.android.cardscanner.IFitPayCardScanner;
 import com.fitpay.android.paymentdevice.DeviceService;
 
 import org.json.JSONException;
@@ -27,7 +28,6 @@ public interface WebViewCommunicator {
     @JavascriptInterface
     void sendUserData(String callbackId, String deviceId, String token, String userId);
 
-
     /**
      * this method is called by the WV onLoad() to retrieve JSON object with host device and wearable data
      */
@@ -41,4 +41,20 @@ public interface WebViewCommunicator {
      * @param deviceService
      */
     void setDeviceService(DeviceService deviceService);
+
+    /**
+     * Provide a {@link IFitPayCardScanner} implemention to handle card image scanning within the native OS.  In order to enable
+     * the "useWebCardScanner" must be set to false in the {@link com.fitpay.android.webview.models.WvConfig} when launching the
+     * webview.
+     *
+     * @param cardScanner
+     */
+    void setCardScanner(IFitPayCardScanner cardScanner);
+    IFitPayCardScanner getCardScanner();
+
+    /**
+     * Called by the webview when the consumer requests a card scan operation and the "useWebCardScanner" is false in the
+     * {@link com.fitpay.android.webview.models.WvConfig}
+     */
+    void startScan();
 }
