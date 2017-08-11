@@ -7,7 +7,7 @@ import android.support.annotation.StringDef;
  */
 public class RtmType {
 
-    public static final int RTM_VERSION = 3;
+    public static final int RTM_VERSION = 4;
 
     public static final String VERSION = "version";
     public static final String SYNC = "sync";
