@@ -368,6 +368,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
                     break;
                 }
+                case States.TIMEOUT:
                 case States.FAILED: {
                     onTaskError(EventCallback.SYNC_COMPLETED, callbackId, !StringUtils.isEmpty(syncEvent.getMessage()) ? syncEvent.getMessage() : "sync failure");
                     NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
