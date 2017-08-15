@@ -1,7 +1,6 @@
 package com.fitpay.android.api.services;
 
-import android.support.compat.BuildConfig;
-
+import com.fitpay.android.BuildConfig;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.FPLog;
@@ -28,7 +27,8 @@ final public class UserService extends BaseClient {
         Interceptor interceptor = chain -> {
             Request.Builder builder = chain.request().newBuilder()
                     .header("Accept", "application/json")
-                    .header("Content-Type", "application/json");
+                    .header("Content-Type", "application/json")
+                    .header(FP_KEY_SDK_VER, BuildConfig.SDK_VERSION);
 
             String keyId = KeysManager.getInstance().getKeyId(KeysManager.KEY_API);
             if (keyId != null) {

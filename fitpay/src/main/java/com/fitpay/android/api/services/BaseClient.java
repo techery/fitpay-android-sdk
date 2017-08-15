@@ -24,6 +24,8 @@ import okhttp3.TlsVersion;
  */
 public class BaseClient {
     protected static final String FP_KEY_ID = "fp-key-id";
+    protected static final String FP_KEY_SDK_VER = "X-FitPay-SDK";
+
 
     /*
      * OKClientBuilder for untrusted ssl endpoints
