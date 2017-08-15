@@ -59,7 +59,7 @@ android {
     }
 
     buildTypes.each {
-        it.buildConfigField "String", 'SDK_VERSION', "\"" + version + "\""
+        it.buildConfigField "String", 'SDK_VERSION', "\"ANDROID-" + version + "\""
     }
 
     compileOptions {
