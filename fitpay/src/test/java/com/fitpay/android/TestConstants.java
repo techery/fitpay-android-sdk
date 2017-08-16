@@ -11,16 +11,11 @@ import java.util.Map;
 public final class TestConstants {
 
     static Map<String, String> getConfig() {
-        String baseURL = System.getenv(ApiManager.PROPERTY_API_BASE_URL);
-        String authURL = System.getenv(ApiManager.PROPERTY_AUTH_BASE_URL);
-        String clientID = System.getenv(ApiManager.PROPERTY_CLIENT_ID);
-        String redirectURI = System.getenv(ApiManager.PROPERTY_REDIRECT_URI);
-
         Map<String, String> config = new HashMap<>();
-        config.put(ApiManager.PROPERTY_API_BASE_URL, baseURL != null ? baseURL : "https://api.fit-pay.com");
-        config.put(ApiManager.PROPERTY_AUTH_BASE_URL, authURL != null ? authURL : "https://auth.fit-pay.com");
-        config.put(ApiManager.PROPERTY_CLIENT_ID, clientID != null ? clientID : "fp_webapp_pJkVp2Rl");
-        config.put(ApiManager.PROPERTY_REDIRECT_URI, redirectURI != null ? redirectURI : "https://webapp.fit-pay.com");
+        config.put(ApiManager.PROPERTY_API_BASE_URL, System.getProperty(ApiManager.PROPERTY_API_BASE_URL, "https://api.fit-pay.com"));
+        config.put(ApiManager.PROPERTY_AUTH_BASE_URL, System.getProperty(ApiManager.PROPERTY_AUTH_BASE_URL, "https://auth.fit-pay.com"));
+        config.put(ApiManager.PROPERTY_CLIENT_ID, System.getProperty(ApiManager.PROPERTY_CLIENT_ID, "fp_webapp_pJkVp2Rl"));
+        config.put(ApiManager.PROPERTY_REDIRECT_URI, System.getProperty(ApiManager.PROPERTY_REDIRECT_URI, "https://webapp.fit-pay.com"));
 
         System.out.println("test configuration: " + config);
 
