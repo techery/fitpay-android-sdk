@@ -4,7 +4,11 @@ import android.content.Context;
 
 import com.fitpay.android.R;
 import com.fitpay.android.api.ApiManager;
+import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.enums.ResponseState;
+import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.device.Commit;
+import com.fitpay.android.api.models.device.CommitConfirm;
 import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
@@ -477,6 +481,8 @@ public class DeviceSyncManager {
 
                 moveLastCommitPointer(commitSuccess.getCommitId());
 
+                confirmCommit(commitSuccess.getCommit(), new CommitConfirm(ResponseState.SUCCESS));
+
                 EventCallback eventCallback = new EventCallback.Builder()
                         .setCommand(EventCallback.getCommandForCommit(commitSuccess.getCommit()))
                         .setStatus(EventCallback.STATUS_OK)
@@ -499,6 +505,8 @@ public class DeviceSyncManager {
                 commitFailedCounter.incrementAndGet();
 
                 cancelCommitTimers();
+
+                confirmCommit(commitFailed.getCommit(), new CommitConfirm(ResponseState.FAILED));
 
                 commits.clear();
 
@@ -531,11 +539,14 @@ public class DeviceSyncManager {
 
                 moveLastCommitPointer(commitSkipped.getCommitId());
 
+                confirmCommit(commitSkipped.getCommit(), new CommitConfirm(ResponseState.SKIPPED));
+
                 EventCallback eventCallback = new EventCallback.Builder()
                         .setCommand(EventCallback.getCommandForCommit(commitSkipped.getCommit()))
                         .setStatus(EventCallback.STATUS_OK)
                         .setTimestamp(commitSkipped.getCreatedTs())
                         .build();
+
                 eventCallback.send();
 
                 processNextCommit();
@@ -555,6 +566,24 @@ public class DeviceSyncManager {
                 deviceData.setLastCommitId(lastCommitId);
 
                 DevicePreferenceData.store(mContext, deviceData);
+            }
+
+            private void confirmCommit(final Commit commit, final CommitConfirm confirm) {
+                if (commit.canConfirmCommit()) {
+                    commit.confirm(confirm, new ApiCallback<Void>() {
+                        @Override
+                        public void onSuccess(Void result) {
+                            FPLog.i("commit " + commit + " successfully confirmed with " + confirm);
+                        }
+
+                        @Override
+                        public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                            FPLog.e("error confirming commit " + commit + ", errorCode: " + errorCode + ", errorMessage: " + errorMessage);
+                        }
+                    });
+                } else {
+                    FPLog.i("skipping commit confirm for commit " + commit + ", no confirm link available");
+                }
             }
 
             private void cancelCommitTimers() {

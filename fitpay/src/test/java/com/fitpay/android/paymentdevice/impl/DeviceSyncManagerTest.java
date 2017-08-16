@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 
 import com.fitpay.android.TestActions;
 import com.fitpay.android.TestUtils;
+import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.UserCreateRequest;
@@ -127,6 +128,11 @@ public class DeviceSyncManagerTest extends TestActions {
 
         this.device = createDevice(this.user, getTestDevice());
         assertNotNull(this.device);
+
+        String pan = "9999504454545450";
+        CreditCard creditCard = getTestCreditCard(pan);
+        CreditCard createdCard = createCreditCard(user, creditCard);
+        assertNotNull("card not created", createdCard);
 
         Properties props = new Properties();
         props.put(MockPaymentDeviceConnector.CONFIG_CONNECTED_RESPONSE_TIME, "0");
@@ -305,7 +311,6 @@ public class DeviceSyncManagerTest extends TestActions {
         }
 
         public void onCommitSuccess(CommitSuccess commit) {
-
             commits.add(commit);
         }
 
@@ -317,5 +322,4 @@ public class DeviceSyncManagerTest extends TestActions {
             return commits;
         }
     }
-
 }
