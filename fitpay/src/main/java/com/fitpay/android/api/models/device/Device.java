@@ -31,6 +31,8 @@ public final class Device extends DeviceModel implements Parcelable {
 
     private static final String COMMITS = "commits";
     private static final String USER = "user";
+    private static final String LAST_ACK_COMMIT = "lastAckCommit";
+    //private static final String DEVICE_RESET_TASKS = "deviceResetTasks";
 
     private List<CreditCardRef> cardRelationships;
 
@@ -107,7 +109,6 @@ public final class Device extends DeviceModel implements Parcelable {
     public boolean canGetCommits() {
         return hasLink(COMMITS);
     }
-
 
     /**
      * Retrieves a collection of events that should be committed to this device.
@@ -206,6 +207,49 @@ public final class Device extends DeviceModel implements Parcelable {
                 });
             }
         });
+    }
+
+    /**
+     * Retrieves last event that was committed to this device.
+     *
+     * @param callback result callback
+     */
+    public void getLastAckCommit(final ApiCallback<Commit> callback) {
+        Map<String, Object> queryMap = new HashMap<>();
+        makeGetCall(LAST_ACK_COMMIT, queryMap, Commit.class, callback);
+    }
+
+    /**
+     * Retrieves last event that was committed to this device.
+     *
+     * @return observable
+     */
+    public Observable<Commit> getLastAckCommit() {
+        return Observable.create(subscriber -> getLastAckCommit(new ApiCallback<Commit>() {
+            @Override
+            public void onSuccess(Commit result) {
+                subscriber.onNext(result);
+                subscriber.onCompleted();
+            }
+
+            @Override
+            public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                subscriber.onError(new DeviceOperationException(errorMessage, errorCode));
+            }
+        }));
+    }
+
+    /**
+     * Retrieves 'all' events that should be committed to this device. Uses lastAckCommit as last commit id
+     *
+     * @return observable
+     */
+    public Observable<Collections.CommitsCollection> getAllCommitsAfterLastAckCommit() {
+        return getLastAckCommit().flatMap(commit -> getAllCommits(commit != null ? commit.commitId : null));
+    }
+
+    public boolean hasLastAckCommit() {
+        return hasLink(LAST_ACK_COMMIT);
     }
 
     public static final class Builder {
