@@ -9,6 +9,7 @@ import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.CommitConfirm;
+import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
@@ -22,6 +23,7 @@ import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
+import com.fitpay.android.utils.StringUtils;
 import com.fitpay.android.webview.events.DeviceStatusMessage;
 
 import java.util.ArrayList;
@@ -37,6 +39,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import rx.Observable;
 
 import static com.fitpay.android.utils.Constants.SYNC_DATA;
 
@@ -282,8 +286,19 @@ public class DeviceSyncManager {
 
             // get all the new commits from the last commit pointer processed
             FPLog.d(TAG, "retrieving commits from the lastCommitId: " + deviceData.getLastCommitId() + ", for syncRequest: " + syncRequest);
-            syncRequest.getDevice().getAllCommits(deviceData.getLastCommitId())
-                    .compose(RxBus.applySchedulersExecutorThread())
+
+            Device device = syncRequest.getDevice();
+            Observable<com.fitpay.android.api.models.collection.Collections.CommitsCollection> observable = null;
+
+            String lastCommitId = deviceData.getLastCommitId();
+
+            if (StringUtils.isEmpty(lastCommitId) && syncRequest.useLastAckCommit() && device.hasLastAckCommit()) {
+                observable = device.getAllCommitsAfterLastAckCommit();
+            } else {
+                observable = device.getAllCommits(lastCommitId);
+            }
+
+            observable.compose(RxBus.applySchedulersExecutorThread())
                     .subscribe(
                             commitsCollection -> {
                                 commits = commitsCollection.getResults();

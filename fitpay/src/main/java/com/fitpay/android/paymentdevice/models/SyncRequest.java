@@ -13,11 +13,13 @@ public class SyncRequest {
     private final String syncId = UUID.randomUUID().toString();
     private final User user;
     private final Device device;
+    private final boolean useLastAckCommit;
     private final IPaymentDeviceConnector connector;
 
-    private SyncRequest(User user, Device device, IPaymentDeviceConnector connector) {
+    private SyncRequest(User user, Device device, boolean useLastAckCommit, IPaymentDeviceConnector connector) {
         this.user = user;
         this.device = device;
+        this.useLastAckCommit = useLastAckCommit;
         this.connector = connector;
     }
 
@@ -37,12 +39,17 @@ public class SyncRequest {
         return syncId;
     }
 
+    public boolean useLastAckCommit() {
+        return useLastAckCommit;
+    }
+
     @Override
     public String toString() {
         return "SyncRequest{" +
                 "syncId='" + syncId + '\'' +
                 ", user=" + user +
                 ", device=" + device +
+                ", useLastAckCommit=" + useLastAckCommit +
                 ", connector=" + connector +
                 '}';
     }
@@ -54,6 +61,7 @@ public class SyncRequest {
     public static final class Builder {
         private User user;
         private Device device;
+        private boolean useLastAckCommit = true;
         private IPaymentDeviceConnector connector;
 
         public Builder setUser(User user) {
@@ -66,13 +74,18 @@ public class SyncRequest {
             return this;
         }
 
+        public Builder setUseLastAckCommit(boolean useLastAckCommit) {
+            this.useLastAckCommit = useLastAckCommit;
+            return this;
+        }
+
         public Builder setConnector(IPaymentDeviceConnector connector) {
             this.connector = connector;
             return this;
         }
 
         public SyncRequest build() {
-            return new SyncRequest(user, device, connector);
+            return new SyncRequest(user, device, useLastAckCommit, connector);
         }
     }
 }
