@@ -108,7 +108,7 @@ public class IdVerification {
             return this;
         }
 
-        public void build(){
+        public IdVerification build(){
             IdVerification idVerification = new IdVerification();
             idVerification.accountScore = accountScore;
             idVerification.oemAccountInfoUpdatedDate = oemAccountInfoUpdatedDate;
@@ -121,6 +121,7 @@ public class IdVerification {
             idVerification.accountScore = accountScore;
             idVerification.deviceScore = deviceScore;
             idVerification.nfcCapable = nfcCapable;
+            return idVerification;
         }
     }
 }
