@@ -356,10 +356,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             super();
             this.callbackId = callbackId;
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
+
+            FPLog.d("new DeviceSyncListener for callbackId (" + callbackId + ")");
         }
 
         private void onSyncStateChanged(Sync syncEvent) {
-            FPLog.d(TAG, "received on sync state changed event: " + syncEvent);
+            FPLog.d(TAG, "received on sync state changed event, callbackId (" + callbackId + "): " + syncEvent);
             switch (syncEvent.getState()) {
                 case States.COMPLETED:
                 case States.COMPLETED_NO_UPDATES: {

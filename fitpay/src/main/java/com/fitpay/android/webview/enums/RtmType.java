@@ -25,8 +25,9 @@ public class RtmType {
     public static final String DEVICE_STATUS = "deviceStatus";
     public static final String LOGOUT = "logout";
     public static final String RESOLVE = "resolve";
+    public static final String UNRECOGNIZED = "unrecognized";
 
-    @StringDef({DEVICE_STATUS, LOGOUT, RESOLVE, VERSION, CARD_SCANNED, SDK_VERSION})
+    @StringDef({DEVICE_STATUS, LOGOUT, RESOLVE, VERSION, CARD_SCANNED, SDK_VERSION, UNRECOGNIZED})
     public @interface Response {
     }
 }

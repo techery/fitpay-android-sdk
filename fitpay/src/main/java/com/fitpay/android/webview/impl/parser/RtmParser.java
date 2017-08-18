@@ -1,6 +1,9 @@
 package com.fitpay.android.webview.impl.parser;
 
+import com.fitpay.android.utils.RxBus;
+import com.fitpay.android.webview.enums.RtmType;
 import com.fitpay.android.webview.events.RtmMessage;
+import com.fitpay.android.webview.events.RtmMessageResponse;
 import com.fitpay.android.webview.impl.WebViewCommunicatorImpl;
 
 /**
@@ -16,7 +19,7 @@ public class RtmParser {
     public void parseMessage(RtmMessage msg) {
         switch (msg.getType()) {
             default:
-                throwException("unsupported action value " + msg.getType());
+                RxBus.getInstance().post(new RtmMessageResponse(msg.getCallbackId(), false, "unrecognized rtm message", RtmType.UNRECOGNIZED));
         }
     }
 
