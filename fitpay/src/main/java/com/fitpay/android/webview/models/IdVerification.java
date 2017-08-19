@@ -26,11 +26,11 @@ public class IdVerification {
     /**
      * send data to RTM
      */
-    public void send() {
-        RxBus.getInstance().post(new RtmMessageResponse(this, RtmType.ID_VERIFICATION));
+    public void send(String callbackId) {
+        RxBus.getInstance().post(new RtmMessageResponse(callbackId, this, RtmType.ID_VERIFICATION));
     }
 
-    public class Builder {
+    public static final class Builder {
         private Integer oemAccountInfoUpdatedDate;
         private Integer oemAccountCreatedDate;
         private Integer suspendedCardsInAccount;
@@ -41,6 +41,10 @@ public class IdVerification {
         private Integer accountScore; // int between 0-9
         private Integer deviceScore; // int between 0-9
         private Boolean nfcCapable;
+
+        public Builder(){
+
+        }
 
         public Builder setOemAccountInfoUpdatedDate(int oemAccountInfoUpdatedDate) {
             this.oemAccountInfoUpdatedDate = oemAccountInfoUpdatedDate;

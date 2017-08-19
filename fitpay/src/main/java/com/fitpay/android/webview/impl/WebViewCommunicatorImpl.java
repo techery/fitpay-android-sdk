@@ -139,8 +139,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         RxBus.getInstance().post(new RtmMessageResponse(new RtmVersion(RtmType.RTM_VERSION), RtmType.VERSION));
     }
 
-    public void sendCardData(@NonNull ScannedCardInfo cardInfo) {
-        RxBus.getInstance().post(new RtmMessageResponse(cardInfo, RtmType.CARD_SCANNED));
+    public void sendCardData(String callbackId, @NonNull ScannedCardInfo cardInfo) {
+        RxBus.getInstance().post(new RtmMessageResponse(callbackId, cardInfo, RtmType.CARD_SCANNED));
     }
 
     @Override
@@ -389,10 +389,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     }
 
     @Override
-    public void startScan() {
+    public void startScan(String callbackId) {
         if (cardScanner != null) {
             FPLog.d("cardScan requested");
-            cardScanner.startScan();
+            cardScanner.startScan(callbackId);
         } else {
             FPLog.e("cardScan requested, however there is no cardScanner implementation provided");
         }

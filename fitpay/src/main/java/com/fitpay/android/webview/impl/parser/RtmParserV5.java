@@ -19,7 +19,7 @@ public class RtmParserV5 extends RtmParserV4 {
     public void parseMessage(RtmMessage msg) {
         switch (msg.getType()) {
             case RtmType.ID_VERIFICATION_REQUEST:
-                RxBus.getInstance().post(new IdVerificationRequest());
+                RxBus.getInstance().post(new IdVerificationRequest(msg.getCallbackId()));
                 break;
 
             default:
