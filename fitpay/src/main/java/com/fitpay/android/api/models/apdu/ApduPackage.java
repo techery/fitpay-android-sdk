@@ -12,6 +12,16 @@ import java.util.List;
 public final class ApduPackage extends ApduPackageModel {
     private static final String APDU_RESPONSE = "apduResponse";
 
+    private String commitId;
+
+    public String getCommitId() {
+        return commitId;
+    }
+
+    public void setCommitId(String commitId) {
+        this.commitId = commitId;
+    }
+
     /**
      * Endpoint to allow for returning responses to APDU execution.
      *
@@ -38,6 +48,10 @@ public final class ApduPackage extends ApduPackageModel {
 
     @Override
     public String toString() {
-        return super.toString();
+        final StringBuffer sb = new StringBuffer("ApduPackage{");
+        sb.append("commitId='").append(commitId).append('\'');
+        sb.append(super.toString());
+        sb.append('}');
+        return sb.toString();
     }
 }

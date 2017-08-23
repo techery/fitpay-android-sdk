@@ -15,6 +15,10 @@ public final class ApduCommand {
     private boolean injected;
     private boolean continueOnFailure;
 
+    // parent (owner) details
+    private String commitId;
+    private ApduPackage apduPackage;
+
     private ApduCommand() {
     }
 
@@ -44,6 +48,22 @@ public final class ApduCommand {
 
     public boolean isContinueOnFailure() {
         return continueOnFailure;
+    }
+
+    public String getCommitId() {
+        return commitId;
+    }
+
+    public void setCommitId(String commitId) {
+        this.commitId = commitId;
+    }
+
+    public ApduPackage getApduPackage() {
+        return apduPackage;
+    }
+
+    public void setApduPackage(ApduPackage apduPackage) {
+        this.apduPackage = apduPackage;
     }
 
     public static class Builder {
@@ -116,6 +136,8 @@ public final class ApduCommand {
                 ", type='" + type + '\'' +
                 ", injected=" + injected +
                 ", continueOnFailure=" + continueOnFailure +
+                ", commitId='" + commitId + '\'' +
+                ", apduPackage=" + apduPackage +
                 '}';
     }
 }

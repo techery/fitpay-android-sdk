@@ -500,6 +500,15 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
             if (payload instanceof ApduPackage) {
                 ApduPackage pkg = (ApduPackage) payload;
 
+                // add references to make logging and troubleshoot easier
+                pkg.setCommitId(commit.getCommitId());
+                if (pkg.getApduCommands() != null) {
+                    for (ApduCommand cmd : pkg.getApduCommands()) {
+                        cmd.setCommitId(commit.getCommitId());
+                        cmd.setApduPackage(pkg);
+                    }
+                }
+
                 long validUntil = TimestampUtils.getDateForISO8601String(pkg.getValidUntil()).getTime();
                 long currentTime = System.currentTimeMillis();
 
