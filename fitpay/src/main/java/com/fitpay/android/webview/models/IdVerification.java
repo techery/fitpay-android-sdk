@@ -4,13 +4,15 @@ import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.webview.enums.RtmType;
 import com.fitpay.android.webview.events.RtmMessageResponse;
 
+import java.util.Date;
+
 /**
  * IdVerification data
  */
 
 public class IdVerification {
-    private Integer oemAccountInfoUpdatedDate;
-    private Integer oemAccountCreatedDate;
+    private Date oemAccountInfoUpdatedDate;
+    private Date oemAccountCreatedDate;
     private Integer suspendedCardsInAccount;
     private Integer daysSinceLastAccountActivity;
     private Integer deviceLostMode;
@@ -31,8 +33,8 @@ public class IdVerification {
     }
 
     public static final class Builder {
-        private Integer oemAccountInfoUpdatedDate;
-        private Integer oemAccountCreatedDate;
+        private Date oemAccountInfoUpdatedDate;
+        private Date oemAccountCreatedDate;
         private Integer suspendedCardsInAccount;
         private Integer daysSinceLastAccountActivity;
         private Integer deviceLostMode;
@@ -46,12 +48,12 @@ public class IdVerification {
 
         }
 
-        public Builder setOemAccountInfoUpdatedDate(int oemAccountInfoUpdatedDate) {
+        public Builder setOemAccountInfoUpdatedDate(Date oemAccountInfoUpdatedDate) {
             this.oemAccountInfoUpdatedDate = oemAccountInfoUpdatedDate;
             return this;
         }
 
-        public Builder setOemAccountCreatedDate(int oemAccountCreatedDate) {
+        public Builder setOemAccountCreatedDate(Date oemAccountCreatedDate) {
             this.oemAccountCreatedDate = oemAccountCreatedDate;
             return this;
         }
