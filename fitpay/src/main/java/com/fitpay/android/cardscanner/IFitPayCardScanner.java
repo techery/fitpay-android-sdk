@@ -1,7 +1,7 @@
 package com.fitpay.android.cardscanner;
 
 public interface IFitPayCardScanner {
-    void startScan();
+    void startScan(String callbackId);
 
     void onScanned(ScannedCardInfo cardInfo);
 
