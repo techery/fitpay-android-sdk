@@ -89,6 +89,12 @@ android {
         }
         unitTests.returnDefaultValues = true
     }
+
+//    release {
+//        minifyEnabled true
+//        proguardFiles getDefaultProguardFile('proguard-android.txt'), '../your_proguard_file.txt'
+//        signingConfig signingConfigs.releaseConfig
+//    }
 }
 
 ext {
