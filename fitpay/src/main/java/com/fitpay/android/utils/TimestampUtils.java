@@ -26,16 +26,13 @@ public class TimestampUtils {
     /**
      * Return a date for specified ISO 8601 time
      *
-     * @param time time in ISO 8601 format "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+     * @param time time in ISO 8601 format "yyyy-MM-dd'T'HH:mm:ss'Z'" or "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
      * @return Date
      */
     public static Date getDateForISO8601String(String time) {
-        DateFormat dateFormat = new SimpleDateFormat(Constants.DATE_FORMAT, Locale.getDefault());
-        Date date = null;
-        try {
-            date = dateFormat.parse(time.replaceAll("Z$", "+0000"));
-        } catch (ParseException e) {
-            FPLog.e(e);
+        Date date = getDateByPattern(Constants.DATE_FORMAT_ISO8601, time);
+        if (date == null) {
+            date = getDateByPattern(Constants.DATE_FORMAT, time);
         }
         return date;
     }
@@ -50,5 +47,19 @@ public class TimestampUtils {
         DateFormat dateFormat = new SimpleDateFormat(Constants.DATE_FORMAT_ISO8601, Locale.US);
         dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         return dateFormat.format(time);
+    }
+
+    private static Date getDateByPattern(String pattern, String time) {
+        DateFormat dateFormat = new SimpleDateFormat(pattern, Locale.getDefault());
+        Date date = null;
+        try {
+            date = dateFormat.parse(time);
+        } catch (ParseException e) {
+            try {
+                date = dateFormat.parse(time.replaceAll("Z$", "+0000"));
+            } catch (ParseException ee) {
+            }
+        }
+        return date;
     }
 }
