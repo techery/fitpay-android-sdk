@@ -56,9 +56,11 @@ public class BaseClient {
             if (Build.VERSION.SDK_INT >= 16 && Build.VERSION.SDK_INT < 22) {
                 try {
                     SSLContext sc = SSLContext.getInstance("TLSv1.2");
-                    sc.init(null, trustAllCerts, new java.security.SecureRandom());
+                    sc.init(null, null, null);
+                    builder.sslSocketFactory(new Tls12SocketFactory(sc.getSocketFactory()), (X509TrustManager) trustAllCerts[0]);
 
-                    builder.sslSocketFactory(new Tls12SocketFactory(sc.getSocketFactory()));
+//                    sc.init(null, trustAllCerts, new java.security.SecureRandom());
+//                    builder.sslSocketFactory(new Tls12SocketFactory(sc.getSocketFactory()));
 
                     ConnectionSpec cs = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
                             .tlsVersions(TlsVersion.TLS_1_2)
@@ -69,7 +71,12 @@ public class BaseClient {
                     specs.add(ConnectionSpec.COMPATIBLE_TLS);
                     specs.add(ConnectionSpec.CLEARTEXT);
 
-                    builder.connectionSpecs(specs);
+                    builder.connectionSpecs(specs)
+                            .followRedirects(true)
+                            .followSslRedirects(true)
+                            .retryOnConnectionFailure(true)
+                            .cache(null);
+
                 } catch (Exception exc) {
                     //"Error while setting TLS 1.2",
                     FPLog.e("OkHttpTLSCompat", exc);
