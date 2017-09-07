@@ -15,7 +15,7 @@ import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
-import com.fitpay.android.test.utils.SecureElementDataProvider;
+import com.fitpay.android.paymentdevice.impl.mock.SecureElementDataProvider;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
