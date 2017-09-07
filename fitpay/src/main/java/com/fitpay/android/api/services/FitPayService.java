@@ -57,26 +57,10 @@ final public class FitPayService extends BaseClient {
             }
         };
 
-        //TODO remove once QA cert is issued
-        OkHttpClient.Builder clientBuilder = getUnsafeOkHttpClient();
-        //OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+        OkHttpClient.Builder clientBuilder = getOkHttpClient();
         clientBuilder.addInterceptor(interceptor);
 
-        clientBuilder.connectTimeout(60, TimeUnit.SECONDS);
-        clientBuilder.readTimeout(60, TimeUnit.SECONDS);
-        clientBuilder.writeTimeout(60, TimeUnit.SECONDS);
-
-        if (FPLog.showHttpLogs()) {
-            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-            clientBuilder.addInterceptor(logging);
-        }
-
-        //add timeout modification here if needed - should be configurable
-        //clientBuilder.readTimeout(<a value from config>, TimeUnit.SECONDS);
-
         mAPIClient = constructClient(apiBaseUrl, clientBuilder.build());
-
     }
 
     private FitPayClient constructClient(String apiBaseUrl, OkHttpClient okHttpClient) {
