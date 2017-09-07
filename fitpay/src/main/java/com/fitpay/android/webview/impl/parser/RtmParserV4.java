@@ -21,11 +21,11 @@ public class RtmParserV4 extends RtmParserV2 {
     public void parseMessage(RtmMessage msg) {
         switch (msg.getType()) {
             case RtmType.SCAN_REQUEST:
-                impl.startScan();
+                impl.startScan(msg.getCallbackId());
                 break;
 
             case RtmType.SDK_VERSION_REQUEST:
-                RxBus.getInstance().post(new RtmMessageResponse(new SdkVersion(BuildConfig.SDK_VERSION), RtmType.SDK_VERSION));
+                RxBus.getInstance().post(new RtmMessageResponse(msg.getCallbackId(), new SdkVersion(BuildConfig.SDK_VERSION), RtmType.SDK_VERSION));
                 break;
 
             default:

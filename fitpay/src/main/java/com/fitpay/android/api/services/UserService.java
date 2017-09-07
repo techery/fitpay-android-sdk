@@ -38,9 +38,7 @@ final public class UserService extends BaseClient {
             return chain.proceed(builder.build());
         };
 
-        //TODO remove unsafe once cert issues addressed
-        OkHttpClient.Builder clientBuilder = getUnsafeOkHttpClient();
-        //OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+        OkHttpClient.Builder clientBuilder = getOkHttpClient();
         clientBuilder.addInterceptor(interceptor);
 
         clientBuilder.connectTimeout(60, TimeUnit.SECONDS);

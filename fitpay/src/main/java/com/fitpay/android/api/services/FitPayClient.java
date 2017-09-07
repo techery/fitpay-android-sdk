@@ -121,4 +121,7 @@ public interface FitPayClient {
 
     @DELETE
     Call<Void> delete(@Url String url);
+
+    @GET("health")
+    Call<Object> health();
 }

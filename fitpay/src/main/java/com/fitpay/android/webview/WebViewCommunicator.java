@@ -55,6 +55,8 @@ public interface WebViewCommunicator {
     /**
      * Called by the webview when the consumer requests a card scan operation and the "useWebCardScanner" is false in the
      * {@link com.fitpay.android.webview.models.WvConfig}
+     *
+     * * @param callbackId rtm callback id
      */
-    void startScan();
+    void startScan(String callbackId);
 }

@@ -18,6 +18,7 @@ import com.fitpay.android.api.services.FitPayService;
 import com.fitpay.android.api.services.UserClient;
 import com.fitpay.android.api.services.UserService;
 import com.fitpay.android.utils.Constants;
+import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.KeysManager;
 import com.fitpay.android.utils.ObjectConverter;
 import com.fitpay.android.utils.StringUtils;
@@ -30,6 +31,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 /*
  * API manager
@@ -45,6 +48,10 @@ public class ApiManager {
     public static final String PROPERTY_COMMIT_TIMERS_ENABLED = "commitTimers";
     public static final String PROPERTY_COMMIT_WARNING_TIMEOUT = "commitWarningTimeout";
     public static final String PROPERTY_COMMIT_ERROR_TIMEOUT = "commitErrorTimeout";
+    public static final String PROPERTY_DISABLE_SSL_VALIDATION = "disableSslTrustValidation";
+    public static final String PROPERTY_HTTP_CONNECT_TIMEOUT = "httpConnectTimeout";
+    public static final String PROPERTY_HTTP_READ_TIMEOUT = "httpReadTimeout";
+    public static final String PROPERTY_HTTP_WRITE_TIMEOUT = "httpWriteTimeout";
 
     private static Map<String, String> config = new HashMap<>();
 
@@ -54,6 +61,10 @@ public class ApiManager {
         config.put(PROPERTY_COMMIT_WARNING_TIMEOUT, "5000");
         config.put(PROPERTY_COMMIT_ERROR_TIMEOUT, "30000");
         config.put(PROPERTY_COMMIT_TIMERS_ENABLED, "true");
+        config.put(PROPERTY_DISABLE_SSL_VALIDATION, "false");
+        config.put(PROPERTY_HTTP_CONNECT_TIMEOUT, "60");
+        config.put(PROPERTY_HTTP_READ_TIMEOUT, "60");
+        config.put(PROPERTY_HTTP_WRITE_TIMEOUT, "60");
     }
 
     private static ApiManager sInstance;
@@ -95,7 +106,27 @@ public class ApiManager {
     }
 
     public static void init(Map<String, String> props) {
+        init(props, false);
+    }
+
+    public static void init(Map<String, String> props, boolean skipHealthCheck) {
         config.putAll(props);
+
+        if (!skipHealthCheck) {
+            Call<Object> healthCall = getInstance().getClient().health();
+            healthCall.enqueue(new Callback<Object>() {
+                @Override
+                public void onResponse(Call<Object> call, Response<Object> response) {
+                    FPLog.i("FitPay API Health Result: " + response.body());
+                }
+
+                @Override
+                public void onFailure(Call<Object> call, Throwable t) {
+                    FPLog.e("FitPay API Health Check Failed: " + t.getMessage());
+                    FPLog.e(t);
+                }
+            });
+        }
     }
 
     public static Map<String, String> getConfig() {
