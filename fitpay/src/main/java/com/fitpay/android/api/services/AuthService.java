@@ -30,7 +30,7 @@ final public class AuthService extends BaseClient {
         };
 
         //TODO remove unsafe once cert issues addressed
-        OkHttpClient.Builder clientBuilder = getUnsafeOkHttpClient();
+        OkHttpClient.Builder clientBuilder = getOkHttpClient();
         //OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
         clientBuilder.addInterceptor(interceptor);
 
