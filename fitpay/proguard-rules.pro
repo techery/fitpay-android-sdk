@@ -81,6 +81,9 @@
 # platform version.  We know about them, and they are safe.
 -dontwarn android.support.**
 
+# Keep all FitPay SDK
+-keep class com.fitpay.android.**  {*;}
+
 # AppCompat
 -keep public class android.support.v7.widget.** { *; }
 -keep public class android.support.v7.internal.widget.** { *; }
@@ -103,7 +106,7 @@
     @retrofit2.http.* <methods>;
 }
 
-# Proguard
+# RxJava
 -dontwarn sun.misc.**
 
 -keep class rx.schedulers.Schedulers {
@@ -131,3 +134,8 @@
 -keepclassmembers class rx.internal.util.unsafe.BaseLinkedQueueConsumerNodeRef {
     rx.internal.util.atomic.LinkedQueueNode consumerNode;
 }
+
+#Bouncycastle
+-keep class org.bouncycastle.** { *; }
+-keepnames class org.bouncycastle.** { *; }
+-dontwarn org.bouncycastle.**
