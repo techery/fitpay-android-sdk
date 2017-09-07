@@ -1,15 +1,15 @@
 # This is a configuration file for ProGuard.
 # http://proguard.sourceforge.net/index.html#manual/usage.html
 
--dontusemixedcaseclassnames
--dontskipnonpubliclibraryclasses
--verbose
+#-dontusemixedcaseclassnames
+#-dontskipnonpubliclibraryclasses
+#-verbose
 
 # Optimization is turned off by default. Dex does not like code run
 # through the ProGuard optimize and preverify steps (and performs some
 # of these optimizations on its own).
--dontoptimize
--dontpreverify
+#-dontoptimize
+#-dontpreverify
 
 # If you want to enable optimization, you should include the
 # following:
@@ -83,6 +83,7 @@
 
 # Keep all FitPay SDK
 -keep class com.fitpay.android.**  {*;}
+-keep interface com.fitpay.android.** { *; }
 
 # AppCompat
 -keep public class android.support.v7.widget.** { *; }
@@ -136,6 +137,6 @@
 }
 
 #Bouncycastle
--keep class org.bouncycastle.** { *; }
--keepnames class org.bouncycastle.** { *; }
--dontwarn org.bouncycastle.**
+#-keep class org.bouncycastle.** { *; }
+#-keepnames class org.bouncycastle.** { *; }
+#-dontwarn org.bouncycastle.**

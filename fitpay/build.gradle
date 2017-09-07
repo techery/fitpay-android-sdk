@@ -45,11 +45,12 @@ uploadArchives {
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "26.0.0"
+    buildToolsVersion "26.0.1"
 
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 25
+//        consumerProGuardFiles 'proguard-rules.pro'
     }
 
     buildTypes {
@@ -95,12 +96,6 @@ android {
         }
         unitTests.returnDefaultValues = true
     }
-
-//    release {
-//        minifyEnabled true
-//        proguardFiles getDefaultProguardFile('proguard-android.txt'), '../your_proguard_file.txt'
-//        signingConfig signingConfigs.releaseConfig
-//    }
 }
 
 ext {
