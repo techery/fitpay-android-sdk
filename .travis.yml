@@ -14,9 +14,6 @@ before_install:
 - export ANDROID_HOME=/usr/local/android-sdk
 - export PATH=${PATH}:${ANDROID_HOME}/tools:${ANDROID_HOME}/platform-tools
 - echo "sdk.dir=$ANDROID_HOME" > local.properties
-- curl -L --cookie 'oraclelicense=accept-securebackup-cookie;'  http://download.oracle.com/otn-pub/java/jce/8/jce_policy-8.zip -o /tmp/policy.zip
-- sudo unzip -j -o /tmp/policy.zip *.jar -d `jdk_switcher home oraclejdk8`/jre/lib/security
-- rm /tmp/policy.zip
 
 script:
   - ./gradlew clean
