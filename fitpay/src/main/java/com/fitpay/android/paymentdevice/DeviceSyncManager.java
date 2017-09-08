@@ -273,7 +273,7 @@ public class DeviceSyncManager {
 
             RxBus.getInstance().post(
                     new DeviceStatusMessage(
-                            mContext.getString(R.string.checking_wallet_updates),
+                            mContext.getString(R.string.fp_checking_wallet_updates),
                             deviceId,
                             DeviceStatusMessage.SUCCESS));
 
@@ -308,19 +308,19 @@ public class DeviceSyncManager {
 
                                 if (commits.size() > 0) {
                                     RxBus.getInstance().post(new DeviceStatusMessage(
-                                            mContext.getString(R.string.updates_available),
+                                            mContext.getString(R.string.fp_updates_available),
                                             deviceId,
                                             DeviceStatusMessage.SUCCESS));
 
                                     RxBus.getInstance().post(new DeviceStatusMessage(
-                                            mContext.getString(R.string.sync_started),
+                                            mContext.getString(R.string.fp_sync_started),
                                             deviceId,
                                             DeviceStatusMessage.PROGRESS));
 
                                     processNextCommit();
                                 } else {
                                     RxBus.getInstance().post(new DeviceStatusMessage(
-                                            mContext.getString(R.string.no_pending_updates),
+                                            mContext.getString(R.string.fp_no_pending_updates),
                                             deviceId,
                                             DeviceStatusMessage.SUCCESS));
 

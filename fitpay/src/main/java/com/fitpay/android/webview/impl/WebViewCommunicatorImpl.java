@@ -115,7 +115,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
      */
     public void logout() {
         RxBus.getInstance().post(new RtmMessageResponse("logout"));
-        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.connecting), deviceId, DeviceStatusMessage.PENDING));
+        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.fp_connecting), deviceId, DeviceStatusMessage.PENDING));
     }
 
     /**
@@ -323,7 +323,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             sendMessageToJs(callbackId, false, gson.toJson(failedResponse));
         }
 
-        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_failed, errorMessage), deviceId, DeviceStatusMessage.ERROR));
+        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.fp_sync_failed, errorMessage), deviceId, DeviceStatusMessage.ERROR));
 
         EventCallback eventCallback = new EventCallback.Builder()
                 .setCommand(command)
@@ -366,7 +366,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 case States.COMPLETED:
                 case States.COMPLETED_NO_UPDATES: {
                     onTaskSuccess(EventCallback.SYNC_COMPLETED, callbackId);
-                    RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_finished), deviceId, DeviceStatusMessage.SUCCESS));
+                    RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.fp_sync_finished), deviceId, DeviceStatusMessage.SUCCESS));
                     NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
                     break;
                 }
