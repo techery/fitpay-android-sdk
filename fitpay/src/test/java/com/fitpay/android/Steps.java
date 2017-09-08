@@ -13,6 +13,7 @@ import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.device.PaymentDevice;
 import com.fitpay.android.api.models.issuer.Issuers;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.LoginIdentity;
@@ -28,6 +29,8 @@ import org.junit.Assert;
 import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -237,15 +240,12 @@ public class Steps {
     }
 
     public void createCard() throws InterruptedException {
-        String pan = "9999545454545454";
-        createCard(pan);
+        createCard("9999411111111114");
     }
 
     public void createCard(String pan) throws InterruptedException {
 
         Assert.assertNotNull(currentUser);
-
-        final CountDownLatch latch = new CountDownLatch(1);
 
         String cardName = "TEST CARD";
         int expYear = 2018;
@@ -272,32 +272,34 @@ public class Steps {
                 .setName(cardName)
                 .build();
 
+        final BlockingQueue<CreditCard> cards = new ArrayBlockingQueue<>(1);
         currentUser.createCreditCard(creditCard, new ApiCallback<CreditCard>() {
             @Override
             public void onSuccess(CreditCard result) {
-                currentCard = result;
-                latch.countDown();
+                cards.add(result);
             }
 
             @Override
             public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
-                latch.countDown();
+                fail(errorMessage);
             }
         });
 
-        latch.await(TIMEOUT, TimeUnit.SECONDS);
-        Assert.assertNotNull(currentCard);
-        Assert.assertEquals(cardName, currentCard.getName());
-        Assert.assertEquals(city, currentCard.getAddress().getCity());
-        Assert.assertEquals(state, currentCard.getAddress().getState());
-        Assert.assertEquals(postalCode, currentCard.getAddress().getPostalCode());
-        Assert.assertEquals(countryCode, currentCard.getAddress().getCountryCode());
-        Assert.assertEquals(street1, currentCard.getAddress().getStreet1());
-        Assert.assertNotNull(currentCard.getCVV());
-        Assert.assertTrue(currentCard.getPan().endsWith(pan.substring(12)));
-        Assert.assertTrue(expYear == currentCard.getExpYear());
-        Assert.assertTrue(expMonth == currentCard.getExpMonth());
-        Assert.assertEquals("ELIGIBLE", currentCard.getState());
+        CreditCard card = cards.poll(TIMEOUT, TimeUnit.SECONDS);
+        Assert.assertNotNull(card);
+        Assert.assertEquals(cardName, card.getName());
+        Assert.assertEquals(city, card.getAddress().getCity());
+        Assert.assertEquals(state, card.getAddress().getState());
+        Assert.assertEquals(postalCode, card.getAddress().getPostalCode());
+        Assert.assertEquals(countryCode, card.getAddress().getCountryCode());
+        Assert.assertEquals(street1, card.getAddress().getStreet1());
+        Assert.assertNotNull(card.getCVV());
+        Assert.assertEquals(card.getPan().substring(12), pan.substring(12));
+        Assert.assertTrue(expYear == card.getExpYear());
+        Assert.assertTrue(expMonth == card.getExpMonth());
+        Assert.assertEquals("ELIGIBLE", card.getState());
+
+        currentCard = card;
     }
 
     public void acceptTerms() throws InterruptedException {
@@ -721,7 +723,7 @@ public class Steps {
         String bdAddress = "bbbbbb-1111-1111-1111-111111111111";
         long pairingTs = System.currentTimeMillis();
         String stringTimestamp = TimestampUtils.getISO8601StringForTime(pairingTs);
-        String secureElementId = SecureElementDataProvider.generateRandomSecureElementId();
+
         Device newDevice = new Device.Builder()
                 .setDeviceType(DeviceTypes.ACTIVITY_TRACKER)
                 .setManufacturerName(manufacturerName)
@@ -736,8 +738,11 @@ public class Steps {
                 .setLicenseKey(licenseKey)
                 .setBdAddress(bdAddress)
                 .setPairingTs(pairingTs)
-                .setSecureElementId(secureElementId)
+                .setSecureElement(new PaymentDevice.SecureElement(
+                        SecureElementDataProvider.generateCasd(),
+                        SecureElementDataProvider.generateRandomSecureElementId()))
                 .build();
+
         final String[] errors = {""};
         final int[] errorCodes = {-1};
         currentUser.createDevice(newDevice, new ApiCallback<Device>() {
@@ -771,7 +776,7 @@ public class Steps {
             Assert.assertEquals(bdAddress, currentDevice.getBdAddress());
         }
         Assert.assertEquals(stringTimestamp, currentDevice.getPairingTs());
-        Assert.assertEquals(secureElementId, currentDevice.getSecureElementId());
+        Assert.assertEquals(newDevice.getSecureElementId(), currentDevice.getSecureElementId());
     }
 
     public void getDevices() throws InterruptedException {

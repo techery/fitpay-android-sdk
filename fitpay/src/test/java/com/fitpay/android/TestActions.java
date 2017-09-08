@@ -11,6 +11,7 @@ import com.fitpay.android.api.models.card.Reason;
 import com.fitpay.android.api.models.card.VerificationMethod;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.device.PaymentDevice;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
@@ -187,6 +188,10 @@ public class TestActions {
     }
 
     public Device getTestDevice() {
+        return getTestDevice(true);
+    }
+
+    public Device getTestDevice(boolean paymentDevice) {
 
         String manufacturerName = "X111";
         String deviceName = "TEST_DEVICE";
@@ -200,9 +205,8 @@ public class TestActions {
         String licenseKey = "aaaaaa-1111-1111-1111-111111111111";
         String bdAddress = "bbbbbb-1111-1111-1111-111111111111";
         long pairingTs = System.currentTimeMillis();
-        String stringTimestamp = TimestampUtils.getISO8601StringForTime(pairingTs);
-        String secureElementId = SecureElementDataProvider.generateRandomSecureElementId();
-        Device newDevice = new Device.Builder()
+
+        Device.Builder builder = new Device.Builder()
                 .setDeviceType(DeviceTypes.ACTIVITY_TRACKER)
                 .setManufacturerName(manufacturerName)
                 .setDeviceName(deviceName)
@@ -215,11 +219,17 @@ public class TestActions {
                 .setOSName(oSName)
                 .setLicenseKey(licenseKey)
                 .setBdAddress(bdAddress)
-                .setPairingTs(pairingTs)
-                .setSecureElementId(secureElementId)
-                .build();
+                .setPairingTs(pairingTs);
 
-        return newDevice;
+
+        if (paymentDevice) {
+            builder = builder
+                        .setSecureElement(new PaymentDevice.SecureElement(
+                                SecureElementDataProvider.generateCasd(),
+                                SecureElementDataProvider.generateRandomSecureElementId()));
+        }
+
+        return builder.build();
 
     }
 

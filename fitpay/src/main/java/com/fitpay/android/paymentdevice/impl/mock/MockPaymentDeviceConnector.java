@@ -13,6 +13,7 @@ import com.fitpay.android.api.models.card.TopOfWallet;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.CreditCardCommit;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.device.PaymentDevice;
 import com.fitpay.android.paymentdevice.CommitHandler;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Connection;
@@ -215,8 +216,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 .setOSName("ANDROID")
                 .setLicenseKey("6b413f37-90a9-47ed-962d-80e6a3528036")
                 .setBdAddress("00:00:00:00:00:00")
-                .setSecureElementId(seID)
-                .setCASD(SecureElementDataProvider.generateCasd())
+                .setSecureElement(new PaymentDevice.SecureElement(SecureElementDataProvider.generateCasd(), seID))
                 .build();
     }
 

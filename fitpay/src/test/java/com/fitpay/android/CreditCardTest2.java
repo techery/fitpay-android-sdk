@@ -427,7 +427,7 @@ public class CreditCardTest2 extends TestActions {
         assertNotNull("devices collection should not be null", devices);
         assertEquals("should have one device", 1, devices.getTotalResults());
 
-        String pan = "9999545454545450";
+        String pan = "9999411111111112";
         CreditCard creditCard = getTestCreditCard(pan);
 
         CreditCard createdCard = createCreditCard(user, creditCard);

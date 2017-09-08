@@ -3,6 +3,7 @@ package com.fitpay.android.paymentdevice.impl.ble;
 import android.bluetooth.BluetoothGatt;
 
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.device.PaymentDevice;
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.Hex;
 import com.fitpay.android.utils.StringUtils;
@@ -24,6 +25,7 @@ class GattDeviceCharacteristicsOperation extends GattOperation {
     private String softwareRevision;
     private String systemId;
     private String secureElementId;
+    private String casd;
 
     public GattDeviceCharacteristicsOperation(final String macAddress) {
 
@@ -64,7 +66,9 @@ class GattDeviceCharacteristicsOperation extends GattOperation {
                 .setManufacturerName(StringUtils.convertHexStringToAscii(manufacturerName))
                 .setSerialNumber(StringUtils.convertHexStringToAscii(serialNumber))
                 .setSystemId(StringUtils.convertHexStringToAscii(systemId))
-                .setSecureElementId(StringUtils.convertHexStringToAscii(secureElementId))
+                .setSecureElement(new PaymentDevice.SecureElement(
+                        casd,
+                        StringUtils.convertHexStringToAscii(secureElementId)))
                 .setFirmwareRevision(StringUtils.convertHexStringToAscii(firmwareRevision))
                 .setSoftwareRevision(StringUtils.convertHexStringToAscii(softwareRevision))
                 .setHardwareRevision(StringUtils.convertHexStringToAscii(hardwareRevision))

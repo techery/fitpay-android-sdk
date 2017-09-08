@@ -49,13 +49,19 @@ public class PaymentDevice extends BaseModel {
         return secureElement != null ? secureElement.secureElementId : null;
     }
 
+    public String getCasd() {
+        return secureElement != null ? secureElement.casd : null;
+    }
+
     /**
      * Secure element
      */
-    static class SecureElement {
+    public static class SecureElement {
         final String secureElementId;
+        final String casd;
 
-        SecureElement(String secureElementId) {
+        public SecureElement(String casd, String secureElementId) {
+            this.casd = casd;
             this.secureElementId = secureElementId;
         }
     }

@@ -64,58 +64,58 @@ public class CreditCardTest {
     }
 
     @Test
+    public void test08_getTransactions() throws InterruptedException {
+        steps.getTransactions();
+    }
+
+    @Test
     @Ignore
-    public void test08_updateCard() throws InterruptedException {
+    public void test09_updateCard() throws InterruptedException {
         steps.updateCard();
     }
 
     @Test
-    public void test09_deactivateCard() throws InterruptedException {
+    public void test10_deactivateCard() throws InterruptedException {
         steps.deactivateCard();
     }
 
     @Test
-    public void test10_reactivateCard() throws InterruptedException {
+    public void test11_reactivateCard() throws InterruptedException {
         steps.reactivateCard();
     }
 
     @Test
-    public void test11_createCard() throws InterruptedException {
-        steps.createCard("9999545454545455");
+    public void test12_createCard() throws InterruptedException {
+        steps.createCard("9999411111111116");
     }
 
     @Test
-    public void test12_acceptCard() throws InterruptedException {
+    public void test13_acceptCard() throws InterruptedException {
         steps.acceptTerms();
         steps.selfCard();
     }
 
     @Test
-    public void test13_selectCard() throws InterruptedException {
+    public void test15_selectCard() throws InterruptedException {
         steps.selectCard();
         steps.selfCard();
     }
 
     @Test
-    public void test14_verifyCard() throws InterruptedException {
+    public void test16_verifyCard() throws InterruptedException {
         steps.verifyCard();
         steps.waitForActivation();
     }
 
 
     @Test
-    public void test15_makeDefault() throws InterruptedException {
+    public void test17_makeDefault() throws InterruptedException {
         steps.makeDefault();
     }
 
     @Test
-    public void test16_getTransactions() throws InterruptedException {
-        steps.getTransactions();
-    }
-
-    @Test
-    public void test16_declineTerms() throws InterruptedException {
-        steps.createCard("9999545454545456");
+    public void test18_declineTerms() throws InterruptedException {
+        steps.createCard("9999411111111115");
         steps.declineTerms();
     }
 

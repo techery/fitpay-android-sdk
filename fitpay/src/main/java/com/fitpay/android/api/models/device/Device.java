@@ -267,8 +267,7 @@ public final class Device extends DeviceModel implements Parcelable {
         private String osName;
         private String licenseKey;
         private String bdAddress;
-        private String secureElementId;
-        private String casd;
+        private SecureElement secureElement;
         private String pairingTs;
         private String notificationToken;
 
@@ -302,10 +301,9 @@ public final class Device extends DeviceModel implements Parcelable {
             device.osName = osName;
             device.licenseKey = licenseKey;
             device.bdAddress = bdAddress;
-            device.secureElement = new SecureElement(secureElementId);
             device.pairingTs = pairingTs;
             device.notificationToken = notificationToken;
-            device.casd = casd;
+            device.secureElement = secureElement;
             return device;
         }
 
@@ -455,11 +453,11 @@ public final class Device extends DeviceModel implements Parcelable {
         /**
          * Set secure element id
          *
-         * @param secureElementId The ID of a secure element in a payment capable device
+         * @param secureElement The ID of a secure element in a payment capable device
          * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
          */
-        public Builder setSecureElementId(String secureElementId) {
-            this.secureElementId = secureElementId;
+        public Builder setSecureElement(SecureElement secureElement) {
+            this.secureElement = secureElement;
             return this;
         }
 
@@ -493,17 +491,6 @@ public final class Device extends DeviceModel implements Parcelable {
             this.notificationToken = notificationToken;
             return this;
         }
-
-        /**
-         * Set CASD
-         *
-         * @param casd
-         * @return a reference to this {@code Builder} object to fulfill the "Builder" pattern
-         */
-        public Builder setCASD(String casd) {
-            this.casd = casd;
-            return this;
-        }
     }
 
     @Override
@@ -533,6 +520,7 @@ public final class Device extends DeviceModel implements Parcelable {
         dest.writeString(this.deviceType);
         dest.writeString(this.manufacturerName);
         dest.writeString(this.deviceName);
+        dest.writeString(this.secureElement.casd);
         dest.writeString(this.secureElement.secureElementId);
     }
 
@@ -562,7 +550,7 @@ public final class Device extends DeviceModel implements Parcelable {
         this.deviceType = in.readString();
         this.manufacturerName = in.readString();
         this.deviceName = in.readString();
-        this.secureElement = new SecureElement(in.readString());
+        this.secureElement = new SecureElement(in.readString(), in.readString());
     }
 
     public static final Parcelable.Creator<Device> CREATOR = new Parcelable.Creator<Device>() {

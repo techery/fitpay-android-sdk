@@ -1,13 +1,9 @@
 package com.fitpay.android;
 
+import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Device;
-import com.fitpay.android.api.models.user.User;
-import com.fitpay.android.api.models.user.UserCreateRequest;
-import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;
@@ -148,12 +144,13 @@ public class DeviceTest2 extends TestActions {
 
     @Test
     public void testCanDevicesWhenTwoInCollection() throws Exception {
-        Device device = getTestDevice();
+        Device phone = getTestDevice(false);
+        Device watch = getTestDevice(true);
 
-        Device createdDevice = createDevice(user, device);
+        Device createdDevice = createDevice(user, phone);
         assertNotNull("device", createdDevice);
 
-        Device anotherCreatedDevice = createDevice(user, device);
+        Device anotherCreatedDevice = createDevice(user, watch);
         assertNotNull("device", anotherCreatedDevice);
 
         Collections.DeviceCollection devices = getDevices(user);
@@ -173,12 +170,13 @@ public class DeviceTest2 extends TestActions {
 
     @Test
     public void testCanDeleteDeviceFromCollection() throws Exception {
-        Device device = getTestDevice();
+        Device phone = getTestDevice(false);
+        Device watch = getTestDevice(true);
 
-        Device createdDevice = createDevice(user, device);
+        Device createdDevice = createDevice(user, phone);
         assertNotNull("device", createdDevice);
 
-        Device anotherCreatedDevice = createDevice(user, device);
+        Device anotherCreatedDevice = createDevice(user, watch);
         assertNotNull("device", anotherCreatedDevice);
 
         Collections.DeviceCollection devices = getDevices(user);
