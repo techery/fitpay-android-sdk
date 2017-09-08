@@ -194,6 +194,23 @@ the ability to scan a card during card entry no must be handled natively by the 
 an interface `IFitPayCardScanner` where a scanning implementation can be provided.   An full working example using the
 [Card.IO](https://www.card.io/) utility can be seen in our [reference implementation](https://github.com/fitpay/Pagare_Android_WV/commit/d3d9267154b20e5a6cdb4e6e5c7a9ce5e5d87727).
 
+You will also need to communicate to the webapp that your Android app is capable of handling native card scanning by sending the RealTimeMessaging (RTM) version number of the SDK. An easy way to ensure that the webapp is always aware of this is to send the version when setting the web view client. 
+
+```
+webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                
+                if (webViewCommunicatorImpl != null) {
+                    webViewCommunicatorImpl.sendRtmVersion();
+                }
+            }
+        });
+```
+
+See an example of this in our [reference implementation](https://github.com/fitpay/Pagare_Android_WV/blob/33f6c41ae920983ab3a01d2221012e74419927d5/app/src/wvUI/java/fitpay.pagare/activities/BaseWvActivity.java#L210).
+
 ## Contributing to the SDK
 We welcome contributions to the SDK. For your first few contributions please fork the repo, make your changes and submit a pull request. Internally we branch off of develop, test, and PR-review the branch before merging to develop (moderately stable). Releases to Master happen less frequently, undergo more testing, and can be considered stable. For more information, please read:  [http://nvie.com/posts/a-successful-git-branching-model/](http://nvie.com/posts/a-successful-git-branching-model/)
 
