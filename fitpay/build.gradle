@@ -70,11 +70,6 @@ android {
         debug {
             testCoverageEnabled = true
         }
-
-//        release {
-//            minifyEnabled true
-//            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-//        }
     }
 
     buildTypes.each {
@@ -130,9 +125,6 @@ dependencies {
     compile 'io.reactivex:rxandroid:1.2.1'
 
     compile 'me.alexrs:prefs:1.1.0'
-
-//    compile 'org.bouncycastle:bcprov-jdk15on:1.54'
-//    compile 'com.nimbusds:nimbus-jose-jwt:4.22'
 
     compile 'org.bouncycastle:bcprov-jdk15on:1.58'
     compile 'com.nimbusds:nimbus-jose-jwt:5.1'

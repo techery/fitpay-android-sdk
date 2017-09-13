@@ -158,5 +158,4 @@
 -dontwarn com.nimbusds.jose.**
 -dontwarn org.bouncycastle.**
 -keep class org.bouncycastle.jcajce.** { *; }
-#-keep class org.bouncycastle.** { *; }
 -keepnames class org.bouncycastle.** { *; }
