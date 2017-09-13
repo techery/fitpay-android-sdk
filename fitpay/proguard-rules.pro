@@ -1,6 +1,33 @@
+-dontobfuscate
+-dontwarn
+#-optimizationpasses 5
+
+#When not preverifing in a case-insensitive filing system, such as Windows. Because this tool unpacks your processed jars, you should then use:
+-dontusemixedcaseclassnames
+
+#Specifies not to ignore non-public library classes. As of version 4.5, this is the default setting
+-dontskipnonpubliclibraryclasses
+
+#Preverification is irrelevant for the dex compiler and the Dalvik VM, so we can switch it off with the -dontpreverify option.
+-dontpreverify
+
+#Specifies to write out some more information during processing. If the program terminates with an exception, this option will print out the entire stack trace, instead of just the exception message.
+-verbose
+
+#The -optimizations option disables some arithmetic simplifications that Dalvik 1.0 and 1.5 can't handle. Note that the Dalvik VM also can't handle aggressive overloading (of static fields).
+#To understand or change this check http://proguard.sourceforge.net/index.html#/manual/optimizations.html
+-optimizations !code/simplification/arithmetic,!field/*,!class/merging/*,!code/allocation/variable
+
+#Annotations for greendao and LineNumber for reports in play store
+-keepattributes *Annotation*, LineNumberTable
+
 -keepattributes *Annotation*
 -keepattributes Signature
 -keepattributes Exceptions
+
+-keepattributes SetJavaScriptEnabled
+-keepattributes JavascriptInterface
+-keepattributes InlinedApi
 
 -keep public class * extends android.app.Activity
 -keep public class * extends android.app.Application
@@ -50,6 +77,20 @@
 -keepclassmembers class **.R$* {
     public static <fields>;
 }
+-keep class **.R$*
+
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+-keepclassmembers class com.fitpay.android.webview.WebViewCommunicator {
+    public *;
+}
+
+-keepclassmembers class com.fitpay.android.webview.impl.WebViewCommunicatorImpl{
+    public *;
+}
+
 
 # The support library contains references to newer platform versions.
 # Don't warn about those in case this app is linking against an older
@@ -73,6 +114,7 @@
 -keep class okhttp3.** { *; }
 -keep interface okhttp3.** { *; }
 -dontwarn okhttp3.**
+-dontwarn okio.**
 
 # Retrofit 2.X
 -dontwarn retrofit2.**
@@ -112,6 +154,9 @@
 }
 
 #Bouncycastle
--keep class org.bouncycastle.** { *; }
--keepnames class org.bouncycastle.** { *; }
+-dontwarn okio.**
+-dontwarn com.nimbusds.jose.**
 -dontwarn org.bouncycastle.**
+-keep class org.bouncycastle.jcajce.** { *; }
+#-keep class org.bouncycastle.** { *; }
+-keepnames class org.bouncycastle.** { *; }

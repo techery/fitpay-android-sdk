@@ -1,9 +1,22 @@
+buildscript {
+    repositories {
+        mavenCentral() // or jcenter()
+    }
+
+    dependencies {
+        classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:0.7.3'
+    }
+}
+
 apply plugin: 'com.android.library'
 apply plugin: 'me.tatarka.retrolambda'
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'maven'
 apply from: '../jacoco.gradle'
+
+// make sure this line comes *after* you apply the Android plugin
+apply plugin: 'com.getkeepsafe.dexcount'
 
 group = 'com.fitpay.android'
 version = '0.4.30'
@@ -50,6 +63,7 @@ android {
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 25
+        consumerProguardFiles 'proguard-rules.pro'
     }
 
     buildTypes {
@@ -57,10 +71,10 @@ android {
             testCoverageEnabled = true
         }
 
-        release {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
+//        release {
+//            minifyEnabled true
+//            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+//        }
     }
 
     buildTypes.each {
@@ -117,8 +131,11 @@ dependencies {
 
     compile 'me.alexrs:prefs:1.1.0'
 
-    compile 'org.bouncycastle:bcprov-jdk15on:1.54'
-    compile 'com.nimbusds:nimbus-jose-jwt:4.22'
+//    compile 'org.bouncycastle:bcprov-jdk15on:1.54'
+//    compile 'com.nimbusds:nimbus-jose-jwt:4.22'
+
+    compile 'org.bouncycastle:bcprov-jdk15on:1.58'
+    compile 'com.nimbusds:nimbus-jose-jwt:5.1'
 
     testCompile 'org.mockito:mockito-core:1.10.19'
     testCompile 'junit:junit:4.12'
