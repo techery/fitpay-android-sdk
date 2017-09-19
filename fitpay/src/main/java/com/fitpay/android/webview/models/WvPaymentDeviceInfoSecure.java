@@ -12,7 +12,7 @@ public class WvPaymentDeviceInfoSecure extends WvPaymentDeviceInfo {
     public WvPaymentDeviceInfoSecure(Device device) {
         super(device);
         secureElementId = device.getSecureElementId();
-        casd = device.getCASD();
+        casd = device.getCasd();
     }
 
     public String getSecureElementId() {
