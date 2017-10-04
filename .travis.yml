@@ -1,5 +1,5 @@
 language: android
-jdk: oraclejdk8
+jdk: openjdk8
 
 android:
   components:
@@ -9,12 +9,6 @@ android:
     - build-tools-26.0.1
     - android-25
     - extra-android-m2repository
-
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
-      - oracle-java8-unlimited-jce-policy
 
 before_install:
 - export ANDROID_HOME=/usr/local/android-sdk
