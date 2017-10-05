@@ -21,8 +21,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runner.Runner;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
+import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowLog;
 
 import java.util.Properties;
@@ -35,7 +37,8 @@ import static junit.framework.Assert.assertNotNull;
 /**
  * Created by tgs on 5/3/16.
  */
-@RunWith(RobolectricTestRunner.class)
+@RunWith(Runner.class)
+@Config(manifest = Config.NONE)
 public class MockPaymentDeviceTest extends TestActions {
 
     private final static String TAG = MockPaymentDeviceTest.class.getSimpleName();
