@@ -14,7 +14,7 @@ public final class ApduExecutionResult {
 
     private String packageId;
     @ResponseState.ApduState
-    private String state;
+    private String state = ResponseState.NOT_PROCESSED;
     private long executedTsEpoch;
     private int executedDuration; //in seconds
     private List<ApduCommandResult> apduResponses;
@@ -66,12 +66,19 @@ public final class ApduExecutionResult {
 
     public void addResponse(ApduCommandResult response) {
         apduResponses.add(response);
-        if (null == state || ResponseState.PROCESSED.equals(state)) {
-            if (isSuccessResponseCode(response)) {
-                state = ResponseState.PROCESSED;
-            } else {
-                state = ResponseState.FAILED;
-            }
+        
+        switch (state) {
+            case ResponseState.NOT_PROCESSED:
+            case ResponseState.PROCESSED:
+                if (isSuccessResponseCode(response)) {
+                    state = ResponseState.PROCESSED;
+                } else {
+                    state = ResponseState.FAILED;
+                }
+                break;
+
+            default:
+                break;
         }
     }
 
