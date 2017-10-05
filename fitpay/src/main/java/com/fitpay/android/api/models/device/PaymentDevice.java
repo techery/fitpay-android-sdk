@@ -53,6 +53,11 @@ public class PaymentDevice extends BaseModel {
         return secureElement != null ? secureElement.casd : null;
     }
 
+    @Deprecated // see getCasd()
+    public String getCASD() {
+        return getCasd();
+    }
+
     /**
      * Secure element
      */

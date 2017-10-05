@@ -68,11 +68,6 @@ abstract class DeviceModel extends PaymentDevice {
      */
     protected String notificationToken;
 
-    /**
-     * CASD
-     */
-    protected String casd;
-
     protected DeviceModel() {
     }
 
@@ -130,9 +125,5 @@ abstract class DeviceModel extends PaymentDevice {
 
     public String getNotificationToken() {
         return notificationToken;
-    }
-
-    public String getCASD() {
-        return casd;
     }
 }

@@ -516,7 +516,6 @@ public final class Device extends DeviceModel implements Parcelable {
         dest.writeList(this.cardRelationships);
         dest.writeParcelable(this.links, flags);
         dest.writeString(this.notificationToken);
-        dest.writeString(this.casd);
         dest.writeString(this.deviceType);
         dest.writeString(this.manufacturerName);
         dest.writeString(this.deviceName);
@@ -545,7 +544,6 @@ public final class Device extends DeviceModel implements Parcelable {
         in.readList(this.cardRelationships, CreditCardRef.class.getClassLoader());
         this.links = in.readParcelable(Links.class.getClassLoader());
         this.notificationToken = in.readString();
-        this.casd = in.readString();
         //noinspection ResourceType
         this.deviceType = in.readString();
         this.manufacturerName = in.readString();
