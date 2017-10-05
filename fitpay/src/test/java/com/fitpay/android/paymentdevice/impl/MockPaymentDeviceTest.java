@@ -29,7 +29,6 @@ import static junit.framework.Assert.assertNotNull;
 /**
  * Created by tgs on 5/3/16.
  */
-//@Config(manifest = Config.NONE)
 public class MockPaymentDeviceTest extends TestActions {
 
     private final static String TAG = MockPaymentDeviceTest.class.getSimpleName();
@@ -39,13 +38,8 @@ public class MockPaymentDeviceTest extends TestActions {
     private NotificationManager manager;
     private Listener listener;
 
-//    private static Context context;
-
     @Before
     public void setUp() throws Exception {
-//        ShadowLog.stream = System.out;
-
-//        context = RuntimeEnvironment.application.getApplicationContext();
         paymentDeviceService = new MockPaymentDeviceConnector();
         manager = NotificationManager.getInstance();
     }
