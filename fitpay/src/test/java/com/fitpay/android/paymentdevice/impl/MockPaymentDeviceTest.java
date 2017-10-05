@@ -1,7 +1,5 @@
 package com.fitpay.android.paymentdevice.impl;
 
-import android.content.Context;
-
 import com.fitpay.android.TestActions;
 import com.fitpay.android.api.enums.ResponseState;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
@@ -20,10 +18,6 @@ import com.fitpay.android.utils.NotificationManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.RuntimeEnvironment;
-import org.robolectric.shadows.ShadowLog;
 
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
@@ -35,23 +29,17 @@ import static junit.framework.Assert.assertNotNull;
 /**
  * Created by tgs on 5/3/16.
  */
-@RunWith(RobolectricTestRunner.class)
 public class MockPaymentDeviceTest extends TestActions {
 
     private final static String TAG = MockPaymentDeviceTest.class.getSimpleName();
 
-    protected IPaymentDeviceConnector paymentDeviceService;
+    private IPaymentDeviceConnector paymentDeviceService;
 
     private NotificationManager manager;
     private Listener listener;
 
-    Context context;
-
     @Before
     public void setUp() throws Exception {
-        ShadowLog.stream = System.out;
-
-        context = RuntimeEnvironment.application.getApplicationContext();
         paymentDeviceService = new MockPaymentDeviceConnector();
         manager = NotificationManager.getInstance();
     }
@@ -286,6 +274,4 @@ public class MockPaymentDeviceTest extends TestActions {
 
         }
     }
-
-
 }
