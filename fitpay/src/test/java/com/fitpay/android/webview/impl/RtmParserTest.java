@@ -8,6 +8,9 @@ import com.fitpay.android.webview.events.RtmMessage;
 
 import junit.framework.Assert;
 
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -19,12 +22,17 @@ import org.mockito.Mockito;
 
 public class RtmParserTest {
 
-    private static WebViewCommunicatorImpl wvci;
+    private WebViewCommunicatorImpl wvci;
 
-    @BeforeClass
-    public static void init() {
+    @Before
+    public void init() {
         Activity context = Mockito.mock(Activity.class);
         wvci = new WebViewCommunicatorImpl(context, -1);
+    }
+
+    @After
+    public void terminate(){
+        wvci = null;
     }
 
     @Test
