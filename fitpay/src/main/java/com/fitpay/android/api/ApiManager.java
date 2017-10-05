@@ -317,18 +317,15 @@ public class ApiManager {
      * @param callback result callback
      */
     public void getIssuers(final ApiCallback<Issuers> callback) {
-        if (isAuthorized(callback)) {
+        Runnable onSuccess = new Runnable() {
+            @Override
+            public void run() {
+                Call<Issuers> getIssuersCall = getClient().getIssuers();
+                getIssuersCall.enqueue(new CallbackWrapper<>(callback));
+            }
+        };
 
-            Runnable onSuccess = new Runnable() {
-                @Override
-                public void run() {
-                    Call<Issuers> getIssuersCall = getClient().getIssuers();
-                    getIssuersCall.enqueue(new CallbackWrapper<>(callback));
-                }
-            };
-
-            checkKeyAndMakeCall(onSuccess, callback);
-        }
+        checkKeyAndMakeCall(onSuccess, callback);
     }
 
 //    /**

@@ -20,17 +20,7 @@ public class IssuersTest {
     }
 
     @Test
-    public void test00_createUser() throws InterruptedException {
-        steps.createUser();
-    }
-
-    @Test
-    public void test01_loginUser() throws InterruptedException {
-        steps.login();
-    }
-
-    @Test
-    public void test03_getIssuers() throws InterruptedException {
+    public void test01_getIssuers() throws InterruptedException {
         steps.getIssuers();
     }
 
