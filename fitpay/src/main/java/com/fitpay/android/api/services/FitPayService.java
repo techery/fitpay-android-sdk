@@ -1,19 +1,19 @@
 package com.fitpay.android.api.services;
 
 import com.fitpay.android.BuildConfig;
+import com.fitpay.android.api.models.security.AccessDenied;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.KeysManager;
+import com.fitpay.android.utils.RxBus;
 
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -43,6 +43,12 @@ final public class FitPayService extends BaseClient {
                 }
 
                 if (mAuthToken != null) {
+                    if (mAuthToken.isExpired()) {
+                        FPLog.w("current access token is expired, using anyways");
+                        RxBus.getInstance().post(AccessDenied.builder()
+                                .reason(AccessDenied.Reason.EXPIRED_TOKEN)
+                                .build());
+                    }
 
                     final String value = new StringBuilder()
                             .append(AUTHORIZATION_BEARER)
@@ -53,7 +59,20 @@ final public class FitPayService extends BaseClient {
                     builder.header(HEADER_AUTHORIZATION, value);
                 }
 
-                return chain.proceed(builder.build());
+                long startTime = System.currentTimeMillis();
+                Response response = null;
+                try {
+                    response = chain.proceed(builder.build());
+                    if (response.code() == AccessDenied.INVALID_TOKEN_RESPONSE_CODE) {
+                        RxBus.getInstance().post(AccessDenied.builder()
+                                .reason(AccessDenied.Reason.UNAUTHORIZED)
+                                .build());
+                    }
+
+                    return response;
+                } finally {
+                    FPLog.d(chain.request().method() + " " + chain.request().url() + " " + response.code() + " " + (System.currentTimeMillis() - startTime) + "ms");
+                }
             }
         };
 

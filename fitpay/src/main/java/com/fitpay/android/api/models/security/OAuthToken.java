@@ -1,30 +1,34 @@
 package com.fitpay.android.api.models.security;
 
-import com.fitpay.android.utils.Constants;
-import com.fitpay.android.utils.StringUtils;
-import com.google.gson.annotations.SerializedName;
-import com.nimbusds.jwt.JWT;
-import com.nimbusds.jwt.JWTParser;
+import com.fitpay.android.utils.FPLog;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 
-import net.minidev.json.JSONObject;
-
-import java.text.ParseException;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * OAuth token.
  */
 final public class OAuthToken {
+    private final String tokenType;
+    private final String accessToken;
+    private final long expiresIn;
+    private final Date expiresTs;
+    private final Date issuedTs;
+    private final String userId;
 
-    @SerializedName("token_type")
-    private String tokenType;
-    @SerializedName("access_token")
-    private String accessToken;
-    @SerializedName("expires_in")
-    private long expiresIn;
+    private OAuthToken(String tokenType, String accessToken, long expiresIn, Date expiresTs, Date issuedTs, String userId) {
+        this.tokenType = tokenType;
+        this.accessToken = accessToken;
+        this.expiresIn = expiresIn;
+        this.expiresTs = expiresTs;
+        this.issuedTs = issuedTs;
+        this.userId = userId;
+    }
 
-    private String userId = null;
-
-    public OAuthToken() {
+    public String getTokenType() {
+        return tokenType;
     }
 
     public String getAccessToken() {
@@ -35,27 +39,55 @@ final public class OAuthToken {
         return expiresIn;
     }
 
-    public String getUserId() {
-        if (StringUtils.isEmpty(userId) && !StringUtils.isEmpty(accessToken)) {
-            JWT jwt = null;
-            try {
-                jwt = JWTParser.parse(accessToken);
-                JSONObject jsonObject = jwt.getJWTClaimsSet().toJSONObject();
-                userId = (String)jsonObject.get("user_id");
-            } catch (ParseException e) {
-                Constants.printError(e.toString());
-            }
-        }
+    public Date getExpiresTs() {
+        return expiresTs;
+    }
 
+    public Date getIssuedTs() {
+        return issuedTs;
+    }
+
+    public String getUserId() {
         return userId;
     }
 
-    public static class Builder {
+    public boolean isExpired() {
+        // used the expired date/time contained in the bearer token if set
+        if (expiresTs != null && expiresTs.before(new Date())) {
+            return expiresTs.getTime() < System.currentTimeMillis();
+        }
 
+        // if expired date/time is not in the bearer token (it's optional), then use
+        // the expires_in value from the authentication request itself
+        if (expiresIn != -1 && issuedTs != null) {
+            return (issuedTs.getTime() + (expiresIn*1000)) < System.currentTimeMillis();
+        }
+
+        // if we get here, then we don't have the information necessary to determine if a token
+        // is expired or not
+        return false;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("OAuthToken{");
+        sb.append("tokenType='").append(tokenType).append('\'');
+        sb.append(", accessToken='").append(accessToken).append('\'');
+        sb.append(", expiresIn=").append(expiresIn);
+        sb.append(", expiresTs=").append(expiresTs);
+        sb.append(", issuedTs=").append(issuedTs);
+        sb.append(", userId='").append(userId).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
+
+    public static class Builder {
         private String tokenType;
         private String accessToken;
-        private long expiresIn;
+        private long expiresIn = -1;
         private String userId = null;
+        private Date expiresTs = null;
+        private Date issuedTs = new Date();
 
         public Builder tokenType(String tokenType) {
             this.tokenType = tokenType;
@@ -64,11 +96,18 @@ final public class OAuthToken {
 
         public Builder accessToken(String accessToken) {
             this.accessToken = accessToken;
+            decodeAccessToken(this.accessToken);
+
             return this;
         }
 
         public Builder expiresIn(long expiresIn) {
             this.expiresIn = expiresIn;
+
+            Calendar c = Calendar.getInstance();
+            c.add(Calendar.SECOND, (int)expiresIn);
+            this.expiresTs = c.getTime();
+
             return this;
         }
 
@@ -77,13 +116,38 @@ final public class OAuthToken {
             return this;
         }
 
+        public Builder expiredTs(Date expiredTs) {
+            this.expiresTs = expiredTs;
+            return this;
+        }
+
         public OAuthToken build() {
-            OAuthToken token = new OAuthToken();
-            token.accessToken = this.accessToken;
-            token.tokenType = this.tokenType;
-            token.expiresIn = this.expiresIn;
-            token.userId = this.userId;
+            OAuthToken token = new OAuthToken(tokenType, accessToken, expiresIn, expiresTs, issuedTs, userId);
+            FPLog.d("oauth token: " + token);
+
             return token;
+        }
+
+        private void decodeAccessToken(String accessToken) {
+            try {
+                SignedJWT jwt = SignedJWT.parse(accessToken);
+
+                JWTClaimsSet claims = jwt.getJWTClaimsSet();
+
+                if (claims.getStringClaim("user_id") != null) {
+                    this.userId = claims.getStringClaim("user_id");
+                }
+
+                if (claims.getExpirationTime() != null) {
+                    this.expiresTs = claims.getExpirationTime();
+                }
+
+                if (claims.getIssueTime() != null) {
+                    this.issuedTs = claims.getIssueTime();
+                }
+            } catch (Exception e) {
+                FPLog.e(e);
+            }
         }
     }
 }

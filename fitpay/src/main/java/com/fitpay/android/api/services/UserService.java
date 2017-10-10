@@ -1,24 +1,17 @@
 package com.fitpay.android.api.services;
 
 import com.fitpay.android.BuildConfig;
-import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.utils.Constants;
-import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.KeysManager;
-
-import java.util.concurrent.TimeUnit;
 
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 
 final public class UserService extends BaseClient {
-
-    private OAuthToken authToken;
 
     private UserClient mClient;
 
@@ -41,16 +34,6 @@ final public class UserService extends BaseClient {
         OkHttpClient.Builder clientBuilder = getOkHttpClient();
         clientBuilder.addInterceptor(interceptor);
 
-        clientBuilder.connectTimeout(60, TimeUnit.SECONDS);
-        clientBuilder.readTimeout(60, TimeUnit.SECONDS);
-        clientBuilder.writeTimeout(60, TimeUnit.SECONDS);
-
-        if (FPLog.showHttpLogs()) {
-            HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-            logging.setLevel(HttpLoggingInterceptor.Level.BODY);
-            clientBuilder.addInterceptor(logging);
-        }
-
         mClient = constructClient(apiBaseUrl, clientBuilder.build());
 
     }
@@ -68,14 +51,4 @@ final public class UserService extends BaseClient {
     public UserClient getClient() {
         return mClient;
     }
-
-    public void updateToken(OAuthToken token) {
-        authToken = token;
-    }
-
-    public boolean isAuthorized() {
-        return authToken != null;
-    }
-
-
 }
