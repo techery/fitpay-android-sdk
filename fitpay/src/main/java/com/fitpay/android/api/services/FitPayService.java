@@ -63,7 +63,8 @@ final public class FitPayService extends BaseClient {
                 Response response = null;
                 try {
                     response = chain.proceed(builder.build());
-                    if (response.code() == AccessDenied.INVALID_TOKEN_RESPONSE_CODE) {
+
+                    if (response != null && response.code() == AccessDenied.INVALID_TOKEN_RESPONSE_CODE) {
                         RxBus.getInstance().post(AccessDenied.builder()
                                 .reason(AccessDenied.Reason.UNAUTHORIZED)
                                 .build());
@@ -71,7 +72,15 @@ final public class FitPayService extends BaseClient {
 
                     return response;
                 } finally {
-                    FPLog.d(chain.request().method() + " " + chain.request().url() + " " + response.code() + " " + (System.currentTimeMillis() - startTime) + "ms");
+                    FPLog.d(
+                            chain.request().method() +
+                            " " +
+                            chain.request().url() +
+                            " " +
+                            (response != null ? response.code() : "null") +
+                             " " +
+                             (System.currentTimeMillis() - startTime) +
+                            "ms");
                 }
             }
         };
