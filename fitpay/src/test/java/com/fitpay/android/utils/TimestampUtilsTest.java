@@ -20,6 +20,7 @@ public class TimestampUtilsTest {
         System.out.println(d.getTime());
         Assert.assertNotNull(d);
         Assert.assertEquals(expected, d);
+        Assert.assertEquals(d.getTime(), 1505257442000l);
     }
 
     @Test
