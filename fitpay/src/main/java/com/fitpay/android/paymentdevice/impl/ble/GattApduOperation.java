@@ -19,6 +19,7 @@ import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
 
 
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,8 +40,12 @@ class GattApduOperation extends GattOperation {
     public GattApduOperation(ApduPackage apduPackage) {
 
         mResult = new ApduExecutionResult(apduPackage.getPackageId());
-        validUntil = TimestampUtils.getDateForISO8601String(apduPackage.getValidUntil()).getTime();
 
+        try {
+            validUntil = TimestampUtils.getDateForISO8601String(apduPackage.getValidUntil()).getTime();
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
         mSequencesMap = new HashMap<>();
 
         addNestedOperation(new GattOperation() {
