@@ -51,8 +51,17 @@ final public class OAuthToken {
         return userId;
     }
 
+    /**
+     * Determines if the current accessToken is considered expired or not.  If the accessToken contains an expired date/time, that
+     * value will be compared against the current system time.  If not, the expires_in value will be utilized against the issued time
+     * to determine if a token is expired or now.  expires_in is not contained in the accessToken, it's returned with the token from the
+     * oauth token endpoint.  Therefore, if this class is only built with an accessToken, expiresIn will not be set.
+     *
+     * If neither expiresIn or expiredTs are set the token will never be considered expired.
+     * @return
+     */
     public boolean isExpired() {
-        // used the expired date/time contained in the bearer token if set
+        // use the expired date/time contained in the bearer token if set
         if (expiresTs != null) {
             return expiresTs.before(new Date());
         }
