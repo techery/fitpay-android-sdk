@@ -19,7 +19,7 @@ apply from: '../jacoco.gradle'
 apply plugin: 'com.getkeepsafe.dexcount'
 
 group = 'com.fitpay.android'
-version = '0.4.31'
+version = '0.4.32'
 archivesBaseName = "android_sdk"
 
 uploadArchives {
