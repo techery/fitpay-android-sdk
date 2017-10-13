@@ -81,6 +81,9 @@ final public class OAuthToken {
         return sb.toString();
     }
 
+    /**
+     * Builder for {@link OAuthToken}
+     */
     public static class Builder {
         private String tokenType;
         private String accessToken;
@@ -94,6 +97,14 @@ final public class OAuthToken {
             return this;
         }
 
+        /**
+         * Warning: Overwrites {@link Builder#expiredTs(Date)}, {@link Builder#userId}, and {@link Builder#issuedTs} if the
+         * received accessToken contains these values.  If you wish to override accessToken values, they must be passed using
+         * the builder pattern <b>after</b> this value.
+         *
+         * @param accessToken
+         * @return
+         */
         public Builder accessToken(String accessToken) {
             this.accessToken = accessToken;
             decodeAccessToken(this.accessToken);
@@ -101,6 +112,13 @@ final public class OAuthToken {
             return this;
         }
 
+        /**
+         * Number of seconds before the accessToken is considered expired, this value is not utilzed if the accessToken passed
+         * contains and expiredTs value.
+         *
+         * @param expiresIn
+         * @return
+         */
         public Builder expiresIn(long expiresIn) {
             this.expiresIn = expiresIn;
 
@@ -111,11 +129,23 @@ final public class OAuthToken {
             return this;
         }
 
+        /**
+         * Derived from the accessToken
+         *
+         * @param userId
+         * @return
+         */
         public Builder userId(String userId) {
             this.userId = userId;
             return this;
         }
 
+        /**
+         * Derived form the accessToken
+         *
+         * @param expiredTs
+         * @return
+         */
         public Builder expiredTs(Date expiredTs) {
             this.expiresTs = expiredTs;
             return this;
