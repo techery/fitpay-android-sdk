@@ -32,6 +32,7 @@ import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.TimestampUtils;
 
 import java.io.SyncFailedException;
+import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -500,18 +501,35 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
             if (payload instanceof ApduPackage) {
                 ApduPackage pkg = (ApduPackage) payload;
 
-                long validUntil = TimestampUtils.getDateForISO8601String(pkg.getValidUntil()).getTime();
                 long currentTime = System.currentTimeMillis();
+                try {
+                    long validUntil = TimestampUtils.getDateForISO8601String(pkg.getValidUntil()).getTime();
 
-                FPLog.i(APDU_DATA, "\\ApduPackage\\: " + pkg);
+                    FPLog.i(APDU_DATA, "\\ApduPackage\\: " + pkg);
 
-                if (validUntil > currentTime) {
-                    executeApduPackage(pkg);
-                } else {
+                    if (validUntil > currentTime) {
+                        executeApduPackage(pkg);
+                    } else {
+                        ApduExecutionResult result = new ApduExecutionResult(pkg.getPackageId());
+                        result.setExecutedDuration(0);
+                        result.setErrorReason(String.format(
+                                "expired APDU package, validUntil: %s, validUtil Parsed: %d, currentTime: %d",
+                                pkg.getValidUntil(),
+                                validUntil,
+                                currentTime));
+                        result.setExecutedTsEpoch(currentTime);
+                        result.setState(ResponseState.EXPIRED);
+
+                        sendApduExecutionResult(result);
+                    }
+                } catch (ParseException e) {
+                    FPLog.e(e);
+
                     ApduExecutionResult result = new ApduExecutionResult(pkg.getPackageId());
                     result.setExecutedDuration(0);
                     result.setExecutedTsEpoch(currentTime);
-                    result.setState(ResponseState.EXPIRED);
+                    result.setErrorReason("failed to parse validUntil date from APDU package: " + pkg.getValidUntil());
+                    result.setState(ResponseState.FAILED);
 
                     sendApduExecutionResult(result);
                 }

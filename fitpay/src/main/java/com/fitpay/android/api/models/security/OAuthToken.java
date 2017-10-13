@@ -53,8 +53,8 @@ final public class OAuthToken {
 
     public boolean isExpired() {
         // used the expired date/time contained in the bearer token if set
-        if (expiresTs != null && expiresTs.before(new Date())) {
-            return expiresTs.getTime() < System.currentTimeMillis();
+        if (expiresTs != null) {
+            return expiresTs.before(new Date());
         }
 
         // if expired date/time is not in the bearer token (it's optional), then use

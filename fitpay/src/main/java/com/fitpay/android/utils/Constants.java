@@ -22,7 +22,6 @@ public final class Constants {
     public final static String WV_DATA = "WV_DATA";
 
     static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-    static final String DATE_FORMAT_ISO8601 = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
     static final String DATE_FORMAT_SIMPLE = "yyyy-MM-dd";
 
     private static Gson gson;
