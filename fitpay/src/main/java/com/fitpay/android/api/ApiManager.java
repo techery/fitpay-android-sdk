@@ -36,6 +36,7 @@ import retrofit2.Response;
 
 /*
  * API manager
+ * PROPERTY_COMMIT_ERROR_TIMEOUT may be overridden temporarily for debugging performance lag issues, but should be <= 30000 for production builds
  */
 public class ApiManager {
 
@@ -136,7 +137,7 @@ public class ApiManager {
     public void setAuthToken(OAuthToken token) {
         apiService.updateToken(token);
     }
-    
+
     public FitPayClient getClient() {
         return apiService.getClient();
     }
