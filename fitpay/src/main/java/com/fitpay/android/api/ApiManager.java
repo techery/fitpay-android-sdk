@@ -106,7 +106,7 @@ public class ApiManager {
     }
 
     public static void init(Map<String, String> props) {
-        init(props, false);
+        init(props, true);
     }
 
     public static void init(Map<String, String> props, boolean skipHealthCheck) {
