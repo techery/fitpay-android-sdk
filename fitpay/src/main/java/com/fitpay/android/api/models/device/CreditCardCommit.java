@@ -4,7 +4,6 @@ import com.fitpay.android.api.enums.CardInitiators;
 import com.fitpay.android.api.models.AssetReference;
 import com.fitpay.android.api.models.card.Address;
 import com.fitpay.android.api.models.card.CardMetaData;
-import com.fitpay.android.api.models.card.VerificationMethod;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
@@ -28,13 +27,15 @@ public class CreditCardCommit {
     protected String targetDeviceId;
     protected String targetDeviceType;
     protected String externalTokenReference;
-//    protected List<VerificationMethod> verificationMethods;
+    //    protected List<VerificationMethod> verificationMethods;
     protected String termsAssetId;
     protected Long eligibilityExpirationEpoch;
     protected List<AssetReference> termsAssetReferences;
 
-    //TODO eliminate the duplicates
+    @SerializedName("encryptedData")
+    private CreditCard creditCard;
 
+    //TODO eliminate the duplicates
     private String pan;
     private int expMonth;
     private int expYear;
@@ -43,10 +44,9 @@ public class CreditCardCommit {
     private Address address;
     private List<Device> deviceRelationships;
 
-
     //TODO resolve with above
 
-    protected CreditCardCommit(){
+    protected CreditCardCommit() {
     }
 
     public String getCreditCardId() {
@@ -104,14 +104,6 @@ public class CreditCardCommit {
 //        return verificationMethods;
 //    }
 
-    public Address getAddress() {
-        return address;
-    }
-
-    public String getCvv() {
-        return cvv;
-    }
-
     public List<Device> getDeviceRelationships() {
         return deviceRelationships;
     }
@@ -120,20 +112,28 @@ public class CreditCardCommit {
         return eligibilityExpirationEpoch;
     }
 
+    public Address getAddress() {
+        return creditCard != null ? creditCard.address : address;
+    }
+
+    public String getCvv() {
+        return creditCard != null ? creditCard.cvv : cvv;
+    }
+
     public int getExpMonth() {
-        return expMonth;
+        return creditCard != null ? creditCard.expMonth : expMonth;
     }
 
     public int getExpYear() {
-        return expYear;
+        return creditCard != null ? creditCard.expYear : expYear;
     }
 
     public String getName() {
-        return name;
+        return creditCard != null ? creditCard.name : name;
     }
 
     public String getPan() {
-        return pan;
+        return creditCard != null ? creditCard.pan : pan;
     }
 
     public String getTermsAssetId() {
@@ -142,5 +142,14 @@ public class CreditCardCommit {
 
     public List<AssetReference> getTermsAssetReferences() {
         return termsAssetReferences;
+    }
+
+    private static class CreditCard {
+        private String pan;
+        private int expMonth;
+        private int expYear;
+        private String cvv;
+        private String name;
+        private Address address;
     }
 }
