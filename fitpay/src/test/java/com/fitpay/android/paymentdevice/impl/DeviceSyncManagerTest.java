@@ -62,7 +62,7 @@ public class DeviceSyncManagerTest extends TestActions {
     public void testActionsSetup() throws Exception {
         SharedPreferences sp = Mockito.mock(SharedPreferences.class);
         Mockito.when(sp.getAll()).thenReturn(Collections.emptyMap());
-        Mockito.when(sp.getString(Matchers.eq("lastCommitId"), (String)Matchers.isNull())).then(new Answer<String>() {
+        Mockito.when(sp.getString(Matchers.eq("lastCommitId"), (String) Matchers.isNull())).then(new Answer<String>() {
             @Override
             public String answer(InvocationOnMock invocation) throws Throwable {
                 return lastCommitId;
@@ -75,7 +75,7 @@ public class DeviceSyncManagerTest extends TestActions {
         Mockito.when(spEditor.putString(Matchers.eq("lastCommitId"), Matchers.anyString())).thenAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock invocation) throws Throwable {
-                lastCommitId = (String)invocation.getArguments()[1];
+                lastCommitId = (String) invocation.getArguments()[1];
 
                 return spEditor;
             }
@@ -92,6 +92,13 @@ public class DeviceSyncManagerTest extends TestActions {
         syncManagerCallback = new DeviceSyncManager.DeviceSyncManagerCallback() {
             @Override
             public void syncRequestAdded(SyncRequest request) {
+            }
+
+            @Override
+            public void syncRequestFailed(SyncRequest request) {
+                if (executionLatch != null) {
+                    executionLatch.countDown();
+                }
             }
 
             @Override
@@ -237,10 +244,10 @@ public class DeviceSyncManagerTest extends TestActions {
     public void happyPathSyncTest() throws Exception {
         int syncCount = 10;
 
-        for (int i=0; i<syncCount; i++) {
+        for (int i = 0; i < syncCount; i++) {
             System.out.println("");
             System.out.println("###############################################################################################################");
-            System.out.println("################ sync #" + (i+1) + " of " + syncCount + " started");
+            System.out.println("################ sync #" + (i + 1) + " of " + syncCount + " started");
             System.out.println("###############################################################################################################");
             System.out.println("");
 
@@ -255,7 +262,7 @@ public class DeviceSyncManagerTest extends TestActions {
 
             System.out.println("");
             System.out.println("###############################################################################################################");
-            System.out.println("################ sync #" + (i+1) + " of " + syncCount + " completed");
+            System.out.println("################ sync #" + (i + 1) + " of " + syncCount + " completed");
             System.out.println("###############################################################################################################");
             System.out.println("");
 
@@ -288,13 +295,13 @@ public class DeviceSyncManagerTest extends TestActions {
 
         assertEquals(syncCount,
                 listener.getSyncEvents().stream()
-                    .filter(syncEvent -> syncEvent.getState() == States.COMPLETED_NO_UPDATES || syncEvent.getState() == States.COMPLETED)
-                    .count());
+                        .filter(syncEvent -> syncEvent.getState() == States.COMPLETED_NO_UPDATES || syncEvent.getState() == States.COMPLETED)
+                        .count());
 
         assertEquals(3,
                 listener.getCommits().stream()
-                    .filter(commit -> commit.getCommitType().equals("APDU_PACKAGE"))
-                    .count());
+                        .filter(commit -> commit.getCommitType().equals("APDU_PACKAGE"))
+                        .count());
     }
 
     private class SyncCompleteListener extends Listener {

@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import static com.fitpay.android.paymentdevice.constants.ApduConstants.APDU_CONTINUE_COMMAND_DATA;
 import static com.fitpay.android.paymentdevice.constants.ApduConstants.NORMAL_PROCESSING;
@@ -50,6 +51,8 @@ import static com.fitpay.android.utils.Constants.APDU_DATA;
 public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector {
 
     private final static String TAG = PaymentDeviceConnector.class.getSimpleName();
+
+    protected final String connectorId = UUID.randomUUID().toString();
 
     private static final int MAX_REPEATS = 0;
 
@@ -82,6 +85,10 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         mContext = context;
     }
 
+    public String id() {
+        return connectorId;
+    }
+
     @Override
     public void init(Properties props) {
         // null implementation - override concrete class as needed
@@ -110,7 +117,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     public void setState(@Connection.State int state) {
         FPLog.d(TAG, "connection state changed: " + state);
         this.state = state;
-        RxBus.getInstance().post(new Connection(state));
+        RxBus.getInstance().post(connectorId, new Connection(state));
     }
 
     @Override
@@ -176,7 +183,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     @Override
     public void syncInit() {
         if (null == apduExecutionListener) {
-            apduExecutionListener = new ApduPackageListener();
+            apduExecutionListener = new ApduPackageListener(connectorId);
             NotificationManager.getInstance().addListenerToCurrentThread(this.apduExecutionListener);
         }
         mErrorRepeats = null;
@@ -233,7 +240,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         curApduPackage = apduPackage;
         curApduPgkNumber = System.currentTimeMillis();
 
-        apduCommandListener = new ApduCommandListener();
+        apduCommandListener = new ApduCommandListener(connectorId);
         NotificationManager.getInstance().addListener(apduCommandListener);
 
         onPreExecuteApdu();
@@ -288,19 +295,24 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     public void commitProcessed(@CommitResult.Type int type, Throwable error) {
         switch (type) {
             case CommitResult.SUCCESS:
-                RxBus.getInstance().post(new CommitSuccess(currentCommit));
+                CommitSuccess.Builder success = new CommitSuccess.Builder().commit(currentCommit);
+                RxBus.getInstance().post(connectorId, success.build());
                 break;
 
             case CommitResult.SKIPPED:
-                RxBus.getInstance().post(new CommitSkipped(currentCommit));
+                CommitSkipped.Builder skipped = new CommitSkipped.Builder().commit(currentCommit);
+                if (error != null) {
+                    skipped.errorMessage(error.getMessage());
+                }
+                RxBus.getInstance().post(connectorId, skipped.build());
                 break;
 
             case CommitResult.FAILED:
-                CommitFailed.Builder builder = new CommitFailed.Builder().commit(currentCommit);
+                CommitFailed.Builder failed = new CommitFailed.Builder().commit(currentCommit);
                 if (error != null) {
-                    builder.errorMessage(error.getMessage());
+                    failed.errorMessage(error.getMessage());
                 }
-                RxBus.getInstance().post(builder.build());
+                RxBus.getInstance().post(connectorId, failed.build());
                 break;
         }
     }
@@ -308,16 +320,15 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     /**
      * @deprecated the SDK handling have TOW as commits is no longer supported, TOW data can still be pulled
      * from the CreditCard API resource when needed.
-     *
+     * <p>
      * Get TOW data from the server
      */
     protected final void getTopOfWalletData(List<String> cardOrder) {
-     }
+    }
 
     /**
-     * @deprecated See {@link IPaymentDeviceConnector} - providing a do-nothing implementation to help clean up OEM integrations
-     *
      * @param towPackages
+     * @deprecated See {@link IPaymentDeviceConnector} - providing a do-nothing implementation to help clean up OEM integrations
      */
     @Override
     public void executeTopOfWallet(List<TopOfWallet> towPackages) {
@@ -341,7 +352,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
             builder.setStatus(EventCallback.STATUS_FAILED);
         }
 
-        builder.build().send();
+        builder.build().send(connectorId);
 
         if (apduExecutionResult.getState().equals(ResponseState.NOT_PROCESSED)) {
             commitProcessed(CommitResult.FAILED, new Exception("apdu command doesn't executed"));
@@ -386,6 +397,10 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      */
     private class ApduPackageListener extends ApduExecutionListener {
 
+        public ApduPackageListener(String connectorId) {
+            super(connectorId);
+        }
+
         @Override
         public void onApduPackageResultReceived(ApduExecutionResult result) {
             sendApduExecutionResult(result);
@@ -424,8 +439,8 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         final String normalResponseCode = Hex.bytesToHexString(NORMAL_PROCESSING);
         final StringBuilder longApduResponseStr = new StringBuilder();
 
-        ApduCommandListener() {
-            super();
+        ApduCommandListener(String connectorId) {
+            super(connectorId);
             mCommands.put(ApduCommandResult.class, data -> onApduCommandReceived((ApduCommandResult) data));
             mCommands.put(ApduExecException.class, data -> onApduExecErrorReceived((ApduExecException) data));
         }

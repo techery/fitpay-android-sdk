@@ -14,9 +14,11 @@ import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.cardscanner.IFitPayCardScanner;
 import com.fitpay.android.cardscanner.ScannedCardInfo;
-import com.fitpay.android.paymentdevice.DeviceService;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
+import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
+import com.fitpay.android.paymentdevice.models.SyncRequest;
+import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.EventCallback;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
@@ -53,7 +55,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     private static final int RESPONSE_IN_PROGRESS = 2;
 
     private final Activity activity;
-    private DeviceService deviceService;
+    private final IPaymentDeviceConnector deviceConnector;
 
     private User user;
     private Device device;
@@ -72,10 +74,11 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private IFitPayCardScanner cardScanner;
 
-    public WebViewCommunicatorImpl(Activity ctx, int wId) {
+    public WebViewCommunicatorImpl(Activity ctx, IPaymentDeviceConnector deviceConnector, int wId) {
         this.activity = ctx;
+        this.deviceConnector = deviceConnector;
 
-        deviceStatusListener = new DeviceStatusListener();
+        deviceStatusListener = new DeviceStatusListener(deviceConnector.id());
         rtmMessageListener = new RtmMessageListener();
 
         NotificationManager.getInstance().addListener(deviceStatusListener);
@@ -84,9 +87,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         webView = (WebView) activity.findViewById(wId);
     }
 
-    public void setDeviceService(DeviceService deviceService) {
-        this.deviceService = deviceService;
-    }
+//    @Override
+//    public void setPaymentConnector(IPaymentDeviceConnector deviceConnector) {
+//        this.deviceConnector = deviceConnector;
+//    }
 
     /**
      * set custom card scanner instead of Jumio
@@ -179,22 +183,31 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
 //        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
 
+        if (null == user) {
+            onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "No user specified for sync operation");
+            return;
+        }
+
         if (null == device) {
             onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "No device specified for sync operation");
             return;
         }
 
-        if (null == deviceService) {
-            onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "No DeviceService has not been configured for sync operation");
+        if (null == deviceConnector) {
+            onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "No PaymentConnector has not been configured for sync operation");
             return;
         }
 
         NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
 
-        listenerForAppCallbacks = new DeviceSyncListener(callbackId);
+        listenerForAppCallbacks = new DeviceSyncListener(deviceConnector.id(), callbackId);
         NotificationManager.getInstance().addListener(listenerForAppCallbacks);
 
-        deviceService.syncData(user, device);
+        RxBus.getInstance().post(deviceConnector.id(), new SyncRequest.Builder()
+                .setUser(user)
+                .setDevice(device)
+                .setConnector(deviceConnector)
+                .build());
     }
 
     @Override
@@ -334,8 +347,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
 
     private class DeviceStatusListener extends Listener {
-        private DeviceStatusListener() {
-            super();
+        private DeviceStatusListener(String connectorId) {
+            super(connectorId);
             mCommands.put(DeviceStatusMessage.class, data -> {
                 if (deviceId == null || deviceId.equals(((DeviceStatusMessage) data).getDeviceId())) {
                     sendDeviceStatusToJs((DeviceStatusMessage) data);
@@ -351,8 +364,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         private String callbackId;
 
-        private DeviceSyncListener(String callbackId) {
-            super();
+        private DeviceSyncListener(String connectorId, String callbackId) {
+            super(connectorId);
             this.callbackId = callbackId;
             mCommands.put(Sync.class, data -> onSyncStateChanged((Sync) data));
 

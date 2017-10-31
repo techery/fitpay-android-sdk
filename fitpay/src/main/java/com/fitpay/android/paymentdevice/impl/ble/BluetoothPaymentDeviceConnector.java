@@ -148,7 +148,7 @@ public final class BluetoothPaymentDeviceConnector extends PaymentDeviceConnecto
     @Override
     public void executeApduPackage(ApduPackage apduPackage) {
         FPLog.d(TAG, "initiate executeApduPackage request");
-        GattOperation sendApduOperation = new GattApduOperation(apduPackage);
+        GattOperation sendApduOperation = new GattApduOperation(id(), apduPackage);
         mGattManager.queue(sendApduOperation);
     }
 
