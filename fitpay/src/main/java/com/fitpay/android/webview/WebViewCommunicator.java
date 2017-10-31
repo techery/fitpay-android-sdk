@@ -40,6 +40,7 @@ public interface WebViewCommunicator {
      *
      * @param deviceService
      */
+    @Deprecated
     void setDeviceService(DeviceService deviceService);
 
     /**

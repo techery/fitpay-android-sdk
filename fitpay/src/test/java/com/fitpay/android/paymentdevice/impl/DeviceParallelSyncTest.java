@@ -8,7 +8,8 @@ import com.fitpay.android.TestUtils;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.UserCreateRequest;
-import com.fitpay.android.paymentdevice.DeviceSyncManager;
+import com.fitpay.android.paymentdevice.DeviceSyncManagerV2;
+import com.fitpay.android.paymentdevice.callbacks.DeviceSyncManagerCallback;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
@@ -47,7 +48,7 @@ import static org.junit.Assert.assertEquals;
 public class DeviceParallelSyncTest extends TestActions {
 
     private Context mContext;
-    private DeviceSyncManager syncManager;
+    private DeviceSyncManagerV2 syncManager;
 
     private IPaymentDeviceConnector firstMockPaymentDevice;
     private Device firstDevice;
@@ -64,7 +65,7 @@ public class DeviceParallelSyncTest extends TestActions {
     private AtomicReference<CountDownLatch> firstFinishLatch = new AtomicReference<>(new CountDownLatch(1));
     private AtomicReference<CountDownLatch> secondFinishLatch = new AtomicReference<>(new CountDownLatch(1));
 
-    private DeviceSyncManager.DeviceSyncManagerCallback syncManagerCallback;
+    private DeviceSyncManagerCallback syncManagerCallback;
 
     private Map<String, String> commitId = new HashMap<String, String>();
 
@@ -114,10 +115,10 @@ public class DeviceParallelSyncTest extends TestActions {
         NotificationManager.getInstance().addListenerToCurrentThread(secondSyncListener);
         /*-----second_device_end-----*/
 
-        syncManager = new DeviceSyncManager(mContext);
+        syncManager = new DeviceSyncManagerV2(mContext);
         syncManager.onCreate();
 
-        syncManagerCallback = new DeviceSyncManager.DeviceSyncManagerCallback() {
+        syncManagerCallback = new DeviceSyncManagerCallback() {
             @Override
             public void syncRequestAdded(SyncRequest request) {
             }

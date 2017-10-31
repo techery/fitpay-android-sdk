@@ -2,7 +2,7 @@ package com.fitpay.android.paymentdevice.utils.sync;
 
 import android.content.Context;
 
-import com.fitpay.android.paymentdevice.DeviceSyncManager;
+import com.fitpay.android.paymentdevice.callbacks.DeviceSyncManagerCallback;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.models.SyncRequest;
@@ -31,11 +31,11 @@ public class SyncThreadExecutor extends ThreadPoolExecutor {
     private final List<String> inWork = new ArrayList<>();
 
     private final Context mContext;
-    private final List<DeviceSyncManager.DeviceSyncManagerCallback> syncManagerCallbacks;
+    private final List<DeviceSyncManagerCallback> syncManagerCallbacks;
 
     private final int queueSize;
 
-    public SyncThreadExecutor(Context context, List<DeviceSyncManager.DeviceSyncManagerCallback> syncManagerCallbacks, int queueSize, int threadsCount, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
+    public SyncThreadExecutor(Context context, List<DeviceSyncManagerCallback> syncManagerCallbacks, int queueSize, int threadsCount, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue) {
         super(threadsCount, threadsCount, keepAliveTime, unit, workQueue);
         this.mContext = context;
         this.syncManagerCallbacks = syncManagerCallbacks;
@@ -48,7 +48,7 @@ public class SyncThreadExecutor extends ThreadPoolExecutor {
         SyncWorkerTask task = (SyncWorkerTask) r;
         inWork.add(task.getSyncRequest().getDevice().getDeviceIdentifier());
 
-        for (DeviceSyncManager.DeviceSyncManagerCallback callback : syncManagerCallbacks) {
+        for (DeviceSyncManagerCallback callback : syncManagerCallbacks) {
             callback.syncTaskStarting(task.getSyncRequest());
         }
 
@@ -60,7 +60,7 @@ public class SyncThreadExecutor extends ThreadPoolExecutor {
         SyncWorkerTask task = (SyncWorkerTask) r;
         inWork.remove(task.getSyncRequest().getDevice().getDeviceIdentifier());
 
-        for (DeviceSyncManager.DeviceSyncManagerCallback callback : syncManagerCallbacks) {
+        for (DeviceSyncManagerCallback callback : syncManagerCallbacks) {
             callback.syncTaskCompleted(task.getSyncRequest());
         }
 
@@ -81,7 +81,7 @@ public class SyncThreadExecutor extends ThreadPoolExecutor {
      */
     public void addTask(SyncRequest request) {
         if (canExecuteRequest(request)) {
-            for (DeviceSyncManager.DeviceSyncManagerCallback callback : syncManagerCallbacks) {
+            for (DeviceSyncManagerCallback callback : syncManagerCallbacks) {
                 callback.syncRequestAdded(request);
             }
 
@@ -97,7 +97,7 @@ public class SyncThreadExecutor extends ThreadPoolExecutor {
             }
 
         } else {
-            for (DeviceSyncManager.DeviceSyncManagerCallback callback : syncManagerCallbacks) {
+            for (DeviceSyncManagerCallback callback : syncManagerCallbacks) {
                 callback.syncRequestFailed(request);
             }
         }

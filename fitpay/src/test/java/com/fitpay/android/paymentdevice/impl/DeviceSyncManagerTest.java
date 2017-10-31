@@ -9,7 +9,8 @@ import com.fitpay.android.api.models.card.CreditCard;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.UserCreateRequest;
-import com.fitpay.android.paymentdevice.DeviceSyncManager;
+import com.fitpay.android.paymentdevice.DeviceSyncManagerV2;
+import com.fitpay.android.paymentdevice.callbacks.DeviceSyncManagerCallback;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
@@ -46,14 +47,14 @@ import static junit.framework.Assert.fail;
 public class DeviceSyncManagerTest extends TestActions {
 
     private Context mContext;
-    private DeviceSyncManager syncManager;
+    private DeviceSyncManagerV2 syncManager;
     protected IPaymentDeviceConnector mockPaymentDevice;
 
     private Device device;
 
     private SyncCompleteListener listener;
     private CountDownLatch executionLatch;
-    private DeviceSyncManager.DeviceSyncManagerCallback syncManagerCallback;
+    private DeviceSyncManagerCallback syncManagerCallback;
 
     private String lastCommitId = null;
 
@@ -86,10 +87,10 @@ public class DeviceSyncManagerTest extends TestActions {
         mContext = Mockito.mock(Context.class);
         Mockito.when(mContext.getSharedPreferences(Matchers.anyString(), Matchers.eq(Context.MODE_PRIVATE))).thenReturn(sp);
 
-        syncManager = new DeviceSyncManager(mContext);
+        syncManager = new DeviceSyncManagerV2(mContext);
         syncManager.onCreate();
 
-        syncManagerCallback = new DeviceSyncManager.DeviceSyncManagerCallback() {
+        syncManagerCallback = new DeviceSyncManagerCallback() {
             @Override
             public void syncRequestAdded(SyncRequest request) {
             }

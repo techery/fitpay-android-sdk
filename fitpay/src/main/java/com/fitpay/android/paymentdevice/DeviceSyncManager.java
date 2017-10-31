@@ -77,6 +77,7 @@ public class DeviceSyncManager {
      * This interface is more about testing and allowing unit tests to inject hooks into the process making this
      * class more testable.
      */
+    @Deprecated
     public interface DeviceSyncManagerCallback {
         void syncRequestAdded(SyncRequest request);
 

@@ -4,9 +4,14 @@ import android.content.Context;
 
 import com.fitpay.android.R;
 import com.fitpay.android.api.ApiManager;
+import com.fitpay.android.api.callbacks.ApiCallback;
+import com.fitpay.android.api.enums.ResponseState;
+import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.device.Commit;
+import com.fitpay.android.api.models.device.CommitConfirm;
+import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.paymentdevice.DeviceOperationException;
-import com.fitpay.android.paymentdevice.DeviceSyncManager;
+import com.fitpay.android.paymentdevice.callbacks.DeviceSyncManagerCallback;
 import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
@@ -20,6 +25,7 @@ import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.utils.RxBus;
+import com.fitpay.android.utils.StringUtils;
 import com.fitpay.android.webview.events.DeviceStatusMessage;
 
 import java.util.Collections;
@@ -31,6 +37,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import rx.Observable;
 
 import static com.fitpay.android.utils.Constants.SYNC_DATA;
 
@@ -59,9 +67,9 @@ public final class SyncWorkerTask implements Runnable {
 
     private String pendingCommitId;
 
-    private final List<DeviceSyncManager.DeviceSyncManagerCallback> syncManagerCallbacks;
+    private final List<DeviceSyncManagerCallback> syncManagerCallbacks;
 
-    public SyncWorkerTask(Context mContext, List<DeviceSyncManager.DeviceSyncManagerCallback> syncManagerCallbacks, SyncRequest syncRequest) {
+    public SyncWorkerTask(Context mContext, List<DeviceSyncManagerCallback> syncManagerCallbacks, SyncRequest syncRequest) {
         this.mContext = mContext;
         this.syncRequest = syncRequest;
         this.syncManagerCallbacks = syncManagerCallbacks;
@@ -80,7 +88,7 @@ public final class SyncWorkerTask implements Runnable {
 
         Exception err = null;
         try {
-            for (DeviceSyncManager.DeviceSyncManagerCallback callback : syncManagerCallbacks) {
+            for (DeviceSyncManagerCallback callback : syncManagerCallbacks) {
                 callback.syncTaskStarted(syncRequest);
             }
 
@@ -177,7 +185,7 @@ public final class SyncWorkerTask implements Runnable {
         String deviceId = syncRequest.getDevice().getDeviceIdentifier();
 
         RxBus.getInstance().post(connectorIdFilter, new DeviceStatusMessage(
-                mContext.getString(R.string.checking_wallet_updates),
+                mContext.getString(R.string.fp_checking_wallet_updates),
                 deviceId,
                 DeviceStatusMessage.SUCCESS));
 
@@ -190,8 +198,19 @@ public final class SyncWorkerTask implements Runnable {
 
         // get all the new commits from the last commit pointer processed
         FPLog.d(TAG, "retrieving commits from the lastCommitId: " + deviceData.getLastCommitId() + ", for syncRequest: " + syncRequest);
-        syncRequest.getDevice().getAllCommits(deviceData.getLastCommitId())
-                .compose(RxBus.applySchedulersExecutorThread())
+
+        Device device = syncRequest.getDevice();
+        Observable<com.fitpay.android.api.models.collection.Collections.CommitsCollection> observable = null;
+
+        String lastCommitId = deviceData.getLastCommitId();
+
+        if (StringUtils.isEmpty(lastCommitId) && syncRequest.useLastAckCommit() && device.hasLastAckCommit()) {
+            observable = device.getAllCommitsAfterLastAckCommit();
+        } else {
+            observable = device.getAllCommits(lastCommitId);
+        }
+
+        observable.compose(RxBus.applySchedulersExecutorThread())
                 .subscribe(
                         commitsCollection -> {
                             commits = commitsCollection.getResults();
@@ -201,19 +220,19 @@ public final class SyncWorkerTask implements Runnable {
 
                             if (commits.size() > 0) {
                                 RxBus.getInstance().post(connectorIdFilter, new DeviceStatusMessage(
-                                        mContext.getString(R.string.updates_available),
+                                        mContext.getString(R.string.fp_updates_available),
                                         deviceId,
                                         DeviceStatusMessage.SUCCESS));
 
                                 RxBus.getInstance().post(connectorIdFilter, new DeviceStatusMessage(
-                                        mContext.getString(R.string.sync_started),
+                                        mContext.getString(R.string.fp_sync_started),
                                         deviceId,
                                         DeviceStatusMessage.PROGRESS));
 
                                 processNextCommit();
                             } else {
                                 RxBus.getInstance().post(connectorIdFilter, new DeviceStatusMessage(
-                                        mContext.getString(R.string.no_pending_updates),
+                                        mContext.getString(R.string.fp_no_pending_updates),
                                         deviceId,
                                         DeviceStatusMessage.SUCCESS));
 
@@ -389,6 +408,8 @@ public final class SyncWorkerTask implements Runnable {
 
             moveLastCommitPointer(commitSuccess.getCommitId());
 
+            confirmCommit(commitSuccess.getCommit(), new CommitConfirm(ResponseState.SUCCESS));
+
             EventCallback eventCallback = new EventCallback.Builder()
                     .setCommand(EventCallback.getCommandForCommit(commitSuccess.getCommit()))
                     .setStatus(EventCallback.STATUS_OK)
@@ -411,6 +432,8 @@ public final class SyncWorkerTask implements Runnable {
             commitFailedCounter.incrementAndGet();
 
             cancelCommitTimers();
+
+            confirmCommit(commitFailed.getCommit(), new CommitConfirm(ResponseState.FAILED));
 
             commits.clear();
 
@@ -443,6 +466,8 @@ public final class SyncWorkerTask implements Runnable {
 
             moveLastCommitPointer(commitSkipped.getCommitId());
 
+            confirmCommit(commitSkipped.getCommit(), new CommitConfirm(ResponseState.SKIPPED));
+
             EventCallback eventCallback = new EventCallback.Builder()
                     .setCommand(EventCallback.getCommandForCommit(commitSkipped.getCommit()))
                     .setStatus(EventCallback.STATUS_OK)
@@ -467,6 +492,24 @@ public final class SyncWorkerTask implements Runnable {
             deviceData.setLastCommitId(lastCommitId);
 
             DevicePreferenceData.store(mContext, deviceData);
+        }
+
+        private void confirmCommit(final Commit commit, final CommitConfirm confirm) {
+            if (commit.canConfirmCommit()) {
+                commit.confirm(confirm, new ApiCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        FPLog.i("commit " + commit + " successfully confirmed with " + confirm);
+                    }
+
+                    @Override
+                    public void onFailure(@ResultCode.Code int errorCode, String errorMessage) {
+                        FPLog.e("error confirming commit " + commit + ", errorCode: " + errorCode + ", errorMessage: " + errorMessage);
+                    }
+                });
+            } else {
+                FPLog.i("skipping commit confirm for commit " + commit + ", no confirm link available");
+            }
         }
 
         private void cancelCommitTimers() {

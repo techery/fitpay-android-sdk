@@ -14,11 +14,11 @@ import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.cardscanner.IFitPayCardScanner;
 import com.fitpay.android.cardscanner.ScannedCardInfo;
+import com.fitpay.android.paymentdevice.DeviceService;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.models.SyncRequest;
-import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.EventCallback;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
@@ -55,6 +55,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     private static final int RESPONSE_IN_PROGRESS = 2;
 
     private final Activity activity;
+    private DeviceService deviceService;
     private final IPaymentDeviceConnector deviceConnector;
 
     private User user;
@@ -74,11 +75,24 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private IFitPayCardScanner cardScanner;
 
+    private boolean usedDeprecatedConstructor = false;
+
+    @Deprecated
+    public WebViewCommunicatorImpl(Activity ctx, int wId) {
+        this(ctx, null, wId);
+        usedDeprecatedConstructor = true;
+    }
+
+    @Deprecated
+    public void setDeviceService(DeviceService deviceService) {
+        this.deviceService = deviceService;
+    }
+
     public WebViewCommunicatorImpl(Activity ctx, IPaymentDeviceConnector deviceConnector, int wId) {
         this.activity = ctx;
         this.deviceConnector = deviceConnector;
 
-        deviceStatusListener = new DeviceStatusListener(deviceConnector.id());
+        deviceStatusListener = new DeviceStatusListener(getConnectorId());
         rtmMessageListener = new RtmMessageListener();
 
         NotificationManager.getInstance().addListener(deviceStatusListener);
@@ -86,11 +100,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         webView = (WebView) activity.findViewById(wId);
     }
-
-//    @Override
-//    public void setPaymentConnector(IPaymentDeviceConnector deviceConnector) {
-//        this.deviceConnector = deviceConnector;
-//    }
 
     /**
      * set custom card scanner instead of Jumio
@@ -193,21 +202,30 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             return;
         }
 
-        if (null == deviceConnector) {
+        if (null == deviceService && usedDeprecatedConstructor) {
+            onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "No DeviceService has not been configured for sync operation");
+            return;
+        }
+
+        if (null == deviceConnector && !usedDeprecatedConstructor) {
             onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "No PaymentConnector has not been configured for sync operation");
             return;
         }
 
         NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
 
-        listenerForAppCallbacks = new DeviceSyncListener(deviceConnector.id(), callbackId);
+        listenerForAppCallbacks = new DeviceSyncListener(getConnectorId(), callbackId);
         NotificationManager.getInstance().addListener(listenerForAppCallbacks);
 
-        RxBus.getInstance().post(deviceConnector.id(), new SyncRequest.Builder()
-                .setUser(user)
-                .setDevice(device)
-                .setConnector(deviceConnector)
-                .build());
+        if (deviceService != null) {
+            deviceService.syncData(user, device);
+        } else {
+            RxBus.getInstance().post(getConnectorId(), new SyncRequest.Builder()
+                    .setUser(user)
+                    .setDevice(device)
+                    .setConnector(deviceConnector)
+                    .build());
+        }
     }
 
     @Override
@@ -343,6 +361,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 .setReason(errorMessage)
                 .build();
         eventCallback.send();
+    }
+
+    private String getConnectorId() {
+        return deviceConnector != null ? deviceConnector.id() : null;
     }
 
 
