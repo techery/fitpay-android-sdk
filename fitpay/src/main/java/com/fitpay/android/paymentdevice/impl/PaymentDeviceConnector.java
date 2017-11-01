@@ -12,6 +12,7 @@ import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.card.TopOfWallet;
 import com.fitpay.android.api.models.device.Commit;
+import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.CommitHandler;
 import com.fitpay.android.paymentdevice.callbacks.ApduExecutionListener;
@@ -22,6 +23,7 @@ import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
+import com.fitpay.android.paymentdevice.models.SyncRequest;
 import com.fitpay.android.paymentdevice.utils.ApduExecException;
 import com.fitpay.android.utils.EventCallback;
 import com.fitpay.android.utils.FPLog;
@@ -74,6 +76,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     private ApduExecutionResult apduExecutionResult;
 
     protected User user;
+    protected Device device;
 
     public PaymentDeviceConnector() {
         state = States.NEW;
@@ -87,6 +90,10 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     public String id() {
         return connectorId;
+    }
+
+    public String deviceId(){
+        return device != null ? device.getDeviceIdentifier() : null;
     }
 
     @Override
@@ -254,6 +261,14 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     @Override
     public void onPostExecuteApdu() {
         completeApduPackageExecution();
+    }
+
+
+    /**
+     * Create sync request
+     */
+    public SyncRequest createRequest(){
+        return new SyncRequest.Builder().setUser(user).setDevice(device).setConnector(this).build();
     }
 
     /**
