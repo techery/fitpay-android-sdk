@@ -29,10 +29,13 @@ import java.util.concurrent.Executor;
 import static java.lang.Class.forName;
 
 /**
+ * @deprecated use {@link DeviceServiceV2}
+ *
  * Connection and synchronization service
  * <p>
  * Allows for service binding or start
  */
+@Deprecated
 public final class DeviceService extends Service {
 
     private final static String TAG = DeviceService.class.getSimpleName();

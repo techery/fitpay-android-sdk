@@ -45,8 +45,11 @@ import rx.Observable;
 import static com.fitpay.android.utils.Constants.SYNC_DATA;
 
 /**
+ * @deprecated use {@link DeviceSyncManagerV2}
+ *
  * Device sync manager can work with one device only, all new sync request will be put in a queue
  */
+@Deprecated
 public class DeviceSyncManager {
     private final static String TAG = DeviceSyncManager.class.getSimpleName();
 
