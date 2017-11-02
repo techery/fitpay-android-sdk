@@ -46,7 +46,7 @@ import static com.fitpay.android.utils.Constants.SYNC_DATA;
 
 /**
  * @deprecated use {@link DeviceSyncManagerV2}
- *
+ * <p>
  * Device sync manager can work with one device only, all new sync request will be put in a queue
  */
 @Deprecated
@@ -286,7 +286,7 @@ public class DeviceSyncManager {
             syncRequest.getConnector().syncInit();
 
             // load the stored device data so we can figure out exactly where the last sync left off
-            DevicePreferenceData deviceData = DevicePreferenceData.load(mContext, deviceId);
+            DevicePreferenceData deviceData = DevicePreferenceData.load(mContext, syncRequest.getDevice().getSecureElementId());
 
             // get all the new commits from the last commit pointer processed
             FPLog.d(TAG, "retrieving commits from the lastCommitId: " + deviceData.getLastCommitId() + ", for syncRequest: " + syncRequest);

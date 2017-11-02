@@ -175,15 +175,11 @@ public final class SyncWorkerTask implements Runnable {
 
         FPLog.d(TAG, "sync initiated from thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName() + ", syncRequest: " + syncRequest);
 
-        //TODO: remove?
-        syncRequest.getConnector().setUser(syncRequest.getUser());
-
         syncDevice();
     }
 
     private void syncDevice() {
         String connectorIdFilter = syncRequest.getConnector().id();
-        //TODO: change to CASD
         String deviceId = syncRequest.getDevice().getDeviceIdentifier();
 
         RxBus.getInstance().post(connectorIdFilter, new DeviceStatusMessage(
@@ -196,7 +192,7 @@ public final class SyncWorkerTask implements Runnable {
         syncRequest.getConnector().syncInit();
 
         // load the stored device data so we can figure out exactly where the last sync left off
-        DevicePreferenceData deviceData = DevicePreferenceData.load(mContext, deviceId);
+        DevicePreferenceData deviceData = DevicePreferenceData.load(mContext, syncRequest.getDevice().getSecureElementId());
 
         // get all the new commits from the last commit pointer processed
         FPLog.d(TAG, "retrieving commits from the lastCommitId: " + deviceData.getLastCommitId() + ", for syncRequest: " + syncRequest);

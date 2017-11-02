@@ -46,7 +46,7 @@ public class SyncThreadExecutor extends ThreadPoolExecutor {
     @Override
     protected void beforeExecute(Thread t, Runnable r) {
         SyncWorkerTask task = (SyncWorkerTask) r;
-        inWork.add(task.getSyncRequest().getDevice().getCasd());
+        inWork.add(task.getSyncRequest().getDevice().getSecureElementId());
 
         for (DeviceSyncManagerCallback callback : syncManagerCallbacks) {
             callback.syncTaskStarting(task.getSyncRequest());
@@ -58,7 +58,7 @@ public class SyncThreadExecutor extends ThreadPoolExecutor {
     @Override
     protected void afterExecute(Runnable r, Throwable t) {
         SyncWorkerTask task = (SyncWorkerTask) r;
-        inWork.remove(task.getSyncRequest().getDevice().getCasd());
+        inWork.remove(task.getSyncRequest().getDevice().getSecureElementId());
 
         for (DeviceSyncManagerCallback callback : syncManagerCallbacks) {
             callback.syncTaskCompleted(task.getSyncRequest());
@@ -85,7 +85,7 @@ public class SyncThreadExecutor extends ThreadPoolExecutor {
                 callback.syncRequestAdded(request);
             }
 
-            String deviceId = request.getDevice().getCasd();
+            String deviceId = request.getDevice().getSecureElementId();
             if (inWork.contains(deviceId)) {
                 BlockingQueue<SyncRequest> deviceQueue = syncBuffer.get(deviceId);
                 if (deviceQueue == null) {
