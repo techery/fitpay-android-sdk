@@ -75,8 +75,8 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     private ApduCommand curApduCommand;
     private ApduExecutionResult apduExecutionResult;
 
-    protected User user;
-    protected Device device;
+    private User user;
+    private Device device;
 
     public PaymentDeviceConnector() {
         state = States.NEW;
@@ -92,7 +92,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         return connectorId;
     }
 
-    public String deviceId(){
+    public String deviceId() {
         return device != null ? device.getDeviceIdentifier() : null;
     }
 
@@ -214,6 +214,11 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         this.user = user;
     }
 
+    @Override
+    public void setDevice(Device device) {
+        this.device = device;
+    }
+
     /**
      * If you want to process full apduPackage on your own,
      * you must override this function and follow these steps:
@@ -267,8 +272,9 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     /**
      * Create sync request
      */
-    public SyncRequest createRequest(){
-        return new SyncRequest.Builder().setUser(user).setDevice(device).setConnector(this).build();
+    @Override
+    public void createSyncRequest() {
+        RxBus.getInstance().post(new SyncRequest.Builder().setUser(user).setDevice(device).setConnector(this).build());
     }
 
     /**

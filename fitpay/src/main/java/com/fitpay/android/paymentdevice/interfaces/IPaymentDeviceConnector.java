@@ -7,9 +7,11 @@ import com.fitpay.android.api.models.apdu.ApduCommand;
 import com.fitpay.android.api.models.apdu.ApduExecutionResult;
 import com.fitpay.android.api.models.apdu.ApduPackage;
 import com.fitpay.android.api.models.card.TopOfWallet;
+import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.CommitHandler;
 import com.fitpay.android.paymentdevice.enums.Connection;
+import com.fitpay.android.paymentdevice.models.SyncRequest;
 
 import java.util.List;
 import java.util.Properties;
@@ -143,4 +145,17 @@ public interface IPaymentDeviceConnector extends CommitHandler {
      * @param user current user
      */
     void setUser(User user);
+
+    /**
+     * Add device
+     *
+     * @param device current device
+     */
+    void setDevice(Device device);
+
+
+    /**
+     * Post {@link SyncRequest} via {@link com.fitpay.android.utils.RxBus}
+     */
+    void createSyncRequest();
 }

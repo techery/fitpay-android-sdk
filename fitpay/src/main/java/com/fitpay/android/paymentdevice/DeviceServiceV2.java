@@ -28,12 +28,12 @@ public final class DeviceServiceV2 extends Service {
 
 
     public static void run(Context context) {
-        context.startService(new Intent(context, DeviceService.class));
+        context.startService(new Intent(context, DeviceServiceV2.class));
     }
 
 
     public static void stop(Context context) {
-        context.stopService(new Intent(context, DeviceService.class));
+        context.stopService(new Intent(context, DeviceServiceV2.class));
     }
 
 

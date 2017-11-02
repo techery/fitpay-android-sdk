@@ -175,6 +175,7 @@ public final class SyncWorkerTask implements Runnable {
 
         FPLog.d(TAG, "sync initiated from thread: " + Thread.currentThread() + ", " + Thread.currentThread().getName() + ", syncRequest: " + syncRequest);
 
+        //TODO: remove?
         syncRequest.getConnector().setUser(syncRequest.getUser());
 
         syncDevice();
@@ -182,6 +183,7 @@ public final class SyncWorkerTask implements Runnable {
 
     private void syncDevice() {
         String connectorIdFilter = syncRequest.getConnector().id();
+        //TODO: change to CASD
         String deviceId = syncRequest.getDevice().getDeviceIdentifier();
 
         RxBus.getInstance().post(connectorIdFilter, new DeviceStatusMessage(

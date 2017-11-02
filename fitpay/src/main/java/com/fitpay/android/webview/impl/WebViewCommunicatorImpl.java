@@ -18,7 +18,6 @@ import com.fitpay.android.paymentdevice.DeviceService;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
-import com.fitpay.android.paymentdevice.models.SyncRequest;
 import com.fitpay.android.utils.EventCallback;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
@@ -219,12 +218,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         if (deviceService != null) {
             deviceService.syncData(user, device);
-        } else {
-            RxBus.getInstance().post(getConnectorId(), new SyncRequest.Builder()
-                    .setUser(user)
-                    .setDevice(device)
-                    .setConnector(deviceConnector)
-                    .build());
+        } else if (deviceConnector != null) {
+            deviceConnector.createSyncRequest();
         }
     }
 
@@ -270,6 +265,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
                 WebViewCommunicatorImpl.this.user = result;
 
+                if(deviceConnector != null){
+                    deviceConnector.setUser(user);
+                }
+
                 RxBus.getInstance().post(new UserReceived(user.getId(), user.getUsername()));
 
                 EventCallback eventCallback = new EventCallback.Builder()
@@ -283,6 +282,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     public void onSuccess(Device result) {
                         WebViewCommunicatorImpl.this.device = result;
 
+                        if(deviceConnector != null){
+                            deviceConnector.setDevice(device);
+                        }
+
                         String token = ApiManager.getPushToken();
                         String deviceToken = device.getNotificationToken();
 
@@ -294,6 +297,11 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                                 @Override
                                 public void onSuccess(Device result) {
                                     WebViewCommunicatorImpl.this.device = result;
+
+                                    if(deviceConnector != null){
+                                        deviceConnector.setDevice(device);
+                                    }
+
                                     onSuccess.run();
                                 }
 
@@ -363,7 +371,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         eventCallback.send();
     }
 
-    public String getCurrentDeviceId(){
+    public String getCurrentDeviceId() {
         return deviceId;
     }
 
