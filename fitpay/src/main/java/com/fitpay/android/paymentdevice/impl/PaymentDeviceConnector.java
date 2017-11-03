@@ -54,7 +54,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     private final static String TAG = PaymentDeviceConnector.class.getSimpleName();
 
-    protected final String connectorId = UUID.randomUUID().toString();
+    protected String connectorId = UUID.randomUUID().toString();
 
     private static final int MAX_REPEATS = 0;
 
@@ -83,9 +83,19 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         addDefaultCommitHandlers();
     }
 
+    public PaymentDeviceConnector(String id) {
+        this();
+        connectorId = id;
+    }
+
     public PaymentDeviceConnector(Context context) {
         this();
         mContext = context;
+    }
+
+    public PaymentDeviceConnector(Context context, String id) {
+        this(context);
+        connectorId = id;
     }
 
     public String id() {
