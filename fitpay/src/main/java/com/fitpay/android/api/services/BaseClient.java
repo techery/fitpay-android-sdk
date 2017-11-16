@@ -7,16 +7,12 @@ import com.fitpay.android.utils.FPLog;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
@@ -37,15 +33,7 @@ public class BaseClient {
 
 
     public static OkHttpClient.Builder getOkHttpClient() {
-        OkHttpClient.Builder builder = null;
-        if ("true".equalsIgnoreCase(ApiManager.getConfig().get(ApiManager.PROPERTY_DISABLE_SSL_VALIDATION))) {
-            FPLog.e("##################################################################################################################");
-            FPLog.e("WARNING!!!  SSL validation has been completely disabled, this should NEVER be utilized in a production environment");
-            FPLog.e("##################################################################################################################");
-            builder = getUnsafeOkHttpClient();
-        } else {
-            builder = getDefaultOkHttpClient();
-        }
+        OkHttpClient.Builder builder = getDefaultOkHttpClient();
 
         int connectTimeout = Integer.valueOf(ApiManager.getConfig().get(ApiManager.PROPERTY_HTTP_CONNECT_TIMEOUT));
         int readTimeout = Integer.valueOf(ApiManager.getConfig().get(ApiManager.PROPERTY_HTTP_READ_TIMEOUT));
@@ -70,29 +58,6 @@ public class BaseClient {
 
     private static OkHttpClient.Builder getDefaultOkHttpClient() {
         return new OkHttpClient.Builder();
-    }
-
-    /*
-     * OKClientBuilder for untrusted ssl endpoints
-     *
-     * DO NOT USE IN PRODUCTION
-     */
-    private static OkHttpClient.Builder getUnsafeOkHttpClient() {
-        try {
-            OkHttpClient.Builder builder = new OkHttpClient.Builder();
-
-            final SSLContext sslContext = SSLContext.getInstance("SSL");
-            sslContext.init(null, null, null);
-            final SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
-
-            return builder.sslSocketFactory(sslSocketFactory, determineTrustManager())
-                    .hostnameVerifier(trustAllHostnames);
-
-        } catch (Exception e) {
-            FPLog.e(e);
-
-            throw new RuntimeException(e);
-        }
     }
 
     private static OkHttpClient.Builder enableTls12OnPreLollipop(OkHttpClient.Builder client) {
@@ -125,44 +90,18 @@ public class BaseClient {
     }
 
     private static X509TrustManager determineTrustManager() {
-        if ("true".equalsIgnoreCase(ApiManager.getConfig().get(ApiManager.PROPERTY_DISABLE_SSL_VALIDATION))) {
-            return trustAllCerts;
-        } else {
-            try {
-                TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
-                        TrustManagerFactory.getDefaultAlgorithm());
-                trustManagerFactory.init((KeyStore) null);
-                TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
-                if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
-                    throw new IllegalStateException("Unexpected default trust managers:"
-                            + Arrays.toString(trustManagers));
-                }
-                return (X509TrustManager) trustManagers[0];
-            } catch (GeneralSecurityException e) {
-                throw assertionError("No System TLS", e); // The system has no TLS. Just give up.
+        try {
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
+                    TrustManagerFactory.getDefaultAlgorithm());
+            trustManagerFactory.init((KeyStore) null);
+            TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
+            if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
+                throw new IllegalStateException("Unexpected default trust managers:"
+                        + Arrays.toString(trustManagers));
             }
+            return (X509TrustManager) trustManagers[0];
+        } catch (GeneralSecurityException e) {
+            throw assertionError("No System TLS", e); // The system has no TLS. Just give up.
         }
     }
-
-    final static X509TrustManager trustAllCerts = new X509TrustManager() {
-        @Override
-        public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {
-        }
-
-        @Override
-        public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) throws CertificateException {
-        }
-
-        @Override
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-            return new java.security.cert.X509Certificate[]{};
-        }
-    };
-
-    final static HostnameVerifier trustAllHostnames = new HostnameVerifier() {
-        @Override
-        public boolean verify(String hostname, SSLSession session) {
-            return true;
-        }
-    };
 }
