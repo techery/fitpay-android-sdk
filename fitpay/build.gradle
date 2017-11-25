@@ -114,7 +114,7 @@ dependencies {
     compile 'org.bouncycastle:bcprov-jdk15on:1.58'
     compile 'com.nimbusds:nimbus-jose-jwt:5.1'
 
-    testCompile 'org.mockito:mockito-core:2.10.0'
+    testCompile 'org.mockito:mockito-core:2.12.0'
     testCompile 'junit:junit:4.12'
 }
 
