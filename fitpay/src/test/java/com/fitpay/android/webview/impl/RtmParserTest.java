@@ -7,7 +7,6 @@ import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
 import com.fitpay.android.webview.enums.RtmType;
 import com.fitpay.android.webview.events.RtmMessage;
-import com.fitpay.android.webview.events.UnrecognizedRtmMessage;
 
 import junit.framework.Assert;
 
@@ -34,7 +33,7 @@ public class RtmParserTest {
     private NotificationManager manager;
     private Listener listener;
 
-    private UnrecognizedRtmMessage unrecognizedRtmMessage;
+    private RtmMessage unrecognizedRtmMessage;
 
     @Before
     public void init() {
@@ -161,8 +160,8 @@ public class RtmParserTest {
     private class UnrecognizedRtmMessageListener extends Listener {
         public UnrecognizedRtmMessageListener(final CountDownLatch latch) {
             super();
-            mCommands.put(UnrecognizedRtmMessage.class, data -> {
-                unrecognizedRtmMessage = (UnrecognizedRtmMessage) data;
+            mCommands.put(RtmMessage.class, data -> {
+                unrecognizedRtmMessage = (RtmMessage) data;
                 latch.countDown();
             });
         }
