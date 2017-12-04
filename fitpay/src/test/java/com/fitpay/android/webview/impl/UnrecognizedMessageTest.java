@@ -36,7 +36,7 @@ public class UnrecognizedMessageTest {
         RxBus.getInstance().post(msg);
 
         try {
-            latch.await(10, TimeUnit.SECONDS);
+            latch.await(60, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
