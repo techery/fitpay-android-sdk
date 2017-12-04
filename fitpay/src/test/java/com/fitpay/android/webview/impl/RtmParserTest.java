@@ -5,6 +5,7 @@ import android.app.Activity;
 import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
+import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.webview.enums.RtmType;
 import com.fitpay.android.webview.events.RtmMessage;
 
@@ -30,26 +31,16 @@ public class RtmParserTest {
 
     private WebViewCommunicatorImpl wvci;
 
-    private NotificationManager manager;
-    private Listener listener;
-
-    private RtmMessage unrecognizedRtmMessage;
-
     @Before
     public void init() {
         Activity context = Mockito.mock(Activity.class);
         wvci = new WebViewCommunicatorImpl(context, -1);
 
-        manager = NotificationManager.getInstance();
     }
 
     @After
     public void terminate() {
         wvci = null;
-
-        if (null != listener) {
-            manager.removeListener(listener);
-        }
     }
 
     @Test
@@ -131,43 +122,5 @@ public class RtmParserTest {
         }
 
         assertEquals("missing required message data", errorMsg);
-    }
-
-    @Test
-    public void testUnrecognizedRtmMessage() {
-        final CountDownLatch latch = new CountDownLatch(1);
-
-        listener = new UnrecognizedRtmMessageListener(latch);
-        manager.addListenerToCurrentThread(listener);
-
-        String rtmMsgStr = "{\"callbackId\":\"10\",\"data\":\"{\\\"resource\\\":\\\"The Truth Is Out There\\\"}\",\"type\":\"somethingUnknown\"}";
-        RtmMessage msg = Constants.getGson().fromJson(rtmMsgStr, RtmMessage.class);
-
-        int webAppRtmVersion = 5;
-        RtmParserImpl.parse(wvci, webAppRtmVersion, msg);
-
-        try {
-            latch.await(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        assertNotNull("unrecognized message shouldn't be null", unrecognizedRtmMessage);
-        UnrecognizedRtmData data = Constants.getGson().fromJson(unrecognizedRtmMessage.getJsonData(), UnrecognizedRtmData.class);
-        assertEquals("unrecognized message data should be equal", "The Truth Is Out There", data.resource);
-    }
-
-    private class UnrecognizedRtmMessageListener extends Listener {
-        public UnrecognizedRtmMessageListener(final CountDownLatch latch) {
-            super();
-            mCommands.put(RtmMessage.class, data -> {
-                unrecognizedRtmMessage = (RtmMessage) data;
-                latch.countDown();
-            });
-        }
-    }
-
-    private class UnrecognizedRtmData {
-        String resource;
     }
 }
