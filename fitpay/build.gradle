@@ -110,8 +110,7 @@ dependencies {
     compile 'io.reactivex:rxandroid:1.2.1'
 
     compile 'me.alexrs:prefs:1.1.0'
-
-    compile 'org.bouncycastle:bcprov-jdk15on:1.58'
+    
     compile 'com.nimbusds:nimbus-jose-jwt:5.1'
 
     testCompile 'org.bouncycastle:bcprov-jdk15on:1.58'
