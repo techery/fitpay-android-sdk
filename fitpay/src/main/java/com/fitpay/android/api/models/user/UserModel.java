@@ -51,22 +51,22 @@ abstract class UserModel extends BaseModel {
     }
 
     public String getUsername() {
-        return userInfo.username;
+        return userInfo != null ? userInfo.username : null;
     }
 
     public String getFirstName() {
-        return userInfo.firstName;
+        return userInfo != null ? userInfo.firstName : null;
     }
 
     public String getLastName() {
-        return userInfo.lastName;
+        return userInfo != null ? userInfo.lastName : null;
     }
 
     public String getBirthDate() {
-        return userInfo.birthDate;
+        return userInfo != null ? userInfo.birthDate : null;
     }
 
     public String getEmail() {
-        return userInfo.email;
+        return userInfo != null ? userInfo.email : null;
     }
 }

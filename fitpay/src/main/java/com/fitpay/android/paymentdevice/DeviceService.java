@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
@@ -282,6 +283,7 @@ public final class DeviceService extends Service {
     }
 
     /**
+     * @deprecated Please send {@link SyncRequest} via {@link com.fitpay.android.utils.RxBus}
      * Sync data between FitPay server and payment device
      * <p>
      * This is an asynchronous operation.
@@ -290,13 +292,18 @@ public final class DeviceService extends Service {
      * @param device    device object with hypermedia data
      * @param connector payment device connector
      */
+    @Deprecated
     public void syncData(@NonNull User user, @NonNull Device device, @NonNull IPaymentDeviceConnector connector) {
-        SyncRequest request = new SyncRequest.Builder()
-                .setUser(user)
-                .setDevice(device)
-                .setConnector(connector)
-                .build();
-        syncManager.add(request);
+        if (syncManager != null) {
+            SyncRequest request = new SyncRequest.Builder()
+                    .setUser(user)
+                    .setDevice(device)
+                    .setConnector(connector)
+                    .build();
+            syncManager.add(request);
+        } else {
+            Log.e(TAG, "syncManager is null");
+        }
     }
 
     private Properties convertCommaSeparatedList(String input) throws IOException {
@@ -330,7 +337,13 @@ public final class DeviceService extends Service {
 
         private MessageListener() {
             super();
-            mCommands.put(SyncRequest.class, data -> syncManager.add((SyncRequest) data));
+            mCommands.put(SyncRequest.class, data -> {
+                if (syncManager != null) {
+                    syncManager.add((SyncRequest) data);
+                } else {
+                    Log.e(TAG, "syncManager is null");
+                }
+            });
             mCommands.put(AppMessage.class, data -> syncData(user, device, paymentDeviceConnector));
         }
     }
