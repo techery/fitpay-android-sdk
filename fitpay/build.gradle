@@ -5,7 +5,7 @@ apply plugin: 'maven'
 apply from: '../jacoco.gradle'
 
 group = 'com.fitpay.android'
-version = '0.4.35'
+version = '0.4.35.1'
 archivesBaseName = "android_sdk"
 
 uploadArchives {
@@ -91,7 +91,7 @@ android {
 }
 
 ext {
-    supportLib = "27.0.1"
+    supportLib = "27.0.2"
 }
 
 dependencies {
