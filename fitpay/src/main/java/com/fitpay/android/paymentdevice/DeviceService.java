@@ -347,7 +347,11 @@ public final class DeviceService extends Service {
                     Log.e(TAG, "syncManager is null");
                 }
             });
-            mCommands.put(AppMessage.class, data -> syncData(user, device, paymentDeviceConnector));
+            mCommands.put(AppMessage.class, data -> {
+                if(AppMessage.SYNC.equals(((AppMessage)data).getType())) {
+                    syncData(user, device, paymentDeviceConnector);
+                }
+            });
         }
     }
 }

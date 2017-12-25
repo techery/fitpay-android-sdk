@@ -268,7 +268,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
                 WebViewCommunicatorImpl.this.user = result;
 
-                if(deviceConnector != null){
+                if (deviceConnector != null) {
                     deviceConnector.setUser(user);
                 }
 
@@ -285,7 +285,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     public void onSuccess(Device result) {
                         WebViewCommunicatorImpl.this.device = result;
 
-                        if(deviceConnector != null){
+                        if (deviceConnector != null) {
                             deviceConnector.setDevice(device);
                         }
 
@@ -301,7 +301,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                                 public void onSuccess(Device result) {
                                     WebViewCommunicatorImpl.this.device = result;
 
-                                    if(deviceConnector != null){
+                                    if (deviceConnector != null) {
                                         deviceConnector.setDevice(device);
                                     }
 
@@ -426,7 +426,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
                     NotificationManager.getInstance().removeListener(listenerForAppCallbacksNoCallbackId);
 
-                    NotificationManager.getInstance().addListener(listenerForAppCallbacksNoCallbackId = new DeviceSyncListener(null));
+                    NotificationManager.getInstance().addListener(listenerForAppCallbacksNoCallbackId = new DeviceSyncListener(getConnectorId(), null));
                     break;
                 }
                 case States.TIMEOUT:
@@ -438,7 +438,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
                     NotificationManager.getInstance().removeListener(listenerForAppCallbacksNoCallbackId);
 
-                    NotificationManager.getInstance().addListener(listenerForAppCallbacksNoCallbackId = new DeviceSyncListener(null));
+                    NotificationManager.getInstance().addListener(listenerForAppCallbacksNoCallbackId = new DeviceSyncListener(getConnectorId(), null));
                     break;
                 }
                 default: {
