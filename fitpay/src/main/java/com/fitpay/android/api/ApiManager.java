@@ -107,10 +107,22 @@ public class ApiManager {
         sPushToken = pushToken;
     }
 
+    /**
+     * Initialize the SDK and do not perform an initial API health check
+     *
+     * @param props
+     */
     public static void init(Map<String, String> props) {
-        init(props, false);
+        init(props, true);
     }
 
+    /**
+     * Initialize the SDK, skipHealthCheck determines if the SDK will perform and initial health check
+     * on the API or not after initialization.
+     *
+     * @param props
+     * @param skipHealthCheck
+     */
     public static void init(Map<String, String> props, boolean skipHealthCheck) {
         config.putAll(props);
 

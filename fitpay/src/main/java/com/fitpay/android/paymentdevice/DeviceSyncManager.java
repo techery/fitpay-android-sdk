@@ -525,6 +525,8 @@ public class DeviceSyncManager {
 
                 cancelCommitTimers();
 
+                moveLastCommitPointer(commitFailed.getCommitId());
+
                 confirmCommit(commitFailed.getCommit(), new CommitConfirm(ResponseState.FAILED));
 
                 commits.clear();
