@@ -184,7 +184,7 @@ public class DeviceSyncManagerTest extends TestActions {
         executionLatch.await();
 
         assertEquals(1, listener.getSyncEvents().stream()
-                .filter(syncEvent -> syncEvent.getState() == States.SKIPPED)
+                .filter(syncEvent -> syncEvent.getState() == States.FAILED)
                 .count());
         assertEquals(0, listener.getCommits().size());
     }
