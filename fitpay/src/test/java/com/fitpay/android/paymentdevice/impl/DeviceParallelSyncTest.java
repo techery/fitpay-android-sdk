@@ -8,7 +8,7 @@ import com.fitpay.android.TestUtils;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.UserCreateRequest;
-import com.fitpay.android.paymentdevice.DeviceSyncManagerV2;
+import com.fitpay.android.paymentdevice.DeviceSyncManager;
 import com.fitpay.android.paymentdevice.callbacks.DeviceSyncManagerCallback;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
@@ -48,7 +48,7 @@ import static org.junit.Assert.assertEquals;
 public class DeviceParallelSyncTest extends TestActions {
 
     private Context mContext;
-    private DeviceSyncManagerV2 syncManager;
+    private DeviceSyncManager syncManager;
 
     private IPaymentDeviceConnector firstMockPaymentDevice;
     private Device firstDevice;
@@ -115,7 +115,7 @@ public class DeviceParallelSyncTest extends TestActions {
         NotificationManager.getInstance().addListenerToCurrentThread(secondSyncListener);
         /*-----second_device_end-----*/
 
-        syncManager = new DeviceSyncManagerV2(mContext);
+        syncManager = new DeviceSyncManager(mContext);
         syncManager.onCreate();
 
         syncManagerCallback = new DeviceSyncManagerCallback() {

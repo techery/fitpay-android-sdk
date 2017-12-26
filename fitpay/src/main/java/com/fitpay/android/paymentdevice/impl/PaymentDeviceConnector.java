@@ -367,6 +367,15 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
     /**
+     * Send apdu command execution result
+     *
+     * @param apduCommandResult
+     */
+    public void sendApduCommandResult(ApduCommandResult apduCommandResult){
+        RxBus.getInstance().post(id(), apduCommandResult);
+    }
+
+    /**
      * Send apdu execution result to the server
      *
      * @param apduExecutionResult apdu execution result

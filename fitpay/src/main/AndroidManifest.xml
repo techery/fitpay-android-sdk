@@ -15,9 +15,6 @@
             android:enabled="true"
             android:exported="false"/>
 
-        <service android:name=".paymentdevice.DeviceServiceV2"
-            android:enabled="true"
-            android:exported="false"/>
     </application>
 
 </manifest>
