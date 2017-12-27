@@ -2,6 +2,7 @@ package com.fitpay.android.paymentdevice.impl;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import com.fitpay.android.TestActions;
 import com.fitpay.android.TestUtils;
@@ -21,10 +22,8 @@ import com.fitpay.android.utils.NotificationManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +38,7 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ssteveli on 7/6/17.
@@ -72,6 +72,7 @@ public class DeviceParallelSyncTest extends TestActions {
     @Before
     @Override
     public void testActionsSetup() throws Exception {
+        mContext = Mockito.mock(Context.class);
 
         /*-----user-----*/
         userName = TestUtils.getRandomLengthString(5, 10) + "@"
@@ -92,7 +93,7 @@ public class DeviceParallelSyncTest extends TestActions {
         firstDevice = createDevice(this.user, getTestDevice());
         assertNotNull(firstDevice);
 
-        initPrefs(firstDevice.getDeviceIdentifier());
+        initPrefs(firstDevice.getSecureElementId());
 
         firstMockPaymentDevice = new MockPaymentDeviceConnector();
         initPaymentDeviceConnector(firstMockPaymentDevice);
@@ -105,7 +106,7 @@ public class DeviceParallelSyncTest extends TestActions {
         secondDevice = createDevice(this.user, getTestDevice());
         assertNotNull(secondDevice);
 
-        initPrefs(secondDevice.getDeviceIdentifier());
+        initPrefs(secondDevice.getSecureElementId());
 
         secondMockPaymentDevice = new MockPaymentDeviceConnector();
         initPaymentDeviceConnector(secondMockPaymentDevice);
@@ -166,30 +167,25 @@ public class DeviceParallelSyncTest extends TestActions {
         mContext = null;
     }
 
-    private void initPrefs(String deviceId) {
+    private void initPrefs(String secureElementId) {
+        final SharedPreferences mockPrefs = Mockito.mock(SharedPreferences.class);
+        final SharedPreferences.Editor mockEditor = Mockito.mock(SharedPreferences.Editor.class);
 
-        SharedPreferences sp = Mockito.mock(SharedPreferences.class);
-        Mockito.when(sp.getAll()).thenReturn(Collections.emptyMap());
-        Mockito.when(sp.getString(Matchers.eq("lastCommitId"), (String) Matchers.isNull())).then(new Answer<String>() {
-            @Override
-            public String answer(InvocationOnMock invocation) throws Throwable {
-                return commitId.get(deviceId);
-            }
+        when(mContext.getSharedPreferences(ArgumentMatchers.eq("paymentDevice_" + secureElementId), ArgumentMatchers.eq(Context.MODE_PRIVATE))).thenReturn(mockPrefs);
+        when(mockPrefs.edit()).thenReturn(mockEditor);
+        when(mockPrefs.getAll()).thenReturn(Collections.emptyMap());
+        when(mockPrefs.getString(ArgumentMatchers.eq("lastCommitId"), ArgumentMatchers.isNull())).then(invocation -> {
+            String cid = commitId.get(secureElementId);
+            Log.d("-----", secureElementId + " " + cid);
+            return cid;
         });
-
-        SharedPreferences.Editor spEditor = Mockito.mock(SharedPreferences.Editor.class);
-
-        Mockito.when(sp.edit()).thenReturn(spEditor);
-        Mockito.when(spEditor.putString(Matchers.eq("lastCommitId"), Matchers.anyString())).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                commitId.put(deviceId, (String) invocation.getArguments()[1]);
-                return spEditor;
-            }
+        when(mockEditor.commit()).thenReturn(true);
+        when(mockEditor.putString(ArgumentMatchers.eq("lastCommitId"), ArgumentMatchers.anyString())).thenAnswer(invocation -> {
+            String cid = (String) invocation.getArguments()[1];
+            commitId.put(secureElementId, cid);
+            Log.d("-----", secureElementId + " " + cid);
+            return mockEditor;
         });
-
-        Mockito.when(spEditor.commit()).thenReturn(true);
-        Mockito.when(mContext.getSharedPreferences(Matchers.eq("paymentDevice_" + deviceId), Matchers.eq(Context.MODE_PRIVATE))).thenReturn(sp);
     }
 
     @Test
@@ -260,7 +256,7 @@ public class DeviceParallelSyncTest extends TestActions {
             if (listener.getCommits().size() < 3) {
                 final CountDownLatch waitForCommitsLatch = new CountDownLatch(1);
                 do {
-                    String lastCommitId = commitId.get(device.getDeviceIdentifier());
+                    String lastCommitId = commitId.get(device.getSecureElementId());
                     device.getAllCommits(lastCommitId)
                             .subscribe(commits -> {
                                         System.out.println("commits found from " + lastCommitId + ": " + commits.getTotalResults());

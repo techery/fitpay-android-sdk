@@ -487,7 +487,7 @@ public final class SyncWorkerTask implements Runnable {
             FPLog.d(TAG, "moving lastCommitId for deviceId " + syncRequest.getDevice().getDeviceIdentifier() + " to " + lastCommitId);
 
             DevicePreferenceData deviceData = DevicePreferenceData.load(
-                    mContext, syncRequest.getDevice().getDeviceIdentifier());
+                    mContext, syncRequest.getDevice().getSecureElementId());
 
             deviceData.setLastCommitId(lastCommitId);
 

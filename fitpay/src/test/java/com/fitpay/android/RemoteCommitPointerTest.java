@@ -33,13 +33,13 @@ public class RemoteCommitPointerTest {
         when(context.getSharedPreferences(anyString(), anyInt())).thenReturn(mockPrefs);
         when(mockPrefs.edit()).thenReturn(mockEditor);
 
-        final String deviceId = UUID.randomUUID().toString();
+        final String secureElementId = UUID.randomUUID().toString();
         final String commitId = UUID.randomUUID().toString();
 
         DevicePreferenceData.setRemoteCommitPtrHandler(new PtrHandler());
 
         DevicePreferenceData data = new DevicePreferenceData.Builder()
-                .deviceId(deviceId)
+                .secureElementId(secureElementId)
                 .lastCommitId(commitId)
                 .build();
 
@@ -48,8 +48,8 @@ public class RemoteCommitPointerTest {
 
         DevicePreferenceData.store(context, data);
 
-        DevicePreferenceData loadedData = DevicePreferenceData.load(context, deviceId);
-        Assert.assertEquals(deviceId, loadedData.getDeviceId());
+        DevicePreferenceData loadedData = DevicePreferenceData.load(context, secureElementId);
+        Assert.assertEquals(secureElementId, loadedData.getSecureElementId());
         Assert.assertEquals(newCommitId, loadedData.getLastCommitId());
     }
 

@@ -76,6 +76,8 @@ public class DeviceSyncManagerTest extends TestActions {
             return mockEditor;
         });
 
+        when(mockEditor.commit()).thenReturn(true);
+
         syncManager = new DeviceSyncManager(mContext);
         syncManager.onCreate();
 
