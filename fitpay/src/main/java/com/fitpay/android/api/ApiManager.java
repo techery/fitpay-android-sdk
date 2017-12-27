@@ -29,6 +29,7 @@ import com.google.gson.JsonObject;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -150,7 +151,7 @@ public class ApiManager {
     public void setAuthToken(OAuthToken token) {
         apiService.updateToken(token);
     }
-    
+
     public FitPayClient getClient() {
         return apiService.getClient();
     }
@@ -217,7 +218,7 @@ public class ApiManager {
     }
 
     private void checkKeyAndMakeCall(@NonNull Runnable successRunnable, @NonNull ApiCallback callback) {
-        if (KeysManager.getInstance().getKeyId(KeysManager.KEY_API) == null) {
+        if (KeysManager.getInstance().keyRequireUpdate(KeysManager.KEY_API)) {
             KeysManager.getInstance().updateECCKey(KeysManager.KEY_API, successRunnable, callback);
         } else {
             successRunnable.run();
