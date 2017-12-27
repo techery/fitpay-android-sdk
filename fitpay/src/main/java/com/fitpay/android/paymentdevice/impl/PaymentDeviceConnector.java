@@ -54,7 +54,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     private final static String TAG = PaymentDeviceConnector.class.getSimpleName();
 
-    protected String connectorId = UUID.randomUUID().toString();
+    protected final String connectorId;
 
     private static final int MAX_REPEATS = 0;
 
@@ -79,12 +79,12 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     private Device device;
 
     public PaymentDeviceConnector() {
-        state = States.NEW;
-        addDefaultCommitHandlers();
+        init();
+        connectorId = UUID.randomUUID().toString();
     }
 
     public PaymentDeviceConnector(String id) {
-        this();
+        init();
         connectorId = id;
     }
 
@@ -94,8 +94,13 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
     public PaymentDeviceConnector(Context context, String id) {
-        this(context);
-        connectorId = id;
+        this(id);
+        mContext = context;
+    }
+
+    private void init() {
+        state = States.NEW;
+        addDefaultCommitHandlers();
     }
 
     public String id() {
@@ -371,7 +376,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      *
      * @param apduCommandResult
      */
-    public void sendApduCommandResult(ApduCommandResult apduCommandResult){
+    public void sendApduCommandResult(ApduCommandResult apduCommandResult) {
         RxBus.getInstance().post(id(), apduCommandResult);
     }
 
