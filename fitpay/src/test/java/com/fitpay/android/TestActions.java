@@ -1,5 +1,8 @@
 package com.fitpay.android;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
 import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ResultProvidingCallback;
 import com.fitpay.android.api.enums.DeviceTypes;
@@ -27,6 +30,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.mockito.Mockito;
 
 import java.security.Security;
 import java.util.concurrent.CountDownLatch;
@@ -41,6 +45,9 @@ import rx.schedulers.Schedulers;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 public class TestActions {
 
@@ -90,7 +97,7 @@ public class TestActions {
         ApiManager.init(TestConstants.getConfig());
 
         RxAndroidPlugins.getInstance().reset();
-        RxAndroidPlugins.getInstance().registerSchedulersHook(new RxAndroidSchedulersHook(){
+        RxAndroidPlugins.getInstance().registerSchedulersHook(new RxAndroidSchedulersHook() {
             @Override
             public Scheduler getMainThreadScheduler() {
                 return Schedulers.immediate();
@@ -242,9 +249,9 @@ public class TestActions {
 
         if (paymentDevice) {
             builder = builder
-                        .setSecureElement(new PaymentDevice.SecureElement(
-                                SecureElementDataProvider.generateCasd(),
-                                SecureElementDataProvider.generateRandomSecureElementId()));
+                    .setSecureElement(new PaymentDevice.SecureElement(
+                            SecureElementDataProvider.generateCasd(),
+                            SecureElementDataProvider.generateRandomSecureElementId()));
         }
 
         return builder.build();
@@ -594,7 +601,7 @@ public class TestActions {
         assertNotNull("no card to wait for activation on", card);
 
         CreditCard retrievedCard = card;
-        for (int x=0; x<30; x++) {
+        for (int x = 0; x < 30; x++) {
             retrievedCard = getCreditCard(retrievedCard);
             if ("ACTIVE".equals(retrievedCard.getState())) {
                 break;
@@ -606,5 +613,4 @@ public class TestActions {
         assertEquals("card never transitioned to ACTIVE state", "ACTIVE", retrievedCard.getState());
         return retrievedCard;
     }
-
 }

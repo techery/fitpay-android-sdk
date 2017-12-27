@@ -72,7 +72,6 @@ public class DeviceParallelSyncTest extends TestActions {
     @Before
     @Override
     public void testActionsSetup() throws Exception {
-        mContext = Mockito.mock(Context.class);
 
         /*-----user-----*/
         userName = TestUtils.getRandomLengthString(5, 10) + "@"

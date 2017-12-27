@@ -23,10 +23,8 @@ import com.fitpay.android.utils.NotificationManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +36,9 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 /**
  * Created by ssteveli on 7/6/17.
@@ -61,31 +62,19 @@ public class DeviceSyncManagerTest extends TestActions {
     @Before
     @Override
     public void testActionsSetup() throws Exception {
-        SharedPreferences sp = Mockito.mock(SharedPreferences.class);
-        Mockito.when(sp.getAll()).thenReturn(Collections.emptyMap());
-        Mockito.when(sp.getString(Matchers.eq("lastCommitId"), (String) Matchers.isNull())).then(new Answer<String>() {
-            @Override
-            public String answer(InvocationOnMock invocation) throws Throwable {
-                return lastCommitId;
-            }
-        });
-
-        SharedPreferences.Editor spEditor = Mockito.mock(SharedPreferences.Editor.class);
-
-        Mockito.when(sp.edit()).thenReturn(spEditor);
-        Mockito.when(spEditor.putString(Matchers.eq("lastCommitId"), Matchers.anyString())).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocation) throws Throwable {
-                lastCommitId = (String) invocation.getArguments()[1];
-
-                return spEditor;
-            }
-        });
-
-        Mockito.when(spEditor.commit()).thenReturn(true);
-
         mContext = Mockito.mock(Context.class);
-        Mockito.when(mContext.getSharedPreferences(Matchers.anyString(), Matchers.eq(Context.MODE_PRIVATE))).thenReturn(sp);
+        final SharedPreferences mockPrefs = Mockito.mock(SharedPreferences.class);
+        final SharedPreferences.Editor mockEditor = Mockito.mock(SharedPreferences.Editor.class);
+
+        when(mContext.getSharedPreferences(anyString(), anyInt())).thenReturn(mockPrefs);
+        when(mockPrefs.edit()).thenReturn(mockEditor);
+
+        when(mockPrefs.getAll()).thenReturn(Collections.emptyMap());
+        when(mockPrefs.getString(ArgumentMatchers.eq("lastCommitId"), ArgumentMatchers.isNull())).then(invocation -> lastCommitId);
+        when(mockEditor.putString(ArgumentMatchers.eq("lastCommitId"), ArgumentMatchers.anyString())).thenAnswer(invocation -> {
+            lastCommitId = (String) invocation.getArguments()[1];
+            return mockEditor;
+        });
 
         syncManager = new DeviceSyncManager(mContext);
         syncManager.onCreate();
@@ -159,7 +148,7 @@ public class DeviceSyncManagerTest extends TestActions {
 
         this.executionLatch = new CountDownLatch(1);
         this.listener = new SyncCompleteListener();
-        NotificationManager.getInstance().addListenerToCurrentThread(this.listener);
+        NotificationManager.getInstance().addListener(this.listener);
     }
 
     @After
@@ -184,7 +173,7 @@ public class DeviceSyncManagerTest extends TestActions {
         executionLatch.await();
 
         assertEquals(1, listener.getSyncEvents().stream()
-                .filter(syncEvent -> syncEvent.getState() == States.FAILED)
+                .filter(syncEvent -> syncEvent.getState() == States.SKIPPED)
                 .count());
         assertEquals(0, listener.getCommits().size());
     }

@@ -148,7 +148,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                 .map(o -> loadDefaultDevice())
                 .subscribe(deviceInfo -> {
                     FPLog.d(TAG, "device info has been read.  device: " + deviceInfo);
-                    RxBus.getInstance().post(connectorId, deviceInfo);
+                    RxBus.getInstance().post(id(), deviceInfo);
                 }, throwable -> FPLog.e(TAG, "read device info error:" + throwable.toString()));
     }
 
@@ -262,7 +262,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                     int duration = (int) ((System.currentTimeMillis() - apduExecutionResult.getExecutedTsEpoch()) / 1000);
                     apduExecutionResult.setExecutedDuration(duration);
                     FPLog.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
-                    RxBus.getInstance().post(connectorId, apduExecutionResult);
+                    RxBus.getInstance().post(id(), apduExecutionResult);
                 } else if (apduCommandNumber + 1 < apduPackage.getApduCommands().size()) {
                     getDelayObservable(100)
                             .map(x -> true)
@@ -272,7 +272,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                     int duration = (int) ((System.currentTimeMillis() - apduExecutionResult.getExecutedTsEpoch()) / 1000);
                     apduExecutionResult.setExecutedDuration(duration);
                     FPLog.d(TAG, "apdu processing is complete.  Result: " + new Gson().toJson(apduExecutionResult));
-                    RxBus.getInstance().post(connectorId, apduExecutionResult);
+                    RxBus.getInstance().post(id(), apduExecutionResult);
                 }
             }
 
@@ -367,7 +367,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
             Object payload = commit.getPayload();
             if (!(payload instanceof CreditCardCommit)) {
                 FPLog.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
-                RxBus.getInstance().post(new CommitFailed.Builder()
+                RxBus.getInstance().post(id(), new CommitFailed.Builder()
                         .commit(commit)
                         .errorCode(999)
                         .errorMessage("Commit does not contain a credit card")
@@ -383,7 +383,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                         CreditCardCommit card = (CreditCardCommit) commit.getPayload();
                         FPLog.d(TAG, "Mock wallet has been updated. Card removed: " + card.getCreditCardId());
                         removeCardFromWallet(card.getCreditCardId());
-                        RxBus.getInstance().post(new CommitSuccess.Builder()
+                        RxBus.getInstance().post(id(), new CommitSuccess.Builder()
                                 .commit(commit).build());
                     }
             );
@@ -397,7 +397,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
             Object payload = commit.getPayload();
             if (!(payload instanceof CreditCardCommit)) {
                 FPLog.e(TAG, "Mock Wallet received a commit to process that was not a credit card commit.  Commit: " + commit);
-                RxBus.getInstance().post(new CommitFailed.Builder()
+                RxBus.getInstance().post(id(), new CommitFailed.Builder()
                         .commit(commit)
                         .errorCode(999)
                         .errorMessage("Commit does not contain a credit card")
@@ -413,7 +413,7 @@ public class MockPaymentDeviceConnector extends PaymentDeviceConnector {
                         CreditCardCommit card = (CreditCardCommit) commit.getPayload();
                         FPLog.d(TAG, "Mock wallet has been updated. Card updated: " + card.getCreditCardId());
                         updateWallet(card);
-                        RxBus.getInstance().post(new CommitSuccess.Builder()
+                        RxBus.getInstance().post(id(), new CommitSuccess.Builder()
                                 .commit(commit).build());
                     }
             );
