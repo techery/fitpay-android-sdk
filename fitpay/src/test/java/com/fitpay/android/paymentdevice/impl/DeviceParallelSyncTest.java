@@ -93,7 +93,7 @@ public class DeviceParallelSyncTest extends TestActions {
         firstDevice = createDevice(this.user, getTestDevice());
         assertNotNull(firstDevice);
 
-        initPrefs(firstDevice.getSecureElementId());
+        initPrefs(firstDevice.getDeviceIdentifier());
 
         firstMockPaymentDevice = new MockPaymentDeviceConnector();
         initPaymentDeviceConnector(firstMockPaymentDevice);
@@ -106,7 +106,7 @@ public class DeviceParallelSyncTest extends TestActions {
         secondDevice = createDevice(this.user, getTestDevice());
         assertNotNull(secondDevice);
 
-        initPrefs(secondDevice.getSecureElementId());
+        initPrefs(secondDevice.getDeviceIdentifier());
 
         secondMockPaymentDevice = new MockPaymentDeviceConnector();
         initPaymentDeviceConnector(secondMockPaymentDevice);
@@ -256,7 +256,7 @@ public class DeviceParallelSyncTest extends TestActions {
             if (listener.getCommits().size() < 3) {
                 final CountDownLatch waitForCommitsLatch = new CountDownLatch(1);
                 do {
-                    String lastCommitId = commitId.get(device.getSecureElementId());
+                    String lastCommitId = commitId.get(device.getDeviceIdentifier());
                     device.getAllCommits(lastCommitId)
                             .subscribe(commits -> {
                                         System.out.println("commits found from " + lastCommitId + ": " + commits.getTotalResults());

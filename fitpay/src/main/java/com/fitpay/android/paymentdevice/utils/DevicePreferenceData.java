@@ -20,7 +20,7 @@ public class DevicePreferenceData {
     private static final String[] KEY_VALUES = {"lastCommitId", "paymentDeviceServiceType", "paymentDeviceConfig"};
     private static IRemoteCommitPtrHandler remoteCommitPtrHandler;
 
-    private String secureElementId;
+    private String deviceIdentifier;
     private String lastCommitId;
     private String paymentDeviceServiceType;
     private String paymentDeviceConfig;
@@ -34,8 +34,8 @@ public class DevicePreferenceData {
         remoteCommitPtrHandler = commitPointerHandler;
     }
 
-    public static DevicePreferenceData load(Context context, String secureElementId) {
-        SharedPreferences prefs = getPreferences(context, secureElementId);
+    public static DevicePreferenceData load(Context context, String deviceIdentifier) {
+        SharedPreferences prefs = getPreferences(context, deviceIdentifier);
         Map<String, String> values = new HashMap<>();
         for (String key : prefs.getAll().keySet()) {
             if (!Arrays.asList(KEY_VALUES).contains(key)) {
@@ -44,10 +44,10 @@ public class DevicePreferenceData {
         }
 
         String lastCommitId = remoteCommitPtrHandler != null ?
-                remoteCommitPtrHandler.getLastCommitId(secureElementId) : prefs.getString("lastCommitId", null);
+                remoteCommitPtrHandler.getLastCommitId(deviceIdentifier) : prefs.getString("lastCommitId", null);
 
         DevicePreferenceData data = new Builder()
-                .secureElementId(secureElementId)
+                .deviceIdentifier(deviceIdentifier)
                 .lastCommitId(lastCommitId)
                 .paymentDeviceServiceType(prefs.getString("paymentDeviceServiceType", null))
                 .paymentDeviceConfig(prefs.getString("paymentDeviceConfig", null))
@@ -73,15 +73,15 @@ public class DevicePreferenceData {
     }
 
     public static void store(Context context, DevicePreferenceData data) {
-        if (null == data.secureElementId) {
+        if (null == data.deviceIdentifier) {
             return;
         }
 
         if(remoteCommitPtrHandler != null){
-            remoteCommitPtrHandler.setLastCommitId(data.secureElementId, data.lastCommitId);
+            remoteCommitPtrHandler.setLastCommitId(data.deviceIdentifier, data.lastCommitId);
         }
 
-        SharedPreferences prefs = getPreferences(context, data.secureElementId);
+        SharedPreferences prefs = getPreferences(context, data.deviceIdentifier);
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString("lastCommitId", data.lastCommitId);
         editor.putString("paymentDeviceServiceType", data.paymentDeviceServiceType);
@@ -94,12 +94,12 @@ public class DevicePreferenceData {
         boolean success = editor.commit();
     }
 
-    protected static SharedPreferences getPreferences(Context context, String deviceId) {
-        return context.getSharedPreferences("paymentDevice_" + deviceId, Context.MODE_PRIVATE);
+    protected static SharedPreferences getPreferences(Context context, String deviceIdentifier) {
+        return context.getSharedPreferences("paymentDevice_" + deviceIdentifier, Context.MODE_PRIVATE);
     }
 
-    public String getSecureElementId() {
-        return secureElementId;
+    public String getDeviceIdentifier() {
+        return deviceIdentifier;
     }
 
     public String getLastCommitId() {
@@ -137,7 +137,7 @@ public class DevicePreferenceData {
 
     public static class Builder {
 
-        private String secureElementId;
+        private String deviceIdentifier;
         private String lastCommitId;
         private String paymentDeviceServiceType;
         private String paymentDeviceConfig;
@@ -146,8 +146,8 @@ public class DevicePreferenceData {
         public Builder() {
         }
 
-        public Builder secureElementId(String secureElementId) {
-            this.secureElementId = secureElementId;
+        public Builder deviceIdentifier(String deviceIdentifier) {
+            this.deviceIdentifier = deviceIdentifier;
             return this;
         }
 
@@ -173,7 +173,7 @@ public class DevicePreferenceData {
 
         public DevicePreferenceData build() {
             DevicePreferenceData data = new DevicePreferenceData();
-            data.secureElementId = this.secureElementId;
+            data.deviceIdentifier = this.deviceIdentifier;
             data.lastCommitId = this.lastCommitId;
             data.paymentDeviceServiceType = this.paymentDeviceServiceType;
             data.paymentDeviceConfig = this.paymentDeviceConfig;

@@ -180,7 +180,9 @@ public final class SyncWorkerTask implements Runnable {
 
     private void syncDevice() {
         String connectorIdFilter = syncRequest.getConnector().id();
-        String deviceId = syncRequest.getDevice().getDeviceIdentifier();
+
+        Device device = syncRequest.getDevice();
+        String deviceId = device.getDeviceIdentifier();
 
         RxBus.getInstance().post(connectorIdFilter, new DeviceStatusMessage(
                 mContext.getString(R.string.fp_checking_wallet_updates),
@@ -192,12 +194,11 @@ public final class SyncWorkerTask implements Runnable {
         syncRequest.getConnector().syncInit();
 
         // load the stored device data so we can figure out exactly where the last sync left off
-        DevicePreferenceData deviceData = DevicePreferenceData.load(mContext, syncRequest.getDevice().getSecureElementId());
+        DevicePreferenceData deviceData = DevicePreferenceData.load(mContext, deviceId);
 
         // get all the new commits from the last commit pointer processed
         FPLog.d(TAG, "retrieving commits from the lastCommitId: " + deviceData.getLastCommitId() + ", for syncRequest: " + syncRequest);
 
-        Device device = syncRequest.getDevice();
         Observable<com.fitpay.android.api.models.collection.Collections.CommitsCollection> observable = null;
 
         String lastCommitId = deviceData.getLastCommitId();
@@ -487,7 +488,7 @@ public final class SyncWorkerTask implements Runnable {
             FPLog.d(TAG, "moving lastCommitId for deviceId " + syncRequest.getDevice().getDeviceIdentifier() + " to " + lastCommitId);
 
             DevicePreferenceData deviceData = DevicePreferenceData.load(
-                    mContext, syncRequest.getDevice().getSecureElementId());
+                    mContext, syncRequest.getDevice().getDeviceIdentifier());
 
             deviceData.setLastCommitId(lastCommitId);
 
