@@ -78,6 +78,8 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     private User user;
     private Device device;
 
+    private Properties properties;
+
     public PaymentDeviceConnector() {
         init();
         connectorId = UUID.randomUUID().toString();
@@ -113,7 +115,11 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
 
     @Override
     public void init(Properties props) {
-        // null implementation - override concrete class as needed
+        this.properties = props;
+    }
+
+    public Properties getProperties() {
+        return properties;
     }
 
     @Override
@@ -282,7 +288,6 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     public void onPostExecuteApdu() {
         completeApduPackageExecution();
     }
-
 
     /**
      * Create sync request

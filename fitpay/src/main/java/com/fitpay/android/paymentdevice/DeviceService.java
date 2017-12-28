@@ -12,6 +12,7 @@ import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.AppMessage;
+import com.fitpay.android.paymentdevice.impl.PaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.impl.ble.BluetoothPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
@@ -20,6 +21,7 @@ import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
 import com.fitpay.android.utils.NotificationManager;
+import com.fitpay.android.utils.RxBus;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -44,14 +46,21 @@ public final class DeviceService extends Service {
 
     public final static String SYNC_PROPERTY_DEVICE_ID = "syncDeviceId";
 
+    @Deprecated
     private User user;
+    @Deprecated
     private Device device;
 
+    @Deprecated
     private IPaymentDeviceConnector paymentDeviceConnector;
+
+    @Deprecated
     private String paymentDeviceConnectorType;
 
+    @Deprecated
     private String configParams;
 
+    @Deprecated
     private Executor executor = Constants.getExecutor();
 
     private DeviceSyncManager syncManager;
@@ -120,6 +129,9 @@ public final class DeviceService extends Service {
     }
 
     /**
+     * @deprecated Create {@link PaymentDeviceConnector} via constructor
+     *  Set properties via {@link PaymentDeviceConnector#init(Properties)}
+     *
      * Used for retrieving connector config information
      *
      * @return name of connector class
@@ -134,6 +146,12 @@ public final class DeviceService extends Service {
         return paymentDeviceConnectorType;
     }
 
+    /**
+     * @deprecated Create {@link PaymentDeviceConnector} via constructor
+     *  Set properties via {@link PaymentDeviceConnector#init(Properties)}
+     *
+     * @param intent
+     */
     @Deprecated
     protected void configure(Intent intent) {
         if (null == intent) {
@@ -186,7 +204,10 @@ public final class DeviceService extends Service {
     }
 
     /**
-     * Get paired payment device
+     * @deprecated Create {@link PaymentDeviceConnector} via constructor
+     *  Set properties via {@link PaymentDeviceConnector#init(Properties)}
+     *
+     * Set paired payment device connector
      *
      * @param paymentDeviceConnector the payment device
      */
@@ -205,6 +226,8 @@ public final class DeviceService extends Service {
 
 
     /**
+     * @deprecated
+     *
      * Get device connector
      *
      * @return interface of payment device
@@ -214,6 +237,9 @@ public final class DeviceService extends Service {
         return paymentDeviceConnector;
     }
 
+    /**
+     * @deprecated Use {@link PaymentDeviceConnector#connect()}
+     */
     @Deprecated
     public void connectToDevice() {
 
@@ -244,6 +270,8 @@ public final class DeviceService extends Service {
     }
 
     /**
+     * @deprecated Use {@link PaymentDeviceConnector#readDeviceInfo()}
+     *
      * read info from your payment device
      */
     @Deprecated
@@ -266,6 +294,8 @@ public final class DeviceService extends Service {
 
 
     /**
+     * @deprecated Use {@link PaymentDeviceConnector#disconnect()}
+     *
      * Disconnect from payment device
      */
     @Deprecated
@@ -280,6 +310,8 @@ public final class DeviceService extends Service {
     }
 
     /**
+     * @deprecated Please send {@link SyncRequest} via {@link RxBus} or {@link PaymentDeviceConnector#createSyncRequest()}
+     *
      * Sync data between FitPay server and payment device
      * <p>
      * This is an asynchronous operation.
@@ -295,12 +327,14 @@ public final class DeviceService extends Service {
     }
 
     /**
+     * @deprecated Please send {@link SyncRequest} via {@link RxBus} or {@link PaymentDeviceConnector#createSyncRequest()}
+     *
+     * Sync data between FitPay server and payment device
+     *
      * @param user      current user with hypermedia data
      * @param device    device object with hypermedia data
      * @param connector payment device connector
-     * @deprecated Please send {@link SyncRequest} via {@link com.fitpay.android.utils.RxBus}
-     * Sync data between FitPay server and payment device
-     * <p>
+     *
      * This is an asynchronous operation.
      */
     @Deprecated
@@ -317,11 +351,21 @@ public final class DeviceService extends Service {
         }
     }
 
+    /**
+     * @deprecated Use {@link PaymentDeviceConnector#getProperties()}
+     *
+     * @return config params
+     */
     @Deprecated
     public String getConfigString() {
         return configParams;
     }
 
+    /**
+     * @deprecated Use {@link PaymentDeviceConnector#getProperties()}
+     *
+     * @return config params
+     */
     @Deprecated
     public Properties getConfig() {
         Properties props = null;

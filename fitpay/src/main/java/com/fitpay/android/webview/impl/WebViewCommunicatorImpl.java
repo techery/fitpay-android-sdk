@@ -78,12 +78,23 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private boolean usedDeprecatedConstructor = false;
 
+    /**
+     * @deprecated Use {@link #WebViewCommunicatorImpl(Activity, IPaymentDeviceConnector, int)}
+     *
+     * @param ctx
+     * @param wId
+     */
     @Deprecated
     public WebViewCommunicatorImpl(Activity ctx, int wId) {
         this(ctx, null, wId);
         usedDeprecatedConstructor = true;
     }
 
+    /**
+     * @deprecated Use {@link #WebViewCommunicatorImpl(Activity, IPaymentDeviceConnector, int)}
+     *
+     * @param deviceService
+     */
     @Deprecated
     public void setDeviceService(DeviceService deviceService) {
         this.deviceService = deviceService;
