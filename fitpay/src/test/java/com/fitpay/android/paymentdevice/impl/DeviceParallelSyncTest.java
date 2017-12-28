@@ -167,23 +167,17 @@ public class DeviceParallelSyncTest extends TestActions {
         mContext = null;
     }
 
-    private void initPrefs(String secureElementId) {
+    private void initPrefs(String deviceId) {
         final SharedPreferences mockPrefs = Mockito.mock(SharedPreferences.class);
         final SharedPreferences.Editor mockEditor = Mockito.mock(SharedPreferences.Editor.class);
 
-        when(mContext.getSharedPreferences(ArgumentMatchers.eq("paymentDevice_" + secureElementId), ArgumentMatchers.eq(Context.MODE_PRIVATE))).thenReturn(mockPrefs);
+        when(mContext.getSharedPreferences(ArgumentMatchers.eq("paymentDevice_" + deviceId), ArgumentMatchers.eq(Context.MODE_PRIVATE))).thenReturn(mockPrefs);
         when(mockPrefs.edit()).thenReturn(mockEditor);
         when(mockPrefs.getAll()).thenReturn(Collections.emptyMap());
-        when(mockPrefs.getString(ArgumentMatchers.eq("lastCommitId"), ArgumentMatchers.isNull())).then(invocation -> {
-            String cid = commitId.get(secureElementId);
-            Log.d("-----", secureElementId + " " + cid);
-            return cid;
-        });
+        when(mockPrefs.getString(ArgumentMatchers.eq("lastCommitId"), ArgumentMatchers.isNull())).then(invocation -> commitId.get(deviceId));
         when(mockEditor.commit()).thenReturn(true);
         when(mockEditor.putString(ArgumentMatchers.eq("lastCommitId"), ArgumentMatchers.anyString())).thenAnswer(invocation -> {
-            String cid = (String) invocation.getArguments()[1];
-            commitId.put(secureElementId, cid);
-            Log.d("-----", secureElementId + " " + cid);
+            commitId.put(deviceId, (String) invocation.getArguments()[1]);
             return mockEditor;
         });
     }
@@ -257,6 +251,9 @@ public class DeviceParallelSyncTest extends TestActions {
                 final CountDownLatch waitForCommitsLatch = new CountDownLatch(1);
                 do {
                     String lastCommitId = commitId.get(device.getDeviceIdentifier());
+
+                    System.out.println(">>> deviceId:" + device.getDeviceIdentifier() + " lastCommitId:" + lastCommitId);
+
                     device.getAllCommits(lastCommitId)
                             .subscribe(commits -> {
                                         System.out.println("commits found from " + lastCommitId + ": " + commits.getTotalResults());
