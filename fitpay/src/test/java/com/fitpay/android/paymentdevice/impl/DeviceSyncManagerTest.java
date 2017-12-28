@@ -174,10 +174,18 @@ public class DeviceSyncManagerTest extends TestActions {
 
         executionLatch.await();
 
-        assertEquals(1, listener.getSyncEvents().stream()
+        int skippedCount = (int)listener.getSyncEvents().stream()
                 .filter(syncEvent -> syncEvent.getState() == States.SKIPPED)
-                .count());
-        assertEquals(0, listener.getCommits().size());
+                .count();
+
+        int commitsSize = listener.getCommits().size();
+
+        System.out.println("events size: " + listener.getSyncEvents().size());
+        System.out.println("events size skipped: " + skippedCount);
+        System.out.println("commits size: " + commitsSize);
+
+        assertEquals(1, skippedCount);
+        assertEquals(0, commitsSize);
     }
 
     @Test
