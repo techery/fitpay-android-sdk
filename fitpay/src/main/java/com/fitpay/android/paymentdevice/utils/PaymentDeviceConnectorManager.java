@@ -1,15 +1,17 @@
 package com.fitpay.android.paymentdevice.utils;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.util.ArrayMap;
 import android.util.Log;
 
 import com.fitpay.android.paymentdevice.impl.PaymentDeviceConnector;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Manager of {@link PaymentDeviceConnector}
+ * Singleton that manages 'n' {@link PaymentDeviceConnector}s.
  */
 public class PaymentDeviceConnectorManager {
 
@@ -17,11 +19,13 @@ public class PaymentDeviceConnectorManager {
 
     private static PaymentDeviceConnectorManager sInstance = null;
 
-    private Map<String, PaymentDeviceConnector> connectors = new HashMap<>();
+    private Map<String, PaymentDeviceConnector> connectors;
 
     private PaymentDeviceConnectorManager() {
+        connectors = new ArrayMap<>(5);
     }
 
+    @NonNull
     public static PaymentDeviceConnectorManager getInstance() {
         if (null == sInstance) {
             sInstance = new PaymentDeviceConnectorManager();
@@ -30,12 +34,19 @@ public class PaymentDeviceConnectorManager {
         return sInstance;
     }
 
+    /**
+     * Get the connector
+     *
+     * @param id string value to determine your connector
+     * @return connector, null if not found
+     */
+    @Nullable
     public PaymentDeviceConnector getConnector(String id) {
         return connectors.get(id);
     }
 
     /**
-     * add new connector
+     * Add new connector
      *
      * @param id        string value to determine your connector
      * @param connector payment device connector
@@ -62,7 +73,7 @@ public class PaymentDeviceConnectorManager {
     }
 
     /**
-     * remove connector by id from the list
+     * Remove connector by id from the list
      *
      * @param id
      */
@@ -71,7 +82,7 @@ public class PaymentDeviceConnectorManager {
     }
 
     /**
-     * remove connector by value from the list
+     * Remove connector by value from the list
      *
      * @param connector
      */

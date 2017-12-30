@@ -1,6 +1,8 @@
 package com.fitpay.android.paymentdevice.interfaces;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.fitpay.android.api.enums.CommitTypes;
 import com.fitpay.android.api.models.apdu.ApduCommand;
@@ -32,7 +34,7 @@ public interface IPaymentDeviceConnector extends CommitHandler {
      *
      * @param context Android context.   In most case this will be the DeviceService context.
      */
-    void setContext(Context context);
+    void setContext(@NonNull Context context);
 
     /**
      * Configuration properties for the PaymentDeviceConnector.
@@ -40,7 +42,7 @@ public interface IPaymentDeviceConnector extends CommitHandler {
      *
      * @param props configuration properties
      */
-    void init(Properties props);
+    void init(@NonNull Properties props);
 
     void reset();
 
@@ -85,7 +87,7 @@ public interface IPaymentDeviceConnector extends CommitHandler {
      *
      * @param apduPackage apdu package commit
      */
-    void executeApduPackage(ApduPackage apduPackage);
+    void executeApduPackage(@NonNull final ApduPackage apduPackage);
 
     /**
      * process single apdu command
@@ -93,14 +95,14 @@ public interface IPaymentDeviceConnector extends CommitHandler {
      * @param apduPkgNumber package number
      * @param apduCommand   apdu command
      */
-    void executeApduCommand(long apduPkgNumber, ApduCommand apduCommand);
+    void executeApduCommand(long apduPkgNumber,@NonNull final ApduCommand apduCommand);
 
     /**
      * send apdu execution result to the server
      *
      * @param apduExecutionResult apdu execution result
      */
-    void sendApduExecutionResult(ApduExecutionResult apduExecutionResult);
+    void sendApduExecutionResult(@NonNull final ApduExecutionResult apduExecutionResult);
 
     /**
      * @param towPackages top of wallet package
@@ -117,7 +119,7 @@ public interface IPaymentDeviceConnector extends CommitHandler {
      * @param type  commit execution result type
      * @param error error
      */
-    void commitProcessed(@CommitTypes.Type int type, Throwable error);
+    void commitProcessed(@CommitTypes.Type int type, @Nullable final Throwable error);
 
     /**
      * Add commit type handler
@@ -125,7 +127,7 @@ public interface IPaymentDeviceConnector extends CommitHandler {
      * @param commitType type of commit
      * @param handler    handler to process that commit
      */
-    void addCommitHandler(String commitType, CommitHandler handler);
+    void addCommitHandler(String commitType, @NonNull CommitHandler handler);
 
     /**
      * Remove commit type handler
@@ -144,14 +146,14 @@ public interface IPaymentDeviceConnector extends CommitHandler {
      *
      * @param user current user
      */
-    void setUser(User user);
+    void setUser(@NonNull User user);
 
     /**
      * Add device
      *
      * @param device current device
      */
-    void setDevice(Device device);
+    void setDevice(@NonNull Device device);
 
 
     /**
