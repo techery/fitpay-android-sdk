@@ -20,13 +20,13 @@ import com.fitpay.android.api.models.user.LoginIdentity;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
 import com.fitpay.android.paymentdevice.impl.mock.SecureElementDataProvider;
+import com.fitpay.android.utils.SecurityProvider;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Assert;
 
-import java.security.Security;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -59,7 +59,7 @@ public class Steps {
     private Issuers currentIssuer;
 
     protected Steps() {
-        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        SecurityProvider.getInstance().setProvider(new BouncyCastleProvider());
 
         userName = TestUtils.getRandomLengthString(5, 10) + "@"
                 + TestUtils.getRandomLengthString(5, 10) + "." + TestUtils.getRandomLengthString(4, 10);
