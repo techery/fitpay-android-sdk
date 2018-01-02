@@ -17,7 +17,7 @@ public class SecurityProvider {
     private static SecurityProvider sInstance;
 
     /**
-     * Retrieve security provider
+     * Retrieve security provider instance
      *
      * @return security provider singleton
      */
