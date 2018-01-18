@@ -10,12 +10,14 @@ import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.CommitConfirm;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.api.models.sync.SyncLinks;
 import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
+import com.fitpay.android.paymentdevice.models.SyncProcess;
 import com.fitpay.android.paymentdevice.models.SyncRequest;
 import com.fitpay.android.paymentdevice.utils.DevicePreferenceData;
 import com.fitpay.android.utils.EventCallback;
@@ -27,7 +29,6 @@ import com.fitpay.android.utils.StringUtils;
 import com.fitpay.android.webview.events.DeviceStatusMessage;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -115,6 +116,21 @@ public class DeviceSyncManager {
         }
 
         try {
+            SyncLinks syncLinks = request.getSyncLinks();
+            if(syncLinks != null){
+                syncLinks.sendAckSync(request.getSyncId(), new ApiCallback<Void>() {
+                    @Override
+                    public void onSuccess(Void result) {
+                        FPLog.i("ackSync has been sent successfully.");
+                    }
+
+                    @Override
+                    public void onFailure(int errorCode, String errorMessage) {
+                        FPLog.w("ackSync failed to send.");
+                    }
+                });
+            }
+
             requests.put(request);
 
             FPLog.d("added sync request to queue for processing, current queue size [" + requests.size() + "]: " + request);
@@ -153,7 +169,6 @@ public class DeviceSyncManager {
         private final SyncRequest syncRequest;
         private final ScheduledExecutorService timeoutWatcherExecutor;
 
-        private List<Commit> commits;
         private final CountDownLatch completionLatch = new CountDownLatch(1);
 
         private ScheduledFuture<Void> commitWarningTimer;
@@ -162,7 +177,7 @@ public class DeviceSyncManager {
         private final int commitWarningTimeout = Integer.parseInt(ApiManager.getConfig().get(ApiManager.PROPERTY_COMMIT_WARNING_TIMEOUT));
         private final int commitErrorTimeout = Integer.parseInt(ApiManager.getConfig().get(ApiManager.PROPERTY_COMMIT_ERROR_TIMEOUT));
 
-        private String pendingCommitId;
+        private SyncProcess syncProcess;
 
         public SyncWorkerTask(Context mContext, ScheduledExecutorService timeoutWatcherExecutor, SyncRequest syncRequest) {
             this.mContext = mContext;
@@ -301,12 +316,11 @@ public class DeviceSyncManager {
             observable.compose(RxBus.applySchedulersExecutorThread())
                     .subscribe(
                             commitsCollection -> {
-                                commits = commitsCollection.getResults();
-                                commits = commits == null ? Collections.emptyList() : commits;
+                                syncProcess.setCommits(commitsCollection.getResults());
 
-                                FPLog.i(SYNC_DATA, "Commits Received: " + commits.size());
+                                FPLog.i(SYNC_DATA, "Commits Received: " + syncProcess.size());
 
-                                if (commits.size() > 0) {
+                                if (syncProcess.size() > 0) {
                                     RxBus.getInstance().post(new DeviceStatusMessage(
                                             mContext.getString(R.string.fp_updates_available),
                                             deviceId,
@@ -373,18 +387,17 @@ public class DeviceSyncManager {
                     return;
             }
 
-            if (commits.size() > 0) {
+            if (syncProcess.size() > 0) {
 
                 RxBus.getInstance().post(Sync.builder()
                         .syncId(syncRequest.getSyncId())
-                        .value(commits.size())
+                        .value(syncProcess.size())
+                        .state(States.IN_PROGRESS)
                         .build());
 
-                Commit commit = commits.remove(0);
+                Commit commit = syncProcess.startCommitProcessing();
 
                 FPLog.i(SYNC_DATA, "Process Next Commit: " + commit);
-
-                pendingCommitId = commit.getCommitId();
 
                 // start the watching timers, this first timer is responsible for producing a warning
                 // if a commit isn't responded to in a timely manner
@@ -456,6 +469,8 @@ public class DeviceSyncManager {
                 switch (syncEvent.getState()) {
                     case States.STARTED:
                         FPLog.d(TAG, "sync started: " + syncEvent);
+                        syncProcess = new SyncProcess(syncRequest);
+                        syncProcess.start();
                         break;
 
                     case States.COMPLETED:
@@ -466,6 +481,12 @@ public class DeviceSyncManager {
                         if (syncRequest == null) {
                             FPLog.i(TAG, "no current sync request on sync event: " + syncEvent);
                         }
+
+                        if (syncProcess == null) {
+                            FPLog.i(TAG, "no current sync process on sync event: " + syncEvent);
+                        }
+
+                        syncProcess.finish();
 
                         completionLatch.countDown();
 
@@ -484,10 +505,12 @@ public class DeviceSyncManager {
 
             @Override
             public void onCommitSuccess(CommitSuccess commitSuccess) {
-                if (!commitSuccess.getCommitId().equals(pendingCommitId)) {
-                    FPLog.w(SYNC_DATA, "Unexpected CommitSuccess " + commitSuccess + " received, expected commitId " + pendingCommitId);
+                if (!commitSuccess.getCommitId().equals(syncProcess.getPendingCommitId())) {
+                    FPLog.w(SYNC_DATA, "Unexpected CommitSuccess " + commitSuccess + " received, expected commitId " + syncProcess.getPendingCommitId());
                     return;
                 }
+
+                syncProcess.finishCommitProcessing();
 
                 FPLog.i(SYNC_DATA, "Commit Success: " + commitSuccess);
                 commitSuccessCounter.incrementAndGet();
@@ -511,10 +534,12 @@ public class DeviceSyncManager {
 
             @Override
             public void onCommitFailed(CommitFailed commitFailed) {
-                if (!commitFailed.getCommitId().equals(pendingCommitId)) {
-                    FPLog.w(SYNC_DATA, "Unexpected CommitFailed " + commitFailed + " received, expected commitId " + pendingCommitId);
+                if (!commitFailed.getCommitId().equals(syncProcess.getPendingCommitId())) {
+                    FPLog.w(SYNC_DATA, "Unexpected CommitFailed " + commitFailed + " received, expected commitId " + syncProcess.getPendingCommitId());
                     return;
                 }
+
+                syncProcess.finishCommitProcessing(String.valueOf(commitFailed.getErrorCode()), commitFailed.getErrorMessage());
 
                 FPLog.w(SYNC_DATA, "Commit Failed: " + commitFailed);
                 commitFailedCounter.incrementAndGet();
@@ -524,8 +549,6 @@ public class DeviceSyncManager {
                 moveLastCommitPointer(commitFailed.getCommitId());
 
                 confirmCommit(commitFailed.getCommit(), new CommitConfirm(ResponseState.FAILED));
-
-                commits.clear();
 
                 RxBus.getInstance().post(Sync.builder()
                         .syncId(syncRequest.getSyncId())
@@ -545,10 +568,13 @@ public class DeviceSyncManager {
 
             @Override
             public void onCommitSkipped(CommitSkipped commitSkipped) {
-                if (!commitSkipped.getCommitId().equals(pendingCommitId)) {
-                    FPLog.w(SYNC_DATA, "Unexpected CommitSkipped " + commitSkipped + " received, expected commitId " + pendingCommitId);
+                if (!commitSkipped.getCommitId().equals(syncProcess.getPendingCommitId())) {
+                    FPLog.w(SYNC_DATA, "Unexpected CommitSkipped " + commitSkipped + " received, expected commitId " + syncProcess.getPendingCommitId());
                     return;
                 }
+
+                syncProcess.finishCommitProcessing();
+
                 FPLog.i(SYNC_DATA, "Commit Skipped: " + commitSkipped);
                 commitSkippedCounter.incrementAndGet();
 
