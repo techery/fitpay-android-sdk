@@ -31,8 +31,8 @@ public class SyncMetricsData {
     }
 
     public void sendData(@NonNull final SyncRequest request) {
-        if (request.getSyncLinks() != null) {
-            request.getSyncLinks().sendSyncMetrics(this, new ApiCallback<Void>() {
+        if (request.getSyncInfo() != null) {
+            request.getSyncInfo().sendSyncMetrics(this, new ApiCallback<Void>() {
                 @Override
                 public void onSuccess(Void result) {
                     FPLog.i("MetricsData has been sent successfully. syncId:" + request.getSyncId());
@@ -146,7 +146,7 @@ public class SyncMetricsData {
             this.syncId = request.getSyncId();
             this.userId = request.getUser() != null ? request.getUser().getId() : null;
             this.deviceId = request.getDevice() != null ? request.getDevice().getDeviceIdentifier() : null;
-            this.initiator = request.getSyncInitiator();
+            this.initiator = request.getSyncInfo() != null ? request.getSyncInfo().getInitiator() : null;
             return this;
         }
 

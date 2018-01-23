@@ -49,7 +49,7 @@ public class RtmParserV2 extends RtmParser {
                 if (syncInfo.getSyncId() == null) {
                     impl.sync(callbackId);
                 } else {
-                    syncInfo.setInitiator(SyncInitiator.WEB_HOOK);
+                    syncInfo.setInitiator(SyncInitiator.WEB_VIEW);
                     impl.sync(callbackId, syncInfo);
                 }
                 break;

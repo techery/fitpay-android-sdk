@@ -8,9 +8,11 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.fitpay.android.api.enums.SyncInitiator;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.constants.States;
+import com.fitpay.android.paymentdevice.events.NotificationSyncRequest;
 import com.fitpay.android.paymentdevice.impl.ble.BluetoothPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
@@ -270,7 +272,7 @@ public final class DeviceService extends Service {
     /**
      * @param user   current user with hypermedia data
      * @param device device object with hypermedia data
-     * @deprecated Please send {@link SyncRequest} via {@link com.fitpay.android.utils.RxBus}
+     * @deprecated Please send {@link NotificationSyncRequest} via {@link com.fitpay.android.utils.RxBus} or the {@link #syncData(User, Device, IPaymentDeviceConnector, NotificationSyncRequest)} method
      * Sync data between FitPay server and payment device
      * <p>
      * This is an asynchronous operation.
@@ -286,7 +288,7 @@ public final class DeviceService extends Service {
      * @param user      current user with hypermedia data
      * @param device    device object with hypermedia data
      * @param connector payment device connector
-     * @deprecated Please send {@link SyncRequest} via {@link com.fitpay.android.utils.RxBus}
+     * @deprecated Please send {@link NotificationSyncRequest} via {@link com.fitpay.android.utils.RxBus} or the {@link #syncData(User, Device, IPaymentDeviceConnector, NotificationSyncRequest)} method
      * Sync data between FitPay server and payment device
      * <p>
      * This is an asynchronous operation.
@@ -298,6 +300,35 @@ public final class DeviceService extends Service {
                     .setUser(user)
                     .setDevice(device)
                     .setConnector(connector)
+                    .build();
+            syncManager.add(request);
+        } else {
+            Log.e(TAG, "syncManager is null");
+        }
+    }
+
+    /**
+     * @param user        current user with hypermedia data
+     * @param device      device object with hypermedia data
+     * @param connector   payment device connector
+     * @param syncRequest data provided in sync request
+     * Sync data between FitPay server and payment device
+     * <p>
+     * This is an asynchronous operation.
+     */
+    public void syncData(@NonNull User user, @NonNull Device device, @NonNull IPaymentDeviceConnector connector, @NonNull NotificationSyncRequest syncRequest) {
+        if (null == syncRequest.getSyncInfo()) {
+            FPLog.w(TAG, "NotificationSyncRequest did not contain sync info. Cannot complete sync");
+            return;
+        }
+
+        if (syncManager != null) {
+            SyncRequest request = new SyncRequest.Builder()
+                    .setSyncId(syncRequest.getSyncInfo().getSyncId())
+                    .setUser(user)
+                    .setDevice(device)
+                    .setConnector(connector)
+                    .setSyncInfo(syncRequest.getSyncInfo())
                     .build();
             syncManager.add(request);
         } else {

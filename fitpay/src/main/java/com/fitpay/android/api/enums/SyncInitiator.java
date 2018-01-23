@@ -10,12 +10,11 @@ import java.lang.annotation.RetentionPolicy;
  */
 public final class SyncInitiator {
 
-    public static final String NOTIFICATION = "NOTIFICATION";
     public static final String PLATFORM = "PLATFORM";
-    public static final String WEB_HOOK = "WEB_HOOK";
+    public static final String WEB_VIEW = "WEB_VIEW";
 
     @Retention(RetentionPolicy.SOURCE)
-    @StringDef({PLATFORM, NOTIFICATION, WEB_HOOK})
+    @StringDef({PLATFORM, WEB_VIEW})
     public @interface Initiator {
     }
 }

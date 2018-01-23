@@ -10,13 +10,13 @@ import com.fitpay.android.api.enums.ResultCode;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.CommitConfirm;
 import com.fitpay.android.api.models.device.Device;
-import com.fitpay.android.api.models.sync.SyncLinks;
 import com.fitpay.android.paymentdevice.callbacks.IListeners;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
+import com.fitpay.android.paymentdevice.models.SyncInfo;
 import com.fitpay.android.paymentdevice.models.SyncProcess;
 import com.fitpay.android.paymentdevice.models.SyncRequest;
 import com.fitpay.android.paymentdevice.utils.DevicePreferenceData;
@@ -116,9 +116,9 @@ public class DeviceSyncManager {
         }
 
         try {
-            SyncLinks syncLinks = request.getSyncLinks();
-            if(syncLinks != null){
-                syncLinks.sendAckSync(request.getSyncId(), new ApiCallback<Void>() {
+            SyncInfo syncInfo = request.getSyncInfo();
+            if (syncInfo != null) {
+                syncInfo.sendAckSync(request.getSyncId(), new ApiCallback<Void>() {
                     @Override
                     public void onSuccess(Void result) {
                         FPLog.i("ackSync has been sent successfully.");
@@ -421,6 +421,8 @@ public class DeviceSyncManager {
                         @Override
                         public Void call() throws Exception {
                             FPLog.e(TAG, "error, commit timeout " + commit + " has not returned within " + commitErrorTimeout + "ms");
+
+                            syncProcess.finishCommitProcessing(States.toSyncString(States.TIMEOUT), "sync process timed out");
 
                             RxBus.getInstance().post(Sync.builder()
                                     .syncId(syncRequest.getSyncId())

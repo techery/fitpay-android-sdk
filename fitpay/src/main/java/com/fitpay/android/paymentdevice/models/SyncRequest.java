@@ -1,9 +1,6 @@
 package com.fitpay.android.paymentdevice.models;
 
-import com.fitpay.android.api.enums.SyncInitiator;
-import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.device.Device;
-import com.fitpay.android.api.models.sync.SyncLinks;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.utils.StringUtils;
@@ -19,9 +16,7 @@ public final class SyncRequest {
     private final Device device;
     private final boolean useLastAckCommit;
     private final IPaymentDeviceConnector connector;
-    private final SyncLinks syncLinks;
-    @SyncInitiator.Initiator
-    private final String syncInitiator;
+    private final SyncInfo syncInfo;
 
     private SyncRequest(
             String syncId,
@@ -29,15 +24,13 @@ public final class SyncRequest {
             Device device,
             boolean useLastAckCommit,
             IPaymentDeviceConnector connector,
-            SyncLinks syncLinks,
-            @SyncInitiator.Initiator String initiator) {
+            SyncInfo syncInfo) {
         this.syncId = !StringUtils.isEmpty(syncId) ? syncId : UUID.randomUUID().toString();
         this.user = user;
         this.device = device;
         this.useLastAckCommit = useLastAckCommit;
         this.connector = connector;
-        this.syncLinks = syncLinks;
-        this.syncInitiator = initiator;
+        this.syncInfo = syncInfo;
     }
 
     public User getUser() {
@@ -60,13 +53,8 @@ public final class SyncRequest {
         return useLastAckCommit;
     }
 
-    public @SyncInitiator.Initiator
-    String getSyncInitiator() {
-        return syncInitiator;
-    }
-
-    public SyncLinks getSyncLinks() {
-        return syncLinks;
+    public SyncInfo getSyncInfo() {
+        return syncInfo;
     }
 
     @Override
@@ -77,7 +65,7 @@ public final class SyncRequest {
                 ", device=" + device +
                 ", useLastAckCommit=" + useLastAckCommit +
                 ", connector=" + connector +
-                ", links=" + syncLinks +
+                ", links=" + syncInfo +
                 '}';
     }
 
@@ -91,9 +79,7 @@ public final class SyncRequest {
         private Device device;
         private boolean useLastAckCommit = true;
         private IPaymentDeviceConnector connector;
-        private SyncLinks syncLinks;
-        @SyncInitiator.Initiator
-        private String initiator;
+        private SyncInfo syncInfo;
 
         /**
          * Set sync id
@@ -153,26 +139,16 @@ public final class SyncRequest {
         /**
          * Set sync links
          *
-         * @param syncLinks sync links
+         * @param syncInfo sync links
          * @return this
          */
-        public Builder setSyncLinks(SyncLinks syncLinks) {
-            this.syncLinks = syncLinks;
-            return this;
-        }
-
-        /**
-         * Set sync initiator
-         *
-         * @return this
-         */
-        public Builder setSyncInitiator(@SyncInitiator.Initiator String initiator) {
-            this.initiator = initiator;
+        public Builder setSyncInfo(SyncInfo syncInfo) {
+            this.syncInfo = syncInfo;
             return this;
         }
 
         public SyncRequest build() {
-            return new SyncRequest(syncId, user, device, useLastAckCommit, connector, syncLinks, initiator);
+            return new SyncRequest(syncId, user, device, useLastAckCommit, connector, syncInfo);
         }
     }
 }

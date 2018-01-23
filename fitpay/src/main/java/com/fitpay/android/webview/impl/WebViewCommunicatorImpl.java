@@ -212,18 +212,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
             return;
         }
 
-        if (syncInfo != null) {
-            if (!user.getId().equals(syncInfo.getUserId())) {
-                onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "User id doesn't match");
-                return;
-            }
-
-            if (!device.getDeviceIdentifier().equals(syncInfo.getDeviceId())) {
-                onTaskError(EventCallback.SYNC_COMPLETED, callbackId, "Device id doesn't match");
-                return;
-            }
-        }
-
         NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
         NotificationManager.getInstance().removeListener(listenerForAppCallbacksNoCallbackId);
 
@@ -235,8 +223,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 .setUser(user)
                 .setDevice(device)
                 .setConnector(deviceService.getPaymentDeviceConnector())
-                .setSyncLinks(syncInfo != null ? syncInfo.getSyncLinks() : null)
-                .setSyncInitiator(syncInfo != null ? syncInfo.getInitiator() : SyncInitiator.WEB_HOOK)
+                .setSyncInfo(syncInfo)
                 .build());
     }
 
@@ -481,7 +468,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private class PushNotificationSyncListener extends Listener {
         private PushNotificationSyncListener() {
-            mCommands.put(NotificationSyncRequest.class, data -> sync(null, (SyncInfo) data));
+            mCommands.put(NotificationSyncRequest.class, data -> sync(null, ((NotificationSyncRequest) data).getSyncInfo()));
             mCommands.put(AppMessage.class, data -> {
                 if (AppMessage.SYNC.equals(((AppMessage) data).getType())) {
                     sync(null);

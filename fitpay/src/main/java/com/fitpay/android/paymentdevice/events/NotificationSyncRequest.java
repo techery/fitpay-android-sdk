@@ -1,6 +1,8 @@
 package com.fitpay.android.paymentdevice.events;
 
+import com.fitpay.android.api.enums.SyncInitiator;
 import com.fitpay.android.paymentdevice.models.SyncInfo;
+import com.fitpay.android.utils.Constants;
 
 /**
  * Request to sync from push notification.
@@ -8,8 +10,9 @@ import com.fitpay.android.paymentdevice.models.SyncInfo;
 public class NotificationSyncRequest {
     private final SyncInfo syncInfo;
 
-    public NotificationSyncRequest(SyncInfo syncInfo) {
-        this.syncInfo = syncInfo;
+    public NotificationSyncRequest(String syncData) {
+        this.syncInfo = Constants.getGson().fromJson(syncData, SyncInfo.class);
+        this.syncInfo.setInitiator(SyncInitiator.PLATFORM);
     }
 
     /**
