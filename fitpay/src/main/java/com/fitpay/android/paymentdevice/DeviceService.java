@@ -288,23 +288,12 @@ public final class DeviceService extends Service {
      * @param user      current user with hypermedia data
      * @param device    device object with hypermedia data
      * @param connector payment device connector
-     * @deprecated Please send {@link NotificationSyncRequest} via {@link com.fitpay.android.utils.RxBus} or the {@link #syncData(User, Device, IPaymentDeviceConnector, NotificationSyncRequest)} method
      * Sync data between FitPay server and payment device
      * <p>
      * This is an asynchronous operation.
      */
-    @Deprecated
     public void syncData(@NonNull User user, @NonNull Device device, @NonNull IPaymentDeviceConnector connector) {
-        if (syncManager != null) {
-            SyncRequest request = new SyncRequest.Builder()
-                    .setUser(user)
-                    .setDevice(device)
-                    .setConnector(connector)
-                    .build();
-            syncManager.add(request);
-        } else {
-            Log.e(TAG, "syncManager is null");
-        }
+        syncData(user, device, connector, new NotificationSyncRequest());
     }
 
     /**
@@ -318,13 +307,12 @@ public final class DeviceService extends Service {
      */
     public void syncData(@NonNull User user, @NonNull Device device, @NonNull IPaymentDeviceConnector connector, @NonNull NotificationSyncRequest syncRequest) {
         if (null == syncRequest.getSyncInfo()) {
-            FPLog.w(TAG, "NotificationSyncRequest did not contain sync info. Cannot complete sync");
-            return;
+            FPLog.d(TAG, "NotificationSyncRequest did not contain sync info.");
         }
 
         if (syncManager != null) {
             SyncRequest request = new SyncRequest.Builder()
-                    .setSyncId(syncRequest.getSyncInfo().getSyncId())
+                    .setSyncId(null != syncRequest.getSyncInfo() ? syncRequest.getSyncInfo().getSyncId() : null)
                     .setUser(user)
                     .setDevice(device)
                     .setConnector(connector)
