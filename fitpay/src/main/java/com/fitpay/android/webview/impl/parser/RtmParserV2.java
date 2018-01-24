@@ -1,5 +1,7 @@
 package com.fitpay.android.webview.impl.parser;
 
+import com.fitpay.android.api.enums.SyncInitiator;
+import com.fitpay.android.paymentdevice.models.SyncInfo;
 import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.webview.enums.RtmType;
@@ -30,7 +32,7 @@ public class RtmParserV2 extends RtmParser {
                 String userId = null;
 
                 try {
-                    JSONObject obj = new JSONObject(msg.getJsonData());
+                    JSONObject obj = new JSONObject(msg.getData());
                     deviceId = obj.getString("deviceId");
                     token = obj.getString("token");
                     userId = obj.getString("userId");
@@ -40,16 +42,25 @@ public class RtmParserV2 extends RtmParser {
                 }
 
                 impl.sendUserData(callbackId, deviceId, token, userId);
-                break;
 
+                break;
             case RtmType.SYNC:
-                impl.sync(callbackId);
-                break;
+                SyncInfo syncInfo = Constants.getGson().fromJson(msg.getData(), SyncInfo.class);
 
+                if (null != syncInfo) {
+                    if (syncInfo.getSyncId() == null) {
+                        impl.sync(callbackId);
+                    } else {
+                        syncInfo.setInitiator(SyncInitiator.WEB_VIEW);
+                        impl.sync(callbackId, syncInfo);
+                    }
+                }
+
+                break;
             case RtmType.VERSION:
                 try {
                     RtmVersion webAppRtmVersion = Constants.getGson().fromJson(msg.getJsonData(), RtmVersion.class);
-                    if(webAppRtmVersion != null) {
+                    if (webAppRtmVersion != null) {
                         impl.setWebAppRtmVersion(webAppRtmVersion);
                     } else {
                         throw new NullPointerException("RtmVersion is empty");
@@ -58,12 +69,12 @@ public class RtmParserV2 extends RtmParser {
                     FPLog.e(WV_DATA, e);
                     throwException("missing required message data");
                 }
-                break;
 
+                break;
             case RtmType.NO_HISTORY:
                 impl.onNoHistory();
-                break;
 
+                break;
             default:
                 super.parseMessage(msg);
         }
