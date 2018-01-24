@@ -42,18 +42,21 @@ public class RtmParserV2 extends RtmParser {
                 }
 
                 impl.sendUserData(callbackId, deviceId, token, userId);
-                break;
 
+                break;
             case RtmType.SYNC:
                 SyncInfo syncInfo = Constants.getGson().fromJson(msg.getData(), SyncInfo.class);
-                if (syncInfo.getSyncId() == null) {
-                    impl.sync(callbackId);
-                } else {
-                    syncInfo.setInitiator(SyncInitiator.WEB_VIEW);
-                    impl.sync(callbackId, syncInfo);
-                }
-                break;
 
+                if (null != syncInfo) {
+                    if (syncInfo.getSyncId() == null) {
+                        impl.sync(callbackId);
+                    } else {
+                        syncInfo.setInitiator(SyncInitiator.WEB_VIEW);
+                        impl.sync(callbackId, syncInfo);
+                    }
+                }
+
+                break;
             case RtmType.VERSION:
                 try {
                     RtmVersion webAppRtmVersion = Constants.getGson().fromJson(msg.getJsonData(), RtmVersion.class);
@@ -66,12 +69,12 @@ public class RtmParserV2 extends RtmParser {
                     FPLog.e(WV_DATA, e);
                     throwException("missing required message data");
                 }
-                break;
 
+                break;
             case RtmType.NO_HISTORY:
                 impl.onNoHistory();
-                break;
 
+                break;
             default:
                 super.parseMessage(msg);
         }

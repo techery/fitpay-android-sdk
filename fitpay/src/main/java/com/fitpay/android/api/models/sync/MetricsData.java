@@ -16,13 +16,6 @@ public final class MetricsData {
         startTime = System.currentTimeMillis();
     }
 
-//    /**
-//     * It's time to process current {@link MetricsData#commitId} commit
-//     */
-//    public void setStartTime() {
-//        startTime = System.currentTimeMillis();
-//    }
-
     /**
      * Processing current {@link MetricsData#commitId} commit was done
      */

@@ -59,8 +59,11 @@ public final class SyncProcess {
         pendingCommitMD.setEndTime();
         pendingCommitMD.setError(error);
         pendingCommitMD.setErrorDescription(errorDescription);
-
         commitsData.add(pendingCommitMD);
+
+        if (null != error) {
+            commits.clear();
+        }
     }
 
     public String getPendingCommitId() {
@@ -70,4 +73,5 @@ public final class SyncProcess {
     public int size() {
         return commits.size();
     }
+
 }

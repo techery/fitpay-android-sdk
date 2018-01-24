@@ -12,7 +12,16 @@ public class NotificationSyncRequest {
 
     public NotificationSyncRequest(String syncData) {
         this.syncInfo = Constants.getGson().fromJson(syncData, SyncInfo.class);
-        this.syncInfo.setInitiator(SyncInitiator.PLATFORM);
+        if (null != this.syncInfo) {
+            this.syncInfo.setInitiator(SyncInitiator.PLATFORM);
+        }
+    }
+
+    public NotificationSyncRequest(String syncData, String initiator) {
+        this.syncInfo = Constants.getGson().fromJson(syncData, SyncInfo.class);
+        if (null != this.syncInfo) {
+            this.syncInfo.setInitiator(initiator);
+        }
     }
 
     /**
