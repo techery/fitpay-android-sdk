@@ -10,6 +10,10 @@ import com.fitpay.android.utils.Constants;
 public class NotificationSyncRequest {
     private final SyncInfo syncInfo;
 
+    public NotificationSyncRequest() {
+        this.syncInfo = null;
+    }
+
     public NotificationSyncRequest(String syncData) {
         this.syncInfo = Constants.getGson().fromJson(syncData, SyncInfo.class);
         if (null != this.syncInfo) {

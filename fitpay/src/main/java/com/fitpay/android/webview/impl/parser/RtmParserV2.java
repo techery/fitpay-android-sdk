@@ -47,13 +47,11 @@ public class RtmParserV2 extends RtmParser {
             case RtmType.SYNC:
                 SyncInfo syncInfo = Constants.getGson().fromJson(msg.getData(), SyncInfo.class);
 
-                if (null != syncInfo) {
-                    if (syncInfo.getSyncId() == null) {
-                        impl.sync(callbackId);
-                    } else {
-                        syncInfo.setInitiator(SyncInitiator.WEB_VIEW);
-                        impl.sync(callbackId, syncInfo);
-                    }
+                if (null != syncInfo && null != syncInfo.getSyncId()) {
+                    syncInfo.setInitiator(SyncInitiator.WEB_VIEW);
+                    impl.sync(callbackId, syncInfo);
+                } else {
+                    impl.sync(callbackId);
                 }
 
                 break;

@@ -217,7 +217,6 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         NotificationManager.getInstance().addListener(listenerForAppCallbacks = new DeviceSyncListener(callbackId));
 
-        //deviceService.syncData(user, device);
         RxBus.getInstance().post(new SyncRequest.Builder()
                 .setSyncId(syncInfo != null ? syncInfo.getSyncId() : null)
                 .setUser(user)
