@@ -272,16 +272,14 @@ public final class DeviceService extends Service {
     /**
      * @param user   current user with hypermedia data
      * @param device device object with hypermedia data
-     * @deprecated Please send {@link NotificationSyncRequest} via {@link com.fitpay.android.utils.RxBus} or the {@link #syncData(User, Device, IPaymentDeviceConnector, NotificationSyncRequest)} method
      * Sync data between FitPay server and payment device
      * <p>
      * This is an asynchronous operation.
      */
-    @Deprecated
     public void syncData(@NonNull User user, @NonNull Device device) {
         this.user = user;
         this.device = device;
-        syncData(user, device, paymentDeviceConnector);
+        syncData(user, device, paymentDeviceConnector, new NotificationSyncRequest());
     }
 
     /**
@@ -294,6 +292,18 @@ public final class DeviceService extends Service {
      */
     public void syncData(@NonNull User user, @NonNull Device device, @NonNull IPaymentDeviceConnector connector) {
         syncData(user, device, connector, new NotificationSyncRequest());
+    }
+
+    /**
+     * @param user        current user with hypermedia data
+     * @param device      device object with hypermedia data
+     * @param syncRequest data provided in sync request
+     * Sync data between FitPay server and payment device
+     * <p>
+     * This is an asynchronous operation.
+     */
+    public void syncData(@NonNull User user, @NonNull Device device, @NonNull NotificationSyncRequest syncRequest) {
+        syncData(user, device, paymentDeviceConnector, syncRequest);
     }
 
     /**
