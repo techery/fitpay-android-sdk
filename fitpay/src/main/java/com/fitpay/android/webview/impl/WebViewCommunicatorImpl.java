@@ -9,7 +9,6 @@ import com.fitpay.android.R;
 import com.fitpay.android.api.ApiManager;
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.ResultCode;
-import com.fitpay.android.api.enums.SyncInitiator;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.security.OAuthToken;
 import com.fitpay.android.api.models.user.User;
@@ -411,9 +410,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 }
                 case States.TIMEOUT:
                 case States.FAILED: {
-                    if (callbackId != null) {
-                        onTaskError(EventCallback.SYNC_COMPLETED, callbackId, !StringUtils.isEmpty(syncEvent.getMessage()) ? syncEvent.getMessage() : "sync failure");
-                    }
+                    onTaskError(EventCallback.SYNC_COMPLETED, callbackId, !StringUtils.isEmpty(syncEvent.getMessage()) ? syncEvent.getMessage() : "sync failure");
 
                     NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
                     NotificationManager.getInstance().removeListener(listenerForAppCallbacksNoCallbackId);
