@@ -8,10 +8,11 @@ import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.fitpay.android.api.enums.SyncInitiator;
 import com.fitpay.android.api.models.device.Device;
 import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.paymentdevice.constants.States;
-import com.fitpay.android.paymentdevice.enums.AppMessage;
+import com.fitpay.android.paymentdevice.events.NotificationSyncRequest;
 import com.fitpay.android.paymentdevice.impl.ble.BluetoothPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.impl.mock.MockPaymentDeviceConnector;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
@@ -269,36 +270,63 @@ public final class DeviceService extends Service {
     }
 
     /**
+     * @param user   current user with hypermedia data
+     * @param device device object with hypermedia data
      * Sync data between FitPay server and payment device
      * <p>
      * This is an asynchronous operation.
-     *
-     * @param user   current user with hypermedia data
-     * @param device device object with hypermedia data
      */
     public void syncData(@NonNull User user, @NonNull Device device) {
         this.user = user;
         this.device = device;
-        syncData(user, device, paymentDeviceConnector);
+        syncData(user, device, paymentDeviceConnector, new NotificationSyncRequest());
     }
 
     /**
-     * @deprecated Please send {@link SyncRequest} via {@link com.fitpay.android.utils.RxBus}
-     * Sync data between FitPay server and payment device
-     * <p>
-     * This is an asynchronous operation.
-     *
      * @param user      current user with hypermedia data
      * @param device    device object with hypermedia data
      * @param connector payment device connector
+     * Sync data between FitPay server and payment device
+     * <p>
+     * This is an asynchronous operation.
      */
-    @Deprecated
     public void syncData(@NonNull User user, @NonNull Device device, @NonNull IPaymentDeviceConnector connector) {
+        syncData(user, device, connector, new NotificationSyncRequest());
+    }
+
+    /**
+     * @param user        current user with hypermedia data
+     * @param device      device object with hypermedia data
+     * @param syncRequest data provided in sync request
+     * Sync data between FitPay server and payment device
+     * <p>
+     * This is an asynchronous operation.
+     */
+    public void syncData(@NonNull User user, @NonNull Device device, @NonNull NotificationSyncRequest syncRequest) {
+        syncData(user, device, paymentDeviceConnector, syncRequest);
+    }
+
+    /**
+     * @param user        current user with hypermedia data
+     * @param device      device object with hypermedia data
+     * @param connector   payment device connector
+     * @param syncRequest data provided in sync request
+     * Sync data between FitPay server and payment device
+     * <p>
+     * This is an asynchronous operation.
+     */
+    public void syncData(@NonNull User user, @NonNull Device device, @NonNull IPaymentDeviceConnector connector, @NonNull NotificationSyncRequest syncRequest) {
+        if (null == syncRequest.getSyncInfo()) {
+            FPLog.d(TAG, "NotificationSyncRequest did not contain sync info.");
+        }
+
         if (syncManager != null) {
             SyncRequest request = new SyncRequest.Builder()
+                    .setSyncId(null != syncRequest.getSyncInfo() ? syncRequest.getSyncInfo().getSyncId() : null)
                     .setUser(user)
                     .setDevice(device)
                     .setConnector(connector)
+                    .setSyncInfo(syncRequest.getSyncInfo())
                     .build();
             syncManager.add(request);
         } else {
@@ -344,7 +372,6 @@ public final class DeviceService extends Service {
                     Log.e(TAG, "syncManager is null");
                 }
             });
-            mCommands.put(AppMessage.class, data -> syncData(user, device, paymentDeviceConnector));
         }
     }
 }

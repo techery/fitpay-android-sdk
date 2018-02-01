@@ -14,6 +14,10 @@ public final class AppMessage {
     public static final String ACTIVATE = "Activate";
     public static final String SUSPEND = "Suspend";
     public static final String PAYMENT_NOTIFICATION = "Payment Notification";
+    /**
+     * @deprecated use {@link com.fitpay.android.paymentdevice.models.SyncRequest}}
+     */
+    @Deprecated
     public static final String SYNC = "Sync";
 
     @Retention(RetentionPolicy.SOURCE)
