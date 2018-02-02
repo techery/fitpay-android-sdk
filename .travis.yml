@@ -6,7 +6,7 @@ android:
     - tools #latest for "builtin" sdk
     - tools #latest
     - platform-tools #latest
-    - build-tools-26.0.2
+    - build-tools-27.0.3
     - android-26
     - extra-android-m2repository
     - android-sdk-license-.+
