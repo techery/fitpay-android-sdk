@@ -8,6 +8,7 @@ import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.CommitConfirm;
 import com.fitpay.android.api.models.device.Device;
+import com.fitpay.android.utils.FPLog;
 
 import org.junit.Test;
 
@@ -234,6 +235,10 @@ public class CommitTest2 extends TestActions {
 
         commits = getAllCommits(createdDevice, null);
         assertNotNull("allCommits collection", commits);
+
+        FPLog.d("totalResult:" + totalResults);
+        FPLog.d("commits totalResult:" + commits.getTotalResults());
+
         assertEquals("number of allCommits", totalResults, commits.getTotalResults());
     }
 }
