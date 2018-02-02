@@ -55,6 +55,7 @@ public class TestActions {
 
     @BeforeClass
     public static void init() {
+        FPLog.clean(); //in tests only one log impl should be used
         FPLog.addLogImpl(new FPLog.ILog() {
             @Override
             public void d(String tag, String text) {

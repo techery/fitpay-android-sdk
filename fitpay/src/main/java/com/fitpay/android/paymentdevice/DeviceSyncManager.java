@@ -395,7 +395,7 @@ public class DeviceSyncManager {
                         .state(States.IN_PROGRESS)
                         .build());
 
-                Commit commit = syncProcess.startCommitProcessing();
+                final Commit commit = syncProcess.startCommitProcessing();
 
                 FPLog.i(SYNC_DATA, "Process Next Commit: " + commit);
 
@@ -420,15 +420,12 @@ public class DeviceSyncManager {
                     commitTimeoutTimer = timeoutWatcherExecutor.schedule(new Callable<Void>() {
                         @Override
                         public Void call() throws Exception {
-                            FPLog.e(TAG, "error, commit timeout " + commit + " has not returned within " + commitErrorTimeout + "ms");
+                            final String errorMessage = "error, commit timeout " + commit.getCommitId() + " has not returned within " + commitErrorTimeout + "ms";
+                            FPLog.e(TAG, errorMessage);
 
-                            syncProcess.finishCommitProcessing(States.toSyncString(States.TIMEOUT), "sync process timed out");
-
-                            RxBus.getInstance().post(Sync.builder()
-                                    .syncId(syncRequest.getSyncId())
-                                    .state(States.TIMEOUT)
-                                    .message("sync timeout, this is typically due to a commit event being sent to the payment device connector and a commit event not being pushed to RxBus")
-                                    .build());
+                            CommitFailed.Builder builder = new CommitFailed.Builder().commit(commit);
+                            builder.errorMessage(errorMessage);
+                            RxBus.getInstance().post(builder.build());
 
                             return null;
                         }
