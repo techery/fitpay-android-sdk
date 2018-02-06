@@ -2,6 +2,8 @@ package com.fitpay.android.paymentdevice.impl;
 
 import android.content.Context;
 import android.support.annotation.Nullable;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.CommitTypes;
@@ -54,7 +56,7 @@ import static com.fitpay.android.utils.Constants.APDU_DATA;
  */
 public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector {
 
-    private final static String TAG = PaymentDeviceConnector.class.getSimpleName();
+    protected final String TAG;
 
     protected final String connectorId;
 
@@ -83,21 +85,21 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     private Properties properties;
 
     public PaymentDeviceConnector() {
-        init();
-        connectorId = UUID.randomUUID().toString();
+        this(UUID.randomUUID().toString());
     }
 
-    public PaymentDeviceConnector(String id) {
+    public PaymentDeviceConnector(@NonNull final String id) {
         init();
         connectorId = id;
+        TAG = "PaymentDeviceConnector-" + connectorId;
     }
 
-    public PaymentDeviceConnector(Context context) {
+    public PaymentDeviceConnector(@NonNull Context context) {
         this();
         mContext = context;
     }
 
-    public PaymentDeviceConnector(Context context, String id) {
+    public PaymentDeviceConnector(@NonNull Context context, @NonNull final String id) {
         this(id);
         mContext = context;
     }
@@ -116,7 +118,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
     @Override
-    public void init(Properties props) {
+    public void init(@NonNull Properties props) {
         this.properties = props;
     }
 
@@ -125,7 +127,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
     @Override
-    public void setContext(Context context) {
+    public void setContext(@NonNull Context context) {
         this.mContext = context;
     }
 
@@ -171,7 +173,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
     @Override
-    public void addCommitHandler(String commitType, CommitHandler handler) {
+    public void addCommitHandler(String commitType, @NonNull final CommitHandler handler) {
         if (null == commitHandlers) {
             commitHandlers = new HashMap<>();
         }
@@ -187,7 +189,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
     @Override
-    public void processCommit(Commit commit) {
+    public void processCommit(@NonNull final Commit commit) {
         // Don't switch the current commit until we are ready to execute the new one. PGR-1240
         if (apduExecutionInProgress && currentCommit.getPayload() instanceof ApduPackage) {
             FPLog.w(TAG, "apduPackage processing is already in progress");
@@ -233,17 +235,16 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
     @Override
-    public void setUser(User user) {
+    public void setUser(@NonNull User user) {
         this.user = user;
     }
 
-    @Override
-    public final User getUser() {
+ 	public final User getUser() {
         return user;
     }
 
     @Override
-    public void setDevice(Device device) {
+    public void setDevice(@NonNull Device device) {
         this.device = device;
     }
 
@@ -271,7 +272,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      * 5) deviceConnector.sendApduExecutionResult(apduExecutionResult)
      */
     @Override
-    public void executeApduPackage(ApduPackage apduPackage) {
+    public void executeApduPackage(@NonNull final ApduPackage apduPackage) {
         if (apduExecutionInProgress) {
             FPLog.w(TAG, "apduPackage processing is already in progress");
             return;
@@ -351,7 +352,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
     @Override
-    public void commitProcessed(@CommitResult.Type int type, Throwable error) {
+    public void commitProcessed(@CommitResult.Type int type, @Nullable final Throwable error) {
         switch (type) {
             case CommitResult.SUCCESS:
                 CommitSuccess.Builder success = new CommitSuccess.Builder().commit(currentCommit);
@@ -399,7 +400,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      *
      * @param apduCommandResult
      */
-    public void sendApduCommandResult(ApduCommandResult apduCommandResult) {
+    public void sendApduCommandResult(@NonNull final ApduCommandResult apduCommandResult) {
         RxBus.getInstance().post(id(), apduCommandResult);
     }
 
@@ -408,7 +409,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      *
      * @param apduExecutionResult apdu execution result
      */
-    public void sendApduExecutionResult(final ApduExecutionResult apduExecutionResult) {
+    public void sendApduExecutionResult(@NonNull final ApduExecutionResult apduExecutionResult) {
 
         EventCallback.Builder builder = new EventCallback.Builder()
                 .setCommand(EventCallback.APDU_COMMANDS_SENT)
@@ -465,7 +466,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      */
     private class ApduPackageListener extends ApduExecutionListener {
 
-        public ApduPackageListener(String connectorId) {
+        public ApduPackageListener(@NonNull final String connectorId) {
             super(connectorId);
         }
 
@@ -507,7 +508,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         final String normalResponseCode = Hex.bytesToHexString(NORMAL_PROCESSING);
         final StringBuilder longApduResponseStr = new StringBuilder();
 
-        ApduCommandListener(String connectorId) {
+        ApduCommandListener(@NonNull final String connectorId) {
             super(connectorId);
             mCommands.put(ApduCommandResult.class, data -> onApduCommandReceived((ApduCommandResult) data));
             mCommands.put(ApduExecException.class, data -> onApduExecErrorReceived((ApduExecException) data));
