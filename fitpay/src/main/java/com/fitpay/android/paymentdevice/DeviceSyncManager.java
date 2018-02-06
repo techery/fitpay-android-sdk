@@ -3,7 +3,9 @@ package com.fitpay.android.paymentdevice;
 import android.content.Context;
 
 import com.fitpay.android.api.ApiManager;
+import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.paymentdevice.callbacks.DeviceSyncManagerCallback;
+import com.fitpay.android.paymentdevice.models.SyncInfo;
 import com.fitpay.android.paymentdevice.models.SyncRequest;
 import com.fitpay.android.paymentdevice.utils.sync.SyncThreadExecutor;
 import com.fitpay.android.utils.FPLog;
@@ -36,7 +38,7 @@ public class DeviceSyncManager {
     }
 
     public void onCreate() {
-        worker = new SyncThreadExecutor(mContext, syncManagerCallbacks, queueSize, threadsCount, 5, TimeUnit. MINUTES, requests);
+        worker = new SyncThreadExecutor(mContext, syncManagerCallbacks, queueSize, threadsCount, 5, TimeUnit.MINUTES, requests);
     }
 
     public void onDestroy() {
@@ -52,6 +54,21 @@ public class DeviceSyncManager {
     public void add(final SyncRequest request) {
         if (request == null) {
             return;
+        }
+
+        SyncInfo syncInfo = request.getSyncInfo();
+        if (syncInfo != null) {
+            syncInfo.sendAckSync(request.getSyncId(), new ApiCallback<Void>() {
+                @Override
+                public void onSuccess(Void result) {
+                    FPLog.i("ackSync has been sent successfully.");
+                }
+
+                @Override
+                public void onFailure(int errorCode, String errorMessage) {
+                    FPLog.w("ackSync failed to send.");
+                }
+            });
         }
 
         worker.addTask(request);

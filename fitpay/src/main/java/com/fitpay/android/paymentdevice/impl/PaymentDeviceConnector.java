@@ -1,6 +1,7 @@
 package com.fitpay.android.paymentdevice.impl;
 
 import android.content.Context;
+import android.support.annotation.Nullable;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.CommitTypes;
@@ -23,6 +24,7 @@ import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
+import com.fitpay.android.paymentdevice.models.SyncInfo;
 import com.fitpay.android.paymentdevice.models.SyncRequest;
 import com.fitpay.android.paymentdevice.utils.ApduExecException;
 import com.fitpay.android.utils.EventCallback;
@@ -236,8 +238,18 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
     @Override
+    public final User getUser() {
+        return user;
+    }
+
+    @Override
     public void setDevice(Device device) {
         this.device = device;
+    }
+
+    @Override
+    public final Device getDevice() {
+        return device;
     }
 
     /**
@@ -293,8 +305,14 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      * Create sync request
      */
     @Override
-    public void createSyncRequest() {
-        RxBus.getInstance().post(new SyncRequest.Builder().setUser(user).setDevice(device).setConnector(this).build());
+    public void createSyncRequest(@Nullable SyncInfo syncInfo) {
+        RxBus.getInstance().post(new SyncRequest.Builder()
+                .setSyncId(syncInfo != null ? syncInfo.getSyncId() : null)
+                .setUser(user)
+                .setDevice(device)
+                .setConnector(this)
+                .setSyncInfo(syncInfo)
+                .build());
     }
 
     /**

@@ -5,6 +5,7 @@ import android.webkit.JavascriptInterface;
 
 import com.fitpay.android.cardscanner.IFitPayCardScanner;
 import com.fitpay.android.paymentdevice.DeviceService;
+import com.fitpay.android.paymentdevice.models.SyncInfo;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
 import com.fitpay.android.webview.impl.WebViewCommunicatorImpl;
 
@@ -24,6 +25,14 @@ public interface WebViewCommunicator {
      */
     @JavascriptInterface
     void sync(String callBackId);
+
+    /**
+     * Internal use only. this method is called by the WV to initiate the sync sequence in the SDK
+     *
+     * @param callBackId       js callback id
+     * @param syncInfo sync notification data
+     */
+    void sync(String callBackId, final SyncInfo syncInfo);
 
     /**
      * this method is called by the WV to provide 'session data' (deviceID, userID, OAuth token) to the SDK
@@ -56,12 +65,13 @@ public interface WebViewCommunicator {
      * @param cardScanner
      */
     void setCardScanner(IFitPayCardScanner cardScanner);
+
     IFitPayCardScanner getCardScanner();
 
     /**
      * Called by the webview when the consumer requests a card scan operation and the "useWebCardScanner" is false in the
      * {@link com.fitpay.android.webview.models.WvConfig}
-     *
+     * <p>
      * * @param callbackId rtm callback id
      */
     void startScan(String callbackId);

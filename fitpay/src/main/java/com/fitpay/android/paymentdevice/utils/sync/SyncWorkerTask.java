@@ -18,6 +18,7 @@ import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.events.CommitFailed;
 import com.fitpay.android.paymentdevice.events.CommitSkipped;
 import com.fitpay.android.paymentdevice.events.CommitSuccess;
+import com.fitpay.android.paymentdevice.models.SyncProcess;
 import com.fitpay.android.paymentdevice.models.SyncRequest;
 import com.fitpay.android.paymentdevice.utils.DevicePreferenceData;
 import com.fitpay.android.utils.EventCallback;
@@ -56,7 +57,6 @@ public final class SyncWorkerTask implements Runnable {
 
     private final String connectorIdFilter;
 
-    private List<Commit> commits;
     private final CountDownLatch completionLatch = new CountDownLatch(1);
 
     private ScheduledFuture<Void> commitWarningTimer;
@@ -65,7 +65,7 @@ public final class SyncWorkerTask implements Runnable {
     private final int commitWarningTimeout = Integer.parseInt(ApiManager.getConfig().get(ApiManager.PROPERTY_COMMIT_WARNING_TIMEOUT));
     private final int commitErrorTimeout = Integer.parseInt(ApiManager.getConfig().get(ApiManager.PROPERTY_COMMIT_ERROR_TIMEOUT));
 
-    private String pendingCommitId;
+    private SyncProcess syncProcess;
 
     private final List<DeviceSyncManagerCallback> syncManagerCallbacks;
 
@@ -212,12 +212,11 @@ public final class SyncWorkerTask implements Runnable {
         observable.compose(RxBus.applySchedulersExecutorThread())
                 .subscribe(
                         commitsCollection -> {
-                            commits = commitsCollection.getResults();
-                            commits = commits == null ? Collections.emptyList() : commits;
+                            syncProcess.setCommits(commitsCollection.getResults());
 
-                            FPLog.i(SYNC_DATA, "Commits Received: " + commits.size());
+                            FPLog.i(SYNC_DATA, "Commits Received: " + syncProcess.size());
 
-                            if (commits.size() > 0) {
+                            if (syncProcess.size() > 0) {
                                 RxBus.getInstance().post(connectorIdFilter, new DeviceStatusMessage(
                                         mContext.getString(R.string.fp_updates_available),
                                         deviceId,
@@ -284,18 +283,16 @@ public final class SyncWorkerTask implements Runnable {
                 return;
         }
 
-        if (commits.size() > 0) {
+        if (syncProcess.size() > 0) {
             RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                     .syncId(syncRequest.getSyncId())
-                    .value(commits.size())
+                    .value(syncProcess.size())
                     .state(States.IN_PROGRESS)
                     .build());
 
-            Commit commit = commits.remove(0);
+            Commit commit = syncProcess.startCommitProcessing();
 
             FPLog.i(SYNC_DATA, "Process Next Commit: " + commit);
-
-            pendingCommitId = commit.getCommitId();
 
             // start the watching timers, this first timer is responsible for producing a warning
             // if a commit isn't responded to in a timely manner
@@ -318,13 +315,12 @@ public final class SyncWorkerTask implements Runnable {
                 commitTimeoutTimer = timeoutWatcherExecutor.schedule(new Callable<Void>() {
                     @Override
                     public Void call() throws Exception {
-                        FPLog.e(TAG, "error, commit timeout " + commit + " has not returned within " + commitErrorTimeout + "ms");
+                        final String errorMessage = "error, commit timeout " + commit.getCommitId() + " has not returned within " + commitErrorTimeout + "ms";
+                        FPLog.e(TAG, errorMessage);
 
-                        RxBus.getInstance().post(connectorIdFilter, Sync.builder()
-                                .syncId(syncRequest.getSyncId())
-                                .state(States.TIMEOUT)
-                                .message("sync timeout, this is typically due to a commit event being sent to the payment device connector and a commit event not being pushed to RxBus")
-                                .build());
+                        CommitFailed.Builder builder = new CommitFailed.Builder().commit(commit);
+                        builder.errorMessage(errorMessage);
+                        RxBus.getInstance().post(builder.build());
 
                         return null;
                     }
@@ -367,6 +363,8 @@ public final class SyncWorkerTask implements Runnable {
             switch (syncEvent.getState()) {
                 case States.STARTED:
                     FPLog.d(TAG, "sync started: " + syncEvent);
+                    syncProcess = new SyncProcess(syncRequest);
+                    syncProcess.start();
                     break;
 
                 case States.COMPLETED:
@@ -377,6 +375,8 @@ public final class SyncWorkerTask implements Runnable {
                     if (syncRequest == null) {
                         FPLog.i(TAG, "no current sync request on sync event: " + syncEvent);
                     }
+
+                    syncProcess.finish();
 
                     completionLatch.countDown();
 
@@ -395,10 +395,12 @@ public final class SyncWorkerTask implements Runnable {
 
         @Override
         public void onCommitSuccess(CommitSuccess commitSuccess) {
-            if (!commitSuccess.getCommitId().equals(pendingCommitId)) {
-                FPLog.w(SYNC_DATA, "Unexpected CommitSuccess " + commitSuccess + " received, expected commitId " + pendingCommitId);
+            if (!commitSuccess.getCommitId().equals(syncProcess.getPendingCommitId())) {
+                FPLog.w(SYNC_DATA, "Unexpected CommitSuccess " + commitSuccess + " received, expected commitId " + syncProcess.getPendingCommitId());
                 return;
             }
+
+            syncProcess.finishCommitProcessing();
 
             FPLog.i(SYNC_DATA, "Commit Success: " + commitSuccess);
             commitSuccessCounter.incrementAndGet();
@@ -422,10 +424,12 @@ public final class SyncWorkerTask implements Runnable {
 
         @Override
         public void onCommitFailed(CommitFailed commitFailed) {
-            if (!commitFailed.getCommitId().equals(pendingCommitId)) {
-                FPLog.w(SYNC_DATA, "Unexpected CommitFailed " + commitFailed + " received, expected commitId " + pendingCommitId);
+            if (!commitFailed.getCommitId().equals(syncProcess.getPendingCommitId())) {
+                FPLog.w(SYNC_DATA, "Unexpected CommitFailed " + commitFailed + " received, expected commitId " + syncProcess.getPendingCommitId());
                 return;
             }
+
+            syncProcess.finishCommitProcessing(String.valueOf(commitFailed.getErrorCode()), commitFailed.getErrorMessage());
 
             FPLog.w(SYNC_DATA, "Commit Failed: " + commitFailed);
             commitFailedCounter.incrementAndGet();
@@ -435,8 +439,6 @@ public final class SyncWorkerTask implements Runnable {
             moveLastCommitPointer(commitFailed.getCommitId());
 
             confirmCommit(commitFailed.getCommit(), new CommitConfirm(ResponseState.FAILED));
-
-            commits.clear();
 
             RxBus.getInstance().post(connectorIdFilter, Sync.builder()
                     .syncId(syncRequest.getSyncId())
@@ -456,10 +458,13 @@ public final class SyncWorkerTask implements Runnable {
 
         @Override
         public void onCommitSkipped(CommitSkipped commitSkipped) {
-            if (!commitSkipped.getCommitId().equals(pendingCommitId)) {
-                FPLog.w(SYNC_DATA, "Unexpected CommitSkipped " + commitSkipped + " received, expected commitId " + pendingCommitId);
+            if (!commitSkipped.getCommitId().equals(syncProcess.getPendingCommitId())) {
+                FPLog.w(SYNC_DATA, "Unexpected CommitSkipped " + commitSkipped + " received, expected commitId " + syncProcess.getPendingCommitId());
                 return;
             }
+
+            syncProcess.finishCommitProcessing();
+
             FPLog.i(SYNC_DATA, "Commit Skipped: " + commitSkipped);
             commitSkippedCounter.incrementAndGet();
 

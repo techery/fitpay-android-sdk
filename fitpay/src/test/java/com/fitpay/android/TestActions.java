@@ -21,6 +21,7 @@ import com.fitpay.android.api.models.user.User;
 import com.fitpay.android.api.models.user.UserCreateRequest;
 import com.fitpay.android.paymentdevice.impl.mock.SecureElementDataProvider;
 import com.fitpay.android.utils.FPLog;
+import com.fitpay.android.utils.SecurityProvider;
 import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.utils.ValidationException;
 import com.google.gson.Gson;
@@ -62,6 +63,7 @@ public class TestActions {
 
     @BeforeClass
     public static void init() {
+        FPLog.clean(); //in tests only one log impl should be used
         FPLog.addLogImpl(new FPLog.ILog() {
             @Override
             public void d(String tag, String text) {
@@ -94,7 +96,7 @@ public class TestActions {
         });
         FPLog.setShowHTTPLogs(false);
 
-        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        SecurityProvider.getInstance().setProvider(new BouncyCastleProvider());
         ApiManager.init(TestConstants.getConfig());
 
         RxAndroidPlugins.getInstance().reset();

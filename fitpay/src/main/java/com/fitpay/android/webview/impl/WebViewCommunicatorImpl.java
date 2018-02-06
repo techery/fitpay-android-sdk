@@ -16,8 +16,12 @@ import com.fitpay.android.cardscanner.IFitPayCardScanner;
 import com.fitpay.android.cardscanner.ScannedCardInfo;
 import com.fitpay.android.paymentdevice.DeviceService;
 import com.fitpay.android.paymentdevice.constants.States;
+import com.fitpay.android.paymentdevice.enums.AppMessage;
 import com.fitpay.android.paymentdevice.enums.Sync;
 import com.fitpay.android.paymentdevice.interfaces.IPaymentDeviceConnector;
+import com.fitpay.android.paymentdevice.events.NotificationSyncRequest;
+import com.fitpay.android.paymentdevice.models.SyncInfo;
+import com.fitpay.android.paymentdevice.models.SyncRequest;
 import com.fitpay.android.utils.EventCallback;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.Listener;
@@ -68,6 +72,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private RtmMessageListener rtmMessageListener;
 
+    private PushNotificationSyncListener pushNotificationSyncListener;
+
     private WebView webView;
 
     private RtmVersion webAppRtmVersion = new RtmVersion(RtmType.RTM_VERSION);
@@ -106,9 +112,11 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         deviceStatusListener = new DeviceStatusListener(getConnectorId());
         rtmMessageListener = new RtmMessageListener();
+        pushNotificationSyncListener = new PushNotificationSyncListener();
 
         NotificationManager.getInstance().addListener(deviceStatusListener);
         NotificationManager.getInstance().addListener(rtmMessageListener);
+        NotificationManager.getInstance().addListener(pushNotificationSyncListener);
 
         webView = (WebView) activity.findViewById(wId);
     }
@@ -132,6 +140,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     public void close() {
         NotificationManager.getInstance().removeListener(deviceStatusListener);
         NotificationManager.getInstance().removeListener(rtmMessageListener);
+        NotificationManager.getInstance().removeListener(pushNotificationSyncListener);
         NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
         NotificationManager.getInstance().removeListener(listenerForAppCallbacksNoCallbackId);
     }
@@ -201,6 +210,11 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     @Override
     @JavascriptInterface
     public void sync(String callbackId) {
+        sync(callbackId, null);
+    }
+
+    @Override
+    public void sync(String callbackId, final SyncInfo syncInfo) {
         FPLog.d(TAG, "sync received");
 
 //        RxBus.getInstance().post(new DeviceStatusMessage(activity.getString(R.string.sync_started), DeviceStatusMessage.PROGRESS));
@@ -230,10 +244,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
         NotificationManager.getInstance().addListener(listenerForAppCallbacks = new DeviceSyncListener(getConnectorId(), callbackId));
 
-        if (deviceService != null) {
-            deviceService.syncData(user, device);
-        } else if (deviceConnector != null) {
-            deviceConnector.createSyncRequest();
+        if (deviceConnector != null) {
+            deviceConnector.createSyncRequest(syncInfo);
+        } else {
+            deviceService.getPaymentDeviceConnector().createSyncRequest(syncInfo);
         }
     }
 
@@ -442,9 +456,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 }
                 case States.TIMEOUT:
                 case States.FAILED: {
-                    if (callbackId != null) {
-                        onTaskError(EventCallback.SYNC_COMPLETED, callbackId, !StringUtils.isEmpty(syncEvent.getMessage()) ? syncEvent.getMessage() : "sync failure");
-                    }
+                    onTaskError(EventCallback.SYNC_COMPLETED, callbackId, !StringUtils.isEmpty(syncEvent.getMessage()) ? syncEvent.getMessage() : "sync failure");
 
                     NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
                     NotificationManager.getInstance().removeListener(listenerForAppCallbacksNoCallbackId);
@@ -492,6 +504,17 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                 FPLog.i(WV_DATA, "\\Response\\: " + str);
                 final String url = "javascript:window.RtmBridge.resolve('" + str + "');";
                 activity.runOnUiThread(() -> webView.loadUrl(url));
+            });
+        }
+    }
+
+    private class PushNotificationSyncListener extends Listener {
+        private PushNotificationSyncListener() {
+            mCommands.put(NotificationSyncRequest.class, data -> sync(null, ((NotificationSyncRequest) data).getSyncInfo()));
+            mCommands.put(AppMessage.class, data -> {
+                if (AppMessage.SYNC.equals(((AppMessage) data).getType())) {
+                    sync(null);
+                }
             });
         }
     }
