@@ -31,7 +31,9 @@ public final class SyncProcess {
     }
 
     public void finish() {
-        commits.clear();
+        if (commits != null) {
+            commits.clear();
+        }
 
         final SyncMetricsData smd = new SyncMetricsData.Builder()
                 .readDataFromRequest(request)
