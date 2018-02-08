@@ -228,8 +228,7 @@ public class CommitTest2 extends TestActions {
             }
         }
 
-        //wait for all commits
-        Thread.sleep(5000);
+        new CountDownLatch(1).await(5, TimeUnit.SECONDS);
 
         Collections.CommitsCollection commits = getCommits(createdDevice, null);
         assertNotNull("commits collection", commits);
