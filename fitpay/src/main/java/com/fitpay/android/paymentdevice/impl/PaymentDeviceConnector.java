@@ -41,6 +41,7 @@ import java.io.SyncFailedException;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
@@ -441,7 +442,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                         case ResponseState.EXPIRED:
                         case ResponseState.FAILED:
                         case ResponseState.ERROR:
-                            commitProcessed(CommitResult.FAILED, null);
+                            commitProcessed(CommitResult.FAILED, new Throwable(apduExecutionResult.getErrorReason()));
                             break;
                     }
                 }
@@ -596,7 +597,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                     } else {
                         ApduExecutionResult result = new ApduExecutionResult(pkg.getPackageId());
                         result.setExecutedDuration(0);
-                        result.setErrorReason(String.format(
+                        result.setErrorReason(String.format(Locale.getDefault(),
                                 "expired APDU package, validUntil: %s, validUtil Parsed: %d, currentTime: %d",
                                 pkg.getValidUntil(),
                                 validUntil,

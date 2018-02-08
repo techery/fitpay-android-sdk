@@ -29,7 +29,6 @@ import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
 import com.fitpay.android.webview.events.DeviceStatusMessage;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -440,12 +439,6 @@ public final class SyncWorkerTask implements Runnable {
 
             confirmCommit(commitFailed.getCommit(), new CommitConfirm(ResponseState.FAILED));
 
-            RxBus.getInstance().post(connectorIdFilter, Sync.builder()
-                    .syncId(syncRequest.getSyncId())
-                    .state(States.FAILED)
-                    .message(commitFailed.getErrorMessage())
-                    .build());
-
             EventCallback eventCallback = new EventCallback.Builder()
                     .setCommand(EventCallback.getCommandForCommit(commitFailed.getCommit()))
                     .setReason(commitFailed.getErrorMessage())
@@ -454,6 +447,8 @@ public final class SyncWorkerTask implements Runnable {
                     .build();
 
             eventCallback.send(syncRequest.getConnector().id());
+
+            processNextCommit();
         }
 
         @Override
