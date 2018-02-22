@@ -1,6 +1,5 @@
 package com.fitpay.android.api.models.card;
 
-import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
@@ -13,7 +12,6 @@ import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.DeviceRef;
 import com.fitpay.android.api.models.user.User;
-import com.fitpay.android.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -45,13 +43,13 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
      * when the credit card was first added to the user's profile.
      * This link will only be available when the credit card is awaiting the user
      * to accept or decline the presented terms and conditions.
-     * <p>
-     * <p>
+     *
      * <b>Important note:</b>
+     * <p>
+     * @see User#createCreditCard
+     * <p>
      *
      * @param callback result callback
-     * @see User#createCreditCard
-     * </p>
      */
     public void acceptTerms(@NonNull ApiCallback<CreditCard> callback) {
         makePostCall(ACCEPT_TERMS, null, CreditCard.class, callback);
@@ -180,38 +178,31 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
     }
 
     /**
-     * Get sessionData for acceptTerms url
+     * Get acceptTerms url
+     *
      * <p>
+     * @see User#createCreditCard
      * <p>
      *
-     * @return sessionData
-     * @see User#createCreditCard
-     * </p>
+     * @return acceptTerms url
      */
     @Nullable
-    public String getSessionData() {
-        if (hasLink(ACCEPT_TERMS)) {
-            Uri uri = Uri.parse(getLinkUrl(ACCEPT_TERMS));
-            return uri.getQueryParameter("sessionData");
-        }
-        return null;
+    public String getAcceptTermsUrl() {
+        return getLinkUrl(ACCEPT_TERMS);
     }
 
     /**
-     * <p>
+     * Update acceptTerms url
      *
-     * @param sessionData sessionData
+     * <p>
      * @see User#createCreditCard
      * </p>
+     *
+     * @param acceptTermsUrl url
      */
-    public void updateSessionData(@NonNull String sessionData) {
+    public void setAcceptTermsUrl(@NonNull String acceptTermsUrl) {
         if (hasLink(ACCEPT_TERMS)) {
-            String updatedUrl = Uri.parse(getLinkUrl(ACCEPT_TERMS))
-                    .buildUpon()
-                    .appendQueryParameter("sessionData", sessionData)
-                    .build()
-                    .toString();
-            links.setLink(ACCEPT_TERMS, updatedUrl);
+            links.setLink(ACCEPT_TERMS, acceptTermsUrl);
         }
     }
 
