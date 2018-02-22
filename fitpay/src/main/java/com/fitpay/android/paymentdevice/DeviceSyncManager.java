@@ -549,12 +549,6 @@ public class DeviceSyncManager {
 
                 confirmCommit(commitFailed.getCommit(), new CommitConfirm(ResponseState.FAILED));
 
-                RxBus.getInstance().post(Sync.builder()
-                        .syncId(syncRequest.getSyncId())
-                        .state(States.FAILED)
-                        .message(commitFailed.getErrorMessage())
-                        .build());
-
                 EventCallback eventCallback = new EventCallback.Builder()
                         .setCommand(EventCallback.getCommandForCommit(commitFailed.getCommit()))
                         .setReason(commitFailed.getErrorMessage())
@@ -563,6 +557,8 @@ public class DeviceSyncManager {
                         .build();
 
                 eventCallback.send();
+
+                processNextCommit();
             }
 
             @Override
