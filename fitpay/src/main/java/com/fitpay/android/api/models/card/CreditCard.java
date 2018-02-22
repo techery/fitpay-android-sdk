@@ -200,9 +200,11 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
      *
      * @param acceptTermsUrl url
      */
-    public void setAcceptTermsUrl(@NonNull String acceptTermsUrl) {
+    public void setAcceptTermsUrl(@NonNull String acceptTermsUrl) throws IllegalAccessException{
         if (hasLink(ACCEPT_TERMS)) {
             links.setLink(ACCEPT_TERMS, acceptTermsUrl);
+        } else {
+            throw new IllegalAccessException("The card is not in a state to accept terms anymore");
         }
     }
 

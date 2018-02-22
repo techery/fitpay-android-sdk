@@ -236,13 +236,10 @@ public final class User extends UserModel implements Parcelable {
      *
      * <p>
      * <b>Important note:</b>
-     * When this call is made to the endpoint the platform responds with a hypermedia link for accept terms.
-     * This hypermedia link will include the sessionData parameter. However, and this is important,
-     * a call {@link #getCreditCard(String, ApiCallback)} or {@link #getCreditCards(int, int, ApiCallback)}
-     * will return a hypermedia link for accept terms, but it will NOT contain the sessionData parameter.
-     * The sessionData is only available in the object that is returned from current call.
-     * The platform is not allowed to store it. The platform may reject the POST to the acceptTerms
-     * endpoint if the sessionData is not included.
+     * This call responds with a hypermedia link for accept terms. Getting the card again will not
+     * result in the proper hypermedia link.
+     * It's your own responsibility to store {@link CreditCard#getAcceptTermsUrl()} and restore
+     * {@link CreditCard#setAcceptTermsUrl(String)} this link allowing the user to come back to the T&Cs at a later time
      * </p>
      *
      * @param creditCard credit card data:(pan, expMonth, expYear, cvv, name,
