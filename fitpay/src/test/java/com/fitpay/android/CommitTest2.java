@@ -8,7 +8,6 @@ import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.Commit;
 import com.fitpay.android.api.models.device.CommitConfirm;
 import com.fitpay.android.api.models.device.Device;
-import com.fitpay.android.utils.FPLog;
 
 import org.junit.Test;
 
@@ -228,19 +227,17 @@ public class CommitTest2 extends TestActions {
             }
         }
 
-        new CountDownLatch(1).await(5, TimeUnit.SECONDS);
+        //wait for all commits
+        final int correctResult = 39;
+        int totalResults = 0;
 
-        Collections.CommitsCollection commits = getCommits(createdDevice, null);
-        assertNotNull("commits collection", commits);
-        int totalResults = commits.getTotalResults();
-        assertTrue("number of commits should be 10 or more.  Got: " + commits.getTotalResults(), commits.getTotalResults() >= 10);
+        for (int i = 0; i < 3; i++) {
+            Collections.CommitsCollection commits = getAllCommits(createdDevice, null);
+            assertNotNull(commits);
+            assertTrue("number of commits should be 10 or more.  Got: " + commits.getTotalResults(), commits.getTotalResults() >= 10);
 
-        commits = getAllCommits(createdDevice, null);
-        assertNotNull("allCommits collection", commits);
-
-        FPLog.d("totalResult:" + totalResults);
-        FPLog.d("commits totalResult:" + commits.getTotalResults());
-
-        assertEquals("number of allCommits", totalResults, commits.getTotalResults());
+            totalResults = commits.getTotalResults();
+        }
+        assertEquals("number of commits should be 39.  Got: " + totalResults, totalResults, correctResult);
     }
 }
