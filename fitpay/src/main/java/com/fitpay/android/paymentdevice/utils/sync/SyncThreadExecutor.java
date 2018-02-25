@@ -5,6 +5,7 @@ import android.content.Context;
 import com.fitpay.android.paymentdevice.callbacks.DeviceSyncManagerCallback;
 import com.fitpay.android.paymentdevice.constants.States;
 import com.fitpay.android.paymentdevice.enums.Sync;
+import com.fitpay.android.paymentdevice.models.SyncProcess;
 import com.fitpay.android.paymentdevice.models.SyncRequest;
 import com.fitpay.android.utils.FPLog;
 import com.fitpay.android.utils.RxBus;
@@ -100,6 +101,11 @@ public class SyncThreadExecutor extends ThreadPoolExecutor {
             for (DeviceSyncManagerCallback callback : syncManagerCallbacks) {
                 callback.syncRequestFailed(request);
             }
+
+            //we can't process current sync request. lets send empty metrics
+            SyncProcess emptyProcess = new SyncProcess(request);
+            emptyProcess.start();
+            emptyProcess.finish();
         }
     }
 

@@ -1,7 +1,6 @@
 package com.fitpay.android.paymentdevice.impl;
 
 import android.content.Context;
-import android.support.annotation.Nullable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -150,7 +149,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     public void setState(@Connection.State int state) {
         FPLog.d(TAG, "connection state changed: " + state);
         this.state = state;
-        RxBus.getInstance().post(connectorId, new Connection(state));
+        postData(new Connection(state));
     }
 
     @Override
@@ -240,7 +239,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         this.user = user;
     }
 
- 	public final User getUser() {
+    public final User getUser() {
         return user;
     }
 
@@ -318,6 +317,14 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
     }
 
     /**
+     * Post data for everyone who is listening for current {@link #id()}
+     * @param data data
+     */
+    public void postData(@NonNull Object data) {
+        RxBus.getInstance().post(connectorId, data);
+    }
+
+    /**
      * Execution has finished
      */
     protected void completeApduPackageExecution() {
@@ -357,7 +364,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
         switch (type) {
             case CommitResult.SUCCESS:
                 CommitSuccess.Builder success = new CommitSuccess.Builder().commit(currentCommit);
-                RxBus.getInstance().post(connectorId, success.build());
+                postData(success.build());
                 break;
 
             case CommitResult.SKIPPED:
@@ -365,7 +372,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                 if (error != null) {
                     skipped.errorMessage(error.getMessage());
                 }
-                RxBus.getInstance().post(connectorId, skipped.build());
+                postData(skipped.build());
                 break;
 
             case CommitResult.FAILED:
@@ -373,7 +380,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
                 if (error != null) {
                     failed.errorMessage(error.getMessage());
                 }
-                RxBus.getInstance().post(connectorId, failed.build());
+                postData(failed.build());
                 break;
         }
     }
@@ -402,7 +409,7 @@ public abstract class PaymentDeviceConnector implements IPaymentDeviceConnector 
      * @param apduCommandResult
      */
     public void sendApduCommandResult(@NonNull final ApduCommandResult apduCommandResult) {
-        RxBus.getInstance().post(id(), apduCommandResult);
+        postData(apduCommandResult);
     }
 
     /**

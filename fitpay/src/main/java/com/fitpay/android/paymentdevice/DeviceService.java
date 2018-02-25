@@ -377,9 +377,7 @@ public final class DeviceService extends Service {
         }
 
         if (syncManager != null) {
-
             SyncRequest request = new SyncRequest.Builder()
-                    .setSyncId(null != syncRequest.getSyncInfo() ? syncRequest.getSyncInfo().getSyncId() : null)
                     .setUser(user)
                     .setDevice(device)
                     .setConnector(connector)
