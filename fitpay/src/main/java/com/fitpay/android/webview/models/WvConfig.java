@@ -2,6 +2,7 @@ package com.fitpay.android.webview.models;
 
 import android.util.Base64;
 
+import com.fitpay.android.webview.models.a2a.A2AIssuerResponse;
 import com.google.gson.Gson;
 
 import java.nio.charset.StandardCharsets;
@@ -79,6 +80,11 @@ public class WvConfig {
 
         public Builder addKeyValue(String key, Object value) {
             data.put(key, value);
+            return this;
+        }
+
+        public Builder setA2A(A2AIssuerResponse issuerResponse){
+            data.put("a2a", issuerResponse);
             return this;
         }
 

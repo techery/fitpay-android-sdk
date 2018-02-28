@@ -7,7 +7,7 @@ import com.fitpay.android.webview.events.RtmMessage;
 import com.fitpay.android.webview.impl.WebViewCommunicatorImpl;
 
 /**
- * RtmMessage parser v3
+ * RtmMessage parser v5
  */
 public class RtmParserV5 extends RtmParserV4 {
 
