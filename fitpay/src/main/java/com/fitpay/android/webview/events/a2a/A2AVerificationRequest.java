@@ -1,12 +1,14 @@
 package com.fitpay.android.webview.events.a2a;
 
+import com.fitpay.android.webview.models.a2a.A2AContext;
+
 /**
  * App-to-app verification request.
  */
 public class A2AVerificationRequest {
     private String cardType;
     private String returnLocation;
-    private ATAContext context;
+    private A2AContext context;
     private String callbackId; //internal usage
 
     public String getCallbackId() {
@@ -26,28 +28,8 @@ public class A2AVerificationRequest {
         return returnLocation;
     }
 
-    public ATAContext getContext() {
+    public A2AContext getContext() {
         return context;
     }
 
-    /**
-     * App-to-App context data for {@link android.content.Intent}
-     */
-    private static class ATAContext {
-        private String applicationId;
-        private String action;
-        private String payload;
-
-        public String getApplicationId() {
-            return applicationId;
-        }
-
-        public String getAction() {
-            return action;
-        }
-
-        public String getPayload() {
-            return payload;
-        }
-    }
 }
