@@ -71,7 +71,7 @@ public interface WebViewCommunicator {
     void startScan(String callbackId);
 
     /**
-     * Called by the parser when it receives {#value {@link com.fitpay.android.webview.enums.RtmType#SUPPORTS_ISSUER_APP_AUTH}} event
+     * Called by the parser when it receives {#value {@link com.fitpay.android.webview.enums.RtmType#SUPPORTS_ISSUER_APP_VERIFICATION}} event
      * By default the app-to-app verification capability should be disabled.
      *
      * @return Mark whether you support app-to-app verifications.

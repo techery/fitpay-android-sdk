@@ -19,11 +19,11 @@ public class RtmType {
     public static final String SDK_VERSION_REQUEST = "sdkVersionRequest";
     public static final String ID_VERIFICATION = "idVerification";
     public static final String ID_VERIFICATION_REQUEST = "idVerificationRequest";
-    public static final String SUPPORTS_ISSUER_APP_AUTH = "supportsIssuerAppAuth";
+    public static final String SUPPORTS_ISSUER_APP_VERIFICATION = "supportsIssuerAppVerification";
     public static final String APP_TO_APP_VERIFICATION = "appToAppVerification";
 
     @StringDef({VERSION, SYNC, USER_DATA, NO_HISTORY, SCAN_REQUEST, SDK_VERSION_REQUEST, ID_VERIFICATION_REQUEST,
-            SUPPORTS_ISSUER_APP_AUTH, APP_TO_APP_VERIFICATION})
+            SUPPORTS_ISSUER_APP_VERIFICATION, APP_TO_APP_VERIFICATION})
     public @interface Request {
     }
 
@@ -33,7 +33,7 @@ public class RtmType {
     public static final String UNRECOGNIZED = "unrecognized";
 
     @StringDef({DEVICE_STATUS, LOGOUT, RESOLVE, VERSION, CARD_SCANNED, SDK_VERSION, UNRECOGNIZED, ID_VERIFICATION,
-            SUPPORTS_ISSUER_APP_AUTH, APP_TO_APP_VERIFICATION})
+            SUPPORTS_ISSUER_APP_VERIFICATION, APP_TO_APP_VERIFICATION})
     public @interface Response {
     }
 }

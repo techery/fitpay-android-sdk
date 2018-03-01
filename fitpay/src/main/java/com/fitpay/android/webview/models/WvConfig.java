@@ -83,11 +83,6 @@ public class WvConfig {
             return this;
         }
 
-        public Builder setA2A(A2AIssuerResponse issuerResponse){
-            data.put("a2a", issuerResponse);
-            return this;
-        }
-
         public WvConfig build() {
             WvConfig wvConfig = new WvConfig();
             wvConfig.data = data;

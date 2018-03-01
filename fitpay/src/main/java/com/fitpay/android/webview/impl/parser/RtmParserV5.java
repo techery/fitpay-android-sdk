@@ -9,7 +9,7 @@ import com.fitpay.android.webview.events.RtmMessageResponse;
 import com.fitpay.android.webview.events.a2a.A2AVerificationFailed;
 import com.fitpay.android.webview.events.a2a.A2AVerificationRequest;
 import com.fitpay.android.webview.impl.WebViewCommunicatorImpl;
-import com.fitpay.android.webview.models.a2a.A2ASupportsAuth;
+import com.fitpay.android.webview.models.a2a.A2AIssuerAppVerification;
 
 /**
  * RtmMessage parser v5
@@ -27,8 +27,8 @@ public class RtmParserV5 extends RtmParserV4 {
                 RxBus.getInstance().post(new IdVerificationRequest(msg.getCallbackId()));
                 break;
 
-            case RtmType.SUPPORTS_ISSUER_APP_AUTH:
-                RxBus.getInstance().post(new RtmMessageResponse(msg.getCallbackId(), true, new A2ASupportsAuth(impl.isSupportAppAuth()), RtmType.SUPPORTS_ISSUER_APP_AUTH));
+            case RtmType.SUPPORTS_ISSUER_APP_VERIFICATION:
+                RxBus.getInstance().post(new RtmMessageResponse(msg.getCallbackId(), true, new A2AIssuerAppVerification(impl.isSupportAppAuth()), RtmType.SUPPORTS_ISSUER_APP_VERIFICATION));
                 break;
 
             case RtmType.APP_TO_APP_VERIFICATION:
