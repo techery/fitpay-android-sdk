@@ -76,5 +76,5 @@ public interface WebViewCommunicator {
      *
      * @return Mark whether you support app-to-app verifications.
      */
-    boolean isSupportAppAuth();
+    boolean supportsAppVerification();
 }

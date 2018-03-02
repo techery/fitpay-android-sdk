@@ -3,7 +3,7 @@ package com.fitpay.android.webview.models.a2a;
 /**
  * App-to-App context data for {@link android.content.Intent}
  */
-public class A2AContext {
+public final class A2AContext {
     private String applicationId;
     private String action;
     private String payload;

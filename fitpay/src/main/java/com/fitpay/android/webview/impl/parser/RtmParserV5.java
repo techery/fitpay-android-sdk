@@ -2,6 +2,7 @@ package com.fitpay.android.webview.impl.parser;
 
 import com.fitpay.android.utils.Constants;
 import com.fitpay.android.utils.RxBus;
+import com.fitpay.android.webview.enums.A2AVerificationError;
 import com.fitpay.android.webview.enums.RtmType;
 import com.fitpay.android.webview.events.IdVerificationRequest;
 import com.fitpay.android.webview.events.RtmMessage;
@@ -28,17 +29,17 @@ public class RtmParserV5 extends RtmParserV4 {
                 break;
 
             case RtmType.SUPPORTS_ISSUER_APP_VERIFICATION:
-                RxBus.getInstance().post(new RtmMessageResponse(msg.getCallbackId(), true, new A2AIssuerAppVerification(impl.isSupportAppAuth()), RtmType.SUPPORTS_ISSUER_APP_VERIFICATION));
+                RxBus.getInstance().post(new RtmMessageResponse(msg.getCallbackId(), true, new A2AIssuerAppVerification(impl.supportsAppVerification()), RtmType.SUPPORTS_ISSUER_APP_VERIFICATION));
                 break;
 
             case RtmType.APP_TO_APP_VERIFICATION:
-                if (impl.isSupportAppAuth()) {
+                if (impl.supportsAppVerification()) {
                     A2AVerificationRequest appToAppVerification = Constants.getGson().fromJson(msg.getData(), A2AVerificationRequest.class);
                     appToAppVerification.setCallbackId(msg.getCallbackId());
                     RxBus.getInstance().post(appToAppVerification);
                 } else {
-                    RxBus.getInstance().post(new RtmMessageResponse(msg.getCallbackId(),false,
-                            new A2AVerificationFailed("a2a auth is not supported"), RtmType.APP_TO_APP_VERIFICATION));
+                    RxBus.getInstance().post(new RtmMessageResponse(msg.getCallbackId(), false,
+                            new A2AVerificationFailed(A2AVerificationError.NOT_SUPPORTED), RtmType.APP_TO_APP_VERIFICATION));
                 }
                 break;
 

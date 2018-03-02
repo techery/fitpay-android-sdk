@@ -12,8 +12,8 @@ import java.nio.charset.StandardCharsets;
  * Issuer response data for {@link A2AVerificationRequest}
  *
  * Intent extra data keys:
- * {@value com.fitpay.android.utils.Constants#A2A_AUTHENTICATION_CODE_RESPONSE}
- * {@value com.fitpay.android.utils.Constants#A2A_STEPUP_RESULT_RESPONSE}
+ * {@value com.fitpay.android.utils.Constants#A2A_STEP_UP_AUTH_CODE}
+ * {@value com.fitpay.android.utils.Constants#A2A_STEP_UP_AUTH_RESPONSE}
  */
 public class A2AIssuerResponse {
     @A2AStepupResult.Response

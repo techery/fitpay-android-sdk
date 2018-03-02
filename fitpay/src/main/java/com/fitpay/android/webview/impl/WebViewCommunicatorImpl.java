@@ -84,7 +84,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private IFitPayCardScanner cardScanner;
 
-    private boolean supportAppAuth;
+    private boolean supportsAppVerification;
 
     public WebViewCommunicatorImpl(Activity ctx, int wId) {
         this.activity = ctx;
@@ -450,12 +450,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     }
 
     @Override
-    public boolean isSupportAppAuth() {
-        return supportAppAuth;
+    public boolean supportsAppVerification() {
+        return supportsAppVerification;
     }
 
-    public void setSupportAppAuth(boolean supportAppAuth) {
-        this.supportAppAuth = supportAppAuth;
+    public void setSupportsAppVerification(boolean supportsAppVerification) {
+        this.supportsAppVerification = supportsAppVerification;
     }
 
     /**
