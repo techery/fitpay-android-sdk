@@ -3,6 +3,7 @@ package com.fitpay.android.api.models.card;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.fitpay.android.api.callbacks.ApiCallback;
 import com.fitpay.android.api.enums.CardInitiators;
@@ -10,6 +11,7 @@ import com.fitpay.android.api.models.AssetReference;
 import com.fitpay.android.api.models.Links;
 import com.fitpay.android.api.models.collection.Collections;
 import com.fitpay.android.api.models.device.DeviceRef;
+import com.fitpay.android.api.models.user.User;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -41,6 +43,11 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
      * when the credit card was first added to the user's profile.
      * This link will only be available when the credit card is awaiting the user
      * to accept or decline the presented terms and conditions.
+     *
+     * <b>Important note:</b>
+     * <p>
+     * @see User#createCreditCard
+     * <p>
      *
      * @param callback result callback
      */
@@ -170,7 +177,36 @@ public final class CreditCard extends CreditCardModel implements Parcelable {
         return hasLink(TRANSACTIONS);
     }
 
+    /**
+     * Get acceptTerms url
+     *
+     * <p>
+     * @see User#createCreditCard
+     * <p>
+     *
+     * @return acceptTerms url
+     */
+    @Nullable
+    public String getAcceptTermsUrl() {
+        return getLinkUrl(ACCEPT_TERMS);
+    }
 
+    /**
+     * Update acceptTerms url
+     *
+     * <p>
+     * @see User#createCreditCard
+     * </p>
+     *
+     * @param acceptTermsUrl url
+     */
+    public void setAcceptTermsUrl(@NonNull String acceptTermsUrl) throws IllegalAccessException{
+        if (hasLink(ACCEPT_TERMS)) {
+            links.setLink(ACCEPT_TERMS, acceptTermsUrl);
+        } else {
+            throw new IllegalAccessException("The card is not in a state to accept terms anymore");
+        }
+    }
 
     public static final class Builder {
 
