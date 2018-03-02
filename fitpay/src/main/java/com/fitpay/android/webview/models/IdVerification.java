@@ -2,7 +2,6 @@ package com.fitpay.android.webview.models;
 
 import com.fitpay.android.utils.RxBus;
 import com.fitpay.android.utils.StringUtils;
-import com.fitpay.android.utils.TimestampUtils;
 import com.fitpay.android.webview.enums.DeviceTimeZone;
 import com.fitpay.android.webview.enums.RtmType;
 import com.fitpay.android.webview.events.RtmMessageResponse;
