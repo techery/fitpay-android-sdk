@@ -30,9 +30,11 @@ import com.fitpay.android.utils.StringUtils;
 import com.fitpay.android.webview.WebViewCommunicator;
 import com.fitpay.android.webview.enums.RtmType;
 import com.fitpay.android.webview.events.DeviceStatusMessage;
+import com.fitpay.android.webview.events.IdVerificationRequest;
 import com.fitpay.android.webview.events.RtmMessage;
 import com.fitpay.android.webview.events.RtmMessageResponse;
 import com.fitpay.android.webview.events.UserReceived;
+import com.fitpay.android.webview.models.IdVerification;
 import com.fitpay.android.webview.models.RtmVersion;
 import com.google.gson.Gson;
 
@@ -72,6 +74,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private PushNotificationSyncListener pushNotificationSyncListener;
 
+    private IdVerificationListener idVerificationListener;
+
     private WebView webView;
 
     private RtmVersion webAppRtmVersion = new RtmVersion(RtmType.RTM_VERSION);
@@ -86,10 +90,12 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         deviceStatusListener = new DeviceStatusListener();
         rtmMessageListener = new RtmMessageListener();
         pushNotificationSyncListener = new PushNotificationSyncListener();
+        idVerificationListener = new IdVerificationListener();
 
         NotificationManager.getInstance().addListener(deviceStatusListener);
         NotificationManager.getInstance().addListener(rtmMessageListener);
         NotificationManager.getInstance().addListener(pushNotificationSyncListener);
+        NotificationManager.getInstance().addListener(idVerificationListener);
 
         webView = (WebView) activity.findViewById(wId);
     }
@@ -120,6 +126,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         NotificationManager.getInstance().removeListener(pushNotificationSyncListener);
         NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
         NotificationManager.getInstance().removeListener(listenerForAppCallbacksNoCallbackId);
+        NotificationManager.getInstance().removeListener(idVerificationListener);
     }
 
     /**
@@ -440,6 +447,11 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         }
     }
 
+    @Override
+    public IdVerification getIdVerification() {
+        return new IdVerification.Builder().build();
+    }
+
     /**
      * Listen to RTM messages
      */
@@ -470,6 +482,13 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     sync(null);
                 }
             });
+        }
+    }
+
+    private class IdVerificationListener extends Listener {
+        private IdVerificationListener() {
+            mCommands.put(IdVerificationRequest.class, data ->
+                    getIdVerification().send(((IdVerificationRequest) data).getCallbackId()));
         }
     }
 }
