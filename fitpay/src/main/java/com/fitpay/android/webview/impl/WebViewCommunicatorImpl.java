@@ -35,6 +35,8 @@ import com.fitpay.android.webview.events.RtmMessage;
 import com.fitpay.android.webview.events.RtmMessageResponse;
 import com.fitpay.android.webview.events.UserReceived;
 import com.fitpay.android.webview.models.IdVerification;
+import com.fitpay.android.webview.events.a2a.A2AVerificationFailed;
+import com.fitpay.android.webview.events.a2a.A2AVerificationRequest;
 import com.fitpay.android.webview.models.RtmVersion;
 import com.google.gson.Gson;
 
@@ -75,6 +77,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     private PushNotificationSyncListener pushNotificationSyncListener;
 
     private IdVerificationListener idVerificationListener;
+    private A2AListener a2AListener;
 
     private WebView webView;
 
@@ -84,6 +87,8 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private IFitPayCardScanner cardScanner;
 
+    private boolean supportsAppVerification;
+
     public WebViewCommunicatorImpl(Activity ctx, int wId) {
         this.activity = ctx;
 
@@ -91,11 +96,13 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         rtmMessageListener = new RtmMessageListener();
         pushNotificationSyncListener = new PushNotificationSyncListener();
         idVerificationListener = new IdVerificationListener();
+        a2AListener = new A2AListener();
 
         NotificationManager.getInstance().addListener(deviceStatusListener);
         NotificationManager.getInstance().addListener(rtmMessageListener);
         NotificationManager.getInstance().addListener(pushNotificationSyncListener);
         NotificationManager.getInstance().addListener(idVerificationListener);
+        NotificationManager.getInstance().addListener(a2AListener);
 
         webView = (WebView) activity.findViewById(wId);
     }
@@ -127,6 +134,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
         NotificationManager.getInstance().removeListener(listenerForAppCallbacksNoCallbackId);
         NotificationManager.getInstance().removeListener(idVerificationListener);
+        NotificationManager.getInstance().removeListener(a2AListener);
     }
 
     /**
@@ -451,6 +459,26 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     public IdVerification getIdVerification() {
         return new IdVerification.Builder().build();
     }
+    @Override
+    public boolean supportsAppVerification() {
+        return supportsAppVerification;
+    }
+
+    public void setSupportsAppVerification(boolean supportsAppVerification) {
+        this.supportsAppVerification = supportsAppVerification;
+    }
+
+    /**
+     * Get app-to-app return location
+     * <p>
+     * On completion of the issuer intent the OEM app must then open the web-view using the returnLocation.
+     * <baseUrl>/<returnLocation>?config=<base64 encoded config with a2a>
+     *
+     * @return a2a return location
+     */
+    public String getA2aReturnLocation() {
+        return a2AListener != null ? a2AListener.returnLocation : null;
+    }
 
     /**
      * Listen to RTM messages
@@ -489,6 +517,20 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         private IdVerificationListener() {
             mCommands.put(IdVerificationRequest.class, data ->
                     getIdVerification().send(((IdVerificationRequest) data).getCallbackId()));
+        }
+    }
+
+    private class A2AListener extends Listener {
+        private String requestCallbackId;
+        private String returnLocation;
+
+        private A2AListener() {
+            mCommands.put(A2AVerificationRequest.class, data -> {
+                returnLocation = ((A2AVerificationRequest) data).getReturnLocation();
+                requestCallbackId = ((A2AVerificationRequest) data).getCallbackId();
+            });
+            mCommands.put(A2AVerificationFailed.class, data ->
+                    RxBus.getInstance().post(new RtmMessageResponse(requestCallbackId, false, data, RtmType.APP_TO_APP_VERIFICATION)));
         }
     }
 }
