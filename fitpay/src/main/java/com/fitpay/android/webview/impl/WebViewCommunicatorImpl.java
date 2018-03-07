@@ -30,9 +30,11 @@ import com.fitpay.android.utils.StringUtils;
 import com.fitpay.android.webview.WebViewCommunicator;
 import com.fitpay.android.webview.enums.RtmType;
 import com.fitpay.android.webview.events.DeviceStatusMessage;
+import com.fitpay.android.webview.events.IdVerificationRequest;
 import com.fitpay.android.webview.events.RtmMessage;
 import com.fitpay.android.webview.events.RtmMessageResponse;
 import com.fitpay.android.webview.events.UserReceived;
+import com.fitpay.android.webview.models.IdVerification;
 import com.fitpay.android.webview.events.a2a.A2AVerificationFailed;
 import com.fitpay.android.webview.events.a2a.A2AVerificationRequest;
 import com.fitpay.android.webview.models.RtmVersion;
@@ -74,6 +76,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
 
     private PushNotificationSyncListener pushNotificationSyncListener;
 
+    private IdVerificationListener idVerificationListener;
     private A2AListener a2AListener;
 
     private WebView webView;
@@ -92,11 +95,13 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         deviceStatusListener = new DeviceStatusListener();
         rtmMessageListener = new RtmMessageListener();
         pushNotificationSyncListener = new PushNotificationSyncListener();
+        idVerificationListener = new IdVerificationListener();
         a2AListener = new A2AListener();
 
         NotificationManager.getInstance().addListener(deviceStatusListener);
         NotificationManager.getInstance().addListener(rtmMessageListener);
         NotificationManager.getInstance().addListener(pushNotificationSyncListener);
+        NotificationManager.getInstance().addListener(idVerificationListener);
         NotificationManager.getInstance().addListener(a2AListener);
 
         webView = (WebView) activity.findViewById(wId);
@@ -128,6 +133,7 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
         NotificationManager.getInstance().removeListener(pushNotificationSyncListener);
         NotificationManager.getInstance().removeListener(listenerForAppCallbacks);
         NotificationManager.getInstance().removeListener(listenerForAppCallbacksNoCallbackId);
+        NotificationManager.getInstance().removeListener(idVerificationListener);
         NotificationManager.getInstance().removeListener(a2AListener);
     }
 
@@ -450,6 +456,10 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
     }
 
     @Override
+    public IdVerification getIdVerification() {
+        return new IdVerification.Builder().build();
+    }
+    @Override
     public boolean supportsAppVerification() {
         return supportsAppVerification;
     }
@@ -500,6 +510,13 @@ public class WebViewCommunicatorImpl implements WebViewCommunicator {
                     sync(null);
                 }
             });
+        }
+    }
+
+    private class IdVerificationListener extends Listener {
+        private IdVerificationListener() {
+            mCommands.put(IdVerificationRequest.class, data ->
+                    getIdVerification().send(((IdVerificationRequest) data).getCallbackId()));
         }
     }
 
